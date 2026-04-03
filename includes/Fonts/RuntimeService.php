@@ -51,9 +51,12 @@ final class RuntimeService
             return $themeJson;
         }
 
+        $existingData = $themeJson->get_data();
+        $schemaVersion = (int) ($existingData['version'] ?? 3);
+
         return $themeJson->update_with(
             [
-                'version' => 3,
+                'version' => $schemaVersion,
                 'settings' => [
                     'typography' => [
                         'fontFamilies' => $fontFamilies,

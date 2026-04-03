@@ -110,7 +110,7 @@ final class CssBuilder
         $css .= "  font-style:{$style};\n";
 
         if (isset($files['eot'])) {
-            $css .= '  src:url("' . $files['eot'] . "\");\n";
+            $css .= '  src:url("' . esc_url((string) $files['eot']) . "\");\n";
         }
 
         $sources = [];
@@ -180,10 +180,11 @@ final class CssBuilder
             'ttf' => 'truetype',
             default => $format,
         };
+        $escapedUrl = esc_url($url);
 
         return $format === 'eot'
-            ? 'url("' . $url . '?#iefix") format("' . $formatName . '")'
-            : 'url("' . $url . '") format("' . $formatName . '")';
+            ? 'url("' . $escapedUrl . '?#iefix") format("' . $formatName . '")'
+            : 'url("' . $escapedUrl . '") format("' . $formatName . '")';
     }
 
     private function roleTokens(array $roles): array

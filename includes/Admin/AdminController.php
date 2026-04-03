@@ -40,8 +40,8 @@ final class AdminController
     public function registerMenu(): void
     {
         add_menu_page(
-            __('Etch Custom Fonts', ETCH_FONTS_TEXT_DOMAIN),
-            __('Etch Fonts', ETCH_FONTS_TEXT_DOMAIN),
+            __('Etch Custom Fonts', 'etch-fonts'),
+            __('Etch Fonts', 'etch-fonts'),
             'manage_options',
             self::MENU_SLUG,
             [$this, 'renderPage'],
@@ -120,11 +120,11 @@ final class AdminController
 
     public function ajaxSearchGoogle(): void
     {
-        $this->assertManageOptionsAjax(__('You are not allowed to search Google Fonts.', ETCH_FONTS_TEXT_DOMAIN));
+        $this->assertManageOptionsAjax(__('You are not allowed to search Google Fonts.', 'etch-fonts'));
         check_ajax_referer('etch_fonts_search_google', 'nonce');
 
         if (!$this->googleClient->canSearch()) {
-            $this->sendAjaxError(__('Search is unavailable until a Google Fonts API key is saved.', ETCH_FONTS_TEXT_DOMAIN), 400);
+            $this->sendAjaxError(__('Search is unavailable until a Google Fonts API key is saved.', 'etch-fonts'), 400);
         }
 
         wp_send_json_success(['items' => $this->googleClient->searchFamilies($this->getPostedText('query'), 20)]);
@@ -132,7 +132,7 @@ final class AdminController
 
     public function ajaxImportGoogle(): void
     {
-        $this->assertManageOptionsAjax(__('You are not allowed to import Google Fonts.', ETCH_FONTS_TEXT_DOMAIN));
+        $this->assertManageOptionsAjax(__('You are not allowed to import Google Fonts.', 'etch-fonts'));
         check_ajax_referer('etch_fonts_import_google', 'nonce');
 
         $result = $this->googleImport->importFamily(
@@ -149,13 +149,13 @@ final class AdminController
 
     public function ajaxUploadLocal(): void
     {
-        $this->assertManageOptionsAjax(__('You are not allowed to upload local fonts.', ETCH_FONTS_TEXT_DOMAIN));
+        $this->assertManageOptionsAjax(__('You are not allowed to upload local fonts.', 'etch-fonts'));
         check_ajax_referer('etch_fonts_upload_local', 'nonce');
 
         $rows = $this->getPostedUploadRows();
 
         if ($rows === []) {
-            $this->sendAjaxError(__('Add at least one upload row before submitting.', ETCH_FONTS_TEXT_DOMAIN), 400);
+            $this->sendAjaxError(__('Add at least one upload row before submitting.', 'etch-fonts'), 400);
         }
 
         $result = $this->localUpload->uploadRows($rows);
@@ -169,14 +169,14 @@ final class AdminController
 
     public function ajaxSaveFamilyFallback(): void
     {
-        $this->assertManageOptionsAjax(__('You are not allowed to update font fallback settings.', ETCH_FONTS_TEXT_DOMAIN));
+        $this->assertManageOptionsAjax(__('You are not allowed to update font fallback settings.', 'etch-fonts'));
         check_ajax_referer('etch_fonts_save_family_fallback', 'nonce');
 
         $family = $this->getPostedText('family');
         $fallback = $this->getPostedFallback('fallback');
 
         if ($family === '') {
-            $this->sendAjaxError(__('A font family is required before saving its fallback.', ETCH_FONTS_TEXT_DOMAIN), 400);
+            $this->sendAjaxError(__('A font family is required before saving its fallback.', 'etch-fonts'), 400);
         }
 
         $this->settings->saveFamilyFallback($family, $fallback);
@@ -187,7 +187,7 @@ final class AdminController
                 'fallback' => $fallback,
                 'stack' => FontUtils::buildFontStack($family, $fallback),
                 'message' => sprintf(
-                    __('Saved fallback for %s.', ETCH_FONTS_TEXT_DOMAIN),
+                    __('Saved fallback for %s.', 'etch-fonts'),
                     $family
                 ),
             ]
@@ -222,7 +222,7 @@ final class AdminController
 
         check_admin_referer('etch_fonts_rescan_fonts');
         $this->assets->refreshGeneratedAssets();
-        $this->log->add(__('Fonts rescanned.', ETCH_FONTS_TEXT_DOMAIN));
+        $this->log->add(__('Fonts rescanned.', 'etch-fonts'));
         $this->redirect(['rescan' => '1']);
     }
 
@@ -237,12 +237,21 @@ final class AdminController
         $submittedGoogleKey = $this->getPostedText('google_api_key');
         $clearGoogleKey = !empty($_POST['etch_fonts_clear_google_api_key']);
 
-        $this->settings->saveSettings($_POST);
+        $this->settings->saveSettings(
+            [
+                'google_api_key' => wp_unslash($_POST['google_api_key'] ?? ''),
+                'etch_fonts_clear_google_api_key' => wp_unslash($_POST['etch_fonts_clear_google_api_key'] ?? ''),
+                'css_delivery_mode' => wp_unslash($_POST['css_delivery_mode'] ?? ''),
+                'font_display' => wp_unslash($_POST['font_display'] ?? ''),
+                'minify_css_output' => $_POST['minify_css_output'] ?? '',
+                'preview_sentence' => wp_unslash($_POST['preview_sentence'] ?? ''),
+            ]
+        );
         $this->googleClient->clearCatalogCache();
 
         if ($clearGoogleKey) {
             $this->settings->saveGoogleApiKeyStatus('empty');
-            $this->log->add(__('Google Fonts API key removed.', ETCH_FONTS_TEXT_DOMAIN));
+            $this->log->add(__('Google Fonts API key removed.', 'etch-fonts'));
             $this->redirect(['google_key_cleared' => '1']);
         }
 
@@ -255,22 +264,22 @@ final class AdminController
             );
 
             if (($validation['state'] ?? 'unknown') === 'valid') {
-                $this->log->add(__('Google Fonts API key validated.', ETCH_FONTS_TEXT_DOMAIN));
+                $this->log->add(__('Google Fonts API key validated.', 'etch-fonts'));
                 $this->redirect(['google_key_saved' => '1']);
             }
 
-            $this->log->add(__('Google Fonts API key validation failed.', ETCH_FONTS_TEXT_DOMAIN));
+            $this->log->add(__('Google Fonts API key validation failed.', 'etch-fonts'));
             $this->redirect(
                 [
                     'etch_fonts_error' => (string) (
                         $validation['message']
-                        ?? __('Google Fonts API key could not be validated.', ETCH_FONTS_TEXT_DOMAIN)
+                        ?? __('Google Fonts API key could not be validated.', 'etch-fonts')
                     ),
                 ]
             );
         }
 
-        $this->log->add(__('Plugin settings updated.', ETCH_FONTS_TEXT_DOMAIN));
+        $this->log->add(__('Plugin settings updated.', 'etch-fonts'));
         $this->redirect(['settings_saved' => '1']);
     }
 
@@ -289,7 +298,7 @@ final class AdminController
             $this->settings->saveFamilyFallback($family, $fallback);
             $this->log->add(
                 sprintf(
-                    __('Saved fallback for %1$s: %2$s.', ETCH_FONTS_TEXT_DOMAIN),
+                    __('Saved fallback for %1$s: %2$s.', 'etch-fonts'),
                     $family,
                     $fallback
                 )
@@ -316,10 +325,10 @@ final class AdminController
         $this->redirect(['family_deleted' => '1']);
     }
 
-    private function handleSaveRolesAction(): bool
+    private function handleSaveRolesAction(): void
     {
         if (!isset($_POST['etch_fonts_save_roles'])) {
-            return false;
+            return;
         }
 
         check_admin_referer('etch_fonts_save_roles');
@@ -343,12 +352,12 @@ final class AdminController
 
         $this->log->add(
             sprintf(
-                __('Roles saved. Heading: %1$s; Body: %2$s. %3$s', ETCH_FONTS_TEXT_DOMAIN),
+                __('Roles saved. Heading: %1$s; Body: %2$s. %3$s', 'etch-fonts'),
                 $roles['heading'],
                 $roles['body'],
                 $applyEverywhere
-                    ? __('Applied everywhere.', ETCH_FONTS_TEXT_DOMAIN)
-                    : __('Saved without global auto-apply.', ETCH_FONTS_TEXT_DOMAIN)
+                    ? __('Applied everywhere.', 'etch-fonts')
+                    : __('Saved without global auto-apply.', 'etch-fonts')
             )
         );
 
@@ -404,60 +413,60 @@ final class AdminController
 
         return [
             [
-                'label' => __('Generated CSS file', ETCH_FONTS_TEXT_DOMAIN),
-                'value' => $cssPath !== '' ? $cssPath : __('Not available', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Generated CSS file', 'etch-fonts'),
+                'value' => $cssPath !== '' ? $cssPath : __('Not available', 'etch-fonts'),
                 'code' => true,
             ],
             [
-                'label' => __('CSS request URL', ETCH_FONTS_TEXT_DOMAIN),
-                'value' => $cssUrl !== '' ? $cssUrl : __('Not available', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('CSS request URL', 'etch-fonts'),
+                'value' => $cssUrl !== '' ? $cssUrl : __('Not available', 'etch-fonts'),
                 'code' => true,
             ],
             [
-                'label' => __('Stylesheet size', ETCH_FONTS_TEXT_DOMAIN),
-                'value' => $cssExists ? size_format((int) ($assetStatus['size'] ?? 0)) : __('Not generated', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Stylesheet size', 'etch-fonts'),
+                'value' => $cssExists ? size_format((int) ($assetStatus['size'] ?? 0)) : __('Not generated', 'etch-fonts'),
                 'code' => false,
             ],
             [
-                'label' => __('Last generated', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Last generated', 'etch-fonts'),
                 'value' => $cssExists
                     ? wp_date(get_option('date_format') . ' ' . get_option('time_format'), (int) filemtime($cssPath))
-                    : __('Not available', ETCH_FONTS_TEXT_DOMAIN),
+                    : __('Not available', 'etch-fonts'),
                 'code' => false,
             ],
             [
-                'label' => __('Fonts directory', ETCH_FONTS_TEXT_DOMAIN),
-                'value' => is_array($storage) ? (string) ($storage['dir'] ?? __('Not available', ETCH_FONTS_TEXT_DOMAIN)) : __('Not available', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Fonts directory', 'etch-fonts'),
+                'value' => is_array($storage) ? (string) ($storage['dir'] ?? __('Not available', 'etch-fonts')) : __('Not available', 'etch-fonts'),
                 'code' => true,
             ],
             [
-                'label' => __('Fonts public URL', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Fonts public URL', 'etch-fonts'),
                 'value' => is_array($storage)
-                    ? (string) ($storage['url_full'] ?? $storage['url'] ?? __('Not available', ETCH_FONTS_TEXT_DOMAIN))
-                    : __('Not available', ETCH_FONTS_TEXT_DOMAIN),
+                    ? (string) ($storage['url_full'] ?? $storage['url'] ?? __('Not available', 'etch-fonts'))
+                    : __('Not available', 'etch-fonts'),
                 'code' => true,
             ],
             [
-                'label' => __('Google import folder', ETCH_FONTS_TEXT_DOMAIN),
-                'value' => is_array($storage) ? (string) ($storage['google_dir'] ?? __('Not available', ETCH_FONTS_TEXT_DOMAIN)) : __('Not available', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Google import folder', 'etch-fonts'),
+                'value' => is_array($storage) ? (string) ($storage['google_dir'] ?? __('Not available', 'etch-fonts')) : __('Not available', 'etch-fonts'),
                 'code' => true,
             ],
             [
-                'label' => __('Library inventory', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Library inventory', 'etch-fonts'),
                 'value' => sprintf(
-                    __('%1$d families / %2$d files', ETCH_FONTS_TEXT_DOMAIN),
+                    __('%1$d families / %2$d files', 'etch-fonts'),
                     (int) ($counts['families'] ?? 0),
                     (int) ($counts['files'] ?? 0)
                 ),
                 'code' => false,
             ],
             [
-                'label' => __('Delivery mode', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Delivery mode', 'etch-fonts'),
                 'value' => (string) ($settings['css_delivery_mode'] ?? 'file'),
                 'code' => false,
             ],
             [
-                'label' => __('Font display', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Font display', 'etch-fonts'),
                 'value' => (string) ($settings['font_display'] ?? 'swap'),
                 'code' => false,
             ],
@@ -468,20 +477,20 @@ final class AdminController
     {
         return [
             [
-                'label' => __('Font families', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Font families', 'etch-fonts'),
                 'value' => (string) ($counts['families'] ?? 0),
             ],
             [
-                'label' => __('Font files', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Font files', 'etch-fonts'),
                 'value' => (string) ($counts['files'] ?? 0),
             ],
             [
-                'label' => __('Google families', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Google families', 'etch-fonts'),
                 'value' => (string) ($counts['google_families'] ?? 0),
             ],
             [
-                'label' => __('Apply everywhere', ETCH_FONTS_TEXT_DOMAIN),
-                'value' => $applyEverywhere ? __('On', ETCH_FONTS_TEXT_DOMAIN) : __('Off', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Apply everywhere', 'etch-fonts'),
+                'value' => $applyEverywhere ? __('On', 'etch-fonts') : __('Off', 'etch-fonts'),
             ],
         ];
     }
@@ -491,28 +500,28 @@ final class AdminController
         return [
             [
                 'key' => 'usage',
-                'label' => __('Site snippet', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Site snippet', 'etch-fonts'),
                 'target' => 'etch-fonts-output-usage',
                 'value' => $this->cssBuilder->buildRoleUsageSnippet($roles),
                 'active' => true,
             ],
             [
                 'key' => 'variables',
-                'label' => __('CSS variables', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('CSS variables', 'etch-fonts'),
                 'target' => 'etch-fonts-output-vars',
                 'value' => $this->cssBuilder->buildRoleVariableSnippet($roles),
                 'active' => false,
             ],
             [
                 'key' => 'stacks',
-                'label' => __('Font stacks', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Font stacks', 'etch-fonts'),
                 'target' => 'etch-fonts-output-stacks',
                 'value' => $this->cssBuilder->buildRoleStackSnippet($roles),
                 'active' => false,
             ],
             [
                 'key' => 'names',
-                'label' => __('Font names', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Font names', 'etch-fonts'),
                 'target' => 'etch-fonts-output-names',
                 'value' => $this->cssBuilder->buildRoleNameSnippet($roles),
                 'active' => false,
@@ -525,22 +534,22 @@ final class AdminController
         return [
             [
                 'key' => 'editorial',
-                'label' => __('Specimen', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Specimen', 'etch-fonts'),
                 'active' => true,
             ],
             [
                 'key' => 'card',
-                'label' => __('Card', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Card', 'etch-fonts'),
                 'active' => false,
             ],
             [
                 'key' => 'reading',
-                'label' => __('Reading', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Reading', 'etch-fonts'),
                 'active' => false,
             ],
             [
                 'key' => 'interface',
-                'label' => __('Interface', ETCH_FONTS_TEXT_DOMAIN),
+                'label' => __('Interface', 'etch-fonts'),
                 'active' => false,
             ],
         ];
@@ -549,14 +558,14 @@ final class AdminController
     private function buildNoticeToasts(): array
     {
         $noticeMap = [
-            'settings_saved' => __('Plugin settings saved.', ETCH_FONTS_TEXT_DOMAIN),
-            'google_key_saved' => __('Google Fonts API key saved and validated.', ETCH_FONTS_TEXT_DOMAIN),
-            'google_key_cleared' => __('Google Fonts API key removed.', ETCH_FONTS_TEXT_DOMAIN),
-            'fallback_saved' => __('Font fallback saved.', ETCH_FONTS_TEXT_DOMAIN),
-            'roles_saved' => __('Font roles saved.', ETCH_FONTS_TEXT_DOMAIN),
-            'rescan' => __('Fonts rescanned.', ETCH_FONTS_TEXT_DOMAIN),
-            'log_cleared' => __('Activity log cleared.', ETCH_FONTS_TEXT_DOMAIN),
-            'family_deleted' => __('Font family deleted.', ETCH_FONTS_TEXT_DOMAIN),
+            'settings_saved' => __('Plugin settings saved.', 'etch-fonts'),
+            'google_key_saved' => __('Google Fonts API key saved and validated.', 'etch-fonts'),
+            'google_key_cleared' => __('Google Fonts API key removed.', 'etch-fonts'),
+            'fallback_saved' => __('Font fallback saved.', 'etch-fonts'),
+            'roles_saved' => __('Font roles saved.', 'etch-fonts'),
+            'rescan' => __('Fonts rescanned.', 'etch-fonts'),
+            'log_cleared' => __('Activity log cleared.', 'etch-fonts'),
+            'family_deleted' => __('Font family deleted.', 'etch-fonts'),
         ];
         $toasts = [];
 
@@ -593,52 +602,52 @@ final class AdminController
     private function buildAdminStrings(string $searchDisabledMessage): array
     {
         return [
-            'searching' => __('Searching Google Fonts…', ETCH_FONTS_TEXT_DOMAIN),
-            'searchEmpty' => __('No Google Fonts families matched that search.', ETCH_FONTS_TEXT_DOMAIN),
+            'searching' => __('Searching Google Fonts…', 'etch-fonts'),
+            'searchEmpty' => __('No Google Fonts families matched that search.', 'etch-fonts'),
             'searchDisabled' => $searchDisabledMessage,
-            'selectFamily' => __('Select a family from search results or type one manually.', ETCH_FONTS_TEXT_DOMAIN),
-            'importing' => __('Importing and self-hosting selected files…', ETCH_FONTS_TEXT_DOMAIN),
-            'importSuccess' => __('Font imported successfully. Reloading…', ETCH_FONTS_TEXT_DOMAIN),
-            'importError' => __('The Google Fonts import failed.', ETCH_FONTS_TEXT_DOMAIN),
-            'importProgress' => __('Importing %1$s: %2$d of %3$d (%4$s)…', ETCH_FONTS_TEXT_DOMAIN),
-            'importSummary' => __('Imported %1$d variant%2$s. %3$d skipped. Reloading…', ETCH_FONTS_TEXT_DOMAIN),
-            'importAlreadyExists' => __('%s already exists in the library for the selected variants.', ETCH_FONTS_TEXT_DOMAIN),
-            'importButtonIdle' => __('Import and self-host', ETCH_FONTS_TEXT_DOMAIN),
-            'importButtonBusy' => __('Importing…', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadReady' => __('Upload WOFF2, WOFF, TTF, or OTF files. Each row imports one face.', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadSubmitting' => __('Uploading font files…', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadProgress' => __('Uploading files… %1$d%%', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadSuccess' => __('Upload complete. Refreshing the library…', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadError' => __('The font upload failed.', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadNoFile' => __('No file chosen', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadButtonIdle' => __('Upload to library', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadButtonBusy' => __('Uploading…', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadRowQueued' => __('Queued', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadRowUploading' => __('Uploading…', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadRowImported' => __('Imported', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadRowSkipped' => __('Skipped', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadRowError' => __('Error', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadAddFace' => __('Add face', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadAddFamily' => __('Add another family', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadUseDetected' => __('Use detected values', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadDetectedSummary' => __('Detected: %1$s / %2$s / %3$s', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadDetectedWeightStyle' => __('Detected: %1$s / %2$s', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadRemoveRow' => __('Remove row', ETCH_FONTS_TEXT_DOMAIN),
-            'uploadRequiresRows' => __('Add at least one upload row before submitting.', ETCH_FONTS_TEXT_DOMAIN),
-            'deleteConfirm' => __('Delete "%s" and remove its files from uploads/fonts?', ETCH_FONTS_TEXT_DOMAIN),
-            'fallbackSaved' => __('Saved fallback for %1$s.', ETCH_FONTS_TEXT_DOMAIN),
-            'fallbackSaveError' => __('The fallback could not be saved.', ETCH_FONTS_TEXT_DOMAIN),
-            'copied' => __('Copied', ETCH_FONTS_TEXT_DOMAIN),
-            'copy' => __('Copy', ETCH_FONTS_TEXT_DOMAIN),
+            'selectFamily' => __('Select a family from search results or type one manually.', 'etch-fonts'),
+            'importing' => __('Importing and self-hosting selected files…', 'etch-fonts'),
+            'importSuccess' => __('Font imported successfully. Reloading…', 'etch-fonts'),
+            'importError' => __('The Google Fonts import failed.', 'etch-fonts'),
+            'importProgress' => __('Importing %1$s: %2$d of %3$d (%4$s)…', 'etch-fonts'),
+            'importSummary' => __('Imported %1$d variant%2$s. %3$d skipped. Reloading…', 'etch-fonts'),
+            'importAlreadyExists' => __('%s already exists in the library for the selected variants.', 'etch-fonts'),
+            'importButtonIdle' => __('Import and self-host', 'etch-fonts'),
+            'importButtonBusy' => __('Importing…', 'etch-fonts'),
+            'uploadReady' => __('Upload WOFF2, WOFF, TTF, or OTF files. Each row imports one face.', 'etch-fonts'),
+            'uploadSubmitting' => __('Uploading font files…', 'etch-fonts'),
+            'uploadProgress' => __('Uploading files… %1$d%%', 'etch-fonts'),
+            'uploadSuccess' => __('Upload complete. Refreshing the library…', 'etch-fonts'),
+            'uploadError' => __('The font upload failed.', 'etch-fonts'),
+            'uploadNoFile' => __('No file chosen', 'etch-fonts'),
+            'uploadButtonIdle' => __('Upload to library', 'etch-fonts'),
+            'uploadButtonBusy' => __('Uploading…', 'etch-fonts'),
+            'uploadRowQueued' => __('Queued', 'etch-fonts'),
+            'uploadRowUploading' => __('Uploading…', 'etch-fonts'),
+            'uploadRowImported' => __('Imported', 'etch-fonts'),
+            'uploadRowSkipped' => __('Skipped', 'etch-fonts'),
+            'uploadRowError' => __('Error', 'etch-fonts'),
+            'uploadAddFace' => __('Add face', 'etch-fonts'),
+            'uploadAddFamily' => __('Add another family', 'etch-fonts'),
+            'uploadUseDetected' => __('Use detected values', 'etch-fonts'),
+            'uploadDetectedSummary' => __('Detected: %1$s / %2$s / %3$s', 'etch-fonts'),
+            'uploadDetectedWeightStyle' => __('Detected: %1$s / %2$s', 'etch-fonts'),
+            'uploadRemoveRow' => __('Remove row', 'etch-fonts'),
+            'uploadRequiresRows' => __('Add at least one upload row before submitting.', 'etch-fonts'),
+            'deleteConfirm' => __('Delete "%s" and remove its files from uploads/fonts?', 'etch-fonts'),
+            'fallbackSaved' => __('Saved fallback for %1$s.', 'etch-fonts'),
+            'fallbackSaveError' => __('The fallback could not be saved.', 'etch-fonts'),
+            'copied' => __('Copied', 'etch-fonts'),
+            'copy' => __('Copy', 'etch-fonts'),
         ];
     }
 
     private function buildSearchDisabledMessage(array $googleApiStatus): string
     {
         return match ((string) ($googleApiStatus['state'] ?? 'empty')) {
-            'invalid' => __('Search is disabled because the saved Google Fonts API key is invalid.', ETCH_FONTS_TEXT_DOMAIN),
-            'unknown' => __('Search is unavailable until the saved Google Fonts API key is validated.', ETCH_FONTS_TEXT_DOMAIN),
-            default => __('Add a Google Fonts API key to enable search, or use manual import below.', ETCH_FONTS_TEXT_DOMAIN),
+            'invalid' => __('Search is disabled because the saved Google Fonts API key is invalid.', 'etch-fonts'),
+            'unknown' => __('Search is unavailable until the saved Google Fonts API key is validated.', 'etch-fonts'),
+            default => __('Add a Google Fonts API key to enable search, or use manual import below.', 'etch-fonts'),
         };
     }
 
@@ -677,10 +686,10 @@ final class AdminController
     private function buildGoogleStatusLabel(string $googleApiState): string
     {
         return match ($googleApiState) {
-            'valid' => __('Valid key', ETCH_FONTS_TEXT_DOMAIN),
-            'invalid' => __('Invalid key', ETCH_FONTS_TEXT_DOMAIN),
-            'unknown' => __('Needs check', ETCH_FONTS_TEXT_DOMAIN),
-            default => __('API key needed', ETCH_FONTS_TEXT_DOMAIN),
+            'valid' => __('Valid key', 'etch-fonts'),
+            'invalid' => __('Invalid key', 'etch-fonts'),
+            'unknown' => __('Needs check', 'etch-fonts'),
+            default => __('API key needed', 'etch-fonts'),
         };
     }
 
@@ -701,19 +710,19 @@ final class AdminController
         }
 
         return match ($googleApiState) {
-            'valid' => __('Google search is ready. Open key settings only when you want to replace or remove the saved key.', ETCH_FONTS_TEXT_DOMAIN),
-            'invalid' => __('The saved Google Fonts API key was rejected. Update it to re-enable live search.', ETCH_FONTS_TEXT_DOMAIN),
-            'unknown' => __('This saved key has not been verified yet. Save it again to validate before using live search.', ETCH_FONTS_TEXT_DOMAIN),
-            default => __('Enable live family search with a Google Fonts Developer API key. Imported files are still downloaded and stored locally after import.', ETCH_FONTS_TEXT_DOMAIN),
+            'valid' => __('Google search is ready. Open key settings only when you want to replace or remove the saved key.', 'etch-fonts'),
+            'invalid' => __('The saved Google Fonts API key was rejected. Update it to re-enable live search.', 'etch-fonts'),
+            'unknown' => __('This saved key has not been verified yet. Save it again to validate before using live search.', 'etch-fonts'),
+            default => __('Enable live family search with a Google Fonts Developer API key. Imported files are still downloaded and stored locally after import.', 'etch-fonts'),
         };
     }
 
     private function buildGoogleSearchDisabledCopy(string $googleApiState): string
     {
         return match ($googleApiState) {
-            'invalid' => __('Search is disabled because the saved API key is invalid. Update or remove it to continue.', ETCH_FONTS_TEXT_DOMAIN),
-            'unknown' => __('Search is disabled until the saved API key has been validated.', ETCH_FONTS_TEXT_DOMAIN),
-            default => __('Search is disabled until you save a Google Fonts API key.', ETCH_FONTS_TEXT_DOMAIN),
+            'invalid' => __('Search is disabled because the saved API key is invalid. Update or remove it to continue.', 'etch-fonts'),
+            'unknown' => __('Search is disabled until the saved API key has been validated.', 'etch-fonts'),
+            default => __('Search is disabled until you save a Google Fonts API key.', 'etch-fonts'),
         };
     }
 

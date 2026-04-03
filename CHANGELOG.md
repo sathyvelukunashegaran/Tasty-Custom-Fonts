@@ -4,10 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-04-03
+
 ### Changed
 
 - Replaced the GitHub release action with the GitHub CLI and upgraded `actions/checkout` to `v5` so the release workflow no longer relies on Node 20 JavaScript actions.
 - Updated the release workflow to publish the matching `CHANGELOG.md` section as the GitHub release notes instead of only showing an auto-generated compare link.
+- Consolidated the Google Fonts request user-agent string into a shared constant.
+
+### Fixed
+
+- Replaced dynamic text-domain constants with the literal `'etch-fonts'` so WordPress i18n tooling can extract every translatable string, and added the generated POT file.
+- Fixed settings persistence for CSS delivery mode, `font-display`, CSS minification, and the preview sentence in the admin settings form.
+- Narrowed settings writes to allowlisted form fields and sanitized generated font URLs and `font-weight` values to avoid malformed CSS output.
+- Removed suppressed filesystem calls during directory cleanup, preserved the active `theme.json` schema version for Block Editor font presets, and stored plugin log timestamps in UTC.
+- Added `index.php` stubs to the plugin uploads directories on activation and aligned the local test harness with the current WordPress helper usage.
 
 ## [1.0.1] - 2026-04-03
 

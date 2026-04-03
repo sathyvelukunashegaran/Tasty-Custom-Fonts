@@ -75,7 +75,7 @@ final class CatalogService
         }
 
         $this->invalidate();
-        $this->log->add(__('Font attachment changed. Catalog cache cleared.', ETCH_FONTS_TEXT_DOMAIN));
+        $this->log->add(__('Font attachment changed. Catalog cache cleared.', 'etch-fonts'));
     }
 
     private function buildCatalog(): array

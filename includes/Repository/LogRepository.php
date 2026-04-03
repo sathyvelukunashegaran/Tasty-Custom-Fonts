@@ -16,7 +16,7 @@ final class LogRepository
         array_unshift(
             $log,
             [
-                'time' => current_time('mysql'),
+                'time' => current_time('mysql', true),
                 'message' => $message,
                 'actor' => $this->getActorLabel(),
             ]
@@ -45,13 +45,13 @@ final class LogRepository
     private function getActorLabel(): string
     {
         if (!is_user_logged_in()) {
-            return __('System', ETCH_FONTS_TEXT_DOMAIN);
+            return __('System', 'etch-fonts');
         }
 
         $user = wp_get_current_user();
 
         if (!$user instanceof \WP_User || !$user->exists()) {
-            return __('System', ETCH_FONTS_TEXT_DOMAIN);
+            return __('System', 'etch-fonts');
         }
 
         $displayName = trim((string) $user->display_name);
@@ -66,6 +66,6 @@ final class LogRepository
             return $userLogin;
         }
 
-        return __('System', ETCH_FONTS_TEXT_DOMAIN);
+        return __('System', 'etch-fonts');
     }
 }

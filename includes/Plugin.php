@@ -132,7 +132,7 @@ final class Plugin
     public function loadTextdomain(): void
     {
         load_plugin_textdomain(
-            ETCH_FONTS_TEXT_DOMAIN,
+            'etch-fonts',
             false,
             dirname(plugin_basename(ETCH_FONTS_FILE)) . '/languages'
         );
@@ -168,6 +168,29 @@ final class Plugin
     private function onActivate(): void
     {
         $this->storage->get();
+        $this->ensureIndexFiles();
         $this->assets->ensureGeneratedCssFile();
+    }
+
+    private function ensureIndexFiles(): void
+    {
+        $root = $this->storage->getRoot();
+
+        if (!$root) {
+            return;
+        }
+
+        $stub = '<?php // Silence is golden.';
+
+        foreach (
+            [
+                trailingslashit($root) . 'index.php',
+                trailingslashit($root) . 'google/index.php',
+            ] as $path
+        ) {
+            if (!file_exists($path)) {
+                $this->storage->writeAbsoluteFile($path, $stub);
+            }
+        }
     }
 }

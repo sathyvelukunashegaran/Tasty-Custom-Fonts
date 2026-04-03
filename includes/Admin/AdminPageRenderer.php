@@ -41,14 +41,14 @@ final class AdminPageRenderer
             <?php $this->renderNotices($toasts); ?>
 
             <?php if (!$storage): ?>
-                <div class="notice notice-error"><p><?php esc_html_e('The uploads/fonts directory could not be initialized.', ETCH_FONTS_TEXT_DOMAIN); ?></p></div>
+                <div class="notice notice-error"><p><?php esc_html_e('The uploads/fonts directory could not be initialized.', 'etch-fonts'); ?></p></div>
             <?php else: ?>
                 <div class="etch-fonts-shell">
                     <section class="etch-fonts-card etch-fonts-overview-card">
                         <div class="etch-fonts-overview-head">
                             <div class="etch-fonts-hero-copy">
-                                <h1><?php esc_html_e('Etch Custom Fonts', ETCH_FONTS_TEXT_DOMAIN); ?></h1>
-                                <p class="etch-fonts-hero-text"><?php esc_html_e('Self-hosted typography for Etch, Gutenberg, and the frontend.', ETCH_FONTS_TEXT_DOMAIN); ?></p>
+                                <h1><?php esc_html_e('Etch Custom Fonts', 'etch-fonts'); ?></h1>
+                                <p class="etch-fonts-hero-text"><?php esc_html_e('Self-hosted typography for Etch, Gutenberg, and the frontend.', 'etch-fonts'); ?></p>
                             </div>
                         </div>
 
@@ -67,9 +67,9 @@ final class AdminPageRenderer
                             <?php
                             $this->renderSectionHeading(
                                 'h2',
-                                __('Font Roles', ETCH_FONTS_TEXT_DOMAIN),
+                                __('Font Roles', 'etch-fonts'),
                                 '',
-                                __('Choose the heading and body pairing used for saved output and optional sitewide typography.', ETCH_FONTS_TEXT_DOMAIN)
+                                __('Choose the heading and body pairing used for saved output and optional sitewide typography.', 'etch-fonts')
                             );
                             ?>
                         </div>
@@ -80,11 +80,11 @@ final class AdminPageRenderer
                             <div class="etch-fonts-role-grid">
                                 <section class="etch-fonts-role-box">
                                     <div class="etch-fonts-role-box-head">
-                                        <?php $this->renderSectionHeading('h3', __('Heading font', ETCH_FONTS_TEXT_DOMAIN), ''); ?>
+                                        <?php $this->renderSectionHeading('h3', __('Heading font', 'etch-fonts'), ''); ?>
                                     </div>
                                     <div class="etch-fonts-role-fields">
                                         <label class="etch-fonts-stack-field">
-                                            <?php $this->renderFieldLabel(__('Family', ETCH_FONTS_TEXT_DOMAIN)); ?>
+                                            <?php $this->renderFieldLabel(__('Family', 'etch-fonts')); ?>
                                             <select name="etch_fonts_heading_font" id="etch_fonts_heading_font">
                                                 <?php foreach (array_keys($catalog) as $familyName): ?>
                                                     <option value="<?php echo esc_attr((string) $familyName); ?>" <?php selected($roles['heading'] ?? '', $familyName); ?>><?php echo esc_html((string) $familyName); ?></option>
@@ -92,14 +92,14 @@ final class AdminPageRenderer
                                             </select>
                                         </label>
                                         <label class="etch-fonts-stack-field">
-                                            <?php $this->renderFieldLabel(__('Fallback', ETCH_FONTS_TEXT_DOMAIN)); ?>
+                                            <?php $this->renderFieldLabel(__('Fallback', 'etch-fonts')); ?>
                                             <?php
                                             $this->renderFallbackInput(
                                                 'etch_fonts_heading_fallback',
                                                 (string) ($roles['heading_fallback'] ?? 'sans-serif'),
                                                 [
                                                     'id' => 'etch_fonts_heading_fallback',
-                                                    'placeholder' => __('Example: system-ui, sans-serif', ETCH_FONTS_TEXT_DOMAIN),
+                                                    'placeholder' => __('Example: system-ui, sans-serif', 'etch-fonts'),
                                                 ]
                                             );
                                             ?>
@@ -109,11 +109,11 @@ final class AdminPageRenderer
 
                                 <section class="etch-fonts-role-box">
                                     <div class="etch-fonts-role-box-head">
-                                        <?php $this->renderSectionHeading('h3', __('Body font', ETCH_FONTS_TEXT_DOMAIN), ''); ?>
+                                        <?php $this->renderSectionHeading('h3', __('Body font', 'etch-fonts'), ''); ?>
                                     </div>
                                     <div class="etch-fonts-role-fields">
                                         <label class="etch-fonts-stack-field">
-                                            <?php $this->renderFieldLabel(__('Family', ETCH_FONTS_TEXT_DOMAIN)); ?>
+                                            <?php $this->renderFieldLabel(__('Family', 'etch-fonts')); ?>
                                             <select name="etch_fonts_body_font" id="etch_fonts_body_font">
                                                 <?php foreach (array_keys($catalog) as $familyName): ?>
                                                     <option value="<?php echo esc_attr((string) $familyName); ?>" <?php selected($roles['body'] ?? '', $familyName); ?>><?php echo esc_html((string) $familyName); ?></option>
@@ -121,14 +121,14 @@ final class AdminPageRenderer
                                             </select>
                                         </label>
                                         <label class="etch-fonts-stack-field">
-                                            <?php $this->renderFieldLabel(__('Fallback', ETCH_FONTS_TEXT_DOMAIN)); ?>
+                                            <?php $this->renderFieldLabel(__('Fallback', 'etch-fonts')); ?>
                                             <?php
                                             $this->renderFallbackInput(
                                                 'etch_fonts_body_fallback',
                                                 (string) ($roles['body_fallback'] ?? 'sans-serif'),
                                                 [
                                                     'id' => 'etch_fonts_body_fallback',
-                                                    'placeholder' => __('Example: system-ui, sans-serif', ETCH_FONTS_TEXT_DOMAIN),
+                                                    'placeholder' => __('Example: system-ui, sans-serif', 'etch-fonts'),
                                                 ]
                                             );
                                             ?>
@@ -139,34 +139,34 @@ final class AdminPageRenderer
 
                             <div class="etch-fonts-role-toolbar">
                                 <div class="etch-fonts-role-actions">
-                                    <button type="submit" class="button button-primary" onclick="document.getElementById('etch_fonts_action_type').value='apply';"><?php esc_html_e('Save and apply everywhere', ETCH_FONTS_TEXT_DOMAIN); ?></button>
-                                    <button type="submit" class="button" onclick="document.getElementById('etch_fonts_action_type').value='save';"><?php esc_html_e('Save roles only', ETCH_FONTS_TEXT_DOMAIN); ?></button>
+                                    <button type="submit" class="button button-primary" onclick="document.getElementById('etch_fonts_action_type').value='apply';"><?php esc_html_e('Save and apply everywhere', 'etch-fonts'); ?></button>
+                                    <button type="submit" class="button" onclick="document.getElementById('etch_fonts_action_type').value='save';"><?php esc_html_e('Save roles only', 'etch-fonts'); ?></button>
                                     <button
                                         type="button"
                                         class="button etch-fonts-disclosure-button etch-fonts-disclosure-button--preview"
                                         data-disclosure-toggle="etch-fonts-role-advanced-panel"
-                                        data-expanded-label="<?php echo esc_attr__('Hide advanced tools', ETCH_FONTS_TEXT_DOMAIN); ?>"
-                                        data-collapsed-label="<?php echo esc_attr__('Open advanced tools', ETCH_FONTS_TEXT_DOMAIN); ?>"
+                                        data-expanded-label="<?php echo esc_attr__('Hide advanced tools', 'etch-fonts'); ?>"
+                                        data-collapsed-label="<?php echo esc_attr__('Open advanced tools', 'etch-fonts'); ?>"
                                         aria-expanded="false"
                                         aria-controls="etch-fonts-role-advanced-panel"
                                     >
-                                        <?php esc_html_e('Open advanced tools', ETCH_FONTS_TEXT_DOMAIN); ?>
+                                        <?php esc_html_e('Open advanced tools', 'etch-fonts'); ?>
                                     </button>
                                 </div>
                                 <div class="etch-fonts-role-stacks">
                                     <span class="etch-fonts-role-stack">
-                                        <span class="etch-fonts-role-stack-label"><?php esc_html_e('Heading', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                        <span class="etch-fonts-role-stack-label"><?php esc_html_e('Heading', 'etch-fonts'); ?></span>
                                         <span class="etch-fonts-kbd" id="etch-fonts-role-heading-stack"><?php echo esc_html(FontUtils::buildFontStack((string) ($roles['heading'] ?? ''), (string) ($roles['heading_fallback'] ?? 'sans-serif'))); ?></span>
                                     </span>
                                     <span class="etch-fonts-role-stack">
-                                        <span class="etch-fonts-role-stack-label"><?php esc_html_e('Body', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                        <span class="etch-fonts-role-stack-label"><?php esc_html_e('Body', 'etch-fonts'); ?></span>
                                         <span class="etch-fonts-kbd" id="etch-fonts-role-body-stack"><?php echo esc_html(FontUtils::buildFontStack((string) ($roles['body'] ?? ''), (string) ($roles['body_fallback'] ?? 'sans-serif'))); ?></span>
                                     </span>
                                 </div>
                             </div>
 
                             <div id="etch-fonts-role-advanced-panel" class="etch-fonts-role-advanced-panel" hidden>
-                                <div class="etch-fonts-studio-switcher" role="tablist" aria-label="<?php esc_attr_e('Advanced tools', ETCH_FONTS_TEXT_DOMAIN); ?>">
+                                <div class="etch-fonts-studio-switcher" role="tablist" aria-label="<?php esc_attr_e('Advanced tools', 'etch-fonts'); ?>">
                                     <button
                                         type="button"
                                         class="etch-fonts-studio-tab is-active"
@@ -176,7 +176,7 @@ final class AdminPageRenderer
                                         aria-controls="etch-fonts-studio-panel-preview"
                                         role="tab"
                                     >
-                                        <?php esc_html_e('Preview', ETCH_FONTS_TEXT_DOMAIN); ?>
+                                        <?php esc_html_e('Preview', 'etch-fonts'); ?>
                                     </button>
                                     <button
                                         type="button"
@@ -187,7 +187,7 @@ final class AdminPageRenderer
                                         aria-controls="etch-fonts-studio-panel-snippets"
                                         role="tab"
                                     >
-                                        <?php esc_html_e('Snippets', ETCH_FONTS_TEXT_DOMAIN); ?>
+                                        <?php esc_html_e('Snippets', 'etch-fonts'); ?>
                                     </button>
                                     <button
                                         type="button"
@@ -198,7 +198,7 @@ final class AdminPageRenderer
                                         aria-controls="etch-fonts-studio-panel-system"
                                         role="tab"
                                     >
-                                        <?php esc_html_e('System details', ETCH_FONTS_TEXT_DOMAIN); ?>
+                                        <?php esc_html_e('System details', 'etch-fonts'); ?>
                                     </button>
                                 </div>
 
@@ -214,7 +214,7 @@ final class AdminPageRenderer
                                         id="etch-fonts-preview-canvas"
                                         style="--etch-preview-base: <?php echo esc_attr((string) $previewSize); ?>px;"
                                     >
-                                        <div class="etch-fonts-preview-tabs" role="tablist" aria-label="<?php esc_attr_e('Preview scenarios', ETCH_FONTS_TEXT_DOMAIN); ?>">
+                                        <div class="etch-fonts-preview-tabs" role="tablist" aria-label="<?php esc_attr_e('Preview scenarios', 'etch-fonts'); ?>">
                                             <?php foreach ($previewPanels as $panel): ?>
                                                 <?php $buttonId = 'etch-fonts-preview-tab-' . $panel['key']; ?>
                                                 <?php $panelId = 'etch-fonts-preview-panel-' . $panel['key']; ?>
@@ -258,7 +258,7 @@ final class AdminPageRenderer
                                     hidden
                                 >
                                     <div class="etch-fonts-code-card etch-fonts-code-card--embedded">
-                                        <div class="etch-fonts-code-tabs" role="tablist" aria-label="<?php esc_attr_e('Font snippet outputs', ETCH_FONTS_TEXT_DOMAIN); ?>">
+                                        <div class="etch-fonts-code-tabs" role="tablist" aria-label="<?php esc_attr_e('Font snippet outputs', 'etch-fonts'); ?>">
                                             <?php foreach ($outputPanels as $panel): ?>
                                                 <?php $buttonId = 'etch-fonts-output-tab-' . $panel['key']; ?>
                                                 <?php $panelId = 'etch-fonts-output-panel-' . $panel['key']; ?>
@@ -289,7 +289,7 @@ final class AdminPageRenderer
                                             >
                                                 <div class="etch-fonts-code-panel-head">
                                                     <span><?php echo esc_html((string) ($panel['label'] ?? '')); ?></span>
-                                                    <button type="button" class="button button-small" data-copy-target="<?php echo esc_attr((string) ($panel['target'] ?? '')); ?>"><?php esc_html_e('Copy', ETCH_FONTS_TEXT_DOMAIN); ?></button>
+                                                    <button type="button" class="button button-small" data-copy-target="<?php echo esc_attr((string) ($panel['target'] ?? '')); ?>"><?php esc_html_e('Copy', 'etch-fonts'); ?></button>
                                                 </div>
                                                 <textarea id="<?php echo esc_attr((string) ($panel['target'] ?? '')); ?>" class="etch-fonts-output" readonly><?php echo esc_textarea((string) ($panel['value'] ?? '')); ?></textarea>
                                             </section>
@@ -327,36 +327,36 @@ final class AdminPageRenderer
                             <?php
                             $this->renderSectionHeading(
                                 'h2',
-                                __('Local Library', ETCH_FONTS_TEXT_DOMAIN),
-                                __('Browse every self-hosted family, assign roles, inspect files, or add fonts from Google and direct uploads.', ETCH_FONTS_TEXT_DOMAIN)
+                                __('Local Library', 'etch-fonts'),
+                                __('Browse every self-hosted family, assign roles, inspect files, or add fonts from Google and direct uploads.', 'etch-fonts')
                             );
                             ?>
                             <div class="etch-fonts-library-tools">
                                 <div class="etch-fonts-search-field etch-fonts-search-field--compact">
-                                    <label class="screen-reader-text" for="etch-fonts-library-search"><?php esc_html_e('Library filter', ETCH_FONTS_TEXT_DOMAIN); ?></label>
+                                    <label class="screen-reader-text" for="etch-fonts-library-search"><?php esc_html_e('Library filter', 'etch-fonts'); ?></label>
                                     <input
                                         type="search"
                                         id="etch-fonts-library-search"
                                         class="regular-text"
-                                        placeholder="<?php esc_attr_e('Filter self-hosted fonts by name', ETCH_FONTS_TEXT_DOMAIN); ?>"
-                                        aria-label="<?php esc_attr_e('Filter self-hosted fonts by name', ETCH_FONTS_TEXT_DOMAIN); ?>"
+                                        placeholder="<?php esc_attr_e('Filter self-hosted fonts by name', 'etch-fonts'); ?>"
+                                        aria-label="<?php esc_attr_e('Filter self-hosted fonts by name', 'etch-fonts'); ?>"
                                     >
                                 </div>
                                 <div class="etch-fonts-actions etch-fonts-actions--library">
                                     <form method="post">
                                         <?php wp_nonce_field('etch_fonts_rescan_fonts'); ?>
-                                        <button type="submit" class="button" name="etch_fonts_rescan_fonts" value="1"><?php esc_html_e('Rescan fonts', ETCH_FONTS_TEXT_DOMAIN); ?></button>
+                                        <button type="submit" class="button" name="etch_fonts_rescan_fonts" value="1"><?php esc_html_e('Rescan fonts', 'etch-fonts'); ?></button>
                                     </form>
                                     <button
                                         type="button"
                                         class="button button-primary"
                                         data-disclosure-toggle="etch-fonts-add-font-panel"
-                                        data-expanded-label="<?php echo esc_attr__('Hide add font', ETCH_FONTS_TEXT_DOMAIN); ?>"
-                                        data-collapsed-label="<?php echo esc_attr__('Add Font', ETCH_FONTS_TEXT_DOMAIN); ?>"
+                                        data-expanded-label="<?php echo esc_attr__('Hide add font', 'etch-fonts'); ?>"
+                                        data-collapsed-label="<?php echo esc_attr__('Add Font', 'etch-fonts'); ?>"
                                         aria-expanded="false"
                                         aria-controls="etch-fonts-add-font-panel"
                                     >
-                                        <?php esc_html_e('Add Font', ETCH_FONTS_TEXT_DOMAIN); ?>
+                                        <?php esc_html_e('Add Font', 'etch-fonts'); ?>
                                     </button>
                                 </div>
                             </div>
@@ -365,13 +365,13 @@ final class AdminPageRenderer
                         <div id="etch-fonts-add-font-panel" class="etch-fonts-import-shell" hidden>
                             <div class="etch-fonts-import-head">
                                 <div class="etch-fonts-import-copy">
-                                    <h3><?php esc_html_e('Add fonts', ETCH_FONTS_TEXT_DOMAIN); ?></h3>
-                                    <p class="etch-fonts-muted"><?php esc_html_e('Search Google Fonts or upload your own files directly into uploads/fonts.', ETCH_FONTS_TEXT_DOMAIN); ?></p>
+                                    <h3><?php esc_html_e('Add fonts', 'etch-fonts'); ?></h3>
+                                    <p class="etch-fonts-muted"><?php esc_html_e('Search Google Fonts or upload your own files directly into uploads/fonts.', 'etch-fonts'); ?></p>
                                 </div>
                             </div>
-                            <div class="etch-fonts-add-font-tabs" role="tablist" aria-label="<?php esc_attr_e('Add font source', ETCH_FONTS_TEXT_DOMAIN); ?>">
-                                <button type="button" class="button etch-fonts-add-font-tab is-active" data-add-font-tab="google" aria-selected="true"><?php esc_html_e('Google Fonts', ETCH_FONTS_TEXT_DOMAIN); ?></button>
-                                <button type="button" class="button etch-fonts-add-font-tab" data-add-font-tab="upload" aria-selected="false"><?php esc_html_e('Upload files', ETCH_FONTS_TEXT_DOMAIN); ?></button>
+                            <div class="etch-fonts-add-font-tabs" role="tablist" aria-label="<?php esc_attr_e('Add font source', 'etch-fonts'); ?>">
+                                <button type="button" class="button etch-fonts-add-font-tab is-active" data-add-font-tab="google" aria-selected="true"><?php esc_html_e('Google Fonts', 'etch-fonts'); ?></button>
+                                <button type="button" class="button etch-fonts-add-font-tab" data-add-font-tab="upload" aria-selected="false"><?php esc_html_e('Upload files', 'etch-fonts'); ?></button>
                             </div>
 
                             <div class="etch-fonts-add-font-panels">
@@ -380,7 +380,7 @@ final class AdminPageRenderer
                                         <div class="etch-fonts-google-access">
                                             <div class="etch-fonts-google-access-head">
                                                 <div class="etch-fonts-google-access-title-row">
-                                                    <h4><?php esc_html_e('Google search access', ETCH_FONTS_TEXT_DOMAIN); ?></h4>
+                                                    <h4><?php esc_html_e('Google search access', 'etch-fonts'); ?></h4>
                                                     <div class="etch-fonts-google-access-head-actions">
                                                         <span class="etch-fonts-badge <?php echo esc_attr($googleStatusClass); ?>">
                                                             <?php echo esc_html($googleStatusLabel); ?>
@@ -389,12 +389,12 @@ final class AdminPageRenderer
                                                             type="button"
                                                             class="button etch-fonts-disclosure-button"
                                                             data-disclosure-toggle="etch-fonts-google-access-panel"
-                                                            data-expanded-label="<?php echo esc_attr__('Hide key settings', ETCH_FONTS_TEXT_DOMAIN); ?>"
-                                                            data-collapsed-label="<?php echo esc_attr__('Manage key', ETCH_FONTS_TEXT_DOMAIN); ?>"
+                                                            data-expanded-label="<?php echo esc_attr__('Hide key settings', 'etch-fonts'); ?>"
+                                                            data-collapsed-label="<?php echo esc_attr__('Manage key', 'etch-fonts'); ?>"
                                                             aria-expanded="<?php echo $googleAccessExpanded ? 'true' : 'false'; ?>"
                                                             aria-controls="etch-fonts-google-access-panel"
                                                         >
-                                                            <?php echo $googleAccessExpanded ? esc_html__('Hide key settings', ETCH_FONTS_TEXT_DOMAIN) : esc_html__('Manage key', ETCH_FONTS_TEXT_DOMAIN); ?>
+                                                            <?php echo $googleAccessExpanded ? esc_html__('Hide key settings', 'etch-fonts') : esc_html__('Manage key', 'etch-fonts'); ?>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -416,13 +416,13 @@ final class AdminPageRenderer
                                                     >
                                                     <div class="etch-fonts-google-access-grid">
                                                         <label class="etch-fonts-stack-field etch-fonts-google-access-field">
-                                                            <?php $this->renderFieldLabel(__('Google Fonts API key', ETCH_FONTS_TEXT_DOMAIN)); ?>
+                                                            <?php $this->renderFieldLabel(__('Google Fonts API key', 'etch-fonts')); ?>
                                                             <input
                                                                 type="password"
                                                                 class="regular-text"
                                                                 name="google_api_key"
                                                                 value=""
-                                                                placeholder="<?php echo esc_attr($googleApiSaved ? __('Saved API key. Enter a new key to replace it.', ETCH_FONTS_TEXT_DOMAIN) : __('Paste your Google Fonts API key', ETCH_FONTS_TEXT_DOMAIN)); ?>"
+                                                                placeholder="<?php echo esc_attr($googleApiSaved ? __('Saved API key. Enter a new key to replace it.', 'etch-fonts') : __('Paste your Google Fonts API key', 'etch-fonts')); ?>"
                                                                 autocomplete="new-password"
                                                                 spellcheck="false"
                                                             >
@@ -430,14 +430,14 @@ final class AdminPageRenderer
 
                                                         <div class="etch-fonts-google-access-footer">
                                                             <div class="etch-fonts-settings-buttons">
-                                                                <button type="submit" class="button button-primary"><?php esc_html_e('Save key', ETCH_FONTS_TEXT_DOMAIN); ?></button>
+                                                                <button type="submit" class="button button-primary"><?php esc_html_e('Save key', 'etch-fonts'); ?></button>
                                                                 <?php if ($googleApiSaved): ?>
-                                                                    <button type="submit" class="button" name="etch_fonts_clear_google_api_key" value="1"><?php esc_html_e('Remove key', ETCH_FONTS_TEXT_DOMAIN); ?></button>
+                                                                    <button type="submit" class="button" name="etch_fonts_clear_google_api_key" value="1"><?php esc_html_e('Remove key', 'etch-fonts'); ?></button>
                                                                 <?php endif; ?>
                                                             </div>
                                                             <div class="etch-fonts-google-access-meta">
                                                                 <p class="etch-fonts-muted etch-fonts-settings-link">
-                                                                    <a href="https://developers.google.com/fonts/docs/developer_api" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Get a Google Fonts API key from the Google Fonts Developer API docs.', ETCH_FONTS_TEXT_DOMAIN); ?></a>
+                                                                    <a href="https://developers.google.com/fonts/docs/developer_api" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Get a Google Fonts API key from the Google Fonts Developer API docs.', 'etch-fonts'); ?></a>
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -449,16 +449,16 @@ final class AdminPageRenderer
                                         <div class="etch-fonts-google-workflow">
                                             <div class="etch-fonts-search-shell">
                                                 <div class="etch-fonts-panel-head">
-                                                    <h4><?php esc_html_e('Search the catalog', ETCH_FONTS_TEXT_DOMAIN); ?></h4>
+                                                    <h4><?php esc_html_e('Search the catalog', 'etch-fonts'); ?></h4>
                                                 </div>
 
                                                 <label class="etch-fonts-stack-field">
-                                                    <span class="screen-reader-text"><?php esc_html_e('Search Google Fonts', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                                    <span class="screen-reader-text"><?php esc_html_e('Search Google Fonts', 'etch-fonts'); ?></span>
                                                     <input
                                                         type="search"
                                                         id="etch-fonts-google-search"
                                                         class="regular-text"
-                                                        placeholder="<?php esc_attr_e('Search Google Fonts families', ETCH_FONTS_TEXT_DOMAIN); ?>"
+                                                        placeholder="<?php esc_attr_e('Search Google Fonts families', 'etch-fonts'); ?>"
                                                         <?php disabled(!$googleApiEnabled); ?>
                                                     >
                                                 </label>
@@ -467,34 +467,34 @@ final class AdminPageRenderer
                                                 <?php endif; ?>
                                                 <div id="etch-fonts-google-results" class="etch-fonts-search-results" aria-live="polite">
                                                     <?php if (!$googleApiEnabled): ?>
-                                                        <div class="etch-fonts-empty"><?php esc_html_e('Google search is currently disabled.', ETCH_FONTS_TEXT_DOMAIN); ?></div>
+                                                        <div class="etch-fonts-empty"><?php esc_html_e('Google search is currently disabled.', 'etch-fonts'); ?></div>
                                                     <?php endif; ?>
                                                 </div>
                                             </div>
 
                                             <div class="etch-fonts-import-panel etch-fonts-import-panel--google">
                                                 <div class="etch-fonts-panel-head">
-                                                    <h4><?php esc_html_e('Choose what to import', ETCH_FONTS_TEXT_DOMAIN); ?></h4>
+                                                    <h4><?php esc_html_e('Choose what to import', 'etch-fonts'); ?></h4>
                                                 </div>
 
                                                 <div class="etch-fonts-import-manual-grid">
                                                     <label class="etch-fonts-stack-field">
-                                                        <?php $this->renderFieldLabel(__('Family name', ETCH_FONTS_TEXT_DOMAIN)); ?>
-                                                        <input type="text" id="etch-fonts-manual-family" class="regular-text" placeholder="<?php esc_attr_e('Example: Inter', ETCH_FONTS_TEXT_DOMAIN); ?>">
+                                                        <?php $this->renderFieldLabel(__('Family name', 'etch-fonts')); ?>
+                                                        <input type="text" id="etch-fonts-manual-family" class="regular-text" placeholder="<?php esc_attr_e('Example: Inter', 'etch-fonts'); ?>">
                                                     </label>
                                                     <label class="etch-fonts-stack-field">
-                                                        <?php $this->renderFieldLabel(__('Manual variants', ETCH_FONTS_TEXT_DOMAIN)); ?>
+                                                        <?php $this->renderFieldLabel(__('Manual variants', 'etch-fonts')); ?>
                                                         <input type="text" id="etch-fonts-manual-variants" class="regular-text" value="regular,700">
                                                     </label>
                                                 </div>
 
                                                 <div class="etch-fonts-selected-wrap etch-fonts-selected-wrap--import">
                                                     <div class="etch-fonts-selected-card">
-                                                        <?php $this->renderFieldLabel(__('Selected family', ETCH_FONTS_TEXT_DOMAIN)); ?>
-                                                        <div id="etch-fonts-selected-family" class="etch-fonts-kbd"><?php esc_html_e('None selected yet', ETCH_FONTS_TEXT_DOMAIN); ?></div>
+                                                        <?php $this->renderFieldLabel(__('Selected family', 'etch-fonts')); ?>
+                                                        <div id="etch-fonts-selected-family" class="etch-fonts-kbd"><?php esc_html_e('None selected yet', 'etch-fonts'); ?></div>
                                                     </div>
                                                     <div class="etch-fonts-selected-card">
-                                                        <?php $this->renderFieldLabel(__('Variants to import', ETCH_FONTS_TEXT_DOMAIN)); ?>
+                                                        <?php $this->renderFieldLabel(__('Variants to import', 'etch-fonts')); ?>
                                                         <div id="etch-fonts-google-variants" class="etch-fonts-variant-list"></div>
                                                     </div>
                                                 </div>
@@ -502,7 +502,7 @@ final class AdminPageRenderer
                                                 <div id="etch-fonts-import-status" class="etch-fonts-import-status" aria-live="polite"></div>
 
                                                 <div class="etch-fonts-actions etch-fonts-actions--import">
-                                                    <button type="button" class="button button-primary" id="etch-fonts-import-submit"><?php esc_html_e('Import and self-host', ETCH_FONTS_TEXT_DOMAIN); ?></button>
+                                                    <button type="button" class="button button-primary" id="etch-fonts-import-submit"><?php esc_html_e('Import and self-host', 'etch-fonts'); ?></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -512,10 +512,10 @@ final class AdminPageRenderer
                                 <section class="etch-fonts-add-font-panel" data-add-font-panel="upload" hidden>
                                     <div class="etch-fonts-upload-shell">
                                         <div class="etch-fonts-upload-intro">
-                                            <p class="etch-fonts-muted"><?php esc_html_e('Use one box per family. Add multiple faces inside the same family, or add another family when you want to upload a separate typeface.', ETCH_FONTS_TEXT_DOMAIN); ?></p>
+                                            <p class="etch-fonts-muted"><?php esc_html_e('Use one box per family. Add multiple faces inside the same family, or add another family when you want to upload a separate typeface.', 'etch-fonts'); ?></p>
                                             <div class="etch-fonts-upload-tip">
-                                                <strong><?php esc_html_e('Quick detect:', ETCH_FONTS_TEXT_DOMAIN); ?></strong>
-                                                <span><?php esc_html_e('If a filename follows a pattern like Abel-400.woff2 or Inter-700-italic.woff2, the plugin can suggest the family name, weight, and style automatically.', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                                <strong><?php esc_html_e('Quick detect:', 'etch-fonts'); ?></strong>
+                                                <span><?php esc_html_e('If a filename follows a pattern like Abel-400.woff2 or Inter-700-italic.woff2, the plugin can suggest the family name, weight, and style automatically.', 'etch-fonts'); ?></span>
                                             </div>
                                         </div>
 
@@ -534,9 +534,9 @@ final class AdminPageRenderer
 
                                             <div class="etch-fonts-upload-actions">
                                                 <div class="etch-fonts-actions etch-fonts-actions--upload-builder">
-                                                    <button type="button" class="button" id="etch-fonts-upload-add-family"><?php esc_html_e('Add another family', ETCH_FONTS_TEXT_DOMAIN); ?></button>
+                                                    <button type="button" class="button" id="etch-fonts-upload-add-family"><?php esc_html_e('Add another family', 'etch-fonts'); ?></button>
                                                 </div>
-                                                <button type="submit" class="button button-primary" id="etch-fonts-upload-submit"><?php esc_html_e('Upload to library', ETCH_FONTS_TEXT_DOMAIN); ?></button>
+                                                <button type="submit" class="button button-primary" id="etch-fonts-upload-submit"><?php esc_html_e('Upload to library', 'etch-fonts'); ?></button>
                                             </div>
 
                                             <div id="etch-fonts-upload-status" class="etch-fonts-import-status" aria-live="polite"></div>
@@ -547,7 +547,7 @@ final class AdminPageRenderer
                         </div>
 
                         <?php if ($catalog === []): ?>
-                            <div class="etch-fonts-empty etch-fonts-empty-state"><?php esc_html_e('No supported font files were found yet in uploads/fonts.', ETCH_FONTS_TEXT_DOMAIN); ?></div>
+                            <div class="etch-fonts-empty etch-fonts-empty-state"><?php esc_html_e('No supported font files were found yet in uploads/fonts.', 'etch-fonts'); ?></div>
                         <?php else: ?>
                             <div class="etch-fonts-library-grid">
                                 <?php foreach ($catalog as $family): ?>
@@ -562,18 +562,18 @@ final class AdminPageRenderer
                             <?php
                             $this->renderSectionHeading(
                                 'h2',
-                                __('Activity', ETCH_FONTS_TEXT_DOMAIN),
-                                __('Recent scans, imports, deletes, and asset refreshes. Newest entries appear first.', ETCH_FONTS_TEXT_DOMAIN)
+                                __('Activity', 'etch-fonts'),
+                                __('Recent scans, imports, deletes, and asset refreshes. Newest entries appear first.', 'etch-fonts')
                             );
                             ?>
                             <form method="post">
                                 <?php wp_nonce_field('etch_fonts_clear_log'); ?>
-                                <button type="submit" class="button" name="etch_fonts_clear_log" value="1"><?php esc_html_e('Clear log', ETCH_FONTS_TEXT_DOMAIN); ?></button>
+                                <button type="submit" class="button" name="etch_fonts_clear_log" value="1"><?php esc_html_e('Clear log', 'etch-fonts'); ?></button>
                             </form>
                         </div>
 
                         <?php if ($logs === []): ?>
-                            <div class="etch-fonts-empty etch-fonts-empty-state"><?php esc_html_e('No log entries yet.', ETCH_FONTS_TEXT_DOMAIN); ?></div>
+                            <div class="etch-fonts-empty etch-fonts-empty-state"><?php esc_html_e('No log entries yet.', 'etch-fonts'); ?></div>
                         <?php else: ?>
                             <?php $this->renderLogList($visibleLogs); ?>
                             <?php if ($olderLogs !== []): ?>
@@ -582,12 +582,12 @@ final class AdminPageRenderer
                                         type="button"
                                         class="button etch-fonts-disclosure-button"
                                         data-disclosure-toggle="etch-fonts-activity-older"
-                                        data-expanded-label="<?php echo esc_attr__('Hide older activity', ETCH_FONTS_TEXT_DOMAIN); ?>"
-                                        data-collapsed-label="<?php echo esc_attr(sprintf(__('Show older activity (%d)', ETCH_FONTS_TEXT_DOMAIN), count($olderLogs))); ?>"
+                                        data-expanded-label="<?php echo esc_attr__('Hide older activity', 'etch-fonts'); ?>"
+                                        data-collapsed-label="<?php echo esc_attr(sprintf(__('Show older activity (%d)', 'etch-fonts'), count($olderLogs))); ?>"
                                         aria-expanded="false"
                                         aria-controls="etch-fonts-activity-older"
                                     >
-                                        <?php echo esc_html(sprintf(__('Show older activity (%d)', ETCH_FONTS_TEXT_DOMAIN), count($olderLogs))); ?>
+                                        <?php echo esc_html(sprintf(__('Show older activity (%d)', 'etch-fonts'), count($olderLogs))); ?>
                                     </button>
                                     <div id="etch-fonts-activity-older" hidden>
                                         <?php $this->renderLogList($olderLogs, 'etch-fonts-log-list etch-fonts-log-list--older'); ?>
@@ -661,10 +661,10 @@ final class AdminPageRenderer
                                             <span class="etch-fonts-badge"><?php echo esc_html(ucfirst((string) $source)); ?></span>
                                         <?php endforeach; ?>
                                         <?php if ($isHeading): ?>
-                                            <span class="etch-fonts-badge is-role"><?php esc_html_e('Heading', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                            <span class="etch-fonts-badge is-role"><?php esc_html_e('Heading', 'etch-fonts'); ?></span>
                                         <?php endif; ?>
                                         <?php if ($isBody): ?>
-                                            <span class="etch-fonts-badge is-role"><?php esc_html_e('Body', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                            <span class="etch-fonts-badge is-role"><?php esc_html_e('Body', 'etch-fonts'); ?></span>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -677,7 +677,7 @@ final class AdminPageRenderer
                                         <?php endforeach; ?>
                                         <?php if ($hiddenFaceSummaryCount > 0): ?>
                                             <span class="etch-fonts-face-pill is-muted">
-                                                <?php echo esc_html(sprintf(__('+%d more', ETCH_FONTS_TEXT_DOMAIN), $hiddenFaceSummaryCount)); ?>
+                                                <?php echo esc_html(sprintf(__('+%d more', 'etch-fonts'), $hiddenFaceSummaryCount)); ?>
                                             </span>
                                         <?php endif; ?>
                                     </div>
@@ -693,7 +693,7 @@ final class AdminPageRenderer
                                     <input type="hidden" name="etch_fonts_family_name" value="<?php echo esc_attr($familyName); ?>">
                                     <div class="etch-fonts-inline-field-row">
                                         <label class="etch-fonts-inline-field etch-fonts-inline-field--select">
-                                            <span class="etch-fonts-field-label"><?php esc_html_e('Fallback', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                            <span class="etch-fonts-field-label"><?php esc_html_e('Fallback', 'etch-fonts'); ?></span>
                                             <?php
                                             $this->renderFallbackInput(
                                                 'etch_fonts_family_fallback',
@@ -702,7 +702,7 @@ final class AdminPageRenderer
                                                     'class' => 'etch-fonts-fallback-selector',
                                                     'data-font-family' => $familyName,
                                                     'data-saved-value' => $savedFallback,
-                                                    'placeholder' => __('Example: system-ui, sans-serif', ETCH_FONTS_TEXT_DOMAIN),
+                                                    'placeholder' => __('Example: system-ui, sans-serif', 'etch-fonts'),
                                                 ]
                                             );
                                             ?>
@@ -712,32 +712,32 @@ final class AdminPageRenderer
                                             class="button etch-fonts-family-fallback-save"
                                             data-family-fallback-save
                                         >
-                                            <?php esc_html_e('Save', ETCH_FONTS_TEXT_DOMAIN); ?>
+                                            <?php esc_html_e('Save', 'etch-fonts'); ?>
                                         </button>
                                     </div>
                                 </form>
                                 <div class="etch-fonts-stack-chip">
-                                    <span class="etch-fonts-field-label"><?php esc_html_e('Stack', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                    <span class="etch-fonts-field-label"><?php esc_html_e('Stack', 'etch-fonts'); ?></span>
                                     <span class="etch-fonts-kbd" data-stack-preview="<?php echo esc_attr($familyName); ?>"><?php echo esc_html($defaultStack); ?></span>
                                 </div>
                             </div>
 
                             <div class="etch-fonts-font-actions">
                                 <div class="etch-fonts-font-actions-primary">
-                                    <button type="button" class="button button-small" data-role-assign="heading" data-font-family="<?php echo esc_attr($familyName); ?>"><?php esc_html_e('Set heading', ETCH_FONTS_TEXT_DOMAIN); ?></button>
-                                    <button type="button" class="button button-small" data-role-assign="body" data-font-family="<?php echo esc_attr($familyName); ?>"><?php esc_html_e('Set body', ETCH_FONTS_TEXT_DOMAIN); ?></button>
+                                    <button type="button" class="button button-small" data-role-assign="heading" data-font-family="<?php echo esc_attr($familyName); ?>"><?php esc_html_e('Set heading', 'etch-fonts'); ?></button>
+                                    <button type="button" class="button button-small" data-role-assign="body" data-font-family="<?php echo esc_attr($familyName); ?>"><?php esc_html_e('Set body', 'etch-fonts'); ?></button>
                                 </div>
                                 <div class="etch-fonts-font-actions-secondary">
                                     <button
                                         type="button"
                                         class="button button-small etch-fonts-disclosure-button etch-fonts-disclosure-button--card"
                                         data-disclosure-toggle="<?php echo esc_attr($detailsId); ?>"
-                                        data-expanded-label="<?php echo esc_attr__('Hide details', ETCH_FONTS_TEXT_DOMAIN); ?>"
-                                        data-collapsed-label="<?php echo esc_attr__('View details', ETCH_FONTS_TEXT_DOMAIN); ?>"
+                                        data-expanded-label="<?php echo esc_attr__('Hide details', 'etch-fonts'); ?>"
+                                        data-collapsed-label="<?php echo esc_attr__('View details', 'etch-fonts'); ?>"
                                         aria-expanded="<?php echo $isExpanded ? 'true' : 'false'; ?>"
                                         aria-controls="<?php echo esc_attr($detailsId); ?>"
                                     >
-                                        <?php echo $isExpanded ? esc_html__('Hide details', ETCH_FONTS_TEXT_DOMAIN) : esc_html__('View details', ETCH_FONTS_TEXT_DOMAIN); ?>
+                                        <?php echo $isExpanded ? esc_html__('Hide details', 'etch-fonts') : esc_html__('View details', 'etch-fonts'); ?>
                                     </button>
                                     <form method="post" class="etch-fonts-delete-form">
                                         <?php wp_nonce_field('etch_fonts_delete_family'); ?>
@@ -751,7 +751,7 @@ final class AdminPageRenderer
                                                 data-delete-blocked="<?php echo esc_attr($deleteBlockedMessage); ?>"
                                             <?php endif; ?>
                                         >
-                                            <?php esc_html_e('Delete', ETCH_FONTS_TEXT_DOMAIN); ?>
+                                            <?php esc_html_e('Delete', 'etch-fonts'); ?>
                                         </button>
                                     </form>
                                 </div>
@@ -765,13 +765,13 @@ final class AdminPageRenderer
                 <table class="widefat striped etch-fonts-table">
                     <thead>
                         <tr>
-                            <th><?php esc_html_e('Weight', ETCH_FONTS_TEXT_DOMAIN); ?></th>
-                            <th><?php esc_html_e('Style', ETCH_FONTS_TEXT_DOMAIN); ?></th>
-                            <th><?php esc_html_e('Preview', ETCH_FONTS_TEXT_DOMAIN); ?></th>
-                            <th><?php esc_html_e('Source', ETCH_FONTS_TEXT_DOMAIN); ?></th>
-                            <th><?php esc_html_e('Storage', ETCH_FONTS_TEXT_DOMAIN); ?></th>
-                            <th><?php esc_html_e('Formats', ETCH_FONTS_TEXT_DOMAIN); ?></th>
-                            <th><?php esc_html_e('Files', ETCH_FONTS_TEXT_DOMAIN); ?></th>
+                            <th><?php esc_html_e('Weight', 'etch-fonts'); ?></th>
+                            <th><?php esc_html_e('Style', 'etch-fonts'); ?></th>
+                            <th><?php esc_html_e('Preview', 'etch-fonts'); ?></th>
+                            <th><?php esc_html_e('Source', 'etch-fonts'); ?></th>
+                            <th><?php esc_html_e('Storage', 'etch-fonts'); ?></th>
+                            <th><?php esc_html_e('Formats', 'etch-fonts'); ?></th>
+                            <th><?php esc_html_e('Files', 'etch-fonts'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -820,21 +820,21 @@ final class AdminPageRenderer
     {
         if ($isHeading && $isBody) {
             return sprintf(
-                __('%s is currently used for both heading and body. Choose different role fonts before deleting it.', ETCH_FONTS_TEXT_DOMAIN),
+                __('%s is currently used for both heading and body. Choose different role fonts before deleting it.', 'etch-fonts'),
                 $familyName
             );
         }
 
         if ($isHeading) {
             return sprintf(
-                __('%s is currently used as the heading font. Choose a different heading font before deleting it.', ETCH_FONTS_TEXT_DOMAIN),
+                __('%s is currently used as the heading font. Choose a different heading font before deleting it.', 'etch-fonts'),
                 $familyName
             );
         }
 
         if ($isBody) {
             return sprintf(
-                __('%s is currently used as the body font. Choose a different body font before deleting it.', ETCH_FONTS_TEXT_DOMAIN),
+                __('%s is currently used as the body font. Choose a different body font before deleting it.', 'etch-fonts'),
                 $familyName
             );
         }
@@ -893,7 +893,7 @@ final class AdminPageRenderer
         $normalized = is_string($normalized) ? $normalized : '';
 
         if ($normalized === '') {
-            return __('The quick brown fox…', ETCH_FONTS_TEXT_DOMAIN);
+            return __('The quick brown fox…', 'etch-fonts');
         }
 
         return wp_trim_words($normalized, 6, '…');
@@ -933,13 +933,13 @@ final class AdminPageRenderer
 
         if ($bytes <= 0) {
             return sprintf(
-                _n('%d file', '%d files', $fileCount, ETCH_FONTS_TEXT_DOMAIN),
+                _n('%d file', '%d files', $fileCount, 'etch-fonts'),
                 $fileCount
             );
         }
 
         return sprintf(
-            _n('%1$d file · %2$s', '%1$d files · %2$s', $fileCount, ETCH_FONTS_TEXT_DOMAIN),
+            _n('%1$d file · %2$s', '%1$d files · %2$s', $fileCount, 'etch-fonts'),
             $fileCount,
             size_format($bytes)
         );
@@ -952,24 +952,24 @@ final class AdminPageRenderer
             <div class="etch-fonts-upload-group-head">
                 <div class="etch-fonts-upload-group-fields">
                     <label class="etch-fonts-stack-field">
-                        <?php $this->renderFieldLabel(__('Family name', ETCH_FONTS_TEXT_DOMAIN)); ?>
+                        <?php $this->renderFieldLabel(__('Family name', 'etch-fonts')); ?>
                         <input
                             type="text"
                             class="regular-text"
                             data-upload-group-field="family"
-                            placeholder="<?php esc_attr_e('Example: Satoshi', ETCH_FONTS_TEXT_DOMAIN); ?>"
+                            placeholder="<?php esc_attr_e('Example: Satoshi', 'etch-fonts'); ?>"
                         >
                     </label>
 
                     <label class="etch-fonts-stack-field">
-                        <?php $this->renderFieldLabel(__('Fallback', ETCH_FONTS_TEXT_DOMAIN)); ?>
+                        <?php $this->renderFieldLabel(__('Fallback', 'etch-fonts')); ?>
                         <?php
                         $this->renderFallbackInput(
                             '',
                             'sans-serif',
                             [
                                 'data-upload-group-field' => 'fallback',
-                                'placeholder' => __('Example: system-ui, sans-serif', ETCH_FONTS_TEXT_DOMAIN),
+                                'placeholder' => __('Example: system-ui, sans-serif', 'etch-fonts'),
                             ]
                         );
                         ?>
@@ -981,15 +981,15 @@ final class AdminPageRenderer
                     class="button etch-fonts-upload-group-remove"
                     data-upload-remove-group
                 >
-                    <?php esc_html_e('Remove family', ETCH_FONTS_TEXT_DOMAIN); ?>
+                    <?php esc_html_e('Remove family', 'etch-fonts'); ?>
                 </button>
             </div>
 
             <div class="etch-fonts-upload-face-headings" aria-hidden="true">
-                <span><?php esc_html_e('Font file', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                <span><?php esc_html_e('Weight', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                <span><?php esc_html_e('Style', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                <span><?php esc_html_e('Action', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                <span><?php esc_html_e('Font file', 'etch-fonts'); ?></span>
+                <span><?php esc_html_e('Weight', 'etch-fonts'); ?></span>
+                <span><?php esc_html_e('Style', 'etch-fonts'); ?></span>
+                <span><?php esc_html_e('Action', 'etch-fonts'); ?></span>
             </div>
 
             <div class="etch-fonts-upload-face-list" data-upload-face-list>
@@ -997,7 +997,7 @@ final class AdminPageRenderer
             </div>
 
             <div class="etch-fonts-upload-group-actions">
-                <button type="button" class="button" data-upload-add-face><?php esc_html_e('Add face', ETCH_FONTS_TEXT_DOMAIN); ?></button>
+                <button type="button" class="button" data-upload-add-face><?php esc_html_e('Add face', 'etch-fonts'); ?></button>
             </div>
         </section>
         <?php
@@ -1009,7 +1009,7 @@ final class AdminPageRenderer
         <div class="etch-fonts-upload-face-row" data-upload-row>
             <div class="etch-fonts-upload-face-grid">
                 <label class="etch-fonts-stack-field etch-fonts-upload-file-field">
-                    <span class="screen-reader-text"><?php esc_html_e('Font file', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                    <span class="screen-reader-text"><?php esc_html_e('Font file', 'etch-fonts'); ?></span>
                     <span class="etch-fonts-upload-file-picker">
                         <input
                             type="file"
@@ -1017,13 +1017,13 @@ final class AdminPageRenderer
                             data-upload-field="file"
                             accept=".woff2,.woff,.ttf,.otf"
                         >
-                        <span class="etch-fonts-upload-file-button"><?php esc_html_e('Select font', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                        <span class="etch-fonts-upload-file-name" data-upload-file-name><?php esc_html_e('No file chosen', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                        <span class="etch-fonts-upload-file-button"><?php esc_html_e('Select font', 'etch-fonts'); ?></span>
+                        <span class="etch-fonts-upload-file-name" data-upload-file-name><?php esc_html_e('No file chosen', 'etch-fonts'); ?></span>
                     </span>
                 </label>
 
                 <label class="etch-fonts-stack-field">
-                    <span class="screen-reader-text"><?php esc_html_e('Weight', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                    <span class="screen-reader-text"><?php esc_html_e('Weight', 'etch-fonts'); ?></span>
                     <select data-upload-field="weight">
                         <?php foreach (range(100, 900, 100) as $weight): ?>
                             <option value="<?php echo esc_attr((string) $weight); ?>" <?php selected((string) $weight, '400'); ?>><?php echo esc_html((string) $weight); ?></option>
@@ -1032,11 +1032,11 @@ final class AdminPageRenderer
                 </label>
 
                 <label class="etch-fonts-stack-field">
-                    <span class="screen-reader-text"><?php esc_html_e('Style', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                    <span class="screen-reader-text"><?php esc_html_e('Style', 'etch-fonts'); ?></span>
                     <select data-upload-field="style">
-                        <option value="normal"><?php esc_html_e('Normal', ETCH_FONTS_TEXT_DOMAIN); ?></option>
-                        <option value="italic"><?php esc_html_e('Italic', ETCH_FONTS_TEXT_DOMAIN); ?></option>
-                        <option value="oblique"><?php esc_html_e('Oblique', ETCH_FONTS_TEXT_DOMAIN); ?></option>
+                        <option value="normal"><?php esc_html_e('Normal', 'etch-fonts'); ?></option>
+                        <option value="italic"><?php esc_html_e('Italic', 'etch-fonts'); ?></option>
+                        <option value="oblique"><?php esc_html_e('Oblique', 'etch-fonts'); ?></option>
                     </select>
                 </label>
 
@@ -1044,9 +1044,9 @@ final class AdminPageRenderer
                     type="button"
                     class="button etch-fonts-upload-row-remove"
                     data-upload-remove
-                    aria-label="<?php esc_attr_e('Remove row', ETCH_FONTS_TEXT_DOMAIN); ?>"
+                    aria-label="<?php esc_attr_e('Remove row', 'etch-fonts'); ?>"
                 >
-                    <?php esc_html_e('Remove', ETCH_FONTS_TEXT_DOMAIN); ?>
+                    <?php esc_html_e('Remove', 'etch-fonts'); ?>
                 </button>
             </div>
 
@@ -1068,65 +1068,65 @@ final class AdminPageRenderer
                         <aside class="etch-fonts-preview-specimen-rail">
                             <div class="etch-fonts-preview-specimen-glyph" data-role-preview="heading">Aa</div>
                             <div class="etch-fonts-preview-specimen-key">
-                                <span class="etch-fonts-preview-specimen-key-label"><?php esc_html_e('Heading family', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                <span class="etch-fonts-preview-specimen-key-label"><?php esc_html_e('Heading family', 'etch-fonts'); ?></span>
                                 <strong class="etch-fonts-preview-specimen-key-value" data-role-preview="heading"><?php echo esc_html((string) ($roles['heading'] ?? '')); ?></strong>
                             </div>
                             <div class="etch-fonts-preview-specimen-key">
-                                <span class="etch-fonts-preview-specimen-key-label"><?php esc_html_e('Body family', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                <span class="etch-fonts-preview-specimen-key-label"><?php esc_html_e('Body family', 'etch-fonts'); ?></span>
                                 <strong class="etch-fonts-preview-specimen-key-value" data-role-preview="body"><?php echo esc_html((string) ($roles['body'] ?? '')); ?></strong>
                             </div>
                         </aside>
 
                         <div class="etch-fonts-preview-specimen-scale">
-                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--1" data-role-preview="heading"><?php esc_html_e('Heading 1', ETCH_FONTS_TEXT_DOMAIN); ?></div>
-                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--2" data-role-preview="heading"><?php esc_html_e('Heading 2', ETCH_FONTS_TEXT_DOMAIN); ?></div>
-                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--3" data-role-preview="heading"><?php esc_html_e('Heading 3', ETCH_FONTS_TEXT_DOMAIN); ?></div>
-                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--4" data-role-preview="heading"><?php esc_html_e('Heading 4', ETCH_FONTS_TEXT_DOMAIN); ?></div>
-                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--5" data-role-preview="heading"><?php esc_html_e('Heading 5', ETCH_FONTS_TEXT_DOMAIN); ?></div>
-                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--6" data-role-preview="heading"><?php esc_html_e('Heading 6', ETCH_FONTS_TEXT_DOMAIN); ?></div>
+                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--1" data-role-preview="heading"><?php esc_html_e('Heading 1', 'etch-fonts'); ?></div>
+                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--2" data-role-preview="heading"><?php esc_html_e('Heading 2', 'etch-fonts'); ?></div>
+                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--3" data-role-preview="heading"><?php esc_html_e('Heading 3', 'etch-fonts'); ?></div>
+                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--4" data-role-preview="heading"><?php esc_html_e('Heading 4', 'etch-fonts'); ?></div>
+                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--5" data-role-preview="heading"><?php esc_html_e('Heading 5', 'etch-fonts'); ?></div>
+                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--6" data-role-preview="heading"><?php esc_html_e('Heading 6', 'etch-fonts'); ?></div>
                         </div>
 
                         <div class="etch-fonts-preview-specimen-copy">
                             <div class="etch-fonts-preview-specimen-copy-row">
-                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Lead', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Lead', 'etch-fonts'); ?></span>
                                 <div class="etch-fonts-preview-specimen-copy-body">
                                     <p class="etch-fonts-preview-specimen-lead" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
                                 </div>
                             </div>
                             <div class="etch-fonts-preview-specimen-copy-row">
-                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Body / 16', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Body / 16', 'etch-fonts'); ?></span>
                                 <div class="etch-fonts-preview-specimen-copy-body">
-                                    <p class="etch-fonts-preview-specimen-body-large" data-role-preview="body"><?php esc_html_e('Apparently we had reached a great height in the atmosphere, for the sky was a dead black, and the stars had ceased to twinkle.', ETCH_FONTS_TEXT_DOMAIN); ?></p>
+                                    <p class="etch-fonts-preview-specimen-body-large" data-role-preview="body"><?php esc_html_e('Apparently we had reached a great height in the atmosphere, for the sky was a dead black, and the stars had ceased to twinkle.', 'etch-fonts'); ?></p>
                                 </div>
                             </div>
                             <div class="etch-fonts-preview-specimen-copy-row">
-                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Body / 14', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Body / 14', 'etch-fonts'); ?></span>
                                 <div class="etch-fonts-preview-specimen-copy-body">
-                                    <p class="etch-fonts-preview-specimen-body" data-role-preview="body"><?php esc_html_e('Apparently we had reached a great height in the atmosphere, for the sky was a dead black, and the stars had ceased to twinkle.', ETCH_FONTS_TEXT_DOMAIN); ?></p>
+                                    <p class="etch-fonts-preview-specimen-body" data-role-preview="body"><?php esc_html_e('Apparently we had reached a great height in the atmosphere, for the sky was a dead black, and the stars had ceased to twinkle.', 'etch-fonts'); ?></p>
                                 </div>
                             </div>
                             <div class="etch-fonts-preview-specimen-copy-row">
-                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Quote', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Quote', 'etch-fonts'); ?></span>
                                 <div class="etch-fonts-preview-specimen-copy-body">
-                                    <blockquote class="etch-fonts-preview-specimen-quote" data-role-preview="heading"><?php esc_html_e('“The sky was cloudless and of a deep dark blue.”', ETCH_FONTS_TEXT_DOMAIN); ?></blockquote>
+                                    <blockquote class="etch-fonts-preview-specimen-quote" data-role-preview="heading"><?php esc_html_e('“The sky was cloudless and of a deep dark blue.”', 'etch-fonts'); ?></blockquote>
                                 </div>
                             </div>
                             <div class="etch-fonts-preview-specimen-copy-row">
-                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Capitalized', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Capitalized', 'etch-fonts'); ?></span>
                                 <div class="etch-fonts-preview-specimen-copy-body">
-                                    <p class="etch-fonts-preview-specimen-caps" data-role-preview="body"><?php esc_html_e('Brainstorm alternative ideas', ETCH_FONTS_TEXT_DOMAIN); ?></p>
+                                    <p class="etch-fonts-preview-specimen-caps" data-role-preview="body"><?php esc_html_e('Brainstorm alternative ideas', 'etch-fonts'); ?></p>
                                 </div>
                             </div>
                             <div class="etch-fonts-preview-specimen-copy-row">
-                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Small', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Small', 'etch-fonts'); ?></span>
                                 <div class="etch-fonts-preview-specimen-copy-body">
-                                    <p class="etch-fonts-preview-specimen-small" data-role-preview="body"><?php esc_html_e('Value your time', ETCH_FONTS_TEXT_DOMAIN); ?></p>
+                                    <p class="etch-fonts-preview-specimen-small" data-role-preview="body"><?php esc_html_e('Value your time', 'etch-fonts'); ?></p>
                                 </div>
                             </div>
                             <div class="etch-fonts-preview-specimen-copy-row">
-                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Tiny', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Tiny', 'etch-fonts'); ?></span>
                                 <div class="etch-fonts-preview-specimen-copy-body">
-                                    <p class="etch-fonts-preview-specimen-tiny" data-role-preview="body"><?php esc_html_e('Nothing is impossible', ETCH_FONTS_TEXT_DOMAIN); ?></p>
+                                    <p class="etch-fonts-preview-specimen-tiny" data-role-preview="body"><?php esc_html_e('Nothing is impossible', 'etch-fonts'); ?></p>
                                 </div>
                             </div>
                         </div>
@@ -1134,39 +1134,39 @@ final class AdminPageRenderer
 
                     <div class="etch-fonts-preview-support-grid">
                         <article class="etch-fonts-preview-support-card">
-                            <span class="etch-fonts-preview-support-label" data-role-preview="body"><?php esc_html_e('Hero lockup', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                            <h3 class="etch-fonts-preview-support-title" data-role-preview="heading"><?php esc_html_e('A type pairing that feels intentional at every scale', ETCH_FONTS_TEXT_DOMAIN); ?></h3>
+                            <span class="etch-fonts-preview-support-label" data-role-preview="body"><?php esc_html_e('Hero lockup', 'etch-fonts'); ?></span>
+                            <h3 class="etch-fonts-preview-support-title" data-role-preview="heading"><?php esc_html_e('A type pairing that feels intentional at every scale', 'etch-fonts'); ?></h3>
                             <p class="etch-fonts-preview-support-copy" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
                             <div class="etch-fonts-preview-support-meta">
-                                <span><?php esc_html_e('Landing page', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                                <strong data-role-preview="heading"><?php esc_html_e('Ready', ETCH_FONTS_TEXT_DOMAIN); ?></strong>
+                                <span><?php esc_html_e('Landing page', 'etch-fonts'); ?></span>
+                                <strong data-role-preview="heading"><?php esc_html_e('Ready', 'etch-fonts'); ?></strong>
                             </div>
                         </article>
 
                         <article class="etch-fonts-preview-support-card">
-                            <span class="etch-fonts-preview-support-label" data-role-preview="body"><?php esc_html_e('Feature module', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                            <h3 class="etch-fonts-preview-support-title" data-role-preview="heading"><?php esc_html_e('Clean cards with enough contrast for product copy', ETCH_FONTS_TEXT_DOMAIN); ?></h3>
-                            <p class="etch-fonts-preview-support-copy" data-role-preview="body"><?php esc_html_e('Use this sample to judge title tone, supporting copy rhythm, and whether the body face stays calm inside UI surfaces.', ETCH_FONTS_TEXT_DOMAIN); ?></p>
+                            <span class="etch-fonts-preview-support-label" data-role-preview="body"><?php esc_html_e('Feature module', 'etch-fonts'); ?></span>
+                            <h3 class="etch-fonts-preview-support-title" data-role-preview="heading"><?php esc_html_e('Clean cards with enough contrast for product copy', 'etch-fonts'); ?></h3>
+                            <p class="etch-fonts-preview-support-copy" data-role-preview="body"><?php esc_html_e('Use this sample to judge title tone, supporting copy rhythm, and whether the body face stays calm inside UI surfaces.', 'etch-fonts'); ?></p>
                             <div class="etch-fonts-preview-support-meta">
-                                <span><?php esc_html_e('Surface check', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                                <strong data-role-preview="heading"><?php esc_html_e('Balanced', ETCH_FONTS_TEXT_DOMAIN); ?></strong>
+                                <span><?php esc_html_e('Surface check', 'etch-fonts'); ?></span>
+                                <strong data-role-preview="heading"><?php esc_html_e('Balanced', 'etch-fonts'); ?></strong>
                             </div>
                         </article>
 
                         <article class="etch-fonts-preview-support-card">
-                            <span class="etch-fonts-preview-support-label" data-role-preview="body"><?php esc_html_e('Metrics panel', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                            <span class="etch-fonts-preview-support-label" data-role-preview="body"><?php esc_html_e('Metrics panel', 'etch-fonts'); ?></span>
                             <div class="etch-fonts-preview-support-stats">
                                 <div class="etch-fonts-preview-support-stat">
-                                    <span data-role-preview="body"><?php esc_html_e('Visitors', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                    <span data-role-preview="body"><?php esc_html_e('Visitors', 'etch-fonts'); ?></span>
                                     <strong data-role-preview="heading">12.4k</strong>
                                 </div>
                                 <div class="etch-fonts-preview-support-stat">
-                                    <span data-role-preview="body"><?php esc_html_e('Conversion', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                    <span data-role-preview="body"><?php esc_html_e('Conversion', 'etch-fonts'); ?></span>
                                     <strong data-role-preview="heading">4.8%</strong>
                                 </div>
                                 <div class="etch-fonts-preview-support-stat">
-                                    <span data-role-preview="body"><?php esc_html_e('Launch', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                                    <strong data-role-preview="heading"><?php esc_html_e('Soon', ETCH_FONTS_TEXT_DOMAIN); ?></strong>
+                                    <span data-role-preview="body"><?php esc_html_e('Launch', 'etch-fonts'); ?></span>
+                                    <strong data-role-preview="heading"><?php esc_html_e('Soon', 'etch-fonts'); ?></strong>
                                 </div>
                             </div>
                         </article>
@@ -1184,13 +1184,13 @@ final class AdminPageRenderer
                                 <span class="dashicons dashicons-format-image" aria-hidden="true"></span>
                             </div>
                             <div class="etch-fonts-preview-card-body">
-                                <span class="etch-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Feature card', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                                <h3 class="etch-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('Title', ETCH_FONTS_TEXT_DOMAIN); ?></h3>
-                                <p class="etch-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Subtitle', ETCH_FONTS_TEXT_DOMAIN); ?></p>
+                                <span class="etch-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Feature card', 'etch-fonts'); ?></span>
+                                <h3 class="etch-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('Title', 'etch-fonts'); ?></h3>
+                                <p class="etch-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Subtitle', 'etch-fonts'); ?></p>
                                 <p class="etch-fonts-preview-card-copy" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
                                 <div class="etch-fonts-preview-card-actions">
-                                    <span class="button" aria-hidden="true"><?php esc_html_e('Action', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                                    <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Action', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                    <span class="button" aria-hidden="true"><?php esc_html_e('Action', 'etch-fonts'); ?></span>
+                                    <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Action', 'etch-fonts'); ?></span>
                                 </div>
                             </div>
                         </article>
@@ -1200,13 +1200,13 @@ final class AdminPageRenderer
                                 <span class="dashicons dashicons-format-gallery" aria-hidden="true"></span>
                             </div>
                             <div class="etch-fonts-preview-card-body">
-                                <span class="etch-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Collection', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                                <h3 class="etch-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('Modern layouts', ETCH_FONTS_TEXT_DOMAIN); ?></h3>
-                                <p class="etch-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Structured and calm', ETCH_FONTS_TEXT_DOMAIN); ?></p>
-                                <p class="etch-fonts-preview-card-copy" data-role-preview="body"><?php esc_html_e('Compare how the chosen heading face holds attention while the body face keeps supporting detail easy to scan.', ETCH_FONTS_TEXT_DOMAIN); ?></p>
+                                <span class="etch-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Collection', 'etch-fonts'); ?></span>
+                                <h3 class="etch-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('Modern layouts', 'etch-fonts'); ?></h3>
+                                <p class="etch-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Structured and calm', 'etch-fonts'); ?></p>
+                                <p class="etch-fonts-preview-card-copy" data-role-preview="body"><?php esc_html_e('Compare how the chosen heading face holds attention while the body face keeps supporting detail easy to scan.', 'etch-fonts'); ?></p>
                                 <div class="etch-fonts-preview-card-actions">
-                                    <span class="button" aria-hidden="true"><?php esc_html_e('Review', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                                    <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Select', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                    <span class="button" aria-hidden="true"><?php esc_html_e('Review', 'etch-fonts'); ?></span>
+                                    <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Select', 'etch-fonts'); ?></span>
                                 </div>
                             </div>
                         </article>
@@ -1216,13 +1216,13 @@ final class AdminPageRenderer
                                 <span class="dashicons dashicons-screenoptions" aria-hidden="true"></span>
                             </div>
                             <div class="etch-fonts-preview-card-body">
-                                <span class="etch-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Product card', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                                <h3 class="etch-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('System-ready', ETCH_FONTS_TEXT_DOMAIN); ?></h3>
-                                <p class="etch-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Useful in real UI', ETCH_FONTS_TEXT_DOMAIN); ?></p>
-                                <p class="etch-fonts-preview-card-copy" data-role-preview="body"><?php esc_html_e('This view is intentionally compact so you can judge hierarchy, spacing, and button copy without oversized demo content.', ETCH_FONTS_TEXT_DOMAIN); ?></p>
+                                <span class="etch-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Product card', 'etch-fonts'); ?></span>
+                                <h3 class="etch-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('System-ready', 'etch-fonts'); ?></h3>
+                                <p class="etch-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Useful in real UI', 'etch-fonts'); ?></p>
+                                <p class="etch-fonts-preview-card-copy" data-role-preview="body"><?php esc_html_e('This view is intentionally compact so you can judge hierarchy, spacing, and button copy without oversized demo content.', 'etch-fonts'); ?></p>
                                 <div class="etch-fonts-preview-card-actions">
-                                    <span class="button" aria-hidden="true"><?php esc_html_e('Later', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                                    <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Launch', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                    <span class="button" aria-hidden="true"><?php esc_html_e('Later', 'etch-fonts'); ?></span>
+                                    <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Launch', 'etch-fonts'); ?></span>
                                 </div>
                             </div>
                         </article>
@@ -1235,21 +1235,21 @@ final class AdminPageRenderer
                 ?>
                 <article class="etch-fonts-preview-reading-sheet">
                     <div class="etch-fonts-preview-reading-head">
-                        <span class="etch-fonts-preview-reading-label" data-role-preview="body"><?php esc_html_e('Long-form reading', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                        <h3 class="etch-fonts-preview-reading-title" data-role-preview="heading"><?php esc_html_e('Readable paragraphs with steady rhythm', ETCH_FONTS_TEXT_DOMAIN); ?></h3>
+                        <span class="etch-fonts-preview-reading-label" data-role-preview="body"><?php esc_html_e('Long-form reading', 'etch-fonts'); ?></span>
+                        <h3 class="etch-fonts-preview-reading-title" data-role-preview="heading"><?php esc_html_e('Readable paragraphs with steady rhythm', 'etch-fonts'); ?></h3>
                     </div>
                     <p class="etch-fonts-preview-reading-lead" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
                     <div class="etch-fonts-preview-reading-layout">
                         <div class="etch-fonts-preview-reading-copy">
-                            <p data-role-preview="body"><?php esc_html_e('Apparently we had reached a great height in the atmosphere, for the sky was a dead black, and the stars had ceased to twinkle.', ETCH_FONTS_TEXT_DOMAIN); ?></p>
-                            <p data-role-preview="body"><?php esc_html_e('A strong reading font should stay calm across longer passages and still leave enough contrast for section headings and pull quotes.', ETCH_FONTS_TEXT_DOMAIN); ?></p>
+                            <p data-role-preview="body"><?php esc_html_e('Apparently we had reached a great height in the atmosphere, for the sky was a dead black, and the stars had ceased to twinkle.', 'etch-fonts'); ?></p>
+                            <p data-role-preview="body"><?php esc_html_e('A strong reading font should stay calm across longer passages and still leave enough contrast for section headings and pull quotes.', 'etch-fonts'); ?></p>
                         </div>
                         <aside class="etch-fonts-preview-reading-aside">
-                            <h4 class="etch-fonts-preview-reading-aside-title" data-role-preview="heading"><?php esc_html_e('Checklist', ETCH_FONTS_TEXT_DOMAIN); ?></h4>
+                            <h4 class="etch-fonts-preview-reading-aside-title" data-role-preview="heading"><?php esc_html_e('Checklist', 'etch-fonts'); ?></h4>
                             <ul class="etch-fonts-preview-reading-list" data-role-preview="body">
-                                <li><?php esc_html_e('Paragraph spacing', ETCH_FONTS_TEXT_DOMAIN); ?></li>
-                                <li><?php esc_html_e('Line length at body sizes', ETCH_FONTS_TEXT_DOMAIN); ?></li>
-                                <li><?php esc_html_e('Subheading emphasis', ETCH_FONTS_TEXT_DOMAIN); ?></li>
+                                <li><?php esc_html_e('Paragraph spacing', 'etch-fonts'); ?></li>
+                                <li><?php esc_html_e('Line length at body sizes', 'etch-fonts'); ?></li>
+                                <li><?php esc_html_e('Subheading emphasis', 'etch-fonts'); ?></li>
                             </ul>
                         </aside>
                     </div>
@@ -1262,24 +1262,24 @@ final class AdminPageRenderer
                 ?>
                 <div class="etch-fonts-preview-ui-shell">
                     <div class="etch-fonts-preview-ui-topbar">
-                        <span class="etch-fonts-preview-ui-topbar-label" data-role-preview="body"><?php esc_html_e('Workspace', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                        <span class="etch-fonts-preview-ui-topbar-status"><?php esc_html_e('Live', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                        <span class="etch-fonts-preview-ui-topbar-label" data-role-preview="body"><?php esc_html_e('Workspace', 'etch-fonts'); ?></span>
+                        <span class="etch-fonts-preview-ui-topbar-status"><?php esc_html_e('Live', 'etch-fonts'); ?></span>
                     </div>
                     <div class="etch-fonts-preview-ui-grid">
                         <div class="etch-fonts-preview-ui-panel">
-                            <span class="etch-fonts-preview-ui-label" data-role-preview="body"><?php esc_html_e('Project name', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                            <h3 class="etch-fonts-preview-ui-title" data-role-preview="heading"><?php esc_html_e('Launch planning', ETCH_FONTS_TEXT_DOMAIN); ?></h3>
+                            <span class="etch-fonts-preview-ui-label" data-role-preview="body"><?php esc_html_e('Project name', 'etch-fonts'); ?></span>
+                            <h3 class="etch-fonts-preview-ui-title" data-role-preview="heading"><?php esc_html_e('Launch planning', 'etch-fonts'); ?></h3>
                             <p class="etch-fonts-preview-ui-copy" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
                         </div>
                         <div class="etch-fonts-preview-ui-panel">
-                            <span class="etch-fonts-preview-ui-label" data-role-preview="body"><?php esc_html_e('Metrics', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                            <span class="etch-fonts-preview-ui-label" data-role-preview="body"><?php esc_html_e('Metrics', 'etch-fonts'); ?></span>
                             <div class="etch-fonts-preview-ui-stats">
                                 <div class="etch-fonts-preview-stat">
-                                    <span data-role-preview="body"><?php esc_html_e('Visitors', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                    <span data-role-preview="body"><?php esc_html_e('Visitors', 'etch-fonts'); ?></span>
                                     <strong data-role-preview="heading">12.4k</strong>
                                 </div>
                                 <div class="etch-fonts-preview-stat">
-                                    <span data-role-preview="body"><?php esc_html_e('Signups', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                                    <span data-role-preview="body"><?php esc_html_e('Signups', 'etch-fonts'); ?></span>
                                     <strong data-role-preview="heading">318</strong>
                                 </div>
                             </div>
@@ -1287,17 +1287,17 @@ final class AdminPageRenderer
                     </div>
                     <div class="etch-fonts-preview-ui-list">
                         <div class="etch-fonts-preview-ui-list-row">
-                            <span data-role-preview="body"><?php esc_html_e('Headline lockup', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                            <strong data-role-preview="heading"><?php esc_html_e('Approved', ETCH_FONTS_TEXT_DOMAIN); ?></strong>
+                            <span data-role-preview="body"><?php esc_html_e('Headline lockup', 'etch-fonts'); ?></span>
+                            <strong data-role-preview="heading"><?php esc_html_e('Approved', 'etch-fonts'); ?></strong>
                         </div>
                         <div class="etch-fonts-preview-ui-list-row">
-                            <span data-role-preview="body"><?php esc_html_e('Landing page copy', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                            <strong data-role-preview="heading"><?php esc_html_e('In review', ETCH_FONTS_TEXT_DOMAIN); ?></strong>
+                            <span data-role-preview="body"><?php esc_html_e('Landing page copy', 'etch-fonts'); ?></span>
+                            <strong data-role-preview="heading"><?php esc_html_e('In review', 'etch-fonts'); ?></strong>
                         </div>
                     </div>
                     <div class="etch-fonts-preview-ui-actions">
-                        <span class="button" aria-hidden="true"><?php esc_html_e('Save draft', ETCH_FONTS_TEXT_DOMAIN); ?></span>
-                        <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Publish', ETCH_FONTS_TEXT_DOMAIN); ?></span>
+                        <span class="button" aria-hidden="true"><?php esc_html_e('Save draft', 'etch-fonts'); ?></span>
+                        <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Publish', 'etch-fonts'); ?></span>
                     </div>
                 </div>
                 <?php
@@ -1321,7 +1321,7 @@ final class AdminPageRenderer
                     role="<?php echo esc_attr((string) ($toast['role'] ?? 'status')); ?>"
                 >
                     <div class="etch-fonts-toast-message"><?php echo esc_html((string) ($toast['message'] ?? '')); ?></div>
-                    <button type="button" class="etch-fonts-toast-dismiss" data-toast-dismiss aria-label="<?php esc_attr_e('Dismiss notification', ETCH_FONTS_TEXT_DOMAIN); ?>">
+                    <button type="button" class="etch-fonts-toast-dismiss" data-toast-dismiss aria-label="<?php esc_attr_e('Dismiss notification', 'etch-fonts'); ?>">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -1336,10 +1336,10 @@ final class AdminPageRenderer
         $ariaLabel = $label !== ''
             ? sprintf(
                 /* translators: %s: UI label */
-                __('More information about %s', ETCH_FONTS_TEXT_DOMAIN),
+                __('More information about %s', 'etch-fonts'),
                 $label
             )
-            : __('More information', ETCH_FONTS_TEXT_DOMAIN);
+            : __('More information', 'etch-fonts');
         ?>
         <span class="etch-fonts-help-wrap">
             <button

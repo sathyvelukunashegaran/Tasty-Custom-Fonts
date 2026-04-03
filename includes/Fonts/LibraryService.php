@@ -31,7 +31,7 @@ final class LibraryService
         if ($family === null) {
             return $this->error(
                 'etch_fonts_family_not_found',
-                __('That font family could not be found in the library.', ETCH_FONTS_TEXT_DOMAIN)
+                __('That font family could not be found in the library.', 'etch-fonts')
             );
         }
 
@@ -40,20 +40,20 @@ final class LibraryService
         $roleLabels = [];
 
         if (($roles['heading'] ?? '') === $familyName) {
-            $roleLabels[] = __('heading', ETCH_FONTS_TEXT_DOMAIN);
+            $roleLabels[] = __('heading', 'etch-fonts');
         }
 
         if (($roles['body'] ?? '') === $familyName) {
-            $roleLabels[] = __('body', ETCH_FONTS_TEXT_DOMAIN);
+            $roleLabels[] = __('body', 'etch-fonts');
         }
 
         if ($roleLabels !== []) {
             return $this->error(
                 'etch_fonts_family_in_use',
                 sprintf(
-                    __('%1$s is currently assigned as the %2$s font. Choose a different heading/body font before deleting it.', ETCH_FONTS_TEXT_DOMAIN),
+                    __('%1$s is currently assigned as the %2$s font. Choose a different heading/body font before deleting it.', 'etch-fonts'),
                     $familyName,
-                    implode(__(' and ', ETCH_FONTS_TEXT_DOMAIN), $roleLabels)
+                    implode(__(' and ', 'etch-fonts'), $roleLabels)
                 )
             );
         }
@@ -63,7 +63,7 @@ final class LibraryService
         if (!$this->storage->deleteRelativeFiles($relativePaths)) {
             return $this->error(
                 'etch_fonts_delete_failed',
-                __('The font files could not be deleted from uploads/fonts.', ETCH_FONTS_TEXT_DOMAIN)
+                __('The font files could not be deleted from uploads/fonts.', 'etch-fonts')
             );
         }
 
@@ -73,7 +73,7 @@ final class LibraryService
         ) {
             return $this->error(
                 'etch_fonts_delete_failed',
-                __('The Google Fonts folder could not be removed cleanly.', ETCH_FONTS_TEXT_DOMAIN)
+                __('The Google Fonts folder could not be removed cleanly.', 'etch-fonts')
             );
         }
 
@@ -83,7 +83,7 @@ final class LibraryService
         $fileCount = count($relativePaths);
         $this->log->add(
             sprintf(
-                __('Font family deleted: %1$s (%2$d file%3$s removed).', ETCH_FONTS_TEXT_DOMAIN),
+                __('Font family deleted: %1$s (%2$d file%3$s removed).', 'etch-fonts'),
                 (string) ($family['family'] ?? $familySlug),
                 $fileCount,
                 $fileCount === 1 ? '' : 's'

@@ -312,7 +312,10 @@ final class Storage
                     break;
                 }
 
-                @rmdir($current);
+                if (is_dir($current) && is_writable($current)) {
+                    rmdir($current);
+                }
+
                 $current = wp_normalize_path(dirname($current));
             }
         }
@@ -320,7 +323,11 @@ final class Storage
 
     private function isDirectoryEmpty(string $directory): bool
     {
-        $entries = @scandir($directory);
+        if (!is_readable($directory)) {
+            return false;
+        }
+
+        $entries = scandir($directory);
 
         if (!is_array($entries)) {
             return false;

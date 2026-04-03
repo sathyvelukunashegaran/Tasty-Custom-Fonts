@@ -46,7 +46,7 @@ final class SettingsRepository
         $settings = $this->getSettings();
         $clearGoogleKey = !empty($input['etch_fonts_clear_google_api_key']);
         $submittedGoogleKey = isset($input['google_api_key'])
-            ? sanitize_text_field(wp_unslash((string) $input['google_api_key']))
+            ? sanitize_text_field((string) $input['google_api_key'])
             : null;
 
         if ($clearGoogleKey) {
@@ -59,6 +59,24 @@ final class SettingsRepository
             $settings['google_api_key_status'] = 'unknown';
             $settings['google_api_key_status_message'] = '';
             $settings['google_api_key_checked_at'] = 0;
+        }
+
+        if (isset($input['css_delivery_mode'])) {
+            $mode = sanitize_text_field((string) $input['css_delivery_mode']);
+            $settings['css_delivery_mode'] = in_array($mode, ['file', 'inline'], true) ? $mode : 'file';
+        }
+
+        if (isset($input['font_display'])) {
+            $display = sanitize_text_field((string) $input['font_display']);
+            $settings['font_display'] = in_array($display, ['auto', 'block', 'swap', 'fallback', 'optional'], true)
+                ? $display
+                : 'swap';
+        }
+
+        $settings['minify_css_output'] = !empty($input['minify_css_output']);
+
+        if (isset($input['preview_sentence'])) {
+            $settings['preview_sentence'] = sanitize_text_field((string) $input['preview_sentence']);
         }
 
         return $this->persistSettings($settings);

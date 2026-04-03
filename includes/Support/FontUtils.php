@@ -18,6 +18,7 @@ final class FontUtils
         'Arial, sans-serif',
         'Georgia, serif',
     ];
+    public const MODERN_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
     private function __construct()
     {
@@ -62,7 +63,27 @@ final class FontUtils
 
     public static function normalizeWeight(string|int $weight): string
     {
-        return trim((string) $weight) !== '' ? trim((string) $weight) : '400';
+        $value = trim((string) $weight);
+
+        if ($value === '') {
+            return '400';
+        }
+
+        if (preg_match('/^\d+$/', $value) === 1) {
+            $numeric = (int) $value;
+
+            return ($numeric >= 1 && $numeric <= 1000) ? $value : '400';
+        }
+
+        if (preg_match('/^\d{1,4}\.\.\d{1,4}$/', $value) === 1) {
+            return $value;
+        }
+
+        if (in_array($value, ['normal', 'bold', 'bolder', 'lighter'], true)) {
+            return $value;
+        }
+
+        return '400';
     }
 
     public static function variantKey(string|int $weight, string $style, string $unicodeRange = ''): string

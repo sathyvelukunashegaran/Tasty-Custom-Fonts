@@ -56,7 +56,7 @@ final class GoogleFontsClient
         if (is_wp_error($response)) {
             return [
                 'state' => 'unknown',
-                'message' => __('The Google Fonts API key could not be validated right now. Save it again to retry.', ETCH_FONTS_TEXT_DOMAIN),
+                'message' => __('The Google Fonts API key could not be validated right now. Save it again to retry.', 'etch-fonts'),
             ];
         }
 
@@ -66,7 +66,7 @@ final class GoogleFontsClient
         if ($status === 200 && is_array($body) && isset($body['items']) && is_array($body['items'])) {
             return [
                 'state' => 'valid',
-                'message' => __('Google Fonts API key validated. Live search is ready.', ETCH_FONTS_TEXT_DOMAIN),
+                'message' => __('Google Fonts API key validated. Live search is ready.', 'etch-fonts'),
             ];
         }
 
@@ -81,16 +81,16 @@ final class GoogleFontsClient
                 'state' => 'invalid',
                 'message' => $errorMessage !== ''
                     ? sprintf(
-                        __('Google Fonts API key is invalid: %s', ETCH_FONTS_TEXT_DOMAIN),
+                        __('Google Fonts API key is invalid: %s', 'etch-fonts'),
                         $errorMessage
                     )
-                    : __('Google Fonts API key is invalid or rejected by Google.', ETCH_FONTS_TEXT_DOMAIN),
+                    : __('Google Fonts API key is invalid or rejected by Google.', 'etch-fonts'),
             ];
         }
 
         return [
             'state' => 'unknown',
-            'message' => __('Google Fonts API key could not be verified because Google returned an unexpected response.', ETCH_FONTS_TEXT_DOMAIN),
+            'message' => __('Google Fonts API key could not be verified because Google returned an unexpected response.', 'etch-fonts'),
         ];
     }
 
@@ -170,7 +170,7 @@ final class GoogleFontsClient
         if ($status !== 200) {
             return new WP_Error(
                 'etch_fonts_google_css_fetch_failed',
-                sprintf(__('Google Fonts CSS request failed with status %d.', ETCH_FONTS_TEXT_DOMAIN), $status)
+                sprintf(__('Google Fonts CSS request failed with status %d.', 'etch-fonts'), $status)
             );
         }
 
@@ -179,7 +179,7 @@ final class GoogleFontsClient
         if (!is_string($body) || trim($body) === '') {
             return new WP_Error(
                 'etch_fonts_google_css_empty',
-                __('Google Fonts returned an empty CSS response.', ETCH_FONTS_TEXT_DOMAIN)
+                __('Google Fonts returned an empty CSS response.', 'etch-fonts')
             );
         }
 
@@ -245,7 +245,7 @@ final class GoogleFontsClient
 
     private function modernUserAgent(): string
     {
-        return 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+        return FontUtils::MODERN_USER_AGENT;
     }
 
     private function buildCssAxes(array $variants): array

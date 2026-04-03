@@ -99,8 +99,8 @@ final class AssetService
 
         $this->log->add(
             $written
-                ? __('Generated CSS file written successfully.', ETCH_FONTS_TEXT_DOMAIN)
-                : __('Could not write generated CSS file. Inline fallback will be used.', ETCH_FONTS_TEXT_DOMAIN)
+                ? __('Generated CSS file written successfully.', 'etch-fonts')
+                : __('Could not write generated CSS file. Inline fallback will be used.', 'etch-fonts')
         );
 
         return $written;

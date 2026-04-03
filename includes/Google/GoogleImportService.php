@@ -32,7 +32,7 @@ final class GoogleImportService
         $familyName = trim(wp_strip_all_tags($familyName));
 
         if ($familyName === '') {
-            return $this->error('etch_fonts_missing_family', __('Choose a Google Fonts family before importing.', ETCH_FONTS_TEXT_DOMAIN));
+            return $this->error('etch_fonts_missing_family', __('Choose a Google Fonts family before importing.', 'etch-fonts'));
         }
 
         $familySlug = FontUtils::slugify($familyName);
@@ -44,7 +44,7 @@ final class GoogleImportService
             return $this->error(
                 'etch_fonts_family_already_exists',
                 sprintf(
-                    __('%s already exists in the library as a local family. Remove or rename the existing files before importing it from Google Fonts.', ETCH_FONTS_TEXT_DOMAIN),
+                    __('%s already exists in the library as a local family. Remove or rename the existing files before importing it from Google Fonts.', 'etch-fonts'),
                     $familyName
                 )
             );
@@ -54,7 +54,7 @@ final class GoogleImportService
 
         if ($variantPlan['import'] === []) {
             $message = sprintf(
-                __('%s already exists in the library for the selected variants.', ETCH_FONTS_TEXT_DOMAIN),
+                __('%s already exists in the library for the selected variants.', 'etch-fonts'),
                 $familyName
             );
 
@@ -87,7 +87,7 @@ final class GoogleImportService
         if ($faces === []) {
             return $this->error(
                 'etch_fonts_google_no_faces',
-                __('No downloadable WOFF2 faces were returned for that family.', ETCH_FONTS_TEXT_DOMAIN)
+                __('No downloadable WOFF2 faces were returned for that family.', 'etch-fonts')
             );
         }
 
@@ -124,7 +124,7 @@ final class GoogleImportService
         if ($newManifestFaces === []) {
             return $this->error(
                 'etch_fonts_google_empty_manifest',
-                __('No local font files were saved from that import.', ETCH_FONTS_TEXT_DOMAIN)
+                __('No local font files were saved from that import.', 'etch-fonts')
             );
         }
 
@@ -158,7 +158,7 @@ final class GoogleImportService
         $faceCount = count($newManifestFaces);
         $skipCount = count($variantPlan['skipped']);
         $message = sprintf(
-            __('Imported %1$s (%2$d variant%3$s, %4$d file%5$s).', ETCH_FONTS_TEXT_DOMAIN),
+            __('Imported %1$s (%2$d variant%3$s, %4$d file%5$s).', 'etch-fonts'),
             $familyName,
             $faceCount,
             $faceCount === 1 ? '' : 's',
@@ -168,7 +168,7 @@ final class GoogleImportService
 
         if ($skipCount > 0) {
             $message .= ' ' . sprintf(
-                __('%d variant%s already existed.', ETCH_FONTS_TEXT_DOMAIN),
+                __('%d variant%s already existed.', 'etch-fonts'),
                 $skipCount,
                 $skipCount === 1 ? '' : 's'
             );
@@ -193,7 +193,7 @@ final class GoogleImportService
         if (!$this->storage->ensureRootDirectory()) {
             return $this->error(
                 'etch_fonts_storage_unavailable',
-                __('The uploads/fonts storage directory could not be created.', ETCH_FONTS_TEXT_DOMAIN)
+                __('The uploads/fonts storage directory could not be created.', 'etch-fonts')
             );
         }
 
@@ -202,7 +202,7 @@ final class GoogleImportService
         if (!$googleRoot) {
             return $this->error(
                 'etch_fonts_storage_unavailable',
-                __('The uploads/fonts storage directory could not be created.', ETCH_FONTS_TEXT_DOMAIN)
+                __('The uploads/fonts storage directory could not be created.', 'etch-fonts')
             );
         }
 
@@ -212,7 +212,7 @@ final class GoogleImportService
         if (!$this->storage->ensureDirectory($familyDirectory)) {
             return $this->error(
                 'etch_fonts_google_family_dir_failed',
-                __('The Google Fonts import directory could not be created.', ETCH_FONTS_TEXT_DOMAIN)
+                __('The Google Fonts import directory could not be created.', 'etch-fonts')
             );
         }
 
@@ -301,7 +301,7 @@ final class GoogleImportService
                 'timeout' => 30,
                 'headers' => [
                     'Accept' => 'font/woff2,*/*;q=0.1',
-                    'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                    'User-Agent' => FontUtils::MODERN_USER_AGENT,
                 ],
             ]
         );
@@ -315,7 +315,7 @@ final class GoogleImportService
         if ($status !== 200) {
             return $this->error(
                 'etch_fonts_google_download_failed',
-                sprintf(__('Font download failed with status %d.', ETCH_FONTS_TEXT_DOMAIN), $status)
+                sprintf(__('Font download failed with status %d.', 'etch-fonts'), $status)
             );
         }
 
@@ -324,14 +324,14 @@ final class GoogleImportService
         if (!is_string($body) || $body === '') {
             return $this->error(
                 'etch_fonts_google_empty_file',
-                __('Google Fonts returned an empty font file.', ETCH_FONTS_TEXT_DOMAIN)
+                __('Google Fonts returned an empty font file.', 'etch-fonts')
             );
         }
 
         if (strlen($body) > self::MAX_FONT_FILE_BYTES) {
             return $this->error(
                 'etch_fonts_google_file_too_large',
-                __('The downloaded font file exceeded the safety size limit.', ETCH_FONTS_TEXT_DOMAIN)
+                __('The downloaded font file exceeded the safety size limit.', 'etch-fonts')
             );
         }
 
@@ -345,14 +345,14 @@ final class GoogleImportService
         ) {
             return $this->error(
                 'etch_fonts_google_invalid_type',
-                __('The downloaded file was not returned as a WOFF2 font.', ETCH_FONTS_TEXT_DOMAIN)
+                __('The downloaded file was not returned as a WOFF2 font.', 'etch-fonts')
             );
         }
 
         if (!$this->storage->writeAbsoluteFile($targetPath, $body)) {
             return $this->error(
                 'etch_fonts_google_write_failed',
-                __('The imported font file could not be written to uploads/fonts.', ETCH_FONTS_TEXT_DOMAIN)
+                __('The imported font file could not be written to uploads/fonts.', 'etch-fonts')
             );
         }
 
@@ -368,14 +368,14 @@ final class GoogleImportService
         if ($host !== 'fonts.gstatic.com') {
             return $this->error(
                 'etch_fonts_google_invalid_host',
-                __('Google font downloads must come from fonts.gstatic.com.', ETCH_FONTS_TEXT_DOMAIN)
+                __('Google font downloads must come from fonts.gstatic.com.', 'etch-fonts')
             );
         }
 
         if (!str_ends_with($path, '.woff2')) {
             return $this->error(
                 'etch_fonts_google_invalid_extension',
-                __('Only WOFF2 files can be imported from Google Fonts.', ETCH_FONTS_TEXT_DOMAIN)
+                __('Only WOFF2 files can be imported from Google Fonts.', 'etch-fonts')
             );
         }
 
