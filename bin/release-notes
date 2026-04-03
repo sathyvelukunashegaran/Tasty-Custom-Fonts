@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: bin/release-notes <version>
+
+Prints the matching version section from CHANGELOG.md without the version heading.
+EOF
+}
+
+die() {
+  echo "Error: $*" >&2
+  exit 1
+}
+
+version="${1:-}"
+
+if [[ -z "${version}" || "${version}" == "-h" || "${version}" == "--help" ]]; then
+  usage
+  [[ -n "${version}" ]] && exit 0
+  exit 1
+fi
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "${script_dir}/.." && pwd)"
+cd "${repo_root}"
+
+php -r '
+  $version = $argv[1];
+  $contents = file_get_contents("CHANGELOG.md");
+
+  if ($contents === false) {
+      fwrite(STDERR, "Could not read CHANGELOG.md\n");
+      exit(1);
+  }
+
+  $pattern = "/^## \\[" . preg_quote($version, "/") . "\\](?: - [^\r\n]*)?\\R(.*?)(?=^## \\[|\\z)/ms";
+
+  if (!preg_match($pattern, $contents, $matches)) {
+      fwrite(STDERR, "Could not find CHANGELOG.md section for " . $version . "\n");
+      exit(1);
+  }
+
+  $notes = trim($matches[1]);
+
+  if ($notes === "") {
+      fwrite(STDERR, "CHANGELOG.md section for " . $version . " is empty\n");
+      exit(1);
+  }
+
+  echo $notes . PHP_EOL;
+  ' "$version"

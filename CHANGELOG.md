@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Replaced the GitHub release action with the GitHub CLI and upgraded `actions/checkout` to `v5` so the release workflow no longer relies on Node 20 JavaScript actions.
+- Updated the release workflow to publish the matching `CHANGELOG.md` section as the GitHub release notes instead of only showing an auto-generated compare link.
 
 ## [1.0.1] - 2026-04-03
 
