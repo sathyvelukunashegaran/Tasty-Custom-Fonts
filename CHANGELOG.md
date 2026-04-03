@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-04-04
+
 ### Added
 
 - Added optional Adobe Fonts web project support using an existing project ID, with stylesheet validation, cached family detection, and separate remote enqueueing for the frontend, Gutenberg, and the Etch canvas.

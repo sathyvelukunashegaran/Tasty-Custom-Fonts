@@ -3,7 +3,7 @@
 Plugin Name: Etch Custom Fonts
 Plugin URI: https://github.com/sathyvelukunashegaran/Etch-Custom-Fonts
 Description: Self-host local and Google Fonts, with optional Adobe Fonts web project support for Etch, Gutenberg, and the frontend.
-Version: 1.0.3
+Version: 1.1.0
 Author: Tasty WP
 Author URI: https://github.com/sathyvelukunashegaran
 License: GPLv2 or later
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('ETCH_FONTS_VERSION', '1.0.3');
+define('ETCH_FONTS_VERSION', '1.1.0');
 define('ETCH_FONTS_FILE', __FILE__);
 define('ETCH_FONTS_DIR', plugin_dir_path(__FILE__));
 define('ETCH_FONTS_URL', plugin_dir_url(__FILE__));
