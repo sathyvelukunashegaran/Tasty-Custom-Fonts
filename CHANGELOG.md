@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Added a GitHub-focused README, the full GPLv2 license text, and a screenshots placeholder directory for repository documentation.
+- Added a lightweight local PHP test harness covering filename parsing, CSS generation, generated asset refreshes, and admin input normalization.
+
+### Changed
+
+- Committed the `tests/` source files and narrowed `.gitignore` so only generated test artifacts stay excluded.
+- Completed the plugin header metadata with the repository URL, author URL, license fields, and minimum WordPress/PHP requirements.
+
 ## [1.0.2] - 2026-04-03
 
 ### Changed

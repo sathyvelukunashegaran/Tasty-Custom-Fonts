@@ -1,10 +1,16 @@
 <?php
 /*
 Plugin Name: Etch Custom Fonts
+Plugin URI: https://github.com/sathyvelukunashegaran/Etch-Custom-Fonts
 Description: Self-host local and Google Fonts for Etch, Gutenberg, and the frontend.
-Author: Tasty WP
 Version: 1.0.2
+Author: Tasty WP
+Author URI: https://github.com/sathyvelukunashegaran
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: etch-fonts
+Requires at least: 6.1
+Requires PHP: 8.1
 */
 
 declare(strict_types=1);

@@ -26,8 +26,7 @@ Desktop.ini
 node_modules/
 vendor/
 
-# Test source and test artifacts
-tests/
+# Test artifacts (test source files in tests/ are committed)
 .phpunit.result.cache
 phpunit.xml
 phpunit.xml.dist
