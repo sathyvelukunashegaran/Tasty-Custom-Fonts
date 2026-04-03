@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: bin/release <version> [--no-push]
+
+Updates plugin.php and CHANGELOG.md, commits the release, creates an annotated tag,
+and pushes main plus the tag to origin unless --no-push is provided.
+EOF
+}
+
+die() {
+  echo "Error: $*" >&2
+  exit 1
+}
+
+version=""
+push_release=true
+
+for arg in "$@"; do
+  case "$arg" in
+    --no-push)
+      push_release=false
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      if [[ -z "$version" ]]; then
+        version="$arg"
+      else
+        die "Unexpected argument: $arg"
+      fi
+      ;;
+  esac
+done
+
+[[ -n "$version" ]] || {
+  usage >&2
+  exit 1
+}
+
+[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "Version must use X.Y.Z format."
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "${script_dir}/.." && pwd)"
+cd "$repo_root"
+
+[[ "$(git branch --show-current)" == "main" ]] || die "Release script must run from main."
+
+git diff --quiet || die "Working tree has unstaged changes."
+git diff --cached --quiet || die "Index has staged changes."
+
+git rev-parse -q --verify "refs/tags/${version}" >/dev/null && die "Tag ${version} already exists locally."
+
+if $push_release; then
+  remote_tag_refs="$(git ls-remote --tags origin "refs/tags/${version}" "refs/tags/${version}^{}")"
+  [[ -z "$remote_tag_refs" ]] || die "Tag ${version} already exists on origin."
+fi
+
+php -r '
+  $version = $argv[1];
+  $file = "plugin.php";
+  $contents = file_get_contents($file);
+
+  if ($contents === false) {
+      fwrite(STDERR, "Could not read plugin.php\n");
+      exit(1);
+  }
+
+  $contents = preg_replace("/^Version:\\s*.*/m", "Version: " . $version, $contents, 1, $headerCount);
+  $contents = preg_replace("/^define\\x28\\x27ETCH_FONTS_VERSION\\x27,\\s*\\x27.*\\x27\\x29;/m", "define('\''ETCH_FONTS_VERSION'\'', '\''" . $version . "'\'');", $contents, 1, $constantCount);
+
+  if ($headerCount !== 1 || $constantCount !== 1) {
+      fwrite(STDERR, "Could not update both plugin version markers\n");
+      exit(1);
+  }
+
+  file_put_contents($file, $contents);
+' "$version"
+
+php -r '
+  $version = $argv[1];
+  $date = $argv[2];
+  $file = "CHANGELOG.md";
+  $contents = file_get_contents($file);
+
+  if ($contents === false) {
+      fwrite(STDERR, "Could not read CHANGELOG.md\n");
+      exit(1);
+  }
+
+  $marker = "## [Unreleased]\n";
+  $start = strpos($contents, $marker);
+
+  if ($start === false) {
+      fwrite(STDERR, "CHANGELOG.md is missing the Unreleased section\n");
+      exit(1);
+  }
+
+  $bodyStart = $start + strlen($marker);
+  while (isset($contents[$bodyStart]) && $contents[$bodyStart] === "\n") {
+      $bodyStart++;
+  }
+
+  $nextHeading = strpos($contents, "\n## [", $bodyStart);
+  $body = $nextHeading === false
+      ? trim(substr($contents, $bodyStart))
+      : trim(substr($contents, $bodyStart, $nextHeading - $bodyStart));
+
+  if ($body === "") {
+      fwrite(STDERR, "CHANGELOG.md has no Unreleased notes to publish\n");
+      exit(1);
+  }
+
+  $prefix = substr($contents, 0, $start);
+  $suffix = $nextHeading === false ? "" : substr($contents, $nextHeading + 1);
+  $updated = rtrim($prefix, "\n")
+      . "\n\n## [Unreleased]\n\n## [" . $version . "] - " . $date . "\n\n"
+      . $body
+      . ($suffix === "" ? "\n" : "\n\n" . ltrim($suffix, "\n"));
+
+  file_put_contents($file, $updated);
+' "$version" "$(date +%F)"
+
+find . -name '*.php' -not -path './output/*' -print0 | xargs -0 -n1 php -l >/dev/null
+
+git add plugin.php CHANGELOG.md
+git commit -m "Release version ${version}"
+git tag -a "${version}" -m "Release ${version}"
+
+if $push_release; then
+  git push origin main
+  git push origin "${version}"
+  echo "Released ${version} to origin."
+else
+  echo "Prepared ${version} locally without pushing."
+fi
