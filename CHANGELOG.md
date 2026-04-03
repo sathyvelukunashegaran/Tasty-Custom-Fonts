@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-04-03
+
 ### Added
 
 - Added a GitHub-focused README, the full GPLv2 license text, and a screenshots placeholder directory for repository documentation.
