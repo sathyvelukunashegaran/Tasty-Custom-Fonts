@@ -16,6 +16,11 @@ final class SettingsRepository
         'font_display' => 'swap',
         'minify_css_output' => true,
         'preview_sentence' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+        'adobe_enabled' => false,
+        'adobe_project_id' => '',
+        'adobe_project_status' => 'empty',
+        'adobe_project_status_message' => '',
+        'adobe_project_checked_at' => 0,
         'google_api_key' => '',
         'google_api_key_status' => 'empty',
         'google_api_key_status_message' => '',
@@ -30,6 +35,14 @@ final class SettingsRepository
     public function getSettings(): array
     {
         $settings = wp_parse_args($this->getOptionArray(self::OPTION_SETTINGS), self::DEFAULT_SETTINGS);
+        $settings['adobe_enabled'] = !empty($settings['adobe_enabled']);
+        $settings['adobe_project_id'] = $this->sanitizeAdobeProjectId((string) ($settings['adobe_project_id'] ?? ''));
+        $settings['adobe_project_status'] = $this->normalizeAdobeProjectStatus(
+            (string) ($settings['adobe_project_status'] ?? 'empty'),
+            (string) ($settings['adobe_project_id'] ?? '')
+        );
+        $settings['adobe_project_status_message'] = sanitize_text_field((string) ($settings['adobe_project_status_message'] ?? ''));
+        $settings['adobe_project_checked_at'] = max(0, absint($settings['adobe_project_checked_at'] ?? 0));
         $settings['google_api_key_status'] = $this->normalizeGoogleApiKeyStatus(
             (string) ($settings['google_api_key_status'] ?? 'empty'),
             (string) ($settings['google_api_key'] ?? '')
@@ -86,7 +99,7 @@ final class SettingsRepository
     {
         $defaults = $this->getDefaultRoles($catalog);
         $roles = wp_parse_args($this->getOptionArray(self::OPTION_ROLES), $defaults);
-        $families = array_keys($catalog);
+        $families = $this->extractFamilyNames($catalog);
         $roles = $this->normalizeRoleFamilies($roles, $families, $defaults);
 
         $roles['heading_fallback'] = FontUtils::sanitizeFallback((string) $roles['heading_fallback']);
@@ -97,7 +110,7 @@ final class SettingsRepository
 
     public function saveRoles(array $input, array $catalog): array
     {
-        $families = array_keys($catalog);
+        $families = $this->extractFamilyNames($catalog);
         $defaults = $this->getDefaultRoles($catalog);
         $roles = $this->normalizeRoleFamilies(
             [
@@ -129,6 +142,74 @@ final class SettingsRepository
         $settings = $this->getSettings();
 
         return trim((string) $settings['google_api_key']) !== '';
+    }
+
+    public function isAdobeEnabled(): bool
+    {
+        return !empty($this->getSettings()['adobe_enabled']);
+    }
+
+    public function getAdobeProjectId(): string
+    {
+        return trim((string) ($this->getSettings()['adobe_project_id'] ?? ''));
+    }
+
+    public function getAdobeProjectStatus(): array
+    {
+        $settings = $this->getSettings();
+
+        return [
+            'state' => (string) ($settings['adobe_project_status'] ?? 'empty'),
+            'message' => (string) ($settings['adobe_project_status_message'] ?? ''),
+            'checked_at' => (int) ($settings['adobe_project_checked_at'] ?? 0),
+        ];
+    }
+
+    public function saveAdobeProject(string $projectId, bool $enabled): array
+    {
+        $settings = $this->getSettings();
+        $settings['adobe_project_id'] = $this->sanitizeAdobeProjectId($projectId);
+        $settings['adobe_enabled'] = $settings['adobe_project_id'] !== '' ? $enabled : false;
+
+        if ($settings['adobe_project_id'] === '') {
+            $settings['adobe_project_status'] = 'empty';
+            $settings['adobe_project_status_message'] = '';
+            $settings['adobe_project_checked_at'] = 0;
+        } else {
+            $settings['adobe_project_status'] = 'unknown';
+            $settings['adobe_project_status_message'] = '';
+            $settings['adobe_project_checked_at'] = 0;
+        }
+
+        return $this->persistSettings($settings);
+    }
+
+    public function saveAdobeProjectStatus(string $state, string $message = ''): array
+    {
+        $settings = $this->getSettings();
+        $normalizedState = $this->normalizeAdobeProjectStatus($state, (string) ($settings['adobe_project_id'] ?? ''));
+
+        $settings['adobe_project_status'] = $normalizedState;
+        $settings['adobe_project_status_message'] = $normalizedState === 'empty'
+            ? ''
+            : sanitize_text_field($message);
+        $settings['adobe_project_checked_at'] = $normalizedState === 'empty' ? 0 : time();
+
+        $this->persistSettings($settings);
+
+        return $this->getAdobeProjectStatus();
+    }
+
+    public function clearAdobeProject(): array
+    {
+        $settings = $this->getSettings();
+        $settings['adobe_enabled'] = false;
+        $settings['adobe_project_id'] = '';
+        $settings['adobe_project_status'] = 'empty';
+        $settings['adobe_project_status_message'] = '';
+        $settings['adobe_project_checked_at'] = 0;
+
+        return $this->persistSettings($settings);
     }
 
     public function getGoogleApiKeyStatus(): array
@@ -190,7 +271,7 @@ final class SettingsRepository
 
     private function getDefaultRoles(array $catalog): array
     {
-        $families = array_keys($catalog);
+        $families = $this->extractFamilyNames($catalog);
         $heading = $families[0] ?? '';
         $body = $families[1] ?? ($families[0] ?? '');
 
@@ -213,11 +294,11 @@ final class SettingsRepository
             return $roles;
         }
 
-        if (!in_array($roles['heading'] ?? '', $families, true)) {
+        if (trim((string) ($roles['heading'] ?? '')) === '') {
             $roles['heading'] = $defaults['heading'];
         }
 
-        if (!in_array($roles['body'] ?? '', $families, true)) {
+        if (trim((string) ($roles['body'] ?? '')) === '') {
             $roles['body'] = $defaults['body'];
         }
 
@@ -229,11 +310,64 @@ final class SettingsRepository
         return sanitize_text_field(wp_unslash((string) $value));
     }
 
+    private function extractFamilyNames(array $catalog): array
+    {
+        if ($catalog === []) {
+            return [];
+        }
+
+        $keys = array_keys($catalog);
+        $isAssoc = array_keys($keys) !== $keys;
+
+        if ($isAssoc) {
+            return array_values(
+                array_filter(
+                    array_map(static fn (mixed $name): string => is_string($name) ? trim($name) : '', $keys),
+                    'strlen'
+                )
+            );
+        }
+
+        $families = [];
+
+        foreach ($catalog as $item) {
+            if (is_string($item) && trim($item) !== '') {
+                $families[] = trim($item);
+                continue;
+            }
+
+            if (is_array($item) && is_string($item['family'] ?? null) && trim((string) $item['family']) !== '') {
+                $families[] = trim((string) $item['family']);
+            }
+        }
+
+        return array_values(array_unique($families));
+    }
+
     private function persistSettings(array $settings): array
     {
         update_option(self::OPTION_SETTINGS, $settings, false);
 
         return $settings;
+    }
+
+    private function sanitizeAdobeProjectId(string $projectId): string
+    {
+        $projectId = strtolower(trim($projectId));
+        $projectId = preg_replace('/[^a-z0-9]+/', '', $projectId) ?? '';
+
+        return trim($projectId);
+    }
+
+    private function normalizeAdobeProjectStatus(string $state, string $projectId): string
+    {
+        $state = sanitize_text_field($state);
+
+        if ($this->sanitizeAdobeProjectId($projectId) === '') {
+            return 'empty';
+        }
+
+        return in_array($state, ['valid', 'invalid', 'unknown'], true) ? $state : 'unknown';
     }
 
     private function normalizeFamilyFallbacks(mixed $value): array

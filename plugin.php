@@ -2,7 +2,7 @@
 /*
 Plugin Name: Etch Custom Fonts
 Plugin URI: https://github.com/sathyvelukunashegaran/Etch-Custom-Fonts
-Description: Self-host local and Google Fonts for Etch, Gutenberg, and the frontend.
+Description: Self-host local and Google Fonts, with optional Adobe Fonts web project support for Etch, Gutenberg, and the frontend.
 Version: 1.0.3
 Author: Tasty WP
 Author URI: https://github.com/sathyvelukunashegaran

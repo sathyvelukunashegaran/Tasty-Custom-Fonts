@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EtchFonts;
 
+use EtchFonts\Adobe\AdobeCssParser;
+use EtchFonts\Adobe\AdobeProjectClient;
 use EtchFonts\Admin\AdminController;
 use EtchFonts\Fonts\AssetService;
 use EtchFonts\Fonts\CatalogService;
@@ -35,6 +37,7 @@ final class Plugin
     private readonly AssetService $assets;
     private readonly LibraryService $library;
     private readonly LocalUploadService $localUpload;
+    private readonly AdobeProjectClient $adobe;
     private readonly GoogleFontsClient $googleClient;
     private readonly GoogleImportService $googleImport;
     private readonly RuntimeService $runtime;
@@ -43,6 +46,7 @@ final class Plugin
     private function __construct()
     {
         $parser = new FontFilenameParser();
+        $adobeCssParser = new AdobeCssParser();
         $googleCssParser = new GoogleCssParser();
 
         $this->storage = new Storage();
@@ -78,6 +82,7 @@ final class Plugin
             $this->settings,
             $this->log
         );
+        $this->adobe = new AdobeProjectClient($this->settings, $adobeCssParser);
         $this->googleClient = new GoogleFontsClient($this->settings);
         $this->googleImport = new GoogleImportService(
             $this->storage,
@@ -88,7 +93,7 @@ final class Plugin
             $this->assets,
             $this->log
         );
-        $this->runtime = new RuntimeService($this->catalog, $this->assets);
+        $this->runtime = new RuntimeService($this->catalog, $this->assets, $this->adobe);
         $this->admin = new AdminController(
             $this->storage,
             $this->settings,
@@ -98,6 +103,7 @@ final class Plugin
             $this->library,
             $this->localUpload,
             $this->cssBuilder,
+            $this->adobe,
             $this->googleClient,
             $this->googleImport
         );

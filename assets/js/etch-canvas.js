@@ -1,8 +1,10 @@
 (function () {
     var config = window.EtchFontsCanvas || {};
-    var stylesheetUrl = config.stylesheetUrl || '';
+    var stylesheetUrls = Array.isArray(config.stylesheetUrls)
+        ? config.stylesheetUrls.filter(Boolean)
+        : (config.stylesheetUrl ? [config.stylesheetUrl] : []);
 
-    if (!stylesheetUrl) {
+    if (!stylesheetUrls.length) {
         return;
     }
 
@@ -21,21 +23,32 @@
             return false;
         }
 
-        var existing = doc.querySelector('link[data-etch-fonts-runtime="1"]');
+        var existing = Array.from(doc.querySelectorAll('link[data-etch-fonts-runtime="1"]'));
 
-        if (existing) {
-            if (existing.href !== stylesheetUrl) {
-                existing.href = stylesheetUrl;
+        existing.forEach(function (node, index) {
+            if (index >= stylesheetUrls.length && node.parentNode) {
+                node.parentNode.removeChild(node);
+            }
+        });
+
+        stylesheetUrls.forEach(function (stylesheetUrl, index) {
+            var current = doc.querySelector('link[data-etch-fonts-runtime="1"][data-etch-fonts-runtime-index="' + index + '"]');
+
+            if (current) {
+                if (current.href !== stylesheetUrl) {
+                    current.href = stylesheetUrl;
+                }
+
+                return;
             }
 
-            return true;
-        }
-
-        var link = doc.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = stylesheetUrl;
-        link.setAttribute('data-etch-fonts-runtime', '1');
-        doc.head.appendChild(link);
+            var link = doc.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = stylesheetUrl;
+            link.setAttribute('data-etch-fonts-runtime', '1');
+            link.setAttribute('data-etch-fonts-runtime-index', String(index));
+            doc.head.appendChild(link);
+        });
 
         return true;
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EtchFonts\Admin;
 
+use EtchFonts\Adobe\AdobeProjectClient;
 use EtchFonts\Fonts\AssetService;
 use EtchFonts\Fonts\CatalogService;
 use EtchFonts\Fonts\CssBuilder;
@@ -31,6 +32,7 @@ final class AdminController
         private readonly LibraryService $library,
         private readonly LocalUploadService $localUpload,
         private readonly CssBuilder $cssBuilder,
+        private readonly AdobeProjectClient $adobe,
         private readonly GoogleFontsClient $googleClient,
         private readonly GoogleImportService $googleImport
     ) {
@@ -104,6 +106,10 @@ final class AdminController
         }
 
         if ($this->handleSaveSettingsAction()) {
+            return;
+        }
+
+        if ($this->handleSaveAdobeProjectAction()) {
             return;
         }
 
@@ -334,6 +340,7 @@ final class AdminController
         check_admin_referer('etch_fonts_save_roles');
 
         $catalog = $this->catalog->getCatalog();
+        $availableFamilies = $this->buildSelectableFamilyNames($catalog);
         $roles = $this->settings->saveRoles(
             [
                 'heading' => $this->getPostedText('etch_fonts_heading_font'),
@@ -341,7 +348,7 @@ final class AdminController
                 'heading_fallback' => $this->getPostedFallback('etch_fonts_heading_fallback'),
                 'body_fallback' => $this->getPostedFallback('etch_fonts_body_fallback'),
             ],
-            $catalog
+            $availableFamilies
         );
 
         $actionType = $this->getPostedText('etch_fonts_action_type', 'save');
@@ -369,7 +376,6 @@ final class AdminController
         $storage = $this->storage->get();
         $settings = $this->settings->getSettings();
         $catalog = $this->catalog->getCatalog();
-        $roles = $this->settings->getRoles($catalog);
         $logs = $this->log->all();
         $counts = $this->catalog->getCounts();
         $assetStatus = $this->assets->getStatus();
@@ -378,11 +384,15 @@ final class AdminController
         $olderLogs = array_slice($logs, 5);
         $applyEverywhere = !empty($settings['auto_apply_roles']);
         $previewContext = $this->buildPreviewContext($settings);
+        $adobeAccessContext = $this->buildAdobeAccessContext();
+        $availableFamilies = $this->buildSelectableFamilyNames($catalog);
+        $roles = $this->settings->getRoles($availableFamilies);
         $googleAccessContext = $this->buildGoogleAccessContext();
 
         return [
             'storage' => $storage,
             'catalog' => $catalog,
+            'available_families' => $availableFamilies,
             'roles' => $roles,
             'logs' => $logs,
             'visible_logs' => $visibleLogs,
@@ -397,6 +407,14 @@ final class AdminController
             'google_status_class' => $googleAccessContext['google_status_class'],
             'google_access_copy' => $googleAccessContext['google_access_copy'],
             'google_search_disabled_copy' => $googleAccessContext['google_search_disabled_copy'],
+            'adobe_project_enabled' => $adobeAccessContext['adobe_project_enabled'],
+            'adobe_project_saved' => $adobeAccessContext['adobe_project_saved'],
+            'adobe_project_id' => $adobeAccessContext['adobe_project_id'],
+            'adobe_status_label' => $adobeAccessContext['adobe_status_label'],
+            'adobe_status_class' => $adobeAccessContext['adobe_status_class'],
+            'adobe_access_copy' => $adobeAccessContext['adobe_access_copy'],
+            'adobe_project_link' => $adobeAccessContext['adobe_project_link'],
+            'adobe_detected_families' => $adobeAccessContext['adobe_detected_families'],
             'diagnostic_items' => $this->buildDiagnosticItems($assetStatus, $storage, $settings, $counts),
             'overview_metrics' => $this->buildOverviewMetrics($counts, $applyEverywhere),
             'output_panels' => $this->buildOutputPanels($roles),
@@ -559,6 +577,9 @@ final class AdminController
     {
         $noticeMap = [
             'settings_saved' => __('Plugin settings saved.', 'etch-fonts'),
+            'adobe_project_saved' => __('Adobe Fonts project saved.', 'etch-fonts'),
+            'adobe_project_removed' => __('Adobe Fonts project removed.', 'etch-fonts'),
+            'adobe_project_resynced' => __('Adobe Fonts project resynced.', 'etch-fonts'),
             'google_key_saved' => __('Google Fonts API key saved and validated.', 'etch-fonts'),
             'google_key_cleared' => __('Google Fonts API key removed.', 'etch-fonts'),
             'fallback_saved' => __('Font fallback saved.', 'etch-fonts'),
@@ -664,6 +685,30 @@ final class AdminController
         ];
     }
 
+    private function buildAdobeAccessContext(): array
+    {
+        $projectId = $this->adobe->getProjectId();
+        $projectSaved = $projectId !== '';
+        $projectEnabled = $this->adobe->isEnabled();
+        $projectStatus = $this->adobe->getProjectStatus();
+        $projectState = (string) ($projectStatus['state'] ?? 'empty');
+        $projectStatusMessage = (string) ($projectStatus['message'] ?? '');
+        $detectedFamilies = $projectSaved && in_array($projectState, ['valid', 'unknown'], true)
+            ? $this->adobe->getProjectFamilies($projectId)
+            : [];
+
+        return [
+            'adobe_project_enabled' => $projectEnabled,
+            'adobe_project_saved' => $projectSaved,
+            'adobe_project_id' => $projectId,
+            'adobe_status_label' => $this->buildAdobeStatusLabel($projectState, $projectEnabled),
+            'adobe_status_class' => $this->buildAdobeStatusClass($projectState, $projectEnabled),
+            'adobe_access_copy' => $this->buildAdobeAccessCopy($projectState, $projectEnabled, $projectStatusMessage),
+            'adobe_project_link' => 'https://fonts.adobe.com/',
+            'adobe_detected_families' => $detectedFamilies,
+        ];
+    }
+
     private function buildGoogleAccessContext(): array
     {
         $googleApiEnabled = $this->googleClient->canSearch();
@@ -724,6 +769,156 @@ final class AdminController
             'unknown' => __('Search is disabled until the saved API key has been validated.', 'etch-fonts'),
             default => __('Search is disabled until you save a Google Fonts API key.', 'etch-fonts'),
         };
+    }
+
+    private function buildAdobeStatusLabel(string $projectState, bool $projectEnabled): string
+    {
+        if (!$projectEnabled && $projectState === 'valid') {
+            return __('Saved project', 'etch-fonts');
+        }
+
+        return match ($projectState) {
+            'valid' => __('Project ready', 'etch-fonts'),
+            'invalid' => __('Invalid project', 'etch-fonts'),
+            'unknown' => __('Needs check', 'etch-fonts'),
+            default => __('Project ID needed', 'etch-fonts'),
+        };
+    }
+
+    private function buildAdobeStatusClass(string $projectState, bool $projectEnabled): string
+    {
+        if (!$projectEnabled && $projectState === 'valid') {
+            return 'is-warning';
+        }
+
+        return match ($projectState) {
+            'valid' => 'is-success',
+            'invalid' => 'is-danger',
+            'unknown' => 'is-warning',
+            default => '',
+        };
+    }
+
+    private function buildAdobeAccessCopy(string $projectState, bool $projectEnabled, string $projectStatusMessage): string
+    {
+        if ($projectStatusMessage !== '') {
+            if (!$projectEnabled && $projectState === 'valid') {
+                return __('The Adobe project is saved and validated but currently disabled. Enable it to load Adobe-hosted fonts on the site and in editors.', 'etch-fonts');
+            }
+
+            return $projectStatusMessage;
+        }
+
+        return match ($projectState) {
+            'valid' => $projectEnabled
+                ? __('This Adobe Fonts project will load remotely from use.typekit.net. Manage families and domains in Adobe Fonts, then resync here when needed.', 'etch-fonts')
+                : __('The Adobe project is saved, but remote loading is disabled until you enable it below.', 'etch-fonts'),
+            'invalid' => __('Adobe rejected the saved web project ID. Check the project ID and allowed domains in Adobe Fonts before saving again.', 'etch-fonts'),
+            'unknown' => __('This Adobe project has not been validated yet. Save or resync it to fetch the project stylesheet and detected families.', 'etch-fonts'),
+            default => __('Connect an existing Adobe Fonts web project to make its hosted families available for previews, roles, Gutenberg, and the Etch canvas.', 'etch-fonts'),
+        };
+    }
+
+    private function buildSelectableFamilyNames(array $catalog): array
+    {
+        $families = array_keys($catalog);
+
+        foreach ($this->adobe->getConfiguredFamilies() as $family) {
+            $familyName = trim((string) ($family['family'] ?? ''));
+
+            if ($familyName === '') {
+                continue;
+            }
+
+            $families[] = $familyName;
+        }
+
+        $storedRoles = $this->settings->getRoles([]);
+
+        foreach (['heading', 'body'] as $roleKey) {
+            $familyName = trim((string) ($storedRoles[$roleKey] ?? ''));
+
+            if ($familyName !== '') {
+                $families[] = $familyName;
+            }
+        }
+
+        $families = array_values(array_unique($families));
+        natcasesort($families);
+
+        return array_values($families);
+    }
+
+    private function handleSaveAdobeProjectAction(): bool
+    {
+        if (
+            !isset($_POST['etch_fonts_save_adobe_project'])
+            && !isset($_POST['etch_fonts_remove_adobe_project'])
+            && !isset($_POST['etch_fonts_resync_adobe_project'])
+        ) {
+            return false;
+        }
+
+        check_admin_referer('etch_fonts_save_adobe_project');
+
+        if (isset($_POST['etch_fonts_remove_adobe_project'])) {
+            $existingProjectId = $this->settings->getAdobeProjectId();
+
+            $this->settings->clearAdobeProject();
+            $this->adobe->clearProjectCache($existingProjectId);
+            $this->log->add(__('Adobe Fonts project removed.', 'etch-fonts'));
+            $this->redirect(['adobe_project_removed' => '1']);
+        }
+
+        $projectId = isset($_POST['etch_fonts_resync_adobe_project'])
+            ? $this->settings->getAdobeProjectId()
+            : $this->getPostedText('adobe_project_id');
+        $enabled = isset($_POST['etch_fonts_resync_adobe_project'])
+            ? $this->settings->isAdobeEnabled()
+            : !empty($_POST['adobe_enabled']);
+
+        $existingProjectId = $this->settings->getAdobeProjectId();
+
+        if (!isset($_POST['etch_fonts_resync_adobe_project'])) {
+            $this->settings->saveAdobeProject($projectId, $enabled);
+        }
+
+        if ($projectId === '') {
+            $this->adobe->clearProjectCache($existingProjectId);
+            $this->log->add(__('Adobe Fonts project cleared.', 'etch-fonts'));
+            $this->redirect(['adobe_project_removed' => '1']);
+        }
+
+        $this->adobe->clearProjectCache($projectId);
+        $validation = $this->adobe->validateProject($projectId);
+
+        $this->settings->saveAdobeProjectStatus(
+            (string) ($validation['state'] ?? 'unknown'),
+            (string) ($validation['message'] ?? '')
+        );
+
+        if (($validation['state'] ?? 'unknown') !== 'valid') {
+            $this->log->add(__('Adobe Fonts project validation failed.', 'etch-fonts'));
+            $this->redirect(
+                [
+                    'etch_fonts_error' => (string) (
+                        $validation['message']
+                        ?? __('Adobe Fonts project could not be validated.', 'etch-fonts')
+                    ),
+                ]
+            );
+        }
+
+        $this->log->add(
+            isset($_POST['etch_fonts_resync_adobe_project'])
+                ? __('Adobe Fonts project resynced.', 'etch-fonts')
+                : __('Adobe Fonts project saved.', 'etch-fonts')
+        );
+        $this->redirect(
+            [
+                isset($_POST['etch_fonts_resync_adobe_project']) ? 'adobe_project_resynced' : 'adobe_project_saved' => '1',
+            ]
+        );
     }
 
     private function assertManageOptionsAjax(string $message): void

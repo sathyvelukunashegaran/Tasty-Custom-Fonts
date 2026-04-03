@@ -27,6 +27,7 @@
     const disclosureToggles = Array.from(document.querySelectorAll('[data-disclosure-toggle]'));
     const librarySearch = document.getElementById('etch-fonts-library-search');
     const googleSearch = document.getElementById('etch-fonts-google-search');
+    const adobeProjectId = document.getElementById('etch-fonts-adobe-project-id');
     const googleResults = document.getElementById('etch-fonts-google-results');
     const manualFamily = document.getElementById('etch-fonts-manual-family');
     const manualVariants = document.getElementById('etch-fonts-manual-variants');
@@ -169,6 +170,14 @@
 
             if (firstFamilyInput) {
                 firstFamilyInput.focus();
+            }
+
+            return;
+        }
+
+        if (activeKey === 'adobe') {
+            if (adobeProjectId) {
+                adobeProjectId.focus();
             }
 
             return;

@@ -6,6 +6,10 @@ if (!defined('ETCH_FONTS_VERSION')) {
     define('ETCH_FONTS_VERSION', '6.0.1');
 }
 
+if (!defined('ETCH_FONTS_URL')) {
+    define('ETCH_FONTS_URL', 'https://example.test/wp-content/plugins/etch-fonts/');
+}
+
 if (!defined('DAY_IN_SECONDS')) {
     define('DAY_IN_SECONDS', 86400);
 }
@@ -22,15 +26,25 @@ if (!defined('FS_CHMOD_FILE')) {
     define('FS_CHMOD_FILE', 0644);
 }
 
+if (!defined('MB_IN_BYTES')) {
+    define('MB_IN_BYTES', 1048576);
+}
+
 require_once __DIR__ . '/bootstrap.php';
 
+use EtchFonts\Adobe\AdobeCssParser;
+use EtchFonts\Adobe\AdobeProjectClient;
 use EtchFonts\Admin\AdminController;
 use EtchFonts\Fonts\AssetService;
 use EtchFonts\Fonts\CatalogService;
 use EtchFonts\Fonts\CssBuilder;
 use EtchFonts\Fonts\FontFilenameParser;
+use EtchFonts\Fonts\LibraryService;
+use EtchFonts\Fonts\LocalUploadService;
+use EtchFonts\Fonts\RuntimeService;
 use EtchFonts\Google\GoogleCssParser;
 use EtchFonts\Google\GoogleFontsClient;
+use EtchFonts\Google\GoogleImportService;
 use EtchFonts\Repository\ImportRepository;
 use EtchFonts\Repository\LogRepository;
 use EtchFonts\Repository\SettingsRepository;
@@ -175,6 +189,15 @@ $transientDeleted = [];
 $transientSet = [];
 $uploadBaseDir = sys_get_temp_dir() . '/etch-fonts-tests/uploads';
 $wp_filesystem = null;
+$remoteGetResponses = [];
+$remoteGetCalls = [];
+$enqueuedStyles = [];
+$registeredStyles = [];
+$inlineStyles = [];
+$enqueuedScripts = [];
+$localizedScripts = [];
+$redirectLocation = '';
+$isAdminRequest = false;
 
 if (!function_exists('get_option')) {
     function get_option(string $option, mixed $default = false): mixed
@@ -257,6 +280,178 @@ if (!function_exists('wp_get_upload_dir')) {
     }
 }
 
+if (!function_exists('wp_remote_get')) {
+    function wp_remote_get(string $url, array $args = []): mixed
+    {
+        global $remoteGetCalls;
+        global $remoteGetResponses;
+
+        $remoteGetCalls[] = ['url' => $url, 'args' => $args];
+
+        return $remoteGetResponses[$url] ?? new WP_Error('missing_mock', 'No mock response for ' . $url);
+    }
+}
+
+if (!function_exists('wp_remote_retrieve_response_code')) {
+    function wp_remote_retrieve_response_code(mixed $response): int
+    {
+        return is_array($response) ? (int) ($response['response']['code'] ?? 0) : 0;
+    }
+}
+
+if (!function_exists('wp_remote_retrieve_body')) {
+    function wp_remote_retrieve_body(mixed $response): string
+    {
+        return is_array($response) ? (string) ($response['body'] ?? '') : '';
+    }
+}
+
+if (!function_exists('wp_remote_retrieve_header')) {
+    function wp_remote_retrieve_header(mixed $response, string $header): string
+    {
+        if (!is_array($response) || !is_array($response['headers'] ?? null)) {
+            return '';
+        }
+
+        $headers = $response['headers'];
+        $header = strtolower($header);
+
+        return (string) ($headers[$header] ?? $headers[strtoupper($header)] ?? '');
+    }
+}
+
+if (!function_exists('wp_enqueue_style')) {
+    function wp_enqueue_style(string $handle, string|false $src = '', array $deps = [], string|bool|null $ver = false): void
+    {
+        global $enqueuedStyles;
+
+        $enqueuedStyles[$handle] = [
+            'src' => $src,
+            'deps' => $deps,
+            'ver' => $ver,
+        ];
+    }
+}
+
+if (!function_exists('wp_register_style')) {
+    function wp_register_style(string $handle, string|false $src = '', array $deps = [], string|bool|null $ver = false): void
+    {
+        global $registeredStyles;
+
+        $registeredStyles[$handle] = [
+            'src' => $src,
+            'deps' => $deps,
+            'ver' => $ver,
+        ];
+    }
+}
+
+if (!function_exists('wp_add_inline_style')) {
+    function wp_add_inline_style(string $handle, string $css): void
+    {
+        global $inlineStyles;
+
+        $inlineStyles[$handle] = $css;
+    }
+}
+
+if (!function_exists('wp_enqueue_script')) {
+    function wp_enqueue_script(string $handle, string $src = '', array $deps = [], string|bool|null $ver = false, bool $inFooter = false): void
+    {
+        global $enqueuedScripts;
+
+        $enqueuedScripts[$handle] = [
+            'src' => $src,
+            'deps' => $deps,
+            'ver' => $ver,
+            'in_footer' => $inFooter,
+        ];
+    }
+}
+
+if (!function_exists('wp_localize_script')) {
+    function wp_localize_script(string $handle, string $objectName, array $l10n): void
+    {
+        global $localizedScripts;
+
+        $localizedScripts[$handle] = [
+            'object_name' => $objectName,
+            'data' => $l10n,
+        ];
+    }
+}
+
+if (!function_exists('add_query_arg')) {
+    function add_query_arg(mixed $key, mixed $value = null, string $url = ''): string
+    {
+        $args = is_array($key) ? $key : [(string) $key => $value];
+        $targetUrl = is_array($key) ? (string) $value : $url;
+        $parts = parse_url($targetUrl);
+        $path = (string) ($parts['scheme'] ?? '') !== ''
+            ? ($parts['scheme'] . '://' . ($parts['host'] ?? '') . (isset($parts['path']) ? $parts['path'] : ''))
+            : $targetUrl;
+        $query = [];
+
+        if (!empty($parts['query'])) {
+            parse_str((string) $parts['query'], $query);
+        }
+
+        foreach ($args as $argKey => $argValue) {
+            $query[(string) $argKey] = (string) $argValue;
+        }
+
+        return $path . ($query === [] ? '' : '?' . http_build_query($query));
+    }
+}
+
+if (!function_exists('admin_url')) {
+    function admin_url(string $path = ''): string
+    {
+        return 'https://example.test/wp-admin/' . ltrim($path, '/');
+    }
+}
+
+if (!function_exists('wp_safe_redirect')) {
+    function wp_safe_redirect(string $location): bool
+    {
+        global $redirectLocation;
+
+        $redirectLocation = $location;
+
+        return true;
+    }
+}
+
+if (!function_exists('check_admin_referer')) {
+    function check_admin_referer(string $action = '', string $name = '_wpnonce'): bool
+    {
+        return true;
+    }
+}
+
+if (!function_exists('current_user_can')) {
+    function current_user_can(string $capability): bool
+    {
+        return true;
+    }
+}
+
+if (!function_exists('wp_strip_all_tags')) {
+    function wp_strip_all_tags(string $text): string
+    {
+        return strip_tags($text);
+    }
+}
+
+if (!function_exists('is_admin')) {
+    function is_admin(): bool
+    {
+        global $isAdminRequest;
+
+        return $isAdminRequest;
+    }
+}
+
 final class TestWpFilesystem
 {
     public array $mkdirCalls = [];
@@ -295,7 +490,16 @@ function uniqueTestDirectory(string $name): string
 
 function resetTestState(): void
 {
+    global $enqueuedScripts;
+    global $enqueuedStyles;
+    global $inlineStyles;
+    global $isAdminRequest;
+    global $localizedScripts;
     global $optionStore;
+    global $redirectLocation;
+    global $registeredStyles;
+    global $remoteGetCalls;
+    global $remoteGetResponses;
     global $transientDeleted;
     global $transientSet;
     global $transientStore;
@@ -306,8 +510,18 @@ function resetTestState(): void
     $transientStore = [];
     $transientDeleted = [];
     $transientSet = [];
+    $remoteGetResponses = [];
+    $remoteGetCalls = [];
+    $enqueuedStyles = [];
+    $registeredStyles = [];
+    $inlineStyles = [];
+    $enqueuedScripts = [];
+    $localizedScripts = [];
+    $redirectLocation = '';
+    $isAdminRequest = false;
     $uploadBaseDir = uniqueTestDirectory('uploads');
     $wp_filesystem = new TestWpFilesystem();
+    $_GET = [];
     $_POST = [];
     $_FILES = [];
 }
@@ -325,6 +539,51 @@ function makeAdminControllerTestInstance(): AdminController
     $reflection = new ReflectionClass(AdminController::class);
 
     return $reflection->newInstanceWithoutConstructor();
+}
+
+function makeServiceGraph(): array
+{
+    $storage = new Storage();
+    $settings = new SettingsRepository();
+    $imports = new ImportRepository();
+    $log = new LogRepository();
+    $catalog = new CatalogService($storage, $imports, new FontFilenameParser(), $log);
+    $assets = new AssetService($storage, $catalog, $settings, new CssBuilder(), $log);
+    $library = new LibraryService($storage, $catalog, $imports, $assets, $log, $settings);
+    $localUpload = new LocalUploadService($storage, $catalog, $assets, $settings, $log);
+    $adobe = new AdobeProjectClient($settings, new AdobeCssParser());
+    $google = new GoogleFontsClient($settings);
+    $googleImport = new GoogleImportService($storage, $imports, $google, new GoogleCssParser(), $catalog, $assets, $log);
+    $controller = new AdminController(
+        $storage,
+        $settings,
+        $log,
+        $catalog,
+        $assets,
+        $library,
+        $localUpload,
+        new CssBuilder(),
+        $adobe,
+        $google,
+        $googleImport
+    );
+    $runtime = new RuntimeService($catalog, $assets, $adobe);
+
+    return [
+        'storage' => $storage,
+        'settings' => $settings,
+        'imports' => $imports,
+        'log' => $log,
+        'catalog' => $catalog,
+        'assets' => $assets,
+        'library' => $library,
+        'local_upload' => $localUpload,
+        'adobe' => $adobe,
+        'google' => $google,
+        'google_import' => $googleImport,
+        'controller' => $controller,
+        'runtime' => $runtime,
+    ];
 }
 
 $tests['font_filename_parser_detects_weight_and_style'] = static function (): void {
@@ -420,6 +679,38 @@ CSS;
     assertSameValue('https://fonts.gstatic.com/s/inter/v18/u-4k0qWljRw-PfU81xCK.woff2', $faces[0]['files']['woff2'], 'Google CSS parser should keep the remote WOFF2 URL.');
 };
 
+$tests['adobe_css_parser_groups_families_and_dedupes_faces'] = static function (): void {
+    $css = <<<'CSS'
+@font-face {
+  font-family: "ff-tisa-web-pro";
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://use.typekit.net/af/abc123/000000000000000000000000/30/l?primer=1") format("woff2");
+}
+@font-face {
+  font-family: "ff-tisa-web-pro";
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://use.typekit.net/af/duplicate/000000000000000000000000/30/l?primer=1") format("woff2");
+}
+@font-face {
+  font-family: "mr-eaves-xl-modern";
+  font-style: italic;
+  font-weight: 700;
+  src: url("https://use.typekit.net/af/def456/000000000000000000000000/30/l?primer=1") format("woff2");
+}
+CSS;
+
+    $parser = new AdobeCssParser();
+    $families = $parser->parseFamilies($css);
+
+    assertSameValue(2, count($families), 'Adobe CSS parser should return one entry per unique family.');
+    assertSameValue('ff-tisa-web-pro', $families[0]['family'], 'Adobe CSS parser should preserve CSS family names for the project.');
+    assertSameValue(1, count($families[0]['faces']), 'Adobe CSS parser should dedupe duplicate axis pairs.');
+    assertSameValue('700', $families[1]['faces'][0]['weight'], 'Adobe CSS parser should capture weight from @font-face blocks.');
+    assertSameValue('italic', $families[1]['faces'][0]['style'], 'Adobe CSS parser should capture style from @font-face blocks.');
+};
+
 $tests['css_builder_generates_font_face_and_role_variables'] = static function (): void {
     $builder = new CssBuilder();
     $catalog = [
@@ -504,6 +795,92 @@ $tests['google_fonts_client_clears_catalog_cache'] = static function (): void {
     assertSameValue(true, in_array('etch_fonts_google_catalog_v1', $transientDeleted, true), 'Google catalog cache clearing should delete the expected transient key.');
 };
 
+$tests['adobe_project_client_validates_project_and_reuses_cached_families'] = static function (): void {
+    resetTestState();
+
+    global $remoteGetCalls;
+    global $remoteGetResponses;
+
+    $projectId = 'abc1234';
+    $url = 'https://use.typekit.net/' . $projectId . '.css';
+    $remoteGetResponses[$url] = [
+        'response' => ['code' => 200],
+        'headers' => ['content-type' => 'text/css'],
+        'body' => <<<'CSS'
+@font-face {
+  font-family: "ff-tisa-web-pro";
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://use.typekit.net/af/abc123/000000000000000000000000/30/l?primer=1") format("woff2");
+}
+@font-face {
+  font-family: "mr-eaves-xl-modern";
+  font-style: italic;
+  font-weight: 700;
+  src: url("https://use.typekit.net/af/def456/000000000000000000000000/30/l?primer=1") format("woff2");
+}
+CSS,
+    ];
+
+    $client = new AdobeProjectClient(new SettingsRepository(), new AdobeCssParser());
+    $validation = $client->validateProject('ABC-1234');
+    $families = $client->getProjectFamilies($projectId);
+
+    assertSameValue('valid', $validation['state'], 'Adobe project validation should mark a parseable 200 stylesheet as valid.');
+    assertContainsValue('2 famil', (string) $validation['message'], 'Adobe project validation should report the detected family count.');
+    assertSameValue(2, count($families), 'Adobe project metadata should expose parsed family records.');
+    assertSameValue('ff-tisa-web-pro', $families[0]['family'], 'Adobe project family metadata should preserve parsed CSS family names.');
+    assertSameValue(1, count($remoteGetCalls), 'Adobe project families should come from the cache after a successful validation fetch.');
+};
+
+$tests['adobe_project_client_maps_invalid_and_unknown_responses'] = static function (): void {
+    resetTestState();
+
+    global $remoteGetResponses;
+
+    $invalidUrl = 'https://use.typekit.net/invalid01.css';
+    $unknownUrl = 'https://use.typekit.net/unknown01.css';
+    $remoteGetResponses[$invalidUrl] = [
+        'response' => ['code' => 404],
+        'headers' => ['content-type' => 'text/css'],
+        'body' => '',
+    ];
+    $remoteGetResponses[$unknownUrl] = new WP_Error('http_request_failed', 'Timed out');
+
+    $client = new AdobeProjectClient(new SettingsRepository(), new AdobeCssParser());
+    $invalid = $client->validateProject('invalid01');
+    $unknown = $client->validateProject('unknown01');
+
+    assertSameValue('invalid', $invalid['state'], 'Adobe project validation should treat rejected project IDs as invalid.');
+    assertSameValue('unknown', $unknown['state'], 'Adobe project validation should treat transport failures as unknown.');
+};
+
+$tests['settings_repository_persists_adobe_project_state'] = static function (): void {
+    resetTestState();
+
+    $settings = new SettingsRepository();
+    $settings->saveAdobeProject(' AbC-123 ', true);
+    $saved = $settings->getSettings();
+
+    assertSameValue(true, $saved['adobe_enabled'], 'Saving an Adobe project should persist the enabled flag.');
+    assertSameValue('abc123', $saved['adobe_project_id'], 'Saving an Adobe project should normalize the project ID.');
+    assertSameValue('unknown', $saved['adobe_project_status'], 'Saving a non-empty Adobe project should reset status to unknown before validation.');
+
+    $settings->saveAdobeProjectStatus('valid', 'Adobe project ready.');
+    $status = $settings->getAdobeProjectStatus();
+
+    assertSameValue('valid', $status['state'], 'Adobe project status updates should persist the normalized state.');
+    assertSameValue('Adobe project ready.', $status['message'], 'Adobe project status updates should persist the status message.');
+    assertSameValue(true, $status['checked_at'] > 0, 'Adobe project status updates should record a validation timestamp.');
+
+    $settings->clearAdobeProject();
+    $cleared = $settings->getSettings();
+
+    assertSameValue(false, $cleared['adobe_enabled'], 'Clearing an Adobe project should disable remote loading.');
+    assertSameValue('', $cleared['adobe_project_id'], 'Clearing an Adobe project should remove the saved project ID.');
+    assertSameValue('empty', $cleared['adobe_project_status'], 'Clearing an Adobe project should reset the status to empty.');
+};
+
 $tests['asset_service_refresh_generated_assets_invalidates_caches_and_rewrites_css'] = static function (): void {
     resetTestState();
 
@@ -546,6 +923,94 @@ $tests['asset_service_refresh_generated_assets_invalidates_caches_and_rewrites_c
     assertSameValue(true, in_array('etch_fonts_css_hash_v2', $transientDeleted, true), 'Refreshing generated assets should invalidate the cached CSS hash.');
     assertSameValue(true, array_key_exists('etch_fonts_css_v2', $transientStore), 'Refreshing generated assets should rebuild the CSS transient after invalidation.');
     assertSameValue(true, array_key_exists('etch_fonts_css_hash_v2', $transientStore), 'Refreshing generated assets should rebuild the CSS hash transient after invalidation.');
+};
+
+$tests['admin_controller_merges_adobe_families_into_selectable_role_names'] = static function (): void {
+    resetTestState();
+
+    global $remoteGetResponses;
+
+    $services = makeServiceGraph();
+    $services['settings']->saveAdobeProject('abc1234', true);
+    $services['settings']->saveAdobeProjectStatus('valid', 'Adobe project ready.');
+    $remoteGetResponses['https://use.typekit.net/abc1234.css'] = [
+        'response' => ['code' => 200],
+        'headers' => ['content-type' => 'text/css'],
+        'body' => <<<'CSS'
+@font-face {
+  font-family: "mr-eaves-xl-modern";
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://use.typekit.net/af/def456/000000000000000000000000/30/l?primer=1") format("woff2");
+}
+CSS,
+    ];
+
+    $families = invokePrivateMethod(
+        $services['controller'],
+        'buildSelectableFamilyNames',
+        [
+            [
+                'Inter' => ['family' => 'Inter'],
+            ],
+        ]
+    );
+
+    assertSameValue(
+        ['Inter', 'mr-eaves-xl-modern'],
+        $families,
+        'Selectable role names should merge local library families with Adobe project families.'
+    );
+};
+
+$tests['runtime_service_enqueues_adobe_stylesheet_and_exposes_it_to_etch_canvas'] = static function (): void {
+    resetTestState();
+
+    global $enqueuedStyles;
+    global $localizedScripts;
+    global $remoteGetResponses;
+
+    $services = makeServiceGraph();
+    $services['settings']->saveAdobeProject('abc1234', true);
+    $services['settings']->saveAdobeProjectStatus('valid', 'Adobe project ready.');
+    $remoteGetResponses['https://use.typekit.net/abc1234.css'] = [
+        'response' => ['code' => 200],
+        'headers' => ['content-type' => 'text/css'],
+        'body' => <<<'CSS'
+@font-face {
+  font-family: "ff-tisa-web-pro";
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://use.typekit.net/af/abc123/000000000000000000000000/30/l?primer=1") format("woff2");
+}
+CSS,
+    ];
+    $_GET['etch'] = '1';
+
+    $services['runtime']->enqueueFrontend();
+    $editorFamilies = invokePrivateMethod($services['runtime'], 'buildEditorFontFamilies');
+    $familyNames = array_values(array_map(static fn (array $item): string => (string) ($item['name'] ?? ''), $editorFamilies));
+
+    assertSameValue(
+        'https://use.typekit.net/abc1234.css',
+        (string) ($enqueuedStyles['etch-fonts-adobe-frontend']['src'] ?? ''),
+        'Runtime should enqueue the Adobe project stylesheet as a separate frontend style handle.'
+    );
+    assertSameValue(
+        true,
+        in_array('ff-tisa-web-pro', $familyNames, true),
+        'Runtime editor font families should include Adobe project families.'
+    );
+    assertSameValue(
+        true,
+        isset($localizedScripts['etch-fonts-canvas']['data']['stylesheetUrls'][1]),
+        'Etch canvas runtime data should include a second stylesheet entry for Adobe fonts.'
+    );
+    assertContainsValue(
+        'https://use.typekit.net/abc1234.css',
+        (string) $localizedScripts['etch-fonts-canvas']['data']['stylesheetUrls'][1],
+        'Etch canvas runtime data should include the Adobe stylesheet URL.'
+    );
 };
 
 $tests['admin_controller_falls_back_to_variant_tokens_when_variants_are_missing'] = static function (): void {

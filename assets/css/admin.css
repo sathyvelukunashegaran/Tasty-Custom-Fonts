@@ -1757,6 +1757,19 @@
     gap: var(--etch-space-3);
 }
 
+.etch-fonts-inline-checkbox {
+    display: inline-flex;
+    align-items: start;
+    gap: 10px;
+    color: var(--etch-text);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.etch-fonts-inline-checkbox input[type="checkbox"] {
+    margin: 2px 0 0;
+}
+
 .etch-fonts-google-access-panel {
     display: grid;
     gap: var(--etch-space-3);
@@ -1791,6 +1804,28 @@
     display: grid;
     gap: var(--etch-space-3);
     grid-template-columns: minmax(320px, 1.02fr) minmax(320px, 0.98fr);
+}
+
+.etch-fonts-adobe-family-list {
+    display: grid;
+    gap: var(--etch-space-3);
+}
+
+.etch-fonts-adobe-family-card {
+    display: grid;
+    gap: var(--etch-space-2);
+    padding: 14px;
+    border: 1px solid var(--etch-border);
+    border-radius: var(--etch-radius-card);
+    background: var(--etch-surface);
+}
+
+.etch-fonts-adobe-family-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--etch-space-3);
+    flex-wrap: wrap;
 }
 
 .etch-fonts-import-copy h3 {

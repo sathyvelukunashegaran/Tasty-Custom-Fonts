@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Added optional Adobe Fonts web project support using an existing project ID, with stylesheet validation, cached family detection, and separate remote enqueueing for the frontend, Gutenberg, and the Etch canvas.
+- Added a dedicated Adobe Fonts admin tab with project save, resync, and remove actions plus detected-family summaries for role selection and previews.
+- Expanded the local PHP test harness to cover Adobe CSS parsing, project validation state handling, merged role-family sources, and runtime Adobe stylesheet loading.
+
+### Changed
+
+- Merged Adobe project families into the heading and body role selectors and Gutenberg font presets without mixing Adobe metadata into the self-hosted local library inventory.
+- Updated the admin canvas bridge to support multiple runtime stylesheets so the generated self-hosted CSS and optional Adobe stylesheet can load together in Etch.
+- Updated the plugin description and README to document the difference between self-hosted Google/local fonts and Adobe-hosted web project delivery.
+
 ## [1.0.3] - 2026-04-03
 
 ### Added

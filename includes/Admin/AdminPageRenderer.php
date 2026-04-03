@@ -17,6 +17,7 @@ final class AdminPageRenderer
     {
         $storage = is_array($context['storage'] ?? null) ? $context['storage'] : null;
         $catalog = is_array($context['catalog'] ?? null) ? $context['catalog'] : [];
+        $availableFamilies = is_array($context['available_families'] ?? null) ? $context['available_families'] : array_keys($catalog);
         $roles = is_array($context['roles'] ?? null) ? $context['roles'] : [];
         $logs = is_array($context['logs'] ?? null) ? $context['logs'] : [];
         $visibleLogs = is_array($context['visible_logs'] ?? null) ? $context['visible_logs'] : [];
@@ -31,6 +32,14 @@ final class AdminPageRenderer
         $googleStatusClass = (string) ($context['google_status_class'] ?? '');
         $googleAccessCopy = (string) ($context['google_access_copy'] ?? '');
         $googleSearchDisabledCopy = (string) ($context['google_search_disabled_copy'] ?? '');
+        $adobeProjectEnabled = !empty($context['adobe_project_enabled']);
+        $adobeProjectSaved = !empty($context['adobe_project_saved']);
+        $adobeProjectId = (string) ($context['adobe_project_id'] ?? '');
+        $adobeStatusLabel = (string) ($context['adobe_status_label'] ?? '');
+        $adobeStatusClass = (string) ($context['adobe_status_class'] ?? '');
+        $adobeAccessCopy = (string) ($context['adobe_access_copy'] ?? '');
+        $adobeProjectLink = (string) ($context['adobe_project_link'] ?? 'https://fonts.adobe.com/');
+        $adobeDetectedFamilies = is_array($context['adobe_detected_families'] ?? null) ? $context['adobe_detected_families'] : [];
         $diagnosticItems = is_array($context['diagnostic_items'] ?? null) ? $context['diagnostic_items'] : [];
         $overviewMetrics = is_array($context['overview_metrics'] ?? null) ? $context['overview_metrics'] : [];
         $outputPanels = is_array($context['output_panels'] ?? null) ? $context['output_panels'] : [];
@@ -86,7 +95,7 @@ final class AdminPageRenderer
                                         <label class="etch-fonts-stack-field">
                                             <?php $this->renderFieldLabel(__('Family', 'etch-fonts')); ?>
                                             <select name="etch_fonts_heading_font" id="etch_fonts_heading_font">
-                                                <?php foreach (array_keys($catalog) as $familyName): ?>
+                                                <?php foreach ($availableFamilies as $familyName): ?>
                                                     <option value="<?php echo esc_attr((string) $familyName); ?>" <?php selected($roles['heading'] ?? '', $familyName); ?>><?php echo esc_html((string) $familyName); ?></option>
                                                 <?php endforeach; ?>
                                             </select>
@@ -115,7 +124,7 @@ final class AdminPageRenderer
                                         <label class="etch-fonts-stack-field">
                                             <?php $this->renderFieldLabel(__('Family', 'etch-fonts')); ?>
                                             <select name="etch_fonts_body_font" id="etch_fonts_body_font">
-                                                <?php foreach (array_keys($catalog) as $familyName): ?>
+                                                <?php foreach ($availableFamilies as $familyName): ?>
                                                     <option value="<?php echo esc_attr((string) $familyName); ?>" <?php selected($roles['body'] ?? '', $familyName); ?>><?php echo esc_html((string) $familyName); ?></option>
                                                 <?php endforeach; ?>
                                             </select>
@@ -366,11 +375,12 @@ final class AdminPageRenderer
                             <div class="etch-fonts-import-head">
                                 <div class="etch-fonts-import-copy">
                                     <h3><?php esc_html_e('Add fonts', 'etch-fonts'); ?></h3>
-                                    <p class="etch-fonts-muted"><?php esc_html_e('Search Google Fonts or upload your own files directly into uploads/fonts.', 'etch-fonts'); ?></p>
+                                    <p class="etch-fonts-muted"><?php esc_html_e('Search Google Fonts, connect an Adobe Fonts web project, or upload your own files directly into uploads/fonts.', 'etch-fonts'); ?></p>
                                 </div>
                             </div>
                             <div class="etch-fonts-add-font-tabs" role="tablist" aria-label="<?php esc_attr_e('Add font source', 'etch-fonts'); ?>">
                                 <button type="button" class="button etch-fonts-add-font-tab is-active" data-add-font-tab="google" aria-selected="true"><?php esc_html_e('Google Fonts', 'etch-fonts'); ?></button>
+                                <button type="button" class="button etch-fonts-add-font-tab" data-add-font-tab="adobe" aria-selected="false"><?php esc_html_e('Adobe Fonts', 'etch-fonts'); ?></button>
                                 <button type="button" class="button etch-fonts-add-font-tab" data-add-font-tab="upload" aria-selected="false"><?php esc_html_e('Upload files', 'etch-fonts'); ?></button>
                             </div>
 
@@ -509,6 +519,80 @@ final class AdminPageRenderer
                                     </div>
                                 </section>
 
+                                <section class="etch-fonts-add-font-panel" data-add-font-panel="adobe" hidden>
+                                    <div class="etch-fonts-google-shell etch-fonts-adobe-shell">
+                                        <div class="etch-fonts-google-access etch-fonts-adobe-access">
+                                            <div class="etch-fonts-google-access-head">
+                                                <div class="etch-fonts-google-access-title-row">
+                                                    <h4><?php esc_html_e('Adobe web project', 'etch-fonts'); ?></h4>
+                                                    <span class="etch-fonts-badge <?php echo esc_attr($adobeStatusClass); ?>">
+                                                        <?php echo esc_html($adobeStatusLabel); ?>
+                                                    </span>
+                                                </div>
+                                                <p class="etch-fonts-muted"><?php echo esc_html($adobeAccessCopy); ?></p>
+                                            </div>
+
+                                            <form method="post" class="etch-fonts-google-access-form">
+                                                <?php wp_nonce_field('etch_fonts_save_adobe_project'); ?>
+                                                <input type="hidden" name="etch_fonts_save_adobe_project" value="1">
+                                                <div class="etch-fonts-google-access-grid">
+                                                    <label class="etch-fonts-stack-field etch-fonts-google-access-field">
+                                                        <?php $this->renderFieldLabel(__('Adobe Fonts project ID', 'etch-fonts')); ?>
+                                                        <input
+                                                            type="text"
+                                                            class="regular-text"
+                                                            id="etch-fonts-adobe-project-id"
+                                                            name="adobe_project_id"
+                                                            value="<?php echo esc_attr($adobeProjectId); ?>"
+                                                            placeholder="<?php esc_attr_e('Example: abc1def', 'etch-fonts'); ?>"
+                                                            autocomplete="off"
+                                                            spellcheck="false"
+                                                        >
+                                                    </label>
+
+                                                    <label class="etch-fonts-inline-checkbox">
+                                                        <input type="checkbox" name="adobe_enabled" value="1" <?php checked($adobeProjectEnabled); ?>>
+                                                        <span><?php esc_html_e('Load this Adobe-hosted stylesheet on the frontend, editor, and Etch canvas.', 'etch-fonts'); ?></span>
+                                                    </label>
+
+                                                    <div class="etch-fonts-google-access-footer">
+                                                        <div class="etch-fonts-settings-buttons">
+                                                            <button type="submit" class="button button-primary"><?php esc_html_e('Save project', 'etch-fonts'); ?></button>
+                                                            <?php if ($adobeProjectSaved): ?>
+                                                                <button type="submit" class="button" name="etch_fonts_resync_adobe_project" value="1"><?php esc_html_e('Resync project', 'etch-fonts'); ?></button>
+                                                                <button type="submit" class="button" name="etch_fonts_remove_adobe_project" value="1"><?php esc_html_e('Remove project', 'etch-fonts'); ?></button>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                        <div class="etch-fonts-google-access-meta">
+                                                            <p class="etch-fonts-muted"><?php esc_html_e('Adobe Fonts stays remotely hosted. Manage domains and enabled families in Adobe Fonts, not in this plugin.', 'etch-fonts'); ?></p>
+                                                            <p class="etch-fonts-muted etch-fonts-settings-link">
+                                                                <a href="<?php echo esc_url($adobeProjectLink); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Open Adobe Fonts Web Projects.', 'etch-fonts'); ?></a>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+
+                                        <div class="etch-fonts-import-panel etch-fonts-import-panel--google">
+                                            <div class="etch-fonts-panel-head">
+                                                <h4><?php esc_html_e('Detected families', 'etch-fonts'); ?></h4>
+                                            </div>
+                                            <p class="etch-fonts-muted etch-fonts-import-note"><?php esc_html_e('These family names come from the Adobe project stylesheet and are added to the role selectors when the project is available.', 'etch-fonts'); ?></p>
+
+                                            <?php if ($adobeDetectedFamilies === []): ?>
+                                                <div class="etch-fonts-empty"><?php esc_html_e('No Adobe families detected yet. Save or resync a valid Adobe Fonts project to load its stylesheet metadata.', 'etch-fonts'); ?></div>
+                                            <?php else: ?>
+                                                <div class="etch-fonts-adobe-family-list">
+                                                    <?php foreach ($adobeDetectedFamilies as $family): ?>
+                                                        <?php $this->renderAdobeFamilyCard($family); ?>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </section>
+
                                 <section class="etch-fonts-add-font-panel" data-add-font-panel="upload" hidden>
                                     <div class="etch-fonts-upload-shell">
                                         <div class="etch-fonts-upload-intro">
@@ -623,6 +707,32 @@ final class AdminPageRenderer
                 </li>
             <?php endforeach; ?>
         </ol>
+        <?php
+    }
+
+    private function renderAdobeFamilyCard(array $family): void
+    {
+        $familyName = (string) ($family['family'] ?? '');
+
+        if ($familyName === '') {
+            return;
+        }
+
+        $faceSummaryLabels = $this->buildFamilyFaceSummaryLabels((array) ($family['faces'] ?? []));
+        ?>
+        <article class="etch-fonts-adobe-family-card">
+            <div class="etch-fonts-adobe-family-head">
+                <strong><?php echo esc_html($familyName); ?></strong>
+                <span class="etch-fonts-badge"><?php esc_html_e('Adobe', 'etch-fonts'); ?></span>
+            </div>
+            <?php if ($faceSummaryLabels !== []): ?>
+                <div class="etch-fonts-face-pills">
+                    <?php foreach ($faceSummaryLabels as $label): ?>
+                        <span class="etch-fonts-face-pill"><?php echo esc_html($label); ?></span>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </article>
         <?php
     }
 

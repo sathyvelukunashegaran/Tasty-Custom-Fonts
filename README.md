@@ -1,6 +1,6 @@
 # Etch Custom Fonts
 
-Self-hosted typography for Etch, Gutenberg, and the frontend. Import Google Fonts to your own server, upload local font files, or scan fonts from `wp-content/uploads/fonts/` and let the plugin generate the CSS you need.
+Typography for Etch, Gutenberg, and the frontend. Import Google Fonts to your own server, upload local font files, scan fonts from `wp-content/uploads/fonts/`, or connect an Adobe Fonts web project while the plugin generates the CSS and runtime hooks you need.
 
 ![PHP 8.1+](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php&logoColor=white)
 ![WordPress 6.1+](https://img.shields.io/badge/WordPress-6.1%2B-21759B?logo=wordpress&logoColor=white)
@@ -11,11 +11,12 @@ Self-hosted typography for Etch, Gutenberg, and the frontend. Import Google Font
 
 ## Features
 
-**Three ways to build a self-hosted font library**
+**Multiple ways to build your font stack**
 
 - Upload `WOFF2`, `WOFF`, `TTF`, or `OTF` files from the `Etch Fonts` dashboard.
 - Import Google Fonts to your own server, with live catalog search when a validated API key is saved.
 - Add local files over FTP or SFTP under `wp-content/uploads/fonts/`, then pick them up with `Rescan fonts`.
+- Connect an existing Adobe Fonts web project ID to load Adobe-hosted families on the frontend, in Gutenberg, and inside the Etch canvas.
 
 **Generated CSS for quick setup or manual control**
 
@@ -43,6 +44,8 @@ Self-hosted typography for Etch, Gutenberg, and the frontend. Import Google Font
 Loading fonts from a third-party CDN creates an extra external request from the visitor's browser. Self-hosting keeps the font files on your own domain, gives you more control over caching, and reduces dependence on remote providers after import time.
 
 Etch Custom Fonts handles the download step for Google imports once, stores the assets locally, and then serves the resulting styles from your WordPress uploads directory.
+
+Adobe Fonts is the exception: Adobe's web-font terms require Adobe-hosted embed delivery, so this plugin connects to an existing Adobe web project instead of downloading and self-hosting Adobe font files.
 
 ## Requirements
 
@@ -114,6 +117,17 @@ The local scanner reads the filename, not the folder name, when it determines th
 
 Google imports are saved into `wp-content/uploads/fonts/google/<family-slug>/` as local `WOFF2` files.
 
+### Connect an Adobe Fonts web project
+
+1. Open `Etch Fonts`.
+2. Click `Add Font` and switch to the `Adobe Fonts` tab.
+3. Paste an existing Adobe Fonts `Web Project` ID.
+4. Turn on `Load this Adobe-hosted stylesheet` if you want the project active on the site and in editors.
+5. Click `Save project`.
+6. Use `Resync project` any time you change families or domains in Adobe Fonts.
+
+Adobe families stay hosted by Adobe at `use.typekit.net`; this plugin only validates the stylesheet, caches the detected family names, and makes them available in role selectors, previews, Gutenberg, and the Etch canvas.
+
 ### Assign roles and use the generated output
 
 1. In `Etch Fonts`, choose the `Heading font` and `Body font`.
@@ -138,6 +152,7 @@ Etch Custom Fonts is a small hand-coded plugin with no Composer packages, npm pa
 - No install step beyond activating the plugin.
 - No dependency management pipeline to keep in sync.
 - No third-party runtime request after a Google family has been imported and stored locally.
+- Adobe Fonts support is optional and remains Adobe-hosted by design.
 
 ## Translation
 
