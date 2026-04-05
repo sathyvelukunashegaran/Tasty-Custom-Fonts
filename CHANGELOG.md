@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-04-06
+
 ### Added
 
 - Added frontend WOFF2 preload hints for the live heading/body pair, plus an Output Settings toggle to control them.
