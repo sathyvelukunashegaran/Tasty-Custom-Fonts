@@ -45,6 +45,7 @@ use TastyFonts\Fonts\RuntimeService;
 use TastyFonts\Google\GoogleCssParser;
 use TastyFonts\Google\GoogleFontsClient;
 use TastyFonts\Google\GoogleImportService;
+use TastyFonts\Plugin;
 use TastyFonts\Repository\ImportRepository;
 use TastyFonts\Repository\LogRepository;
 use TastyFonts\Repository\SettingsRepository;
@@ -161,6 +162,13 @@ if (!function_exists('absint')) {
     }
 }
 
+if (!function_exists('wp_max_upload_size')) {
+    function wp_max_upload_size(): int
+    {
+        return 16 * MB_IN_BYTES;
+    }
+}
+
 if (!function_exists('current_time')) {
     function current_time(string $type, bool $gmt = false): string
     {
@@ -188,6 +196,8 @@ $transientStore = [];
 $transientDeleted = [];
 $transientSet = [];
 $uploadBaseDir = sys_get_temp_dir() . '/tasty-fonts-tests/uploads';
+$uploadedFilePaths = [];
+$currentUserId = 1;
 $wp_filesystem = null;
 $remoteGetResponses = [];
 $remoteGetCalls = [];
@@ -436,6 +446,15 @@ if (!function_exists('current_user_can')) {
     }
 }
 
+if (!function_exists('get_current_user_id')) {
+    function get_current_user_id(): int
+    {
+        global $currentUserId;
+
+        return $currentUserId;
+    }
+}
+
 if (!function_exists('wp_strip_all_tags')) {
     function wp_strip_all_tags(string $text): string
     {
@@ -495,6 +514,7 @@ function resetTestState(): void
     global $inlineStyles;
     global $isAdminRequest;
     global $localizedScripts;
+    global $currentUserId;
     global $optionStore;
     global $redirectLocation;
     global $registeredStyles;
@@ -503,6 +523,7 @@ function resetTestState(): void
     global $transientDeleted;
     global $transientSet;
     global $transientStore;
+    global $uploadedFilePaths;
     global $wp_filesystem;
     global $uploadBaseDir;
 
@@ -520,6 +541,8 @@ function resetTestState(): void
     $redirectLocation = '';
     $isAdminRequest = false;
     $uploadBaseDir = uniqueTestDirectory('uploads');
+    $uploadedFilePaths = [];
+    $currentUserId = 1;
     $wp_filesystem = new TestWpFilesystem();
     $_GET = [];
     $_POST = [];
@@ -550,7 +573,18 @@ function makeServiceGraph(): array
     $catalog = new CatalogService($storage, $imports, new FontFilenameParser(), $log);
     $assets = new AssetService($storage, $catalog, $settings, new CssBuilder(), $log);
     $library = new LibraryService($storage, $catalog, $imports, $assets, $log, $settings);
-    $localUpload = new LocalUploadService($storage, $catalog, $assets, $settings, $log);
+    $localUpload = new LocalUploadService(
+        $storage,
+        $catalog,
+        $assets,
+        $settings,
+        $log,
+        static function (string $filename): bool {
+            global $uploadedFilePaths;
+
+            return in_array($filename, $uploadedFilePaths, true);
+        }
+    );
     $adobe = new AdobeProjectClient($settings, new AdobeCssParser());
     $google = new GoogleFontsClient($settings);
     $googleImport = new GoogleImportService($storage, $imports, $google, new GoogleCssParser(), $catalog, $assets, $log);
@@ -788,6 +822,43 @@ $tests['css_builder_can_generate_font_faces_without_role_usage_rules'] = static 
     assertNotContainsValue('font-family: var(--font-body);', $css, 'Font-face-only CSS should not emit body usage rules.');
 };
 
+$tests['css_builder_ignores_eot_and_svg_sources'] = static function (): void {
+    $builder = new CssBuilder();
+    $catalog = [
+        'Inter' => [
+            'family' => 'Inter',
+            'slug' => 'inter',
+            'sources' => ['local'],
+            'faces' => [
+                [
+                    'family' => 'Inter',
+                    'slug' => 'inter',
+                    'source' => 'local',
+                    'weight' => '400',
+                    'style' => 'normal',
+                    'unicode_range' => '',
+                    'files' => [
+                        'eot' => 'https://example.com/fonts/inter.eot',
+                        'woff2' => 'https://example.com/fonts/inter.woff2',
+                        'svg' => 'https://example.com/fonts/inter.svg',
+                    ],
+                ],
+            ],
+        ],
+    ];
+    $settings = [
+        'font_display' => 'swap',
+        'auto_apply_roles' => false,
+        'minify_css_output' => false,
+    ];
+
+    $css = $builder->buildFontFaceOnly($catalog, $settings);
+
+    assertContainsValue('format("woff2")', $css, 'CSS builder should continue to emit supported modern formats.');
+    assertNotContainsValue('embedded-opentype', $css, 'CSS builder should not emit legacy EOT sources.');
+    assertNotContainsValue('inter.svg', $css, 'CSS builder should not emit deprecated SVG font sources.');
+};
+
 $tests['storage_returns_absolute_generated_css_url'] = static function (): void {
     resetTestState();
 
@@ -799,6 +870,21 @@ $tests['storage_returns_absolute_generated_css_url'] = static function (): void 
         $url,
         'Generated CSS URL should stay absolute so Etch can pass it to new URL(...).'
     );
+};
+
+$tests['catalog_service_ignores_eot_and_svg_files_during_local_scan'] = static function (): void {
+    resetTestState();
+
+    $storage = new Storage();
+    $storage->ensureRootDirectory();
+    $storage->writeAbsoluteFile((string) $storage->pathForRelativePath('inter/Inter-400-normal.woff2'), 'font-data');
+    $storage->writeAbsoluteFile((string) $storage->pathForRelativePath('legacy/Legacy-400-normal.eot'), 'font-data');
+    $storage->writeAbsoluteFile((string) $storage->pathForRelativePath('vector/Vector-400-normal.svg'), 'font-data');
+
+    $catalog = new CatalogService($storage, new ImportRepository(), new FontFilenameParser(), new LogRepository());
+    $families = $catalog->getCatalog();
+
+    assertSameValue(['Inter'], array_values(array_keys($families)), 'Catalog scanning should ignore local EOT and SVG files so the scanned formats match the upload allowlist.');
 };
 
 $tests['storage_writes_absolute_files_via_wp_filesystem'] = static function (): void {
@@ -813,6 +899,22 @@ $tests['storage_writes_absolute_files_via_wp_filesystem'] = static function (): 
     assertSameValue(true, $written, 'Storage should write absolute files through the shared filesystem bridge.');
     assertSameValue('font-data', (string) file_get_contents($targetPath), 'Storage writes should persist the provided file contents.');
     assertSameValue(true, in_array(dirname($targetPath), $wp_filesystem->mkdirCalls, true), 'Storage writes should create missing parent directories before writing.');
+};
+
+$tests['storage_can_copy_absolute_files_without_buffering_contents'] = static function (): void {
+    resetTestState();
+
+    $storage = new Storage();
+    $sourcePath = uniqueTestDirectory('storage-copy-source') . '/inter-400.woff2';
+    $targetPath = uniqueTestDirectory('storage-copy-target') . '/families/inter/inter-400.woff2';
+
+    mkdir(dirname($sourcePath), FS_CHMOD_DIR, true);
+    file_put_contents($sourcePath, 'font-data');
+
+    $copied = $storage->copyAbsoluteFile($sourcePath, $targetPath);
+
+    assertSameValue(true, $copied, 'Storage should copy uploaded files into the target directory without reading the whole file into PHP memory first.');
+    assertSameValue('font-data', (string) file_get_contents($targetPath), 'Copied files should preserve the original contents.');
 };
 
 $tests['google_fonts_client_clears_catalog_cache'] = static function (): void {
@@ -914,6 +1016,21 @@ $tests['settings_repository_persists_adobe_project_state'] = static function ():
     assertSameValue(false, $cleared['adobe_enabled'], 'Clearing an Adobe project should disable remote loading.');
     assertSameValue('', $cleared['adobe_project_id'], 'Clearing an Adobe project should remove the saved project ID.');
     assertSameValue('empty', $cleared['adobe_project_status'], 'Clearing an Adobe project should reset the status to empty.');
+};
+
+$tests['settings_repository_persists_delete_files_on_uninstall_preference'] = static function (): void {
+    resetTestState();
+
+    $settings = new SettingsRepository();
+    $settings->saveSettings(['delete_uploaded_files_on_uninstall' => '1']);
+    $saved = $settings->getSettings();
+
+    assertSameValue(true, !empty($saved['delete_uploaded_files_on_uninstall']), 'Settings should persist the uninstall file cleanup preference when enabled.');
+
+    $settings->saveSettings(['delete_uploaded_files_on_uninstall' => '0']);
+    $saved = $settings->getSettings();
+
+    assertSameValue(false, !empty($saved['delete_uploaded_files_on_uninstall']), 'Settings should persist the uninstall file cleanup preference when disabled.');
 };
 
 $tests['settings_repository_bootstraps_applied_roles_before_draft_changes'] = static function (): void {
@@ -1040,6 +1157,16 @@ $tests['asset_service_refresh_generated_assets_invalidates_caches_and_rewrites_c
     assertSameValue(true, in_array('tasty_fonts_css_hash_v2', $transientDeleted, true), 'Refreshing generated assets should invalidate the cached CSS hash.');
     assertSameValue(true, array_key_exists('tasty_fonts_css_v2', $transientStore), 'Refreshing generated assets should rebuild the CSS transient after invalidation.');
     assertSameValue(true, array_key_exists('tasty_fonts_css_hash_v2', $transientStore), 'Refreshing generated assets should rebuild the CSS hash transient after invalidation.');
+};
+
+$tests['asset_service_can_refresh_generated_assets_without_logging_file_writes'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['assets']->refreshGeneratedAssets(true, false);
+    $entries = $services['log']->all();
+
+    assertSameValue(0, count($entries), 'Refreshing generated assets with logging disabled should not add the low-level generated CSS write log entry.');
 };
 
 $tests['admin_controller_merges_adobe_families_into_selectable_role_names'] = static function (): void {
@@ -1169,6 +1296,141 @@ $tests['admin_controller_normalizes_uploaded_files_by_sparse_row_index'] = stati
     assertSameValue(2048, $rows[0]['file']['size'], 'Uploaded row normalization should preserve the uploaded file size.');
 };
 
+$tests['local_upload_service_rejects_unverified_tmp_files'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $tmpName = uniqueTestDirectory('tmp-upload-invalid') . '/inter-400-normal.woff2';
+    mkdir(dirname($tmpName), FS_CHMOD_DIR, true);
+    file_put_contents($tmpName, "wOF2test-font");
+
+    $result = $services['local_upload']->uploadRows([
+        [
+            'family' => 'Inter',
+            'weight' => '400',
+            'style' => 'normal',
+            'fallback' => 'sans-serif',
+            'file' => [
+                'name' => 'inter-400-normal.woff2',
+                'tmp_name' => $tmpName,
+                'error' => UPLOAD_ERR_OK,
+                'size' => filesize($tmpName),
+            ],
+        ],
+    ]);
+
+    $savedPath = $services['storage']->pathForRelativePath('inter/Inter-400-normal.woff2');
+
+    assertSameValue(1, (int) ($result['summary']['errors'] ?? 0), 'Uploads should error when PHP cannot verify the temp file as an HTTP upload.');
+    assertContainsValue('could not be verified as a valid HTTP upload', (string) ($result['rows'][0]['message'] ?? ''), 'Uploads should explain when the temp file fails the PHP upload-origin guard.');
+    assertSameValue(false, is_string($savedPath) && file_exists($savedPath), 'Uploads should not write font files when the temp file was not verified.');
+};
+
+$tests['local_upload_service_imports_verified_font_uploads'] = static function (): void {
+    resetTestState();
+
+    global $uploadedFilePaths;
+
+    $services = makeServiceGraph();
+    $tmpName = uniqueTestDirectory('tmp-upload-valid') . '/inter-400-italic.woff2';
+    mkdir(dirname($tmpName), FS_CHMOD_DIR, true);
+    file_put_contents($tmpName, "wOF2test-font");
+    $uploadedFilePaths[] = $tmpName;
+
+    $result = $services['local_upload']->uploadRows([
+        [
+            'family' => 'Inter',
+            'weight' => '400',
+            'style' => 'italic',
+            'fallback' => 'Arial, sans-serif',
+            'file' => [
+                'name' => 'inter-400-italic.woff2',
+                'tmp_name' => $tmpName,
+                'error' => UPLOAD_ERR_OK,
+                'size' => filesize($tmpName),
+            ],
+        ],
+    ]);
+
+    $savedPath = $services['storage']->pathForRelativePath('inter/Inter-400-italic.woff2');
+
+    assertSameValue(1, (int) ($result['summary']['imported'] ?? 0), 'Verified HTTP uploads should be imported into the local library.');
+    assertSameValue('imported', (string) ($result['rows'][0]['status'] ?? ''), 'Verified HTTP uploads should produce an imported row result.');
+    assertSameValue(true, is_string($savedPath) && file_exists($savedPath), 'Verified HTTP uploads should be written into uploads/fonts.');
+};
+
+$tests['library_service_blocks_deleting_live_applied_family_when_draft_changed'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $fontPath = $services['storage']->pathForRelativePath('inter/Inter-400-normal.woff2');
+    $services['storage']->writeAbsoluteFile((string) $fontPath, 'font-data');
+
+    $catalog = ['Inter', 'Lora'];
+    $services['settings']->saveRoles(
+        [
+            'heading' => 'Lora',
+            'body' => 'Lora',
+            'heading_fallback' => 'serif',
+            'body_fallback' => 'serif',
+        ],
+        $catalog
+    );
+    $services['settings']->saveAppliedRoles(
+        [
+            'heading' => 'Inter',
+            'body' => 'Lora',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'serif',
+        ],
+        $catalog
+    );
+    $services['settings']->setAutoApplyRoles(true);
+
+    $result = $services['library']->deleteFamily('inter');
+
+    assertSameValue(true, is_wp_error($result), 'Deleting a family should be blocked when it is still used by the live applied roles.');
+    assertSameValue('tasty_fonts_family_in_use', $result->get_error_code(), 'Deleting a live applied role family should return the family-in-use error.');
+    assertContainsValue('currently assigned as the heading font', $result->get_error_message(), 'The delete-family guard should explain that the family is still the live heading role.');
+};
+
+$tests['library_service_blocks_deleting_last_live_applied_variant_when_draft_changed'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $fontPath = $services['storage']->pathForRelativePath('inter/Inter-400-normal.woff2');
+    $services['storage']->writeAbsoluteFile((string) $fontPath, 'font-data');
+
+    $catalog = ['Inter', 'Lora'];
+    $services['settings']->saveRoles(
+        [
+            'heading' => 'Lora',
+            'body' => 'Lora',
+            'heading_fallback' => 'serif',
+            'body_fallback' => 'serif',
+        ],
+        $catalog
+    );
+    $services['settings']->saveAppliedRoles(
+        [
+            'heading' => 'Inter',
+            'body' => 'Lora',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'serif',
+        ],
+        $catalog
+    );
+    $services['settings']->setAutoApplyRoles(true);
+
+    $result = $services['library']->deleteFaceVariant('inter', '400', 'normal');
+
+    assertSameValue(true, is_wp_error($result), 'Deleting the last variant should be blocked when the family is still used by the live applied roles.');
+    assertSameValue('tasty_fonts_variant_in_use', $result->get_error_code(), 'Deleting the last live applied role variant should return the variant-in-use error.');
+    assertContainsValue('currently assigned to heading', $result->get_error_message(), 'The delete-variant guard should explain that the family is still the live heading role.');
+};
+
 $tests['admin_controller_sanitizes_posted_fallback_values'] = static function (): void {
     resetTestState();
 
@@ -1213,16 +1475,68 @@ $tests['admin_controller_builds_specific_settings_saved_message'] = static funct
     assertContainsValue('preview text updated', $message, 'Settings save messages should explain preview text changes.');
 };
 
-$tests['admin_controller_prefers_specific_settings_saved_toast_message'] = static function (): void {
+$tests['admin_controller_versions_admin_assets_from_plugin_version'] = static function (): void {
     resetTestState();
 
-    $_GET['settings_saved'] = '1';
-    $_GET['settings_saved_message'] = 'Plugin settings saved: preview text updated.';
+    $controller = makeAdminControllerTestInstance();
+    $version = invokePrivateMethod($controller, 'assetVersionFor', ['assets/css/admin.css']);
+
+    assertSameValue(TASTY_FONTS_VERSION, $version, 'Admin asset versioning should reuse the plugin version instead of hashing shipped files on every request.');
+};
+
+$tests['admin_controller_reads_and_clears_transient_notice_toasts'] = static function (): void {
+    resetTestState();
 
     $controller = makeAdminControllerTestInstance();
+    $transientKey = invokePrivateMethod($controller, 'getPendingNoticeTransientKey');
+
+    set_transient(
+        $transientKey,
+        [[
+            'tone' => 'success',
+            'message' => 'Plugin settings saved: preview text updated.',
+            'role' => 'status',
+        ]],
+        300
+    );
+
     $toasts = invokePrivateMethod($controller, 'buildNoticeToasts');
 
-    assertSameValue('Plugin settings saved: preview text updated.', $toasts[0]['message'] ?? '', 'Settings toasts should prefer the detailed saved-settings message from the redirect.');
+    assertSameValue('Plugin settings saved: preview text updated.', $toasts[0]['message'] ?? '', 'Settings toasts should come from the per-user transient store.');
+    assertSameValue(false, get_transient($transientKey), 'Notice toasts should be cleared after they are read for rendering.');
+};
+
+$tests['admin_controller_queues_redirect_toasts_for_the_current_user'] = static function (): void {
+    resetTestState();
+
+    global $transientSet;
+
+    $controller = makeAdminControllerTestInstance();
+    $transientKey = invokePrivateMethod($controller, 'getPendingNoticeTransientKey');
+
+    invokePrivateMethod($controller, 'queueNoticeToast', ['error', 'Variant deleted: Inter 400 italic.', 'alert']);
+    $toasts = get_transient($transientKey);
+
+    assertSameValue(true, in_array($transientKey, $transientSet, true), 'Queued redirect toasts should be written into the current user transient.');
+    assertSameValue('error', (string) ($toasts[0]['tone'] ?? ''), 'Queued redirect toasts should persist the toast tone.');
+    assertSameValue('Variant deleted: Inter 400 italic.', (string) ($toasts[0]['message'] ?? ''), 'Queued redirect toasts should persist the rendered message.');
+    assertSameValue('alert', (string) ($toasts[0]['role'] ?? ''), 'Queued redirect toasts should persist the ARIA role.');
+};
+
+$tests['admin_controller_builds_a_clean_plugin_redirect_url'] = static function (): void {
+    resetTestState();
+
+    $controller = makeAdminControllerTestInstance();
+    $url = invokePrivateMethod($controller, 'buildAdminPageUrl');
+
+    assertSameValue('https://example.test/wp-admin/admin.php?page=tasty-custom-fonts', $url, 'Redirect URLs should stay on the plugin admin page without encoding toast data in the query string.');
+};
+
+$tests['plugin_adds_a_settings_link_to_plugin_action_links'] = static function (): void {
+    $links = Plugin::filterPluginActionLinks(['<a href="https://example.test/deactivate">Deactivate</a>']);
+
+    assertContainsValue('admin.php?page=tasty-custom-fonts', $links[0] ?? '', 'Plugin action links should include a direct Settings link to the plugin admin page.');
+    assertContainsValue('Settings', $links[0] ?? '', 'Plugin action links should label the direct admin link as Settings.');
 };
 
 $tests['log_repository_can_reseed_audit_entry_after_clear'] = static function (): void {

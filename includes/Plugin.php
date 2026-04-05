@@ -159,11 +159,26 @@ final class Plugin
         add_action('admin_menu', [$this->admin, 'registerMenu']);
         add_action('admin_init', [$this->admin, 'handleAdminActions']);
         add_action('admin_enqueue_scripts', [$this->admin, 'enqueueAssets']);
+        add_filter('plugin_action_links_' . plugin_basename(TASTY_FONTS_FILE), [self::class, 'filterPluginActionLinks']);
         add_action('wp_ajax_tasty_fonts_search_google', [$this->admin, 'ajaxSearchGoogle']);
         add_action('wp_ajax_tasty_fonts_import_google', [$this->admin, 'ajaxImportGoogle']);
         add_action('wp_ajax_tasty_fonts_upload_local', [$this->admin, 'ajaxUploadLocal']);
         add_action('wp_ajax_tasty_fonts_save_family_fallback', [$this->admin, 'ajaxSaveFamilyFallback']);
         add_action('wp_ajax_tasty_fonts_save_role_draft', [$this->admin, 'ajaxSaveRoleDraft']);
+    }
+
+    public static function filterPluginActionLinks(array $links): array
+    {
+        array_unshift(
+            $links,
+            sprintf(
+                '<a href="%s">%s</a>',
+                esc_url(admin_url('admin.php?page=' . AdminController::MENU_SLUG)),
+                __('Settings', 'tasty-fonts')
+            )
+        );
+
+        return $links;
     }
 
     private function registerCatalogHooks(): void

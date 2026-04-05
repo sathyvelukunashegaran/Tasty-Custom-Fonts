@@ -78,14 +78,4 @@
     });
 
     bindAllIframes();
-
-    var attempts = 0;
-    var interval = window.setInterval(function () {
-        bindAllIframes();
-        attempts += 1;
-
-        if (attempts > 40) {
-            window.clearInterval(interval);
-        }
-    }, 500);
 })();

@@ -20,6 +20,8 @@ use TastyFonts\Support\Storage;
 final class AdminController
 {
     public const MENU_SLUG = 'tasty-custom-fonts';
+    private const NOTICE_TTL = 300;
+    private const NOTICE_TRANSIENT_PREFIX = 'tasty_fonts_admin_notices_';
     private const NOTICE_MESSAGES = [
         'settings_saved' => 'Plugin settings saved.',
         'adobe_project_saved' => 'Adobe Fonts project saved.',
@@ -278,7 +280,7 @@ final class AdminController
         check_admin_referer('tasty_fonts_clear_log');
         $this->log->clear();
         $this->log->add(__('Activity log cleared. Older entries removed.', 'tasty-fonts'));
-        $this->redirect(['log_cleared' => '1']);
+        $this->redirectWithNoticeKey('log_cleared');
     }
 
     private function handleRescanFontsAction(): bool
@@ -288,9 +290,9 @@ final class AdminController
         }
 
         check_admin_referer('tasty_fonts_rescan_fonts');
-        $this->assets->refreshGeneratedAssets();
+        $this->assets->refreshGeneratedAssets(true, false);
         $this->log->add(__('Fonts rescanned.', 'tasty-fonts'));
-        $this->redirect(['rescan' => '1']);
+        $this->redirectWithNoticeKey('rescan');
     }
 
     private function handleSaveSettingsAction(): bool
@@ -305,22 +307,35 @@ final class AdminController
         $submittedGoogleKey = $this->getPostedText('google_api_key');
         $clearGoogleKey = !empty($_POST['tasty_fonts_clear_google_api_key']);
 
-        $savedSettings = $this->settings->saveSettings(
+        $settingsInput = [];
+
+        foreach (
             [
-                'google_api_key' => wp_unslash($_POST['google_api_key'] ?? ''),
-                'tasty_fonts_clear_google_api_key' => wp_unslash($_POST['tasty_fonts_clear_google_api_key'] ?? ''),
-                'css_delivery_mode' => wp_unslash($_POST['css_delivery_mode'] ?? ''),
-                'font_display' => wp_unslash($_POST['font_display'] ?? ''),
-                'minify_css_output' => $_POST['minify_css_output'] ?? '',
-                'preview_sentence' => wp_unslash($_POST['preview_sentence'] ?? ''),
-            ]
-        );
+                'google_api_key',
+                'tasty_fonts_clear_google_api_key',
+                'css_delivery_mode',
+                'font_display',
+                'preview_sentence',
+            ] as $field
+        ) {
+            if (array_key_exists($field, $_POST)) {
+                $settingsInput[$field] = wp_unslash($_POST[$field]);
+            }
+        }
+
+        foreach (['minify_css_output', 'delete_uploaded_files_on_uninstall'] as $field) {
+            if (array_key_exists($field, $_POST)) {
+                $settingsInput[$field] = $_POST[$field];
+            }
+        }
+
+        $savedSettings = $this->settings->saveSettings($settingsInput);
         $this->googleClient->clearCatalogCache();
 
         if ($clearGoogleKey) {
             $this->settings->saveGoogleApiKeyStatus('empty');
             $this->log->add(__('Google Fonts API key removed.', 'tasty-fonts'));
-            $this->redirect(['google_key_cleared' => '1']);
+            $this->redirectWithNoticeKey('google_key_cleared');
         }
 
         if ($submittedGoogleKey !== '') {
@@ -333,29 +348,22 @@ final class AdminController
 
             if (($validation['state'] ?? 'unknown') === 'valid') {
                 $this->log->add(__('Google Fonts API key validated.', 'tasty-fonts'));
-                $this->redirect(['google_key_saved' => '1']);
+                $this->redirectWithNoticeKey('google_key_saved');
             }
 
             $this->log->add(__('Google Fonts API key validation failed.', 'tasty-fonts'));
-            $this->redirect(
-                [
-                    'tasty_fonts_error' => (string) (
-                        $validation['message']
-                        ?? __('Google Fonts API key could not be validated.', 'tasty-fonts')
-                    ),
-                ]
+            $this->redirectWithError(
+                (string) (
+                    $validation['message']
+                    ?? __('Google Fonts API key could not be validated.', 'tasty-fonts')
+                )
             );
         }
 
         $settingsMessage = $this->buildSettingsSavedMessage($previousSettings, $savedSettings);
 
         $this->log->add($settingsMessage);
-        $this->redirect(
-            [
-                'settings_saved' => '1',
-                'settings_saved_message' => $settingsMessage,
-            ]
-        );
+        $this->redirectWithSuccess($settingsMessage);
     }
 
     private function handleSaveFamilyFallbackAction(): bool
@@ -380,7 +388,7 @@ final class AdminController
             );
         }
 
-        $this->redirect(['fallback_saved' => '1']);
+        $this->redirectWithNoticeKey('fallback_saved');
     }
 
     private function handleDeleteFamilyAction(): bool
@@ -394,10 +402,10 @@ final class AdminController
         $result = $this->library->deleteFamily($this->getPostedText('tasty_fonts_family_slug'));
 
         if (is_wp_error($result)) {
-            $this->redirect(['tasty_fonts_error' => $result->get_error_message()]);
+            $this->redirectWithError($result->get_error_message());
         }
 
-        $this->redirect(['family_deleted' => '1']);
+        $this->redirectWithNoticeKey('family_deleted');
     }
 
     private function handleDeleteVariantAction(): bool
@@ -417,7 +425,7 @@ final class AdminController
         );
 
         if (is_wp_error($result)) {
-            $this->redirect(['tasty_fonts_error' => $result->get_error_message()]);
+            $this->redirectWithError($result->get_error_message());
         }
 
         $message = sprintf(
@@ -427,10 +435,7 @@ final class AdminController
             (string) ($result['style'] ?? 'normal')
         );
 
-        $this->redirect([
-            'variant_deleted' => '1',
-            'variant_deleted_message' => $message,
-        ]);
+        $this->redirectWithSuccess($message);
     }
 
     private function handleSaveRolesAction(): void
@@ -482,10 +487,7 @@ final class AdminController
 
         $this->log->add($message);
 
-        $this->redirect([
-            'roles_saved' => '1',
-            'roles_saved_message' => $message,
-        ]);
+        $this->redirectWithSuccess($message);
     }
 
     private function buildPageContext(): array
@@ -538,6 +540,7 @@ final class AdminController
             'adobe_project_link' => $adobeAccessContext['adobe_project_link'],
             'adobe_detected_families' => $adobeAccessContext['adobe_detected_families'],
             'minify_css_output' => !empty($settings['minify_css_output']),
+            'delete_uploaded_files_on_uninstall' => !empty($settings['delete_uploaded_files_on_uninstall']),
             'diagnostic_items' => $this->buildDiagnosticItems($assetStatus, $storage, $settings, $counts),
             'overview_metrics' => $this->buildOverviewMetrics($counts, $applyEverywhere, $assetStatus),
             'output_panels' => $this->buildOutputPanels($roles),
@@ -703,35 +706,39 @@ final class AdminController
 
     private function buildNoticeToasts(): array
     {
+        $transientKey = $this->getPendingNoticeTransientKey();
+        $storedToasts = get_transient($transientKey);
+
+        if ($storedToasts === false) {
+            return [];
+        }
+
+        delete_transient($transientKey);
+
+        if (!is_array($storedToasts)) {
+            return [];
+        }
+
         $toasts = [];
 
-        foreach (self::NOTICE_MESSAGES as $key => $message) {
-            if (!isset($_GET[$key]) || $_GET[$key] !== '1') {
+        foreach ($storedToasts as $toast) {
+            if (!is_array($toast)) {
                 continue;
             }
 
-            $resolvedMessage = $message;
+            $message = sanitize_text_field((string) ($toast['message'] ?? ''));
 
-            if ($key === 'settings_saved' && !empty($_GET['settings_saved_message'])) {
-                $resolvedMessage = sanitize_text_field(wp_unslash((string) $_GET['settings_saved_message']));
+            if ($message === '') {
+                continue;
             }
 
-            if (in_array($key, ['roles_saved', 'family_deleted', 'variant_deleted'], true) && !empty($_GET[$key . '_message'])) {
-                $resolvedMessage = sanitize_text_field(wp_unslash((string) $_GET[$key . '_message']));
-            }
+            $tone = (string) ($toast['tone'] ?? 'success');
+            $role = (string) ($toast['role'] ?? ($tone === 'error' ? 'alert' : 'status'));
 
             $toasts[] = [
-                'tone' => 'success',
-                'message' => __($resolvedMessage, 'tasty-fonts'),
-                'role' => 'status',
-            ];
-        }
-
-        if (!empty($_GET['tasty_fonts_error'])) {
-            $toasts[] = [
-                'tone' => 'error',
-                'message' => sanitize_text_field(wp_unslash((string) $_GET['tasty_fonts_error'])),
-                'role' => 'alert',
+                'tone' => $tone === 'error' ? 'error' : 'success',
+                'message' => $message,
+                'role' => $role === 'alert' ? 'alert' : 'status',
             ];
         }
 
@@ -766,6 +773,12 @@ final class AdminController
             $changes[] = __('preview text updated', 'tasty-fonts');
         }
 
+        if (!empty($before['delete_uploaded_files_on_uninstall']) !== !empty($after['delete_uploaded_files_on_uninstall'])) {
+            $changes[] = !empty($after['delete_uploaded_files_on_uninstall'])
+                ? __('uninstall file cleanup enabled', 'tasty-fonts')
+                : __('uninstall file cleanup disabled', 'tasty-fonts');
+        }
+
         if ($changes === []) {
             return __('Plugin settings saved.', 'tasty-fonts');
         }
@@ -786,19 +799,7 @@ final class AdminController
 
     private function assetVersionFor(string $relativePath): string
     {
-        $path = TASTY_FONTS_DIR . ltrim($relativePath, '/');
-
-        if (!file_exists($path) || !is_readable($path)) {
-            return TASTY_FONTS_VERSION;
-        }
-
-        $hash = md5_file($path);
-
-        if ($hash === false) {
-            return (string) filemtime($path);
-        }
-
-        return substr($hash, 0, 12);
+        return TASTY_FONTS_VERSION;
     }
 
     private function buildAdminStrings(string $searchDisabledMessage): array
@@ -1172,7 +1173,7 @@ final class AdminController
             $this->settings->clearAdobeProject();
             $this->adobe->clearProjectCache($existingProjectId);
             $this->log->add(__('Adobe Fonts project removed.', 'tasty-fonts'));
-            $this->redirect(['adobe_project_removed' => '1']);
+            $this->redirectWithNoticeKey('adobe_project_removed');
         }
 
         $projectId = $isResync
@@ -1190,7 +1191,7 @@ final class AdminController
         if ($projectId === '') {
             $this->adobe->clearProjectCache($existingProjectId);
             $this->log->add(__('Adobe Fonts project cleared.', 'tasty-fonts'));
-            $this->redirect(['adobe_project_removed' => '1']);
+            $this->redirectWithNoticeKey('adobe_project_removed');
         }
 
         $this->adobe->clearProjectCache($projectId);
@@ -1203,20 +1204,18 @@ final class AdminController
 
         if (($validation['state'] ?? 'unknown') !== 'valid') {
             $this->log->add(__('Adobe Fonts project validation failed.', 'tasty-fonts'));
-            $this->redirect(
-                [
-                    'tasty_fonts_error' => (string) (
-                        $validation['message']
-                        ?? __('Adobe Fonts project could not be validated.', 'tasty-fonts')
-                    ),
-                ]
+            $this->redirectWithError(
+                (string) (
+                    $validation['message']
+                    ?? __('Adobe Fonts project could not be validated.', 'tasty-fonts')
+                )
             );
         }
 
         $this->log->add($isResync
             ? __('Adobe Fonts project resynced.', 'tasty-fonts')
             : __('Adobe Fonts project saved.', 'tasty-fonts'));
-        $this->redirect([$isResync ? 'adobe_project_resynced' : 'adobe_project_saved' => '1']);
+        $this->redirectWithNoticeKey($isResync ? 'adobe_project_resynced' : 'adobe_project_saved');
     }
 
     private function assertManageOptionsAjax(string $message): void
@@ -1310,14 +1309,57 @@ final class AdminController
         wp_send_json_error(['message' => $message], $status);
     }
 
-    private function redirect(array $queryArgs): never
+    private function queueNoticeToast(string $tone, string $message, string $role): void
     {
-        wp_safe_redirect(
-            add_query_arg(
-                array_merge(['page' => self::MENU_SLUG], $queryArgs),
-                admin_url('admin.php')
-            )
-        );
+        $transientKey = $this->getPendingNoticeTransientKey();
+        $storedToasts = get_transient($transientKey);
+        $toasts = is_array($storedToasts) ? $storedToasts : [];
+
+        $toasts[] = [
+            'tone' => $tone === 'error' ? 'error' : 'success',
+            'message' => sanitize_text_field($message),
+            'role' => $role === 'alert' ? 'alert' : 'status',
+        ];
+
+        set_transient($transientKey, $toasts, self::NOTICE_TTL);
+    }
+
+    private function getPendingNoticeTransientKey(): string
+    {
+        return self::NOTICE_TRANSIENT_PREFIX . max(0, (int) get_current_user_id());
+    }
+
+    private function redirectWithSuccess(string $message): never
+    {
+        $this->queueNoticeToast('success', $message, 'status');
+        $this->redirect();
+    }
+
+    private function redirectWithError(string $message): never
+    {
+        $this->queueNoticeToast('error', $message, 'alert');
+        $this->redirect();
+    }
+
+    private function redirectWithNoticeKey(string $key): never
+    {
+        $message = self::NOTICE_MESSAGES[$key] ?? '';
+
+        if ($message === '') {
+            $this->redirect();
+        }
+
+        $this->redirectWithSuccess(__($message, 'tasty-fonts'));
+    }
+
+    private function buildAdminPageUrl(): string
+    {
+        return add_query_arg(['page' => self::MENU_SLUG], admin_url('admin.php'));
+    }
+
+    private function redirect(): never
+    {
+        wp_safe_redirect($this->buildAdminPageUrl());
         exit;
     }
 

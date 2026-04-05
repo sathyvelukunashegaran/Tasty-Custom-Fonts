@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace TastyFonts\Fonts;
 
+use Closure;
 use TastyFonts\Repository\LogRepository;
 use TastyFonts\Repository\SettingsRepository;
 use TastyFonts\Support\FontUtils;
@@ -21,7 +22,8 @@ final class LocalUploadService
         private readonly CatalogService $catalog,
         private readonly AssetService $assets,
         private readonly SettingsRepository $settings,
-        private readonly LogRepository $log
+        private readonly LogRepository $log,
+        private readonly ?Closure $isUploadedFileValidator = null
     ) {
     }
 
@@ -103,7 +105,7 @@ final class LocalUploadService
                 continue;
             }
 
-            $write = $this->writeUploadedFontFile($familyName, $familySlug, $weight, $style, $extension, $file);
+            $write = $this->writeUploadedFontFile($familyName, $familySlug, $weight, $style, $validatedFile);
 
             if (is_wp_error($write)) {
                 $results[] = $this->buildRowResult($index, 'error', $write->get_error_message());
@@ -239,6 +241,13 @@ final class LocalUploadService
             return $this->error('tasty_fonts_upload_too_large', __('The uploaded file exceeded the current WordPress upload size limit.', 'tasty-fonts'));
         }
 
+        if (!$this->isUploadedFile($tmpName)) {
+            return $this->error(
+                'tasty_fonts_upload_unverified_tmp',
+                __('The uploaded font file could not be verified as a valid HTTP upload.', 'tasty-fonts')
+            );
+        }
+
         if (!is_readable($tmpName)) {
             return $this->error('tasty_fonts_upload_missing_tmp', __('The uploaded file was not readable on the server.', 'tasty-fonts'));
         }
@@ -276,6 +285,7 @@ final class LocalUploadService
         }
 
         return [
+            'tmp_name' => $tmpName,
             'extension' => $detectedExtension,
             'size' => $size,
         ];
@@ -312,13 +322,21 @@ final class LocalUploadService
         return null;
     }
 
+    private function isUploadedFile(string $tmpName): bool
+    {
+        if ($this->isUploadedFileValidator instanceof Closure) {
+            return (bool) ($this->isUploadedFileValidator)($tmpName);
+        }
+
+        return is_uploaded_file($tmpName);
+    }
+
     private function writeUploadedFontFile(
         string $familyName,
         string $familySlug,
         string $weight,
         string $style,
-        string $extension,
-        array $file
+        array $validatedFile
     ): bool|WP_Error {
         $root = $this->storage->getRoot();
 
@@ -338,6 +356,8 @@ final class LocalUploadService
             );
         }
 
+        $extension = (string) ($validatedFile['extension'] ?? '');
+        $tmpName = (string) ($validatedFile['tmp_name'] ?? '');
         $filename = FontUtils::buildStaticFontFilename($familyName, $weight, $style, $extension);
         $targetPath = wp_normalize_path(trailingslashit($familyDirectory) . $filename);
 
@@ -348,19 +368,10 @@ final class LocalUploadService
             );
         }
 
-        $contents = file_get_contents((string) ($file['tmp_name'] ?? ''));
-
-        if (!is_string($contents) || $contents === '') {
-            return $this->error(
-                'tasty_fonts_upload_read_failed',
-                __('The uploaded font file could not be read from the temporary upload location.', 'tasty-fonts')
-            );
-        }
-
-        if (!$this->storage->writeAbsoluteFile($targetPath, $contents)) {
+        if (!$this->storage->copyAbsoluteFile($tmpName, $targetPath)) {
             return $this->error(
                 'tasty_fonts_upload_write_failed',
-                __('The uploaded font file could not be written into uploads/fonts.', 'tasty-fonts')
+                __('The uploaded font file could not be copied into uploads/fonts.', 'tasty-fonts')
             );
         }
 

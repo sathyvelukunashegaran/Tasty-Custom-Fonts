@@ -153,6 +153,33 @@ final class Storage
         return (bool) $wp_filesystem->put_contents($path, $contents, FS_CHMOD_FILE);
     }
 
+    public function copyAbsoluteFile(string $sourcePath, string $targetPath): bool
+    {
+        if ($sourcePath === '' || $targetPath === '') {
+            return false;
+        }
+
+        $directory = dirname($targetPath);
+
+        if (!$this->ensureDirectory($directory) || !is_readable($sourcePath)) {
+            return false;
+        }
+
+        $copied = move_uploaded_file($sourcePath, $targetPath);
+
+        if (!$copied) {
+            $copied = copy($sourcePath, $targetPath);
+        }
+
+        if (!$copied) {
+            return false;
+        }
+
+        chmod($targetPath, FS_CHMOD_FILE);
+
+        return true;
+    }
+
     public function deleteRelativeFiles(array $relativePaths): bool
     {
         $paths = array_values(

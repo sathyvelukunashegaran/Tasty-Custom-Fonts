@@ -15,6 +15,7 @@ final class SettingsRepository
     private const DEFAULT_SETTINGS = [
         'auto_apply_roles' => false,
         'applied_roles' => [],
+        'delete_uploaded_files_on_uninstall' => false,
         'css_delivery_mode' => 'file',
         'font_display' => 'swap',
         'minify_css_output' => true,
@@ -56,6 +57,7 @@ final class SettingsRepository
         $settings['google_api_key_status_message'] = $this->sanitizeStatusMessage($settings['google_api_key_status_message'] ?? '');
         $settings['google_api_key_checked_at'] = $this->normalizeTimestamp($settings['google_api_key_checked_at'] ?? 0);
         $settings['family_fallbacks'] = $this->normalizeFamilyFallbacks($settings['family_fallbacks'] ?? []);
+        $settings['delete_uploaded_files_on_uninstall'] = !empty($settings['delete_uploaded_files_on_uninstall']);
 
         return $settings;
     }
@@ -92,7 +94,13 @@ final class SettingsRepository
                 : 'swap';
         }
 
-        $settings['minify_css_output'] = !empty($input['minify_css_output']);
+        if (array_key_exists('minify_css_output', $input)) {
+            $settings['minify_css_output'] = !empty($input['minify_css_output']);
+        }
+
+        if (array_key_exists('delete_uploaded_files_on_uninstall', $input)) {
+            $settings['delete_uploaded_files_on_uninstall'] = !empty($input['delete_uploaded_files_on_uninstall']);
+        }
 
         if (isset($input['preview_sentence'])) {
             $settings['preview_sentence'] = sanitize_text_field((string) $input['preview_sentence']);

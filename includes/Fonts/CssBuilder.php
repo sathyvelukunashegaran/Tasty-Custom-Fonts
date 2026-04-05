@@ -8,7 +8,7 @@ use TastyFonts\Support\FontUtils;
 
 final class CssBuilder
 {
-    private const FORMAT_ORDER = ['eot', 'woff2', 'woff', 'ttf', 'otf', 'svg'];
+    private const FORMAT_ORDER = ['woff2', 'woff', 'ttf', 'otf'];
 
     public function build(array $catalog, array $roles, array $settings): string
     {
@@ -119,10 +119,6 @@ final class CssBuilder
         $css .= "  font-weight:{$weight};\n";
         $css .= "  font-style:{$style};\n";
 
-        if (isset($files['eot'])) {
-            $css .= '  src:url("' . esc_url((string) $files['eot']) . "\");\n";
-        }
-
         $sources = [];
 
         foreach (self::FORMAT_ORDER as $format) {
@@ -185,16 +181,13 @@ final class CssBuilder
     private function buildSourceEntry(string $format, string $url): string
     {
         $formatName = match ($format) {
-            'eot' => 'embedded-opentype',
             'otf' => 'opentype',
             'ttf' => 'truetype',
             default => $format,
         };
         $escapedUrl = esc_url($url);
 
-        return $format === 'eot'
-            ? 'url("' . $escapedUrl . '?#iefix") format("' . $formatName . '")'
-            : 'url("' . $escapedUrl . '") format("' . $formatName . '")';
+        return 'url("' . $escapedUrl . '") format("' . $formatName . '")';
     }
 
     private function roleTokens(array $roles): array

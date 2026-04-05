@@ -45,6 +45,7 @@ final class AdminPageRenderer
         $googleAccessButtonLabel = $googleApiEnabled ? __('Edit Key', 'tasty-fonts') : __('Key Settings', 'tasty-fonts');
         $adobeAccessButtonLabel = $adobeProjectSaved ? __('Project Settings', 'tasty-fonts') : __('Add Project', 'tasty-fonts');
         $minifyCssOutput = !empty($context['minify_css_output']);
+        $deleteUploadedFilesOnUninstall = !empty($context['delete_uploaded_files_on_uninstall']);
         $diagnosticItems = is_array($context['diagnostic_items'] ?? null) ? $context['diagnostic_items'] : [];
         $overviewMetrics = is_array($context['overview_metrics'] ?? null) ? $context['overview_metrics'] : [];
         $outputPanels = is_array($context['output_panels'] ?? null) ? $context['output_panels'] : [];
@@ -391,6 +392,7 @@ final class AdminPageRenderer
                                             <form method="post" class="tasty-fonts-output-settings-form">
                                                 <?php wp_nonce_field('tasty_fonts_save_settings'); ?>
                                                 <input type="hidden" name="tasty_fonts_save_settings" value="1">
+                                                <input type="hidden" name="minify_css_output" value="0">
                                                 <label class="tasty-fonts-toggle-field">
                                                     <input
                                                         type="checkbox"
@@ -403,6 +405,21 @@ final class AdminPageRenderer
                                                     <span class="tasty-fonts-toggle-copy">
                                                         <span class="tasty-fonts-toggle-title"><?php esc_html_e('Minify generated CSS', 'tasty-fonts'); ?></span>
                                                         <span class="tasty-fonts-toggle-description"><?php esc_html_e('Reduces whitespace in frontend CSS and snippet output.', 'tasty-fonts'); ?></span>
+                                                    </span>
+                                                </label>
+                                                <input type="hidden" name="delete_uploaded_files_on_uninstall" value="0">
+                                                <label class="tasty-fonts-toggle-field">
+                                                    <input
+                                                        type="checkbox"
+                                                        class="tasty-fonts-toggle-input"
+                                                        name="delete_uploaded_files_on_uninstall"
+                                                        value="1"
+                                                        <?php checked($deleteUploadedFilesOnUninstall); ?>
+                                                    >
+                                                    <span class="tasty-fonts-toggle-switch" aria-hidden="true"></span>
+                                                    <span class="tasty-fonts-toggle-copy">
+                                                        <span class="tasty-fonts-toggle-title"><?php esc_html_e('Delete uploaded fonts on uninstall', 'tasty-fonts'); ?></span>
+                                                        <span class="tasty-fonts-toggle-description"><?php esc_html_e('Also remove the plugin-managed files in uploads/fonts when the plugin is deleted.', 'tasty-fonts'); ?></span>
                                                     </span>
                                                 </label>
                                                 <button type="submit" class="button"><?php esc_html_e('Save Output Settings', 'tasty-fonts'); ?></button>

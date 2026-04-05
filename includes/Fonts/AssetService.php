@@ -80,7 +80,7 @@ final class AssetService
         return hash('crc32b', $this->getVersionedCss());
     }
 
-    public function ensureGeneratedCssFile(): bool
+    public function ensureGeneratedCssFile(bool $logWriteResult = true): bool
     {
         if (!$this->isFileDeliveryEnabled()) {
             return false;
@@ -99,23 +99,25 @@ final class AssetService
 
         $written = $this->storage->writeAbsoluteFile($path, $this->getVersionedCss());
 
-        $this->log->add(
-            $written
-                ? __('Generated CSS file written successfully.', 'tasty-fonts')
-                : __('Could not write generated CSS file. Inline fallback will be used.', 'tasty-fonts')
-        );
+        if ($logWriteResult) {
+            $this->log->add(
+                $written
+                    ? __('Generated CSS file written successfully.', 'tasty-fonts')
+                    : __('Could not write generated CSS file. Inline fallback will be used.', 'tasty-fonts')
+            );
+        }
 
         return $written;
     }
 
-    public function refreshGeneratedAssets(bool $invalidateCatalog = true): void
+    public function refreshGeneratedAssets(bool $invalidateCatalog = true, bool $logWriteResult = true): void
     {
         if ($invalidateCatalog) {
             $this->catalog->invalidate();
         }
 
         $this->invalidate();
-        $this->ensureGeneratedCssFile();
+        $this->ensureGeneratedCssFile($logWriteResult);
     }
 
     public function enqueue(string $handle): void

@@ -35,17 +35,8 @@ final class LibraryService
             );
         }
 
-        $roles = $this->settings->getRoles($this->catalog->getCatalog());
         $familyName = (string) ($family['family'] ?? $familySlug);
-        $roleLabels = [];
-
-        if (($roles['heading'] ?? '') === $familyName) {
-            $roleLabels[] = __('heading', 'tasty-fonts');
-        }
-
-        if (($roles['body'] ?? '') === $familyName) {
-            $roleLabels[] = __('body', 'tasty-fonts');
-        }
+        $roleLabels = $this->getProtectedRoleLabels($familyName);
 
         if ($roleLabels !== []) {
             return $this->error(
@@ -53,7 +44,7 @@ final class LibraryService
                 sprintf(
                     __('%1$s is currently assigned as the %2$s font. Choose a different heading/body font before deleting it.', 'tasty-fonts'),
                     $familyName,
-                    implode(__(' and ', 'tasty-fonts'), $roleLabels)
+                    implode(__(' and ', 'tasty-fonts'), $this->translateRoleLabels($roleLabels))
                 )
             );
         }
@@ -124,9 +115,9 @@ final class LibraryService
         }
 
         $familyName = (string) ($family['family'] ?? $familySlug);
-        $roles = $this->settings->getRoles($this->catalog->getCatalog());
-        $isHeading = ($roles['heading'] ?? '') === $familyName;
-        $isBody = ($roles['body'] ?? '') === $familyName;
+        $roleLabels = $this->getProtectedRoleLabels($familyName);
+        $isHeading = in_array('heading', $roleLabels, true);
+        $isBody = in_array('body', $roleLabels, true);
         $isLastFace = count((array) ($family['faces'] ?? [])) <= 1;
 
         if ($isLastFace && ($isHeading || $isBody)) {
@@ -311,6 +302,42 @@ final class LibraryService
         }
 
         return array_values(array_unique($variants));
+    }
+
+    private function getProtectedRoleLabels(string $familyName): array
+    {
+        $catalog = $this->catalog->getCatalog();
+        $roleSets = [$this->settings->getRoles($catalog)];
+
+        if (!empty($this->settings->getSettings()['auto_apply_roles'])) {
+            $roleSets[] = $this->settings->getAppliedRoles($catalog);
+        }
+
+        $roleLabels = [];
+
+        foreach ($roleSets as $roles) {
+            if (($roles['heading'] ?? '') === $familyName) {
+                $roleLabels[] = 'heading';
+            }
+
+            if (($roles['body'] ?? '') === $familyName) {
+                $roleLabels[] = 'body';
+            }
+        }
+
+        return array_values(array_unique($roleLabels));
+    }
+
+    private function translateRoleLabels(array $roleLabels): array
+    {
+        return array_map(
+            static fn (string $label): string => match ($label) {
+                'heading' => __('heading', 'tasty-fonts'),
+                'body' => __('body', 'tasty-fonts'),
+                default => $label,
+            },
+            $roleLabels
+        );
     }
 
     private function buildDeleteLastVariantBlockedMessage(string $familyName, bool $isHeading, bool $isBody): string

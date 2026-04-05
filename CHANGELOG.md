@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Added `uninstall.php` cleanup for plugin options and transients, plus a settings toggle to optionally remove plugin-managed uploaded font files during uninstall.
+- Added a direct Settings link from the WordPress plugins list to the Tasty Custom Fonts admin screen.
+- Expanded the local PHP test harness to cover applied-role deletion guards, transient-backed admin notices, uninstall preferences, modern format filtering, streamed file copies, and admin asset versioning.
+
+### Changed
+
+- Switched local upload writes to streamed file moves/copies instead of buffering the full uploaded font into PHP memory, and now apply `FS_CHMOD_FILE` after successful copies.
+- Simplified the Etch canvas bridge to rely on iframe `load` events and the existing `MutationObserver` without the extra polling interval.
+- Simplified rescan logging so a manual rescan records the high-level `Fonts rescanned.` entry without also adding the lower-level generated CSS write message.
+- Removed legacy EOT and SVG font handling from local catalog scans and generated `@font-face` output so scanned formats now match the upload allowlist.
+- Reused `TASTY_FONTS_VERSION` directly for shipped admin asset versioning instead of hashing plugin files on every admin page load.
+
+### Fixed
+
+- Added explicit PHP upload-origin verification before reading uploaded font temp files and hardened the local upload flow around validated file metadata.
+- Moved redirect-backed success and error notices off URL query strings into short-lived per-user transients.
+- Protected family and variant deletion against live applied roles as well as draft role selections.
+- Aligned the catalog scanner, upload validation, and generated CSS around the same modern local font formats only.
+
 ## [1.2.0] - 2026-04-05
 
 ### Added

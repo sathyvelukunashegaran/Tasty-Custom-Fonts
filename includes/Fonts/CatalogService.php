@@ -15,7 +15,7 @@ use SplFileInfo;
 final class CatalogService
 {
     private const TRANSIENT_CATALOG = 'tasty_fonts_catalog_v2';
-    private const LOCAL_FORMATS = ['eot', 'woff2', 'woff', 'ttf', 'otf', 'svg'];
+    private const LOCAL_FORMATS = ['woff2', 'woff', 'ttf', 'otf'];
     private const DEFAULT_COUNTS = [
         'families' => 0,
         'files' => 0,

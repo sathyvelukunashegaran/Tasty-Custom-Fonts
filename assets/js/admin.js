@@ -776,35 +776,6 @@
         toastItems.forEach((toast) => {
             scheduleToastDismiss(toast, toast.getAttribute('data-toast-tone') === 'error' ? 'error' : 'success');
         });
-
-        const params = new URLSearchParams(window.location.search);
-        const ephemeralKeys = [
-            'settings_saved',
-            'google_key_saved',
-            'google_key_cleared',
-            'fallback_saved',
-            'roles_saved',
-            'rescan',
-            'log_cleared',
-            'family_deleted',
-            'tasty_fonts_error'
-        ];
-        let changed = false;
-
-        ephemeralKeys.forEach((key) => {
-            if (params.has(key)) {
-                params.delete(key);
-                changed = true;
-            }
-        });
-
-        if (!changed || !window.history.replaceState) {
-            return;
-        }
-
-        const query = params.toString();
-        const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
-        window.history.replaceState({}, '', nextUrl);
     }
 
     function positionHelpTooltip(button) {
