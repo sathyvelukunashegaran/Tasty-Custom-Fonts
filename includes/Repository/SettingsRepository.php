@@ -2,16 +2,19 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Repository;
+namespace TastyFonts\Repository;
 
-use EtchFonts\Support\FontUtils;
+use TastyFonts\Support\FontUtils;
 
 final class SettingsRepository
 {
-    public const OPTION_SETTINGS = 'etch_fonts_settings';
-    public const OPTION_ROLES = 'etch_fonts_roles';
+    public const OPTION_SETTINGS = 'tasty_fonts_settings';
+    public const OPTION_ROLES = 'tasty_fonts_roles';
+    private const LEGACY_OPTION_SETTINGS = 'etch_fonts_settings';
+    private const LEGACY_OPTION_ROLES = 'etch_fonts_roles';
     private const DEFAULT_SETTINGS = [
         'auto_apply_roles' => false,
+        'applied_roles' => [],
         'css_delivery_mode' => 'file',
         'font_display' => 'swap',
         'minify_css_output' => true,
@@ -34,21 +37,24 @@ final class SettingsRepository
 
     public function getSettings(): array
     {
-        $settings = wp_parse_args($this->getOptionArray(self::OPTION_SETTINGS), self::DEFAULT_SETTINGS);
+        $settings = wp_parse_args(
+            $this->getOptionArray(self::OPTION_SETTINGS, self::LEGACY_OPTION_SETTINGS),
+            self::DEFAULT_SETTINGS
+        );
         $settings['adobe_enabled'] = !empty($settings['adobe_enabled']);
         $settings['adobe_project_id'] = $this->sanitizeAdobeProjectId((string) ($settings['adobe_project_id'] ?? ''));
         $settings['adobe_project_status'] = $this->normalizeAdobeProjectStatus(
             (string) ($settings['adobe_project_status'] ?? 'empty'),
             (string) ($settings['adobe_project_id'] ?? '')
         );
-        $settings['adobe_project_status_message'] = sanitize_text_field((string) ($settings['adobe_project_status_message'] ?? ''));
-        $settings['adobe_project_checked_at'] = max(0, absint($settings['adobe_project_checked_at'] ?? 0));
+        $settings['adobe_project_status_message'] = $this->sanitizeStatusMessage($settings['adobe_project_status_message'] ?? '');
+        $settings['adobe_project_checked_at'] = $this->normalizeTimestamp($settings['adobe_project_checked_at'] ?? 0);
         $settings['google_api_key_status'] = $this->normalizeGoogleApiKeyStatus(
             (string) ($settings['google_api_key_status'] ?? 'empty'),
             (string) ($settings['google_api_key'] ?? '')
         );
-        $settings['google_api_key_status_message'] = sanitize_text_field((string) ($settings['google_api_key_status_message'] ?? ''));
-        $settings['google_api_key_checked_at'] = max(0, absint($settings['google_api_key_checked_at'] ?? 0));
+        $settings['google_api_key_status_message'] = $this->sanitizeStatusMessage($settings['google_api_key_status_message'] ?? '');
+        $settings['google_api_key_checked_at'] = $this->normalizeTimestamp($settings['google_api_key_checked_at'] ?? 0);
         $settings['family_fallbacks'] = $this->normalizeFamilyFallbacks($settings['family_fallbacks'] ?? []);
 
         return $settings;
@@ -57,7 +63,7 @@ final class SettingsRepository
     public function saveSettings(array $input): array
     {
         $settings = $this->getSettings();
-        $clearGoogleKey = !empty($input['etch_fonts_clear_google_api_key']);
+        $clearGoogleKey = !empty($input['tasty_fonts_clear_google_api_key']);
         $submittedGoogleKey = isset($input['google_api_key'])
             ? sanitize_text_field((string) $input['google_api_key'])
             : null;
@@ -97,36 +103,70 @@ final class SettingsRepository
 
     public function getRoles(array $catalog): array
     {
-        $defaults = $this->getDefaultRoles($catalog);
-        $roles = wp_parse_args($this->getOptionArray(self::OPTION_ROLES), $defaults);
-        $families = $this->extractFamilyNames($catalog);
-        $roles = $this->normalizeRoleFamilies($roles, $families, $defaults);
-
-        $roles['heading_fallback'] = FontUtils::sanitizeFallback((string) $roles['heading_fallback']);
-        $roles['body_fallback'] = FontUtils::sanitizeFallback((string) $roles['body_fallback']);
-
-        return $roles;
+        return $this->normalizeRoleSet(
+            $this->getOptionArray(self::OPTION_ROLES, self::LEGACY_OPTION_ROLES),
+            $catalog
+        );
     }
 
     public function saveRoles(array $input, array $catalog): array
     {
-        $families = $this->extractFamilyNames($catalog);
         $defaults = $this->getDefaultRoles($catalog);
-        $roles = $this->normalizeRoleFamilies(
+        $roles = $this->normalizeRoleSet(
             [
                 'heading' => $this->sanitizeTextValue($input['heading'] ?? $defaults['heading']),
                 'body' => $this->sanitizeTextValue($input['body'] ?? $defaults['body']),
+                'heading_fallback' => FontUtils::sanitizeFallback((string) ($input['heading_fallback'] ?? 'sans-serif')),
+                'body_fallback' => FontUtils::sanitizeFallback((string) ($input['body_fallback'] ?? 'sans-serif')),
             ],
-            $families,
-            $defaults
-        ) + [
-            'heading_fallback' => FontUtils::sanitizeFallback((string) ($input['heading_fallback'] ?? 'sans-serif')),
-            'body_fallback' => FontUtils::sanitizeFallback((string) ($input['body_fallback'] ?? 'sans-serif')),
-        ];
+            $catalog
+        );
 
         update_option(self::OPTION_ROLES, $roles, false);
 
         return $roles;
+    }
+
+    public function getAppliedRoles(array $catalog): array
+    {
+        $settings = $this->getSettings();
+        $storedAppliedRoles = is_array($settings['applied_roles'] ?? null)
+            ? $settings['applied_roles']
+            : [];
+
+        if ($storedAppliedRoles === [] && !empty($settings['auto_apply_roles'])) {
+            $storedAppliedRoles = $this->getOptionArray(self::OPTION_ROLES, self::LEGACY_OPTION_ROLES);
+        }
+
+        return $this->normalizeRoleSet($storedAppliedRoles, $catalog);
+    }
+
+    public function ensureAppliedRolesInitialized(array $catalog): array
+    {
+        $settings = $this->getSettings();
+        $storedAppliedRoles = is_array($settings['applied_roles'] ?? null)
+            ? $settings['applied_roles']
+            : [];
+
+        if ($storedAppliedRoles !== [] || empty($settings['auto_apply_roles'])) {
+            return $this->normalizeRoleSet($storedAppliedRoles, $catalog);
+        }
+
+        $currentRoles = $this->getRoles($catalog);
+        $settings['applied_roles'] = $currentRoles;
+        $this->persistSettings($settings);
+
+        return $currentRoles;
+    }
+
+    public function saveAppliedRoles(array $roles, array $catalog): array
+    {
+        $settings = $this->getSettings();
+        $normalizedRoles = $this->normalizeRoleSet($roles, $catalog);
+        $settings['applied_roles'] = $normalizedRoles;
+        $this->persistSettings($settings);
+
+        return $normalizedRoles;
     }
 
     public function setAutoApplyRoles(bool $enabled): array
@@ -170,16 +210,9 @@ final class SettingsRepository
         $settings = $this->getSettings();
         $settings['adobe_project_id'] = $this->sanitizeAdobeProjectId($projectId);
         $settings['adobe_enabled'] = $settings['adobe_project_id'] !== '' ? $enabled : false;
-
-        if ($settings['adobe_project_id'] === '') {
-            $settings['adobe_project_status'] = 'empty';
-            $settings['adobe_project_status_message'] = '';
-            $settings['adobe_project_checked_at'] = 0;
-        } else {
-            $settings['adobe_project_status'] = 'unknown';
-            $settings['adobe_project_status_message'] = '';
-            $settings['adobe_project_checked_at'] = 0;
-        }
+        $settings['adobe_project_status'] = $settings['adobe_project_id'] === '' ? 'empty' : 'unknown';
+        $settings['adobe_project_status_message'] = '';
+        $settings['adobe_project_checked_at'] = 0;
 
         return $this->persistSettings($settings);
     }
@@ -281,11 +314,23 @@ final class SettingsRepository
         ];
     }
 
-    private function getOptionArray(string $option): array
+    private function getOptionArray(string $option, ?string $legacyOption = null): array
     {
-        $value = get_option($option, []);
+        $value = get_option($option, null);
 
-        return is_array($value) ? $value : [];
+        if (is_array($value)) {
+            return $value;
+        }
+
+        $legacyValue = $legacyOption !== null ? get_option($legacyOption, null) : null;
+
+        if (!is_array($legacyValue)) {
+            return [];
+        }
+
+        update_option($option, $legacyValue, false);
+
+        return $legacyValue;
     }
 
     private function normalizeRoleFamilies(array $roles, array $families, array $defaults): array
@@ -294,15 +339,25 @@ final class SettingsRepository
             return $roles;
         }
 
-        if (trim((string) ($roles['heading'] ?? '')) === '') {
-            $roles['heading'] = $defaults['heading'];
-        }
-
-        if (trim((string) ($roles['body'] ?? '')) === '') {
-            $roles['body'] = $defaults['body'];
+        foreach (['heading', 'body'] as $roleKey) {
+            if (trim((string) ($roles[$roleKey] ?? '')) === '') {
+                $roles[$roleKey] = $defaults[$roleKey];
+            }
         }
 
         return $roles;
+    }
+
+    private function normalizeRoleSet(array $roles, array $catalog): array
+    {
+        $defaults = $this->getDefaultRoles($catalog);
+        $families = $this->extractFamilyNames($catalog);
+        $normalizedRoles = wp_parse_args($roles, $defaults);
+        $normalizedRoles = $this->normalizeRoleFamilies($normalizedRoles, $families, $defaults);
+        $normalizedRoles['heading_fallback'] = FontUtils::sanitizeFallback((string) ($normalizedRoles['heading_fallback'] ?? 'sans-serif'));
+        $normalizedRoles['body_fallback'] = FontUtils::sanitizeFallback((string) ($normalizedRoles['body_fallback'] ?? 'sans-serif'));
+
+        return $normalizedRoles;
     }
 
     private function sanitizeTextValue(mixed $value): string
@@ -316,13 +371,10 @@ final class SettingsRepository
             return [];
         }
 
-        $keys = array_keys($catalog);
-        $isAssoc = array_keys($keys) !== $keys;
-
-        if ($isAssoc) {
+        if (!array_is_list($catalog)) {
             return array_values(
                 array_filter(
-                    array_map(static fn (mixed $name): string => is_string($name) ? trim($name) : '', $keys),
+                    array_map(static fn (mixed $name): string => is_string($name) ? trim($name) : '', array_keys($catalog)),
                     'strlen'
                 )
             );
@@ -357,6 +409,16 @@ final class SettingsRepository
         $projectId = preg_replace('/[^a-z0-9]+/', '', $projectId) ?? '';
 
         return trim($projectId);
+    }
+
+    private function sanitizeStatusMessage(mixed $message): string
+    {
+        return sanitize_text_field((string) $message);
+    }
+
+    private function normalizeTimestamp(mixed $value): int
+    {
+        return max(0, absint($value));
     }
 
     private function normalizeAdobeProjectStatus(string $state, string $projectId): string

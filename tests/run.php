@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-if (!defined('ETCH_FONTS_VERSION')) {
-    define('ETCH_FONTS_VERSION', '6.0.1');
+if (!defined('TASTY_FONTS_VERSION')) {
+    define('TASTY_FONTS_VERSION', '6.0.1');
 }
 
-if (!defined('ETCH_FONTS_URL')) {
-    define('ETCH_FONTS_URL', 'https://example.test/wp-content/plugins/etch-fonts/');
+if (!defined('TASTY_FONTS_URL')) {
+    define('TASTY_FONTS_URL', 'https://example.test/wp-content/plugins/etch-fonts/');
 }
 
 if (!defined('DAY_IN_SECONDS')) {
@@ -32,24 +32,24 @@ if (!defined('MB_IN_BYTES')) {
 
 require_once __DIR__ . '/bootstrap.php';
 
-use EtchFonts\Adobe\AdobeCssParser;
-use EtchFonts\Adobe\AdobeProjectClient;
-use EtchFonts\Admin\AdminController;
-use EtchFonts\Fonts\AssetService;
-use EtchFonts\Fonts\CatalogService;
-use EtchFonts\Fonts\CssBuilder;
-use EtchFonts\Fonts\FontFilenameParser;
-use EtchFonts\Fonts\LibraryService;
-use EtchFonts\Fonts\LocalUploadService;
-use EtchFonts\Fonts\RuntimeService;
-use EtchFonts\Google\GoogleCssParser;
-use EtchFonts\Google\GoogleFontsClient;
-use EtchFonts\Google\GoogleImportService;
-use EtchFonts\Repository\ImportRepository;
-use EtchFonts\Repository\LogRepository;
-use EtchFonts\Repository\SettingsRepository;
-use EtchFonts\Support\FontUtils;
-use EtchFonts\Support\Storage;
+use TastyFonts\Adobe\AdobeCssParser;
+use TastyFonts\Adobe\AdobeProjectClient;
+use TastyFonts\Admin\AdminController;
+use TastyFonts\Fonts\AssetService;
+use TastyFonts\Fonts\CatalogService;
+use TastyFonts\Fonts\CssBuilder;
+use TastyFonts\Fonts\FontFilenameParser;
+use TastyFonts\Fonts\LibraryService;
+use TastyFonts\Fonts\LocalUploadService;
+use TastyFonts\Fonts\RuntimeService;
+use TastyFonts\Google\GoogleCssParser;
+use TastyFonts\Google\GoogleFontsClient;
+use TastyFonts\Google\GoogleImportService;
+use TastyFonts\Repository\ImportRepository;
+use TastyFonts\Repository\LogRepository;
+use TastyFonts\Repository\SettingsRepository;
+use TastyFonts\Support\FontUtils;
+use TastyFonts\Support\Storage;
 
 if (!class_exists('WP_Error')) {
     class WP_Error extends RuntimeException
@@ -187,7 +187,7 @@ $optionStore = [];
 $transientStore = [];
 $transientDeleted = [];
 $transientSet = [];
-$uploadBaseDir = sys_get_temp_dir() . '/etch-fonts-tests/uploads';
+$uploadBaseDir = sys_get_temp_dir() . '/tasty-fonts-tests/uploads';
 $wp_filesystem = null;
 $remoteGetResponses = [];
 $remoteGetCalls = [];
@@ -485,7 +485,7 @@ final class TestWpFilesystem
 
 function uniqueTestDirectory(string $name): string
 {
-    return sys_get_temp_dir() . '/etch-fonts-tests/' . $name . '-' . uniqid('', true);
+    return sys_get_temp_dir() . '/tasty-fonts-tests/' . $name . '-' . uniqid('', true);
 }
 
 function resetTestState(): void
@@ -753,6 +753,41 @@ $tests['css_builder_generates_font_face_and_role_variables'] = static function (
     assertContainsValue('font-family: var(--font-body);', $css, 'CSS builder should emit the body usage rule.');
 };
 
+$tests['css_builder_can_generate_font_faces_without_role_usage_rules'] = static function (): void {
+    $builder = new CssBuilder();
+    $catalog = [
+        'Inter' => [
+            'family' => 'Inter',
+            'slug' => 'inter',
+            'sources' => ['local'],
+            'faces' => [
+                [
+                    'family' => 'Inter',
+                    'slug' => 'inter',
+                    'source' => 'local',
+                    'weight' => '400',
+                    'style' => 'normal',
+                    'unicode_range' => '',
+                    'files' => [
+                        'woff2' => 'https://example.com/fonts/inter.woff2',
+                    ],
+                ],
+            ],
+        ],
+    ];
+    $settings = [
+        'font_display' => 'swap',
+        'auto_apply_roles' => true,
+        'minify_css_output' => false,
+    ];
+
+    $css = $builder->buildFontFaceOnly($catalog, $settings);
+
+    assertContainsValue('@font-face', $css, 'Font-face-only CSS should still emit @font-face rules.');
+    assertNotContainsValue('--font-heading', $css, 'Font-face-only CSS should not emit role variables.');
+    assertNotContainsValue('font-family: var(--font-body);', $css, 'Font-face-only CSS should not emit body usage rules.');
+};
+
 $tests['storage_returns_absolute_generated_css_url'] = static function (): void {
     resetTestState();
 
@@ -760,7 +795,7 @@ $tests['storage_returns_absolute_generated_css_url'] = static function (): void 
     $url = $storage->getGeneratedCssUrl();
 
     assertSameValue(
-        'https://example.test/wp-content/uploads/fonts/etch-fonts.css',
+        'https://example.test/wp-content/uploads/fonts/tasty-fonts.css',
         $url,
         'Generated CSS URL should stay absolute so Etch can pass it to new URL(...).'
     );
@@ -786,13 +821,13 @@ $tests['google_fonts_client_clears_catalog_cache'] = static function (): void {
     global $transientDeleted;
     global $transientStore;
 
-    $transientStore['etch_fonts_google_catalog_v1'] = ['family' => 'Inter'];
+    $transientStore['tasty_fonts_google_catalog_v1'] = ['family' => 'Inter'];
 
     $client = new GoogleFontsClient(new SettingsRepository());
     $client->clearCatalogCache();
 
-    assertSameValue(false, array_key_exists('etch_fonts_google_catalog_v1', $transientStore), 'Google catalog cache clearing should remove the cached catalog transient.');
-    assertSameValue(true, in_array('etch_fonts_google_catalog_v1', $transientDeleted, true), 'Google catalog cache clearing should delete the expected transient key.');
+    assertSameValue(false, array_key_exists('tasty_fonts_google_catalog_v1', $transientStore), 'Google catalog cache clearing should remove the cached catalog transient.');
+    assertSameValue(true, in_array('tasty_fonts_google_catalog_v1', $transientDeleted, true), 'Google catalog cache clearing should delete the expected transient key.');
 };
 
 $tests['adobe_project_client_validates_project_and_reuses_cached_families'] = static function (): void {
@@ -881,6 +916,88 @@ $tests['settings_repository_persists_adobe_project_state'] = static function ():
     assertSameValue('empty', $cleared['adobe_project_status'], 'Clearing an Adobe project should reset the status to empty.');
 };
 
+$tests['settings_repository_bootstraps_applied_roles_before_draft_changes'] = static function (): void {
+    resetTestState();
+
+    $settings = new SettingsRepository();
+    $catalog = ['Inter', 'Lora'];
+
+    $settings->saveRoles(
+        [
+            'heading' => 'Inter',
+            'body' => 'Inter',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'sans-serif',
+        ],
+        $catalog
+    );
+    $settings->setAutoApplyRoles(true);
+
+    $bootstrapped = $settings->ensureAppliedRolesInitialized($catalog);
+
+    assertSameValue('Inter', $bootstrapped['heading'], 'Applied roles should bootstrap from the current live heading before draft-only changes.');
+    assertSameValue('Inter', $bootstrapped['body'], 'Applied roles should bootstrap from the current live body before draft-only changes.');
+
+    $settings->saveRoles(
+        [
+            'heading' => 'Lora',
+            'body' => 'Inter',
+            'heading_fallback' => 'serif',
+            'body_fallback' => 'sans-serif',
+        ],
+        $catalog
+    );
+
+    $appliedRoles = $settings->getAppliedRoles($catalog);
+    $draftRoles = $settings->getRoles($catalog);
+
+    assertSameValue('Inter', $appliedRoles['heading'], 'Draft-only saves should not replace the bootstrapped live heading.');
+    assertSameValue('Inter', $appliedRoles['body'], 'Draft-only saves should not replace the bootstrapped live body.');
+    assertSameValue('Lora', $draftRoles['heading'], 'Draft roles should still update independently after bootstrapping applied roles.');
+};
+
+$tests['repositories_migrate_legacy_option_keys'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $optionStore['etch_fonts_settings'] = [
+        'preview_sentence' => 'Legacy preview',
+        'google_api_key' => 'legacy-key',
+    ];
+    $optionStore['etch_fonts_roles'] = [
+        'heading' => 'Inter',
+        'body' => 'Lora',
+        'heading_fallback' => 'serif',
+        'body_fallback' => 'sans-serif',
+    ];
+    $optionStore['etch_fonts_imports'] = [
+        'inter' => ['slug' => 'inter', 'family' => 'Inter'],
+    ];
+    $optionStore['etch_fonts_log'] = [
+        ['time' => '2026-04-04 00:00:00', 'message' => 'Legacy log entry', 'actor' => 'System'],
+    ];
+
+    $settings = new SettingsRepository();
+    $roles = $settings->getRoles(
+        [
+            ['family' => 'Inter'],
+            ['family' => 'Lora'],
+        ]
+    );
+    $imports = (new ImportRepository())->all();
+    $log = (new LogRepository())->all();
+
+    assertSameValue('Legacy preview', $settings->getSettings()['preview_sentence'], 'Settings should fall back to the legacy option key during upgrade.');
+    assertSameValue('Inter', $roles['heading'], 'Role settings should migrate from the legacy option key during upgrade.');
+    assertSameValue(true, isset($optionStore[SettingsRepository::OPTION_SETTINGS]), 'Settings migration should seed the renamed option key.');
+    assertSameValue(true, isset($optionStore[SettingsRepository::OPTION_ROLES]), 'Role migration should seed the renamed option key.');
+    assertSameValue(true, isset($optionStore[ImportRepository::OPTION_IMPORTS]), 'Import migration should seed the renamed option key.');
+    assertSameValue(true, isset($optionStore[LogRepository::OPTION_LOG]), 'Log migration should seed the renamed option key.');
+    assertSameValue('Inter', (string) ($imports['inter']['family'] ?? ''), 'Imports should remain available after migrating the option key.');
+    assertSameValue('Legacy log entry', (string) ($log[0]['message'] ?? ''), 'Logs should remain available after migrating the option key.');
+};
+
 $tests['asset_service_refresh_generated_assets_invalidates_caches_and_rewrites_css'] = static function (): void {
     resetTestState();
 
@@ -901,9 +1018,9 @@ $tests['asset_service_refresh_generated_assets_invalidates_caches_and_rewrites_c
         'family_fallbacks' => [],
     ];
     $optionStore[SettingsRepository::OPTION_ROLES] = [];
-    $transientStore['etch_fonts_catalog_v2'] = ['stale' => true];
-    $transientStore['etch_fonts_css_v2'] = 'stale-css';
-    $transientStore['etch_fonts_css_hash_v2'] = 'stale-hash';
+    $transientStore['tasty_fonts_catalog_v2'] = ['stale' => true];
+    $transientStore['tasty_fonts_css_v2'] = 'stale-css';
+    $transientStore['tasty_fonts_css_hash_v2'] = 'stale-hash';
 
     $storage = new Storage();
     $catalog = new CatalogService($storage, new ImportRepository(), new FontFilenameParser(), new LogRepository());
@@ -917,12 +1034,12 @@ $tests['asset_service_refresh_generated_assets_invalidates_caches_and_rewrites_c
         : '';
 
     assertSameValue(true, is_string($generatedPath) && file_exists($generatedPath), 'Refreshing generated assets should rewrite the generated CSS file.');
-    assertContainsValue('/* Version: ' . ETCH_FONTS_VERSION . ' */', $generatedCss, 'Refreshing generated assets should write the versioned CSS header.');
-    assertSameValue(true, in_array('etch_fonts_catalog_v2', $transientDeleted, true), 'Refreshing generated assets should invalidate the catalog cache first.');
-    assertSameValue(true, in_array('etch_fonts_css_v2', $transientDeleted, true), 'Refreshing generated assets should invalidate the cached CSS payload.');
-    assertSameValue(true, in_array('etch_fonts_css_hash_v2', $transientDeleted, true), 'Refreshing generated assets should invalidate the cached CSS hash.');
-    assertSameValue(true, array_key_exists('etch_fonts_css_v2', $transientStore), 'Refreshing generated assets should rebuild the CSS transient after invalidation.');
-    assertSameValue(true, array_key_exists('etch_fonts_css_hash_v2', $transientStore), 'Refreshing generated assets should rebuild the CSS hash transient after invalidation.');
+    assertContainsValue('/* Version: ' . TASTY_FONTS_VERSION . ' */', $generatedCss, 'Refreshing generated assets should write the versioned CSS header.');
+    assertSameValue(true, in_array('tasty_fonts_catalog_v2', $transientDeleted, true), 'Refreshing generated assets should invalidate the catalog cache first.');
+    assertSameValue(true, in_array('tasty_fonts_css_v2', $transientDeleted, true), 'Refreshing generated assets should invalidate the cached CSS payload.');
+    assertSameValue(true, in_array('tasty_fonts_css_hash_v2', $transientDeleted, true), 'Refreshing generated assets should invalidate the cached CSS hash.');
+    assertSameValue(true, array_key_exists('tasty_fonts_css_v2', $transientStore), 'Refreshing generated assets should rebuild the CSS transient after invalidation.');
+    assertSameValue(true, array_key_exists('tasty_fonts_css_hash_v2', $transientStore), 'Refreshing generated assets should rebuild the CSS hash transient after invalidation.');
 };
 
 $tests['admin_controller_merges_adobe_families_into_selectable_role_names'] = static function (): void {
@@ -993,7 +1110,7 @@ CSS,
 
     assertSameValue(
         'https://use.typekit.net/abc1234.css',
-        (string) ($enqueuedStyles['etch-fonts-adobe-frontend']['src'] ?? ''),
+        (string) ($enqueuedStyles['tasty-fonts-adobe-frontend']['src'] ?? ''),
         'Runtime should enqueue the Adobe project stylesheet as a separate frontend style handle.'
     );
     assertSameValue(
@@ -1003,12 +1120,12 @@ CSS,
     );
     assertSameValue(
         true,
-        isset($localizedScripts['etch-fonts-canvas']['data']['stylesheetUrls'][1]),
+        isset($localizedScripts['tasty-fonts-canvas']['data']['stylesheetUrls'][1]),
         'Etch canvas runtime data should include a second stylesheet entry for Adobe fonts.'
     );
     assertContainsValue(
         'https://use.typekit.net/abc1234.css',
-        (string) $localizedScripts['etch-fonts-canvas']['data']['stylesheetUrls'][1],
+        (string) $localizedScripts['tasty-fonts-canvas']['data']['stylesheetUrls'][1],
         'Etch canvas runtime data should include the Adobe stylesheet URL.'
     );
 };
@@ -1064,6 +1181,85 @@ $tests['admin_controller_sanitizes_posted_fallback_values'] = static function ()
         '-apple-system, BlinkMacSystemFont, "Segoe UI", serif',
         $fallback,
         'Posted fallback values should be normalized through the controller before they reach settings storage.'
+    );
+};
+
+$tests['admin_controller_builds_specific_settings_saved_message'] = static function (): void {
+    resetTestState();
+
+    $controller = makeAdminControllerTestInstance();
+    $message = invokePrivateMethod(
+        $controller,
+        'buildSettingsSavedMessage',
+        [
+            [
+                'css_delivery_mode' => 'file',
+                'font_display' => 'swap',
+                'minify_css_output' => true,
+                'preview_sentence' => 'Alpha',
+            ],
+            [
+                'css_delivery_mode' => 'inline',
+                'font_display' => 'optional',
+                'minify_css_output' => false,
+                'preview_sentence' => 'Beta',
+            ],
+        ]
+    );
+
+    assertContainsValue('delivery mode set to inline CSS', $message, 'Settings save messages should explain delivery-mode changes.');
+    assertContainsValue('font-display set to optional', $message, 'Settings save messages should explain font-display changes.');
+    assertContainsValue('CSS minification disabled', $message, 'Settings save messages should explain CSS minification changes.');
+    assertContainsValue('preview text updated', $message, 'Settings save messages should explain preview text changes.');
+};
+
+$tests['admin_controller_prefers_specific_settings_saved_toast_message'] = static function (): void {
+    resetTestState();
+
+    $_GET['settings_saved'] = '1';
+    $_GET['settings_saved_message'] = 'Plugin settings saved: preview text updated.';
+
+    $controller = makeAdminControllerTestInstance();
+    $toasts = invokePrivateMethod($controller, 'buildNoticeToasts');
+
+    assertSameValue('Plugin settings saved: preview text updated.', $toasts[0]['message'] ?? '', 'Settings toasts should prefer the detailed saved-settings message from the redirect.');
+};
+
+$tests['log_repository_can_reseed_audit_entry_after_clear'] = static function (): void {
+    resetTestState();
+
+    $log = new LogRepository();
+    $log->add('Fonts rescanned.');
+    $log->clear();
+    $log->add('Activity log cleared. Older entries removed.');
+
+    $entries = $log->all();
+
+    assertSameValue(1, count($entries), 'Clearing the log and reseeding the audit entry should leave exactly one retained entry.');
+    assertSameValue('Activity log cleared. Older entries removed.', $entries[0]['message'] ?? '', 'The retained entry should explain that the older activity was removed.');
+    assertSameValue('System', $entries[0]['actor'] ?? '', 'The retained clear-log audit entry should still record an actor label.');
+};
+
+$tests['admin_controller_builds_distinct_sorted_activity_actor_options'] = static function (): void {
+    resetTestState();
+
+    $controller = makeAdminControllerTestInstance();
+    $actors = invokePrivateMethod(
+        $controller,
+        'buildActivityActorOptions',
+        [[
+            ['actor' => 'sathyvelukunashegaran'],
+            ['actor' => 'System'],
+            ['actor' => 'sathyvelukunashegaran'],
+            ['actor' => 'Alicia'],
+            ['actor' => ''],
+        ]]
+    );
+
+    assertSameValue(
+        ['Alicia', 'sathyvelukunashegaran', 'System'],
+        $actors,
+        'Activity actor options should be distinct, trimmed, and sorted for the filter dropdown.'
     );
 };
 

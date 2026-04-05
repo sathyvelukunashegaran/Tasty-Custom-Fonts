@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Support;
+namespace TastyFonts\Support;
 
 final class Storage
 {
@@ -60,10 +60,9 @@ final class Storage
 
     public function getGoogleRoot(): ?string
     {
-        $storage = $this->get();
-        $googleDir = is_array($storage) ? ($storage['google_dir'] ?? null) : null;
+        $googleDir = $this->getStorageValue('google_dir');
 
-        if (!is_string($googleDir)) {
+        if ($googleDir === null) {
             return null;
         }
 
@@ -74,14 +73,14 @@ final class Storage
     {
         $root = $this->getRoot();
 
-        return $root ? trailingslashit($root) . 'etch-fonts.css' : null;
+        return $root ? trailingslashit($root) . 'tasty-fonts.css' : null;
     }
 
     public function getGeneratedCssUrl(): ?string
     {
         $url = $this->getRootUrlFull();
 
-        return $url ? untrailingslashit($url) . '/etch-fonts.css' : null;
+        return $url ? untrailingslashit($url) . '/tasty-fonts.css' : null;
     }
 
     public function getRootUrlFull(): ?string

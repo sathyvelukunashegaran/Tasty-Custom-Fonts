@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts;
+namespace TastyFonts;
 
-use EtchFonts\Adobe\AdobeCssParser;
-use EtchFonts\Adobe\AdobeProjectClient;
-use EtchFonts\Admin\AdminController;
-use EtchFonts\Fonts\AssetService;
-use EtchFonts\Fonts\CatalogService;
-use EtchFonts\Fonts\CssBuilder;
-use EtchFonts\Fonts\FontFilenameParser;
-use EtchFonts\Fonts\LibraryService;
-use EtchFonts\Fonts\LocalUploadService;
-use EtchFonts\Fonts\RuntimeService;
-use EtchFonts\Google\GoogleCssParser;
-use EtchFonts\Google\GoogleFontsClient;
-use EtchFonts\Google\GoogleImportService;
-use EtchFonts\Repository\ImportRepository;
-use EtchFonts\Repository\LogRepository;
-use EtchFonts\Repository\SettingsRepository;
-use EtchFonts\Support\Storage;
+use TastyFonts\Adobe\AdobeCssParser;
+use TastyFonts\Adobe\AdobeProjectClient;
+use TastyFonts\Admin\AdminController;
+use TastyFonts\Fonts\AssetService;
+use TastyFonts\Fonts\CatalogService;
+use TastyFonts\Fonts\CssBuilder;
+use TastyFonts\Fonts\FontFilenameParser;
+use TastyFonts\Fonts\LibraryService;
+use TastyFonts\Fonts\LocalUploadService;
+use TastyFonts\Fonts\RuntimeService;
+use TastyFonts\Google\GoogleCssParser;
+use TastyFonts\Google\GoogleFontsClient;
+use TastyFonts\Google\GoogleImportService;
+use TastyFonts\Repository\ImportRepository;
+use TastyFonts\Repository\LogRepository;
+use TastyFonts\Repository\SettingsRepository;
+use TastyFonts\Support\Storage;
 
 final class Plugin
 {
@@ -138,9 +138,9 @@ final class Plugin
     public function loadTextdomain(): void
     {
         load_plugin_textdomain(
-            'etch-fonts',
+            'tasty-fonts',
             false,
-            dirname(plugin_basename(ETCH_FONTS_FILE)) . '/languages'
+            dirname(plugin_basename(TASTY_FONTS_FILE)) . '/languages'
         );
     }
 
@@ -159,10 +159,11 @@ final class Plugin
         add_action('admin_menu', [$this->admin, 'registerMenu']);
         add_action('admin_init', [$this->admin, 'handleAdminActions']);
         add_action('admin_enqueue_scripts', [$this->admin, 'enqueueAssets']);
-        add_action('wp_ajax_etch_fonts_search_google', [$this->admin, 'ajaxSearchGoogle']);
-        add_action('wp_ajax_etch_fonts_import_google', [$this->admin, 'ajaxImportGoogle']);
-        add_action('wp_ajax_etch_fonts_upload_local', [$this->admin, 'ajaxUploadLocal']);
-        add_action('wp_ajax_etch_fonts_save_family_fallback', [$this->admin, 'ajaxSaveFamilyFallback']);
+        add_action('wp_ajax_tasty_fonts_search_google', [$this->admin, 'ajaxSearchGoogle']);
+        add_action('wp_ajax_tasty_fonts_import_google', [$this->admin, 'ajaxImportGoogle']);
+        add_action('wp_ajax_tasty_fonts_upload_local', [$this->admin, 'ajaxUploadLocal']);
+        add_action('wp_ajax_tasty_fonts_save_family_fallback', [$this->admin, 'ajaxSaveFamilyFallback']);
+        add_action('wp_ajax_tasty_fonts_save_role_draft', [$this->admin, 'ajaxSaveRoleDraft']);
     }
 
     private function registerCatalogHooks(): void

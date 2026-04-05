@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Fonts;
+namespace TastyFonts\Fonts;
 
-use EtchFonts\Repository\ImportRepository;
-use EtchFonts\Repository\LogRepository;
-use EtchFonts\Support\FontUtils;
-use EtchFonts\Support\Storage;
+use TastyFonts\Repository\ImportRepository;
+use TastyFonts\Repository\LogRepository;
+use TastyFonts\Support\FontUtils;
+use TastyFonts\Support\Storage;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
 final class CatalogService
 {
-    private const TRANSIENT_CATALOG = 'etch_fonts_catalog_v2';
+    private const TRANSIENT_CATALOG = 'tasty_fonts_catalog_v2';
     private const LOCAL_FORMATS = ['eot', 'woff2', 'woff', 'ttf', 'otf', 'svg'];
     private const DEFAULT_COUNTS = [
         'families' => 0,
@@ -75,7 +75,7 @@ final class CatalogService
         }
 
         $this->invalidate();
-        $this->log->add(__('Font attachment changed. Catalog cache cleared.', 'etch-fonts'));
+        $this->log->add(__('Font attachment changed. Catalog cache cleared.', 'tasty-fonts'));
     }
 
     private function buildCatalog(): array

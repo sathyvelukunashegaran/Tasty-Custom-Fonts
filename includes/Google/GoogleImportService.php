@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Google;
+namespace TastyFonts\Google;
 
-use EtchFonts\Fonts\AssetService;
-use EtchFonts\Fonts\CatalogService;
-use EtchFonts\Repository\ImportRepository;
-use EtchFonts\Repository\LogRepository;
-use EtchFonts\Support\FontUtils;
-use EtchFonts\Support\Storage;
+use TastyFonts\Fonts\AssetService;
+use TastyFonts\Fonts\CatalogService;
+use TastyFonts\Repository\ImportRepository;
+use TastyFonts\Repository\LogRepository;
+use TastyFonts\Support\FontUtils;
+use TastyFonts\Support\Storage;
 use WP_Error;
 
 final class GoogleImportService
@@ -32,7 +32,7 @@ final class GoogleImportService
         $familyName = trim(wp_strip_all_tags($familyName));
 
         if ($familyName === '') {
-            return $this->error('etch_fonts_missing_family', __('Choose a Google Fonts family before importing.', 'etch-fonts'));
+            return $this->error('tasty_fonts_missing_family', __('Choose a Google Fonts family before importing.', 'tasty-fonts'));
         }
 
         $familySlug = FontUtils::slugify($familyName);
@@ -42,9 +42,9 @@ final class GoogleImportService
 
         if ($existingCatalogFamily !== null && !in_array('google', (array) ($existingCatalogFamily['sources'] ?? []), true)) {
             return $this->error(
-                'etch_fonts_family_already_exists',
+                'tasty_fonts_family_already_exists',
                 sprintf(
-                    __('%s already exists in the library as a local family. Remove or rename the existing files before importing it from Google Fonts.', 'etch-fonts'),
+                    __('%s already exists in the library as a local family. Remove or rename the existing files before importing it from Google Fonts.', 'tasty-fonts'),
                     $familyName
                 )
             );
@@ -54,7 +54,7 @@ final class GoogleImportService
 
         if ($variantPlan['import'] === []) {
             $message = sprintf(
-                __('%s already exists in the library for the selected variants.', 'etch-fonts'),
+                __('%s already exists in the library for the selected variants.', 'tasty-fonts'),
                 $familyName
             );
 
@@ -86,18 +86,16 @@ final class GoogleImportService
 
         if ($faces === []) {
             return $this->error(
-                'etch_fonts_google_no_faces',
-                __('No downloadable WOFF2 faces were returned for that family.', 'etch-fonts')
+                'tasty_fonts_google_no_faces',
+                __('No downloadable WOFF2 faces were returned for that family.', 'tasty-fonts')
             );
         }
 
-        $target = $this->resolveImportTarget($familyName);
+        $familyDirectory = $this->resolveImportTarget($familySlug);
 
-        if (is_wp_error($target)) {
-            return $target;
+        if (is_wp_error($familyDirectory)) {
+            return $familyDirectory;
         }
-
-        $familyDirectory = $target['directory'];
         $provider = $this->buildProviderMetadata($metadata, $variantPlan['import']);
         $newManifestFaces = [];
         $downloadedFiles = 0;
@@ -123,8 +121,8 @@ final class GoogleImportService
 
         if ($newManifestFaces === []) {
             return $this->error(
-                'etch_fonts_google_empty_manifest',
-                __('No local font files were saved from that import.', 'etch-fonts')
+                'tasty_fonts_google_empty_manifest',
+                __('No local font files were saved from that import.', 'tasty-fonts')
             );
         }
 
@@ -158,7 +156,7 @@ final class GoogleImportService
         $faceCount = count($newManifestFaces);
         $skipCount = count($variantPlan['skipped']);
         $message = sprintf(
-            __('Imported %1$s (%2$d variant%3$s, %4$d file%5$s).', 'etch-fonts'),
+            __('Imported %1$s (%2$d variant%3$s, %4$d file%5$s).', 'tasty-fonts'),
             $familyName,
             $faceCount,
             $faceCount === 1 ? '' : 's',
@@ -168,7 +166,7 @@ final class GoogleImportService
 
         if ($skipCount > 0) {
             $message .= ' ' . sprintf(
-                __('%d variant%s already existed.', 'etch-fonts'),
+                __('%d variant%s already existed.', 'tasty-fonts'),
                 $skipCount,
                 $skipCount === 1 ? '' : 's'
             );
@@ -188,12 +186,32 @@ final class GoogleImportService
         ];
     }
 
-    private function resolveImportTarget(string $familyName): array|WP_Error
+    private function resolveImportTarget(string $familySlug): string|WP_Error
+    {
+        $googleRoot = $this->getGoogleRootDirectory();
+
+        if (is_wp_error($googleRoot)) {
+            return $googleRoot;
+        }
+
+        $familyDirectory = trailingslashit($googleRoot) . $familySlug;
+
+        if (!$this->storage->ensureDirectory($familyDirectory)) {
+            return $this->error(
+                'tasty_fonts_google_family_dir_failed',
+                __('The Google Fonts import directory could not be created.', 'tasty-fonts')
+            );
+        }
+
+        return $familyDirectory;
+    }
+
+    private function getGoogleRootDirectory(): string|WP_Error
     {
         if (!$this->storage->ensureRootDirectory()) {
             return $this->error(
-                'etch_fonts_storage_unavailable',
-                __('The uploads/fonts storage directory could not be created.', 'etch-fonts')
+                'tasty_fonts_storage_unavailable',
+                __('The uploads/fonts storage directory could not be created.', 'tasty-fonts')
             );
         }
 
@@ -201,25 +219,12 @@ final class GoogleImportService
 
         if (!$googleRoot) {
             return $this->error(
-                'etch_fonts_storage_unavailable',
-                __('The uploads/fonts storage directory could not be created.', 'etch-fonts')
+                'tasty_fonts_storage_unavailable',
+                __('The uploads/fonts storage directory could not be created.', 'tasty-fonts')
             );
         }
 
-        $familySlug = FontUtils::slugify($familyName);
-        $familyDirectory = trailingslashit($googleRoot) . $familySlug;
-
-        if (!$this->storage->ensureDirectory($familyDirectory)) {
-            return $this->error(
-                'etch_fonts_google_family_dir_failed',
-                __('The Google Fonts import directory could not be created.', 'etch-fonts')
-            );
-        }
-
-        return [
-            'slug' => $familySlug,
-            'directory' => $familyDirectory,
-        ];
+        return $googleRoot;
     }
 
     private function buildLocalFilename(string $familyName, array $face): string
@@ -314,8 +319,8 @@ final class GoogleImportService
 
         if ($status !== 200) {
             return $this->error(
-                'etch_fonts_google_download_failed',
-                sprintf(__('Font download failed with status %d.', 'etch-fonts'), $status)
+                'tasty_fonts_google_download_failed',
+                sprintf(__('Font download failed with status %d.', 'tasty-fonts'), $status)
             );
         }
 
@@ -323,15 +328,15 @@ final class GoogleImportService
 
         if (!is_string($body) || $body === '') {
             return $this->error(
-                'etch_fonts_google_empty_file',
-                __('Google Fonts returned an empty font file.', 'etch-fonts')
+                'tasty_fonts_google_empty_file',
+                __('Google Fonts returned an empty font file.', 'tasty-fonts')
             );
         }
 
         if (strlen($body) > self::MAX_FONT_FILE_BYTES) {
             return $this->error(
-                'etch_fonts_google_file_too_large',
-                __('The downloaded font file exceeded the safety size limit.', 'etch-fonts')
+                'tasty_fonts_google_file_too_large',
+                __('The downloaded font file exceeded the safety size limit.', 'tasty-fonts')
             );
         }
 
@@ -344,15 +349,15 @@ final class GoogleImportService
             && !str_contains($contentType, 'octet-stream')
         ) {
             return $this->error(
-                'etch_fonts_google_invalid_type',
-                __('The downloaded file was not returned as a WOFF2 font.', 'etch-fonts')
+                'tasty_fonts_google_invalid_type',
+                __('The downloaded file was not returned as a WOFF2 font.', 'tasty-fonts')
             );
         }
 
         if (!$this->storage->writeAbsoluteFile($targetPath, $body)) {
             return $this->error(
-                'etch_fonts_google_write_failed',
-                __('The imported font file could not be written to uploads/fonts.', 'etch-fonts')
+                'tasty_fonts_google_write_failed',
+                __('The imported font file could not be written to uploads/fonts.', 'tasty-fonts')
             );
         }
 
@@ -367,15 +372,15 @@ final class GoogleImportService
 
         if ($host !== 'fonts.gstatic.com') {
             return $this->error(
-                'etch_fonts_google_invalid_host',
-                __('Google font downloads must come from fonts.gstatic.com.', 'etch-fonts')
+                'tasty_fonts_google_invalid_host',
+                __('Google font downloads must come from fonts.gstatic.com.', 'tasty-fonts')
             );
         }
 
         if (!str_ends_with($path, '.woff2')) {
             return $this->error(
-                'etch_fonts_google_invalid_extension',
-                __('Only WOFF2 files can be imported from Google Fonts.', 'etch-fonts')
+                'tasty_fonts_google_invalid_extension',
+                __('Only WOFF2 files can be imported from Google Fonts.', 'tasty-fonts')
             );
         }
 

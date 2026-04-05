@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Fonts;
+namespace TastyFonts\Fonts;
 
-use EtchFonts\Repository\LogRepository;
-use EtchFonts\Repository\SettingsRepository;
-use EtchFonts\Support\Storage;
+use TastyFonts\Repository\LogRepository;
+use TastyFonts\Repository\SettingsRepository;
+use TastyFonts\Support\Storage;
 
 final class AssetService
 {
-    private const TRANSIENT_CSS = 'etch_fonts_css_v2';
-    private const TRANSIENT_HASH = 'etch_fonts_css_hash_v2';
+    private const TRANSIENT_CSS = 'tasty_fonts_css_v2';
+    private const TRANSIENT_HASH = 'tasty_fonts_css_hash_v2';
 
     private ?string $css = null;
     private ?string $hash = null;
@@ -50,8 +50,10 @@ final class AssetService
         }
 
         $catalog = $this->catalog->getCatalog();
-        $roles = $this->settings->getRoles($catalog);
         $settings = $this->settings->getSettings();
+        $roles = !empty($settings['auto_apply_roles'])
+            ? $this->settings->getAppliedRoles($catalog)
+            : $this->settings->getRoles($catalog);
 
         $this->css = $this->cssBuilder->build($catalog, $roles, $settings);
         $this->hash = hash('crc32b', $this->css);
@@ -99,8 +101,8 @@ final class AssetService
 
         $this->log->add(
             $written
-                ? __('Generated CSS file written successfully.', 'etch-fonts')
-                : __('Could not write generated CSS file. Inline fallback will be used.', 'etch-fonts')
+                ? __('Generated CSS file written successfully.', 'tasty-fonts')
+                : __('Could not write generated CSS file. Inline fallback will be used.', 'tasty-fonts')
         );
 
         return $written;
@@ -138,6 +140,20 @@ final class AssetService
         $this->ensureGeneratedCssFile();
     }
 
+    public function enqueueFontFacesOnly(string $handle): void
+    {
+        $catalog = $this->catalog->getCatalog();
+        $settings = $this->settings->getSettings();
+        $css = $this->cssBuilder->buildFontFaceOnly($catalog, $settings);
+
+        wp_register_style($handle, false);
+        wp_enqueue_style($handle);
+
+        if ($css !== '') {
+            wp_add_inline_style($handle, $css);
+        }
+    }
+
     public function getStatus(): array
     {
         $state = $this->getGeneratedStylesheetState();
@@ -165,7 +181,7 @@ final class AssetService
 
     private function getVersionedCss(): string
     {
-        return "/* Version: " . ETCH_FONTS_VERSION . " */\n" . $this->getCss();
+        return "/* Version: " . TASTY_FONTS_VERSION . " */\n" . $this->getCss();
     }
 
     private function isFileDeliveryEnabled(): bool

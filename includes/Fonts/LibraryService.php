@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Fonts;
+namespace TastyFonts\Fonts;
 
-use EtchFonts\Repository\ImportRepository;
-use EtchFonts\Repository\LogRepository;
-use EtchFonts\Repository\SettingsRepository;
-use EtchFonts\Support\FontUtils;
-use EtchFonts\Support\Storage;
+use TastyFonts\Repository\ImportRepository;
+use TastyFonts\Repository\LogRepository;
+use TastyFonts\Repository\SettingsRepository;
+use TastyFonts\Support\FontUtils;
+use TastyFonts\Support\Storage;
 use WP_Error;
 
 final class LibraryService
@@ -30,8 +30,8 @@ final class LibraryService
 
         if ($family === null) {
             return $this->error(
-                'etch_fonts_family_not_found',
-                __('That font family could not be found in the library.', 'etch-fonts')
+                'tasty_fonts_family_not_found',
+                __('That font family could not be found in the library.', 'tasty-fonts')
             );
         }
 
@@ -40,20 +40,20 @@ final class LibraryService
         $roleLabels = [];
 
         if (($roles['heading'] ?? '') === $familyName) {
-            $roleLabels[] = __('heading', 'etch-fonts');
+            $roleLabels[] = __('heading', 'tasty-fonts');
         }
 
         if (($roles['body'] ?? '') === $familyName) {
-            $roleLabels[] = __('body', 'etch-fonts');
+            $roleLabels[] = __('body', 'tasty-fonts');
         }
 
         if ($roleLabels !== []) {
             return $this->error(
-                'etch_fonts_family_in_use',
+                'tasty_fonts_family_in_use',
                 sprintf(
-                    __('%1$s is currently assigned as the %2$s font. Choose a different heading/body font before deleting it.', 'etch-fonts'),
+                    __('%1$s is currently assigned as the %2$s font. Choose a different heading/body font before deleting it.', 'tasty-fonts'),
                     $familyName,
-                    implode(__(' and ', 'etch-fonts'), $roleLabels)
+                    implode(__(' and ', 'tasty-fonts'), $roleLabels)
                 )
             );
         }
@@ -62,8 +62,8 @@ final class LibraryService
 
         if (!$this->storage->deleteRelativeFiles($relativePaths)) {
             return $this->error(
-                'etch_fonts_delete_failed',
-                __('The font files could not be deleted from uploads/fonts.', 'etch-fonts')
+                'tasty_fonts_delete_failed',
+                __('The font files could not be deleted from uploads/fonts.', 'tasty-fonts')
             );
         }
 
@@ -72,8 +72,8 @@ final class LibraryService
             && !$this->storage->deleteRelativeDirectory('google/' . $familySlug)
         ) {
             return $this->error(
-                'etch_fonts_delete_failed',
-                __('The Google Fonts folder could not be removed cleanly.', 'etch-fonts')
+                'tasty_fonts_delete_failed',
+                __('The Google Fonts folder could not be removed cleanly.', 'tasty-fonts')
             );
         }
 
@@ -83,7 +83,7 @@ final class LibraryService
         $fileCount = count($relativePaths);
         $this->log->add(
             sprintf(
-                __('Font family deleted: %1$s (%2$d file%3$s removed).', 'etch-fonts'),
+                __('Font family deleted: %1$s (%2$d file%3$s removed).', 'tasty-fonts'),
                 (string) ($family['family'] ?? $familySlug),
                 $fileCount,
                 $fileCount === 1 ? '' : 's'
@@ -91,6 +91,87 @@ final class LibraryService
         );
 
         return true;
+    }
+
+    public function deleteFaceVariant(
+        string $familySlug,
+        string $weight,
+        string $style,
+        string $source = 'local',
+        string $unicodeRange = ''
+    ): array|WP_Error {
+        $familySlug = FontUtils::slugify($familySlug);
+        $family = $this->findFamilyBySlug($familySlug);
+
+        if ($family === null) {
+            return $this->error(
+                'tasty_fonts_family_not_found',
+                __('That font family could not be found in the library.', 'tasty-fonts')
+            );
+        }
+
+        $normalizedWeight = FontUtils::normalizeWeight($weight);
+        $normalizedStyle = FontUtils::normalizeStyle($style);
+        $normalizedSource = trim($source) !== '' ? strtolower(trim($source)) : 'local';
+        $normalizedUnicodeRange = $normalizedSource === 'google' ? '' : trim($unicodeRange);
+        $face = $this->findMatchingFace($family, $normalizedWeight, $normalizedStyle, $normalizedSource, $normalizedUnicodeRange);
+
+        if ($face === null) {
+            return $this->error(
+                'tasty_fonts_variant_not_found',
+                __('That font variant could not be found in the library.', 'tasty-fonts')
+            );
+        }
+
+        $familyName = (string) ($family['family'] ?? $familySlug);
+        $roles = $this->settings->getRoles($this->catalog->getCatalog());
+        $isHeading = ($roles['heading'] ?? '') === $familyName;
+        $isBody = ($roles['body'] ?? '') === $familyName;
+        $isLastFace = count((array) ($family['faces'] ?? [])) <= 1;
+
+        if ($isLastFace && ($isHeading || $isBody)) {
+            return $this->error(
+                'tasty_fonts_variant_in_use',
+                $this->buildDeleteLastVariantBlockedMessage($familyName, $isHeading, $isBody)
+            );
+        }
+
+        $relativePaths = $this->collectFaceRelativePaths($face);
+
+        if (!$this->storage->deleteRelativeFiles($relativePaths)) {
+            return $this->error(
+                'tasty_fonts_delete_failed',
+                __('The font files for that variant could not be deleted from uploads/fonts.', 'tasty-fonts')
+            );
+        }
+
+        if ($normalizedSource === 'google') {
+            $updateResult = $this->deleteGoogleImportedFace($familySlug, $normalizedWeight, $normalizedStyle);
+
+            if (is_wp_error($updateResult)) {
+                return $updateResult;
+            }
+        }
+
+        $this->assets->refreshGeneratedAssets();
+
+        $fileCount = count($relativePaths);
+        $this->log->add(
+            sprintf(
+                __('Font variant deleted: %1$s %2$s %3$s (%4$d file%5$s removed).', 'tasty-fonts'),
+                $familyName,
+                $normalizedWeight,
+                $normalizedStyle,
+                $fileCount,
+                $fileCount === 1 ? '' : 's'
+            )
+        );
+
+        return [
+            'family' => $familyName,
+            'weight' => $normalizedWeight,
+            'style' => $normalizedStyle,
+        ];
     }
 
     private function findFamilyBySlug(string $familySlug): ?array
@@ -121,6 +202,137 @@ final class LibraryService
         }
 
         return array_values(array_unique($paths));
+    }
+
+    private function collectFaceRelativePaths(array $face): array
+    {
+        $paths = [];
+
+        foreach ((array) ($face['paths'] ?? []) as $path) {
+            if (!is_string($path) || trim($path) === '') {
+                continue;
+            }
+
+            $paths[] = trim($path);
+        }
+
+        return array_values(array_unique($paths));
+    }
+
+    private function findMatchingFace(
+        array $family,
+        string $weight,
+        string $style,
+        string $source,
+        string $unicodeRange
+    ): ?array {
+        foreach ((array) ($family['faces'] ?? []) as $face) {
+            if ($this->faceMatches($face, $weight, $style, $source, $unicodeRange)) {
+                return $face;
+            }
+        }
+
+        return null;
+    }
+
+    private function faceMatches(array $face, string $weight, string $style, string $source, string $unicodeRange): bool
+    {
+        $faceSource = strtolower(trim((string) ($face['source'] ?? 'local')));
+        $faceUnicodeRange = $faceSource === 'google' ? '' : trim((string) ($face['unicode_range'] ?? ''));
+
+        return $faceSource === $source
+            && FontUtils::normalizeWeight((string) ($face['weight'] ?? '400')) === $weight
+            && FontUtils::normalizeStyle((string) ($face['style'] ?? 'normal')) === $style
+            && $faceUnicodeRange === $unicodeRange;
+    }
+
+    private function deleteGoogleImportedFace(string $familySlug, string $weight, string $style): bool|WP_Error
+    {
+        $import = $this->imports->get($familySlug);
+
+        if ($import === null) {
+            return true;
+        }
+
+        $remainingFaces = array_values(
+            array_filter(
+                (array) ($import['faces'] ?? []),
+                fn (mixed $face): bool => !$this->importFaceMatches($face, $weight, $style)
+            )
+        );
+
+        if ($remainingFaces === []) {
+            $this->imports->delete($familySlug);
+
+            if (!$this->storage->deleteRelativeDirectory('google/' . $familySlug)) {
+                return $this->error(
+                    'tasty_fonts_delete_failed',
+                    __('The Google Fonts folder could not be removed cleanly.', 'tasty-fonts')
+                );
+            }
+
+            return true;
+        }
+
+        $import['faces'] = $remainingFaces;
+        $import['variants'] = $this->buildImportVariantsFromFaces($remainingFaces);
+        $this->imports->upsert($import);
+
+        return true;
+    }
+
+    private function importFaceMatches(mixed $face, string $weight, string $style): bool
+    {
+        if (!is_array($face)) {
+            return false;
+        }
+
+        return FontUtils::normalizeWeight((string) ($face['weight'] ?? '400')) === $weight
+            && FontUtils::normalizeStyle((string) ($face['style'] ?? 'normal')) === $style;
+    }
+
+    private function buildImportVariantsFromFaces(array $faces): array
+    {
+        $variants = [];
+
+        foreach ($faces as $face) {
+            if (!is_array($face)) {
+                continue;
+            }
+
+            $weight = FontUtils::normalizeWeight((string) ($face['weight'] ?? '400'));
+            $style = FontUtils::normalizeStyle((string) ($face['style'] ?? 'normal'));
+            $variants[] = match (true) {
+                $weight === '400' && $style === 'normal' => 'regular',
+                $weight === '400' && $style === 'italic' => 'italic',
+                $style === 'italic' => $weight . 'italic',
+                default => $weight,
+            };
+        }
+
+        return array_values(array_unique($variants));
+    }
+
+    private function buildDeleteLastVariantBlockedMessage(string $familyName, bool $isHeading, bool $isBody): string
+    {
+        if ($isHeading && $isBody) {
+            return sprintf(
+                __('%s is currently assigned to both heading and body, and this is the last saved variant. Choose different role fonts before deleting it.', 'tasty-fonts'),
+                $familyName
+            );
+        }
+
+        if ($isHeading) {
+            return sprintf(
+                __('%s is currently assigned to heading, and this is the last saved variant. Choose a different heading font before deleting it.', 'tasty-fonts'),
+                $familyName
+            );
+        }
+
+        return sprintf(
+            __('%s is currently assigned to body, and this is the last saved variant. Choose a different body font before deleting it.', 'tasty-fonts'),
+            $familyName
+        );
     }
 
     private function error(string $code, string $message): WP_Error

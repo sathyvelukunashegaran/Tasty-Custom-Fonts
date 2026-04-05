@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Fonts;
+namespace TastyFonts\Fonts;
 
 final class FontFilenameParser
 {

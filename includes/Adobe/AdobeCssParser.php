@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Adobe;
+namespace TastyFonts\Adobe;
 
-use EtchFonts\Support\FontUtils;
+use TastyFonts\Support\FontUtils;
 
 final class AdobeCssParser
 {

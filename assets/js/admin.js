@@ -1,52 +1,67 @@
 (function () {
     // DOM references
-    const config = window.EtchFontsAdmin || {};
+    const config = window.TastyFontsAdmin || {};
     const strings = config.strings || {};
-    const roleHeading = document.getElementById('etch_fonts_heading_font');
-    const roleBody = document.getElementById('etch_fonts_body_font');
-    const roleHeadingFallback = document.getElementById('etch_fonts_heading_fallback');
-    const roleBodyFallback = document.getElementById('etch_fonts_body_fallback');
-    const headingStack = document.getElementById('etch-fonts-role-heading-stack');
-    const bodyStack = document.getElementById('etch-fonts-role-body-stack');
-    const previewCanvas = document.getElementById('etch-fonts-preview-canvas');
-    const previewTextInput = document.getElementById('etch-fonts-preview-text');
-    const previewSizeInput = document.getElementById('etch-fonts-preview-size');
+    const roleHeading = document.getElementById('tasty_fonts_heading_font');
+    const roleBody = document.getElementById('tasty_fonts_body_font');
+    const roleHeadingFallback = document.getElementById('tasty_fonts_heading_fallback');
+    const roleBodyFallback = document.getElementById('tasty_fonts_body_fallback');
+    const roleForm = document.querySelector('[data-role-form]');
+    const roleDeployment = document.querySelector('[data-role-deployment]');
+    const roleDeploymentBadge = document.querySelector('[data-role-deployment-badge]');
+    const roleDeploymentTitle = document.querySelector('[data-role-deployment-title]');
+    const roleDeploymentText = document.querySelector('[data-role-deployment-text]');
+    const headingRoleVariableCopies = Array.from(document.querySelectorAll('[data-role-variable-copy="heading"]'));
+    const bodyRoleVariableCopies = Array.from(document.querySelectorAll('[data-role-variable-copy="body"]'));
+    const headingFamilyVariableCopies = Array.from(document.querySelectorAll('[data-role-family-variable-copy="heading"]'));
+    const bodyFamilyVariableCopies = Array.from(document.querySelectorAll('[data-role-family-variable-copy="body"]'));
+    const previewCanvas = document.getElementById('tasty-fonts-preview-canvas');
+    const previewTextInput = document.getElementById('tasty-fonts-preview-text');
+    const previewSizeInput = document.getElementById('tasty-fonts-preview-size');
+    const roleAssignButtons = Array.from(document.querySelectorAll('[data-role-assign]'));
+    const deleteFamilyButtons = Array.from(document.querySelectorAll('[data-delete-family]'));
     const roleHeadingPreviews = Array.from(document.querySelectorAll('[data-role-preview="heading"]'));
     const roleBodyPreviews = Array.from(document.querySelectorAll('[data-role-preview="body"]'));
-    const previewDynamicText = Array.from(document.querySelectorAll('[data-preview-dynamic-text], .etch-fonts-preview-dynamic-text'));
-    const previewTabs = Array.from(document.querySelectorAll('[data-preview-tab]'));
-    const previewPanels = Array.from(document.querySelectorAll('[data-preview-panel]'));
-    const studioTabs = Array.from(document.querySelectorAll('[data-studio-tab]'));
-    const studioPanels = Array.from(document.querySelectorAll('[data-studio-panel]'));
-    const outputNames = document.getElementById('etch-fonts-output-names');
-    const outputStacks = document.getElementById('etch-fonts-output-stacks');
-    const outputVars = document.getElementById('etch-fonts-output-vars');
-    const outputUsage = document.getElementById('etch-fonts-output-usage');
-    const outputTabs = Array.from(document.querySelectorAll('[data-output-tab]'));
-    const outputPanels = Array.from(document.querySelectorAll('[data-output-panel]'));
+    const previewDynamicText = Array.from(document.querySelectorAll('[data-preview-dynamic-text], .tasty-fonts-preview-dynamic-text'));
+    const tabButtons = Array.from(document.querySelectorAll('[data-tab-group][data-tab-target]'));
+    const tabPanels = Array.from(document.querySelectorAll('[data-tab-group][data-tab-panel]'));
+    const outputNames = document.getElementById('tasty-fonts-output-names');
+    const outputStacks = document.getElementById('tasty-fonts-output-stacks');
+    const outputVars = document.getElementById('tasty-fonts-output-vars');
+    const outputUsage = document.getElementById('tasty-fonts-output-usage');
     const disclosureToggles = Array.from(document.querySelectorAll('[data-disclosure-toggle]'));
-    const librarySearch = document.getElementById('etch-fonts-library-search');
-    const googleSearch = document.getElementById('etch-fonts-google-search');
-    const adobeProjectId = document.getElementById('etch-fonts-adobe-project-id');
-    const googleResults = document.getElementById('etch-fonts-google-results');
-    const manualFamily = document.getElementById('etch-fonts-manual-family');
-    const manualVariants = document.getElementById('etch-fonts-manual-variants');
-    const selectedFamily = document.getElementById('etch-fonts-selected-family');
-    const variantsWrap = document.getElementById('etch-fonts-google-variants');
-    const importButton = document.getElementById('etch-fonts-import-submit');
-    const importStatus = document.getElementById('etch-fonts-import-status');
-    const addFontTabs = Array.from(document.querySelectorAll('[data-add-font-tab]'));
-    const addFontPanels = Array.from(document.querySelectorAll('[data-add-font-panel]'));
-    const uploadForm = document.getElementById('etch-fonts-upload-form');
-    const uploadGroupsWrap = document.getElementById('etch-fonts-upload-groups');
-    const uploadGroupTemplate = document.getElementById('etch-fonts-upload-group-template');
-    const uploadRowTemplate = document.getElementById('etch-fonts-upload-row-template');
-    const uploadAddFamily = document.getElementById('etch-fonts-upload-add-family');
-    const uploadSubmit = document.getElementById('etch-fonts-upload-submit');
-    const uploadStatus = document.getElementById('etch-fonts-upload-status');
+    const librarySearch = document.getElementById('tasty-fonts-library-search');
+    const librarySourceFilter = document.querySelector('[data-library-source-filter]');
+    const libraryFilteredEmpty = document.getElementById('tasty-fonts-library-empty-filtered');
+    const googleSearch = document.getElementById('tasty-fonts-google-search');
+    const adobeProjectId = document.getElementById('tasty-fonts-adobe-project-id');
+    const googleResults = document.getElementById('tasty-fonts-google-results');
+    const manualFamily = document.getElementById('tasty-fonts-manual-family');
+    const manualVariants = document.getElementById('tasty-fonts-manual-variants');
+    const selectedFamily = document.getElementById('tasty-fonts-selected-family');
+    const selectedFamilyPreview = document.getElementById('tasty-fonts-selected-family-preview');
+    const importFilesEstimate = document.getElementById('tasty-fonts-import-files-estimate');
+    const importSizeEstimate = document.getElementById('tasty-fonts-import-size-estimate');
+    const importSelectionSummary = document.getElementById('tasty-fonts-import-selection-summary');
+    const variantsWrap = document.getElementById('tasty-fonts-google-variants');
+    const variantQuickSelectButtons = Array.from(document.querySelectorAll('[data-google-variant-select]'));
+    const importButton = document.getElementById('tasty-fonts-import-submit');
+    const importStatus = document.getElementById('tasty-fonts-import-status');
+    const uploadForm = document.getElementById('tasty-fonts-upload-form');
+    const uploadGroupsWrap = document.getElementById('tasty-fonts-upload-groups');
+    const uploadGroupTemplate = document.getElementById('tasty-fonts-upload-group-template');
+    const uploadRowTemplate = document.getElementById('tasty-fonts-upload-row-template');
+    const uploadAddFamily = document.getElementById('tasty-fonts-upload-add-family');
+    const uploadSubmit = document.getElementById('tasty-fonts-upload-submit');
+    const uploadStatus = document.getElementById('tasty-fonts-upload-status');
     const toastItems = Array.from(document.querySelectorAll('[data-toast]'));
     const helpButtons = Array.from(document.querySelectorAll('[data-help-tooltip]'));
-    const helpTooltipLayer = document.getElementById('etch-fonts-help-tooltip-layer');
+    const helpTooltipLayer = document.getElementById('tasty-fonts-help-tooltip-layer');
+    const activityActorFilter = document.querySelector('[data-activity-actor-filter]');
+    const activitySearch = document.querySelector('[data-activity-search]');
+    const activityCount = document.querySelector('[data-activity-count]');
+    const activityList = document.querySelector('[data-activity-list]');
+    const activityFilteredEmpty = document.getElementById('tasty-fonts-activity-empty-filtered');
 
     let selectedSearchFamily = null;
     let searchResults = [];
@@ -56,6 +71,10 @@
     let activeHelpButton = null;
     let nextUploadGroupIndex = uploadGroupsWrap ? uploadGroupsWrap.querySelectorAll('[data-upload-group]').length : 0;
     let nextUploadRowIndex = uploadGroupsWrap ? uploadGroupsWrap.querySelectorAll('[data-upload-row]').length : 0;
+    let activeLibrarySourceFilter = 'all';
+    let syncingGoogleVariants = false;
+    let renderedGoogleVariantFamily = '';
+    let roleDraftSaveInFlight = false;
 
     // Shared helpers
     function slugify(value) {
@@ -75,8 +94,11 @@
     }
 
     function formatMessage(template, replacements) {
-        return (template || '').replace(/%(\d+)\$[sd]/g, (match, index) => {
-            const replacement = replacements[Number(index) - 1];
+        let sequentialIndex = 0;
+
+        return (template || '').replace(/%(?:(\d+)\$)?[sd]/g, (match, index) => {
+            const replacementIndex = index ? Number(index) - 1 : sequentialIndex++;
+            const replacement = replacements[replacementIndex];
 
             return replacement === undefined ? match : String(replacement);
         });
@@ -90,14 +112,191 @@
         return error instanceof Error && error.message ? error.message : fallback;
     }
 
+    function formatActivityCount(visibleCount, totalCount) {
+        if (visibleCount === totalCount) {
+            return formatMessage(
+                totalCount === 1
+                    ? getString('activityCountSingle', '%1$d entry')
+                    : getString('activityCountMultiple', '%1$d entries'),
+                [totalCount]
+            );
+        }
+
+        return formatMessage(
+            totalCount === 1
+                ? getString('activityCountFilteredSingle', '%1$d of %2$d entry')
+                : getString('activityCountFilteredMultiple', '%1$d of %2$d entries'),
+            [visibleCount, totalCount]
+        );
+    }
+
+    function googlePreviewStylesheet() {
+        return document.getElementById('tasty-fonts-google-preview-stylesheet');
+    }
+
+    function removeGooglePreviewStylesheet() {
+        const stylesheet = googlePreviewStylesheet();
+
+        if (stylesheet) {
+            stylesheet.remove();
+        }
+    }
+
+    function googlePreviewFallback(category) {
+        switch ((category || '').toLowerCase()) {
+            case 'serif':
+                return 'serif';
+            case 'monospace':
+                return 'monospace';
+            case 'handwriting':
+                return 'cursive';
+            case 'display':
+                return 'sans-serif';
+            default:
+                return 'sans-serif';
+        }
+    }
+
+    function googlePreviewText() {
+        const rawText = getElementValue(previewTextInput, '').trim() || getString('previewFallback', 'The quick brown fox jumps over the lazy dog.');
+
+        return rawText.replace(/\s+/g, ' ').trim().slice(0, 36);
+    }
+
+    function googleSelectedPreviewText() {
+        const rawText = getElementValue(previewTextInput, '').trim();
+
+        if (rawText) {
+            return rawText.replace(/\s+/g, ' ').trim().slice(0, 72);
+        }
+
+        return getString('importPreviewSample', 'Aa Bb Cc Dd Ee Ff Gg Hh\n0123456789');
+    }
+
+    function googlePreviewStylesheetText() {
+        return [googlePreviewText(), googleSelectedPreviewText()]
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function updateGooglePreviewStylesheet(items) {
+        const families = Array.from(
+            new Set(
+                [selectedSearchFamily ? selectedSearchFamily.family : '']
+                    .concat(
+                        (items || [])
+                            .map((item) => (item && item.family ? String(item.family).trim() : ''))
+                    )
+                    .filter(Boolean)
+            )
+        ).slice(0, 8);
+
+        if (!families.length) {
+            removeGooglePreviewStylesheet();
+            return;
+        }
+
+        const sample = googlePreviewStylesheetText();
+        const queryParts = families.map((family) => `family=${encodeURIComponent(family).replace(/%20/g, '+')}`);
+        queryParts.push(`text=${encodeURIComponent(sample)}`);
+        queryParts.push('display=swap');
+
+        const href = `https://fonts.googleapis.com/css2?${queryParts.join('&')}`;
+        let stylesheet = googlePreviewStylesheet();
+
+        if (!stylesheet) {
+            stylesheet = document.createElement('link');
+            stylesheet.id = 'tasty-fonts-google-preview-stylesheet';
+            stylesheet.rel = 'stylesheet';
+            document.head.appendChild(stylesheet);
+        }
+
+        if (stylesheet.href !== href) {
+            stylesheet.href = href;
+        }
+    }
+
     function reloadPageSoon(delay = 900) {
         window.setTimeout(() => {
             window.location.reload();
         }, delay);
     }
 
+    function roleFieldSnapshot() {
+        return {
+            heading: getElementValue(roleHeading, ''),
+            body: getElementValue(roleBody, ''),
+            headingFallback: getElementValue(roleHeadingFallback, 'sans-serif'),
+            bodyFallback: getElementValue(roleBodyFallback, 'sans-serif')
+        };
+    }
+
+    function restoreRoleFieldSnapshot(snapshot) {
+        if (!snapshot) {
+            return;
+        }
+
+        if (roleHeading) {
+            roleHeading.value = snapshot.heading || '';
+        }
+
+        if (roleBody) {
+            roleBody.value = snapshot.body || '';
+        }
+
+        if (roleHeadingFallback) {
+            roleHeadingFallback.value = snapshot.headingFallback || 'sans-serif';
+        }
+
+        if (roleBodyFallback) {
+            roleBodyFallback.value = snapshot.bodyFallback || 'sans-serif';
+        }
+    }
+
+    function setRoleDraftSavingState(isSaving) {
+        roleDraftSaveInFlight = isSaving;
+
+        roleAssignButtons.forEach((button) => {
+            button.disabled = isSaving;
+            button.setAttribute('aria-busy', isSaving ? 'true' : 'false');
+        });
+
+        if (roleForm) {
+            roleForm.classList.toggle('is-saving', isSaving);
+            roleForm.setAttribute('aria-busy', isSaving ? 'true' : 'false');
+        }
+    }
+
+    function syncRoleDeploymentState(deployment) {
+        if (!roleDeployment || !deployment) {
+            return;
+        }
+
+        const badgeClass = deployment.badge_class || '';
+
+        roleDeployment.classList.remove('is-success', 'is-warning', 'is-accent');
+
+        if (badgeClass) {
+            roleDeployment.classList.add(badgeClass);
+        }
+
+        if (roleDeploymentBadge) {
+            roleDeploymentBadge.className = `tasty-fonts-status-label${badgeClass ? ` ${badgeClass}` : ''}`;
+            roleDeploymentBadge.textContent = deployment.badge || '';
+        }
+
+        if (roleDeploymentTitle) {
+            roleDeploymentTitle.textContent = deployment.title || '';
+        }
+
+        if (roleDeploymentText) {
+            roleDeploymentText.textContent = deployment.copy || '';
+        }
+    }
+
     function getFallbackSelector(family) {
-        return document.querySelector(`.etch-fonts-fallback-selector[data-font-family="${CSS.escape(family)}"]`);
+        return document.querySelector(`.tasty-fonts-fallback-selector[data-font-family="${CSS.escape(family)}"]`);
     }
 
     function updateSelectedFamilyLabel(familyName) {
@@ -105,7 +304,259 @@
             return;
         }
 
-        selectedFamily.textContent = familyName || getString('selectFamily', 'Select a family from search results or type one manually.');
+        selectedFamily.textContent = familyName || getString('importFamilyEmpty', 'Choose a Google family or type one manually.');
+    }
+
+    function currentGoogleImportFamily() {
+        return manualFamily ? manualFamily.value.trim() : '';
+    }
+
+    function normalizeFamilyKey(value) {
+        return String(value || '').trim().toLowerCase();
+    }
+
+    function findGoogleFamilyMatch(familyName) {
+        const normalized = String(familyName || '').trim().toLowerCase();
+
+        if (!normalized) {
+            return null;
+        }
+
+        return searchResults.find((item) => String(item.family || '').trim().toLowerCase() === normalized) || null;
+    }
+
+    function approximateVariantTransferSize(variant, category) {
+        const baseSize = {
+            serif: 30,
+            'sans-serif': 26,
+            monospace: 24,
+            display: 32,
+            handwriting: 34,
+        };
+        const token = String(variant || '').toLowerCase();
+        const normalizedCategory = String(category || '').toLowerCase();
+        let estimate = baseSize[normalizedCategory] || 28;
+        const weightMatch = token.match(/\d{3}/);
+
+        if (token.includes('italic')) {
+            estimate += 3;
+        }
+
+        if (weightMatch) {
+            const weight = Number(weightMatch[0]);
+
+            if (weight >= 700) {
+                estimate += 1;
+            }
+
+            if (weight <= 200) {
+                estimate -= 1;
+            }
+        }
+
+        return Math.max(18, estimate);
+    }
+
+    function formatTransferEstimate(kilobytes) {
+        if (kilobytes >= 1024) {
+            const megabytes = kilobytes / 1024;
+
+            return `${megabytes >= 10 ? Math.round(megabytes) : megabytes.toFixed(1)} MB`;
+        }
+
+        return `${Math.round(kilobytes)} KB`;
+    }
+
+    function syncVariantChipState(input) {
+        const chip = input ? input.closest('.tasty-fonts-variant-chip') : null;
+
+        if (!chip || !input) {
+            return;
+        }
+
+        chip.classList.toggle('is-checked', input.checked);
+    }
+
+    function normalizeVariantTokens(value) {
+        const seen = new Set();
+
+        return String(value || '')
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean)
+            .filter((token) => {
+                const key = token.toLowerCase();
+
+                if (seen.has(key)) {
+                    return false;
+                }
+
+                seen.add(key);
+                return true;
+            });
+    }
+
+    function availableVariantInputs() {
+        return variantsWrap ? Array.from(variantsWrap.querySelectorAll('input[type="checkbox"]')) : [];
+    }
+
+    function syncManualVariantsInputFromChips() {
+        if (!manualVariants) {
+            return;
+        }
+
+        manualVariants.value = availableVariantInputs()
+            .filter((input) => input.checked)
+            .map((input) => input.value)
+            .join(',');
+    }
+
+    function syncVariantChipsFromManualInput() {
+        if (!manualVariants) {
+            return false;
+        }
+
+        const inputs = availableVariantInputs();
+
+        if (!inputs.length) {
+            return false;
+        }
+
+        const selectedTokens = new Set(normalizeVariantTokens(manualVariants.value).map((token) => token.toLowerCase()));
+        const normalizedValues = [];
+
+        syncingGoogleVariants = true;
+
+        inputs.forEach((input) => {
+            input.checked = selectedTokens.has(String(input.value).toLowerCase());
+            syncVariantChipState(input);
+
+            if (input.checked) {
+                normalizedValues.push(input.value);
+            }
+        });
+
+        manualVariants.value = normalizedValues.join(',');
+        syncingGoogleVariants = false;
+
+        return true;
+    }
+
+    function applyVariantQuickSelection(mode) {
+        const inputs = availableVariantInputs();
+
+        if (!inputs.length) {
+            return;
+        }
+
+        inputs.forEach((input) => {
+            const value = String(input.value).toLowerCase();
+            let shouldCheck = false;
+
+            switch (mode) {
+                case 'all':
+                    shouldCheck = true;
+                    break;
+                case 'normal':
+                    shouldCheck = !value.includes('italic');
+                    break;
+                case 'italic':
+                    shouldCheck = value.includes('italic');
+                    break;
+                case 'clear':
+                    shouldCheck = false;
+                    break;
+                default:
+                    shouldCheck = input.checked;
+                    break;
+            }
+
+            input.checked = shouldCheck;
+            syncVariantChipState(input);
+        });
+
+        if (manualVariants) {
+            if (mode === 'clear') {
+                manualVariants.dataset.explicitEmpty = 'true';
+            } else {
+                delete manualVariants.dataset.explicitEmpty;
+            }
+        }
+
+        syncManualVariantsInputFromChips();
+        updateGoogleImportSummary();
+    }
+
+    function updateGoogleImportSummary() {
+        const familyName = currentGoogleImportFamily();
+        const matchedFamily = selectedSearchFamily || findGoogleFamilyMatch(familyName);
+        const hasFamily = familyName !== '';
+        const variants = hasFamily ? Array.from(new Set(selectedVariantTokens())) : [];
+        const variantCount = variants.length;
+        const fallback = googlePreviewFallback(matchedFamily ? matchedFamily.category : '');
+        const previewText = googleSelectedPreviewText();
+        const availableCount = matchedFamily && Array.isArray(matchedFamily.variants)
+            ? matchedFamily.variants.length
+            : 0;
+        const estimatedKilobytes = variants.reduce((total, variant) => {
+            return total + approximateVariantTransferSize(variant, matchedFamily ? matchedFamily.category : '');
+        }, 0);
+
+        updateSelectedFamilyLabel(familyName);
+
+        if (selectedFamilyPreview) {
+            const previewFamilyName = matchedFamily ? matchedFamily.family : familyName;
+
+            selectedFamilyPreview.textContent = hasFamily
+                ? previewText
+                : getString('importPreviewEmpty', 'Preview appears here after you choose a family.');
+            selectedFamilyPreview.classList.toggle('is-placeholder', !hasFamily);
+            selectedFamilyPreview.style.fontFamily = hasFamily ? `"${previewFamilyName}", ${fallback}` : '';
+        }
+
+        if (importFilesEstimate) {
+            importFilesEstimate.textContent = formatMessage(
+                getString('importEstimateFiles', '%1$d file%2$s selected'),
+                [hasFamily ? variantCount : 0, variantCount === 1 ? '' : 's']
+            );
+        }
+
+        if (importSizeEstimate) {
+            importSizeEstimate.textContent = formatMessage(
+                getString('importEstimateSize', 'Approx. +%1$s WOFF2'),
+                [formatTransferEstimate(hasFamily ? estimatedKilobytes : 0)]
+            );
+        }
+
+        if (importSelectionSummary) {
+            if (!hasFamily) {
+                importSelectionSummary.textContent = getString(
+                    'importSelectionSummaryEmpty',
+                    '0 Variants Selected'
+                );
+            } else if (availableCount > 0) {
+                importSelectionSummary.textContent = formatMessage(
+                    getString('importSelectionSummaryAvailable', '%1$d of %2$d Variants Selected'),
+                    [variantCount, availableCount]
+                );
+            } else if (variantCount > 0) {
+                importSelectionSummary.textContent = formatMessage(
+                    getString('importSelectionSummaryManual', '%1$d Variant%2$s Selected'),
+                    [variantCount, variantCount === 1 ? '' : 's']
+                );
+            } else {
+                importSelectionSummary.textContent = getString(
+                    'importSelectionSummaryEmpty',
+                    '0 Variants Selected'
+                );
+            }
+        }
+
+        variantQuickSelectButtons.forEach((button) => {
+            button.disabled = !hasFamily || availableCount === 0;
+        });
+
+        updateGooglePreviewStylesheet(searchResults);
     }
 
     function getDisclosureTarget(toggle) {
@@ -118,15 +569,30 @@
         return targetId ? document.getElementById(targetId) : null;
     }
 
-    function activateTabSet(tabs, panels, tabAttribute, panelAttribute, key) {
-        tabs.forEach((tab) => {
-            const isActive = tab.getAttribute(tabAttribute) === key;
+    function tabButtonsForGroup(group) {
+        return tabButtons.filter((tab) => tab.getAttribute('data-tab-group') === group);
+    }
+
+    function tabPanelsForGroup(group) {
+        return tabPanels.filter((panel) => panel.getAttribute('data-tab-group') === group);
+    }
+
+    function activeTabKeyForGroup(group) {
+        const activeTab = tabButtonsForGroup(group).find((tab) => tab.classList.contains('is-active'));
+
+        return activeTab ? activeTab.getAttribute('data-tab-target') : '';
+    }
+
+    function activateTabGroup(group, key) {
+        tabButtonsForGroup(group).forEach((tab) => {
+            const isActive = tab.getAttribute('data-tab-target') === key;
             tab.classList.toggle('is-active', isActive);
             tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            tab.setAttribute('tabindex', isActive ? '0' : '-1');
         });
 
-        panels.forEach((panel) => {
-            const isActive = panel.getAttribute(panelAttribute) === key;
+        tabPanelsForGroup(group).forEach((panel) => {
+            const isActive = panel.getAttribute('data-tab-panel') === key;
             panel.classList.toggle('is-active', isActive);
             panel.hidden = !isActive;
         });
@@ -162,8 +628,7 @@
     }
 
     function focusAddFontPanel() {
-        const activeTab = addFontTabs.find((tab) => tab.classList.contains('is-active'));
-        const activeKey = activeTab ? activeTab.getAttribute('data-add-font-tab') : 'google';
+        const activeKey = activeTabKeyForGroup('add-font') || 'google';
 
         if (activeKey === 'upload') {
             const firstFamilyInput = uploadGroupsWrap ? uploadGroupsWrap.querySelector('[data-upload-group-field="family"]') : null;
@@ -176,8 +641,15 @@
         }
 
         if (activeKey === 'adobe') {
-            if (adobeProjectId) {
+            if (adobeProjectId && !adobeProjectId.closest('[hidden]')) {
                 adobeProjectId.focus();
+                return;
+            }
+
+            const adobeSettingsButton = document.querySelector('[data-disclosure-toggle="tasty-fonts-adobe-project-panel"]');
+
+            if (adobeSettingsButton) {
+                adobeSettingsButton.focus();
             }
 
             return;
@@ -193,26 +665,15 @@
         }
     }
 
-    function activateOutputTab(key) {
-        activateTabSet(outputTabs, outputPanels, 'data-output-tab', 'data-output-panel', key);
-    }
-
-    function activatePreviewTab(key) {
-        activateTabSet(previewTabs, previewPanels, 'data-preview-tab', 'data-preview-panel', key);
-    }
-
-    function activateStudioTab(key) {
-        activateTabSet(studioTabs, studioPanels, 'data-studio-tab', 'data-studio-panel', key);
-    }
-
-    function activateAddFontTab(key) {
-        activateTabSet(addFontTabs, addFontPanels, 'data-add-font-tab', 'data-add-font-panel', key);
-    }
-
     // Toasts and tooltips
     function dismissToast(toast) {
         if (!toast || !toast.parentNode) {
             return;
+        }
+
+        if (toast._dismissTimer) {
+            window.clearTimeout(toast._dismissTimer);
+            toast._dismissTimer = 0;
         }
 
         if (toast.classList.contains('is-leaving')) {
@@ -229,19 +690,33 @@
     }
 
     function ensureToastStack() {
-        let stack = document.querySelector('.etch-fonts-toast-stack');
+        let stack = document.querySelector('.tasty-fonts-toast-stack');
 
         if (stack) {
             return stack;
         }
 
         stack = document.createElement('div');
-        stack.className = 'etch-fonts-toast-stack';
+        stack.className = 'tasty-fonts-toast-stack';
         stack.setAttribute('aria-live', 'polite');
         stack.setAttribute('aria-atomic', 'true');
         document.body.appendChild(stack);
 
         return stack;
+    }
+
+    function scheduleToastDismiss(toast, tone) {
+        if (!toast) {
+            return;
+        }
+
+        if (toast._dismissTimer) {
+            window.clearTimeout(toast._dismissTimer);
+        }
+
+        toast._dismissTimer = window.setTimeout(() => {
+            dismissToast(toast);
+        }, tone === 'error' ? 6000 : 3200);
     }
 
     function showToast(message, tone) {
@@ -250,20 +725,38 @@
         }
 
         const stack = ensureToastStack();
+        const resolvedTone = tone === 'error' ? 'error' : 'success';
+        const existingToast = Array.from(stack.querySelectorAll('[data-toast]')).find((toast) => {
+            if (toast.getAttribute('data-toast-tone') !== resolvedTone) {
+                return false;
+            }
+
+            const text = toast.querySelector('.tasty-fonts-toast-message');
+
+            return text && text.textContent === message;
+        });
+
+        if (existingToast) {
+            existingToast.classList.remove('is-leaving');
+            stack.appendChild(existingToast);
+            scheduleToastDismiss(existingToast, resolvedTone);
+            return;
+        }
+
         const toast = document.createElement('div');
         const dismiss = document.createElement('button');
         const text = document.createElement('div');
 
-        toast.className = `etch-fonts-toast is-${tone === 'error' ? 'error' : 'success'}`;
+        toast.className = `tasty-fonts-toast is-${resolvedTone}`;
         toast.setAttribute('data-toast', '');
-        toast.setAttribute('data-toast-tone', tone === 'error' ? 'error' : 'success');
-        toast.setAttribute('role', tone === 'error' ? 'alert' : 'status');
+        toast.setAttribute('data-toast-tone', resolvedTone);
+        toast.setAttribute('role', resolvedTone === 'error' ? 'alert' : 'status');
 
-        text.className = 'etch-fonts-toast-message';
+        text.className = 'tasty-fonts-toast-message';
         text.textContent = message;
 
         dismiss.type = 'button';
-        dismiss.className = 'etch-fonts-toast-dismiss';
+        dismiss.className = 'tasty-fonts-toast-dismiss';
         dismiss.setAttribute('data-toast-dismiss', '');
         dismiss.setAttribute('aria-label', 'Dismiss notification');
         dismiss.innerHTML = '<span aria-hidden="true">&times;</span>';
@@ -272,9 +765,7 @@
         toast.appendChild(dismiss);
         stack.appendChild(toast);
 
-        window.setTimeout(() => {
-            dismissToast(toast);
-        }, tone === 'error' ? 6000 : 3200);
+        scheduleToastDismiss(toast, resolvedTone);
     }
 
     function initToasts() {
@@ -283,12 +774,7 @@
         }
 
         toastItems.forEach((toast) => {
-            const tone = toast.getAttribute('data-toast-tone');
-            const timeout = tone === 'error' ? 6000 : 3200;
-
-            window.setTimeout(() => {
-                dismissToast(toast);
-            }, timeout);
+            scheduleToastDismiss(toast, toast.getAttribute('data-toast-tone') === 'error' ? 'error' : 'success');
         });
 
         const params = new URLSearchParams(window.location.search);
@@ -301,7 +787,7 @@
             'rescan',
             'log_cleared',
             'family_deleted',
-            'etch_fonts_error'
+            'tasty_fonts_error'
         ];
         let changed = false;
 
@@ -419,6 +905,11 @@
                 }, 0);
             });
             button.addEventListener('click', (event) => {
+                if (button.hasAttribute('data-help-passive')) {
+                    hideHelpTooltip();
+                    return;
+                }
+
                 event.preventDefault();
 
                 if (activeHelpButton === button && !helpTooltipLayer.hidden) {
@@ -535,7 +1026,7 @@
         }
 
         const text = document.createElement('div');
-        text.className = 'etch-fonts-import-status-message';
+        text.className = 'tasty-fonts-import-status-message';
         text.textContent = message;
         target.appendChild(text);
 
@@ -549,8 +1040,8 @@
             const clamped = Math.max(0, Math.min(100, progress));
 
             target.classList.add('is-progress');
-            track.className = 'etch-fonts-import-progress-track';
-            bar.className = 'etch-fonts-import-progress-bar';
+            track.className = 'tasty-fonts-import-progress-track';
+            bar.className = 'tasty-fonts-import-progress-bar';
             bar.style.width = `${clamped}%`;
             track.appendChild(bar);
             target.appendChild(track);
@@ -572,6 +1063,10 @@
             bodyFallback: bodyFallbackValue,
             headingSlug: slugify(heading),
             bodySlug: slugify(body),
+            headingVariable: 'var(--font-heading)',
+            bodyVariable: 'var(--font-body)',
+            headingFamilyVariable: heading ? `var(--font-${slugify(heading)})` : '',
+            bodyFamilyVariable: body ? `var(--font-${slugify(body)})` : '',
             headingStack: buildStack(heading, headingFallbackValue),
             bodyStack: buildStack(body, bodyFallbackValue)
         };
@@ -580,13 +1075,29 @@
     function updateRoleOutputs() {
         const data = currentRoleData();
 
-        if (headingStack) {
-            headingStack.textContent = data.headingStack;
-        }
+        headingRoleVariableCopies.forEach((button) => {
+            button.textContent = data.headingVariable;
+            button.setAttribute('data-copy-text', data.headingVariable);
+            button.setAttribute('title', `Heading font variable: ${data.headingVariable}. Resolved stack: ${data.headingStack}`);
+        });
 
-        if (bodyStack) {
-            bodyStack.textContent = data.bodyStack;
-        }
+        bodyRoleVariableCopies.forEach((button) => {
+            button.textContent = data.bodyVariable;
+            button.setAttribute('data-copy-text', data.bodyVariable);
+            button.setAttribute('title', `Body font variable: ${data.bodyVariable}. Resolved stack: ${data.bodyStack}`);
+        });
+
+        headingFamilyVariableCopies.forEach((button) => {
+            button.textContent = data.headingFamilyVariable;
+            button.setAttribute('data-copy-text', data.headingFamilyVariable);
+            button.setAttribute('title', `Heading family variable: ${data.headingFamilyVariable}. Role alias: ${data.headingVariable}. Resolved stack: ${data.headingStack}`);
+        });
+
+        bodyFamilyVariableCopies.forEach((button) => {
+            button.textContent = data.bodyFamilyVariable;
+            button.setAttribute('data-copy-text', data.bodyFamilyVariable);
+            button.setAttribute('title', `Body family variable: ${data.bodyFamilyVariable}. Role alias: ${data.bodyVariable}. Resolved stack: ${data.bodyStack}`);
+        });
 
         roleHeadingPreviews.forEach((element) => {
             element.style.fontFamily = data.headingStack;
@@ -594,6 +1105,46 @@
 
         roleBodyPreviews.forEach((element) => {
             element.style.fontFamily = data.bodyStack;
+        });
+
+        roleAssignButtons.forEach((button) => {
+            const family = button.getAttribute('data-font-family') || '';
+            const role = button.getAttribute('data-role-assign');
+            const isCurrent = (role === 'heading' && family === data.heading) || (role === 'body' && family === data.body);
+            const label = button.querySelector('.tasty-fonts-role-assign-label');
+
+            button.classList.toggle('is-current', isCurrent);
+            button.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
+
+            if (label) {
+                label.textContent = isCurrent ? (button.dataset.activeLabel || '') : (button.dataset.idleLabel || '');
+            }
+        });
+
+        deleteFamilyButtons.forEach((button) => {
+            const family = button.getAttribute('data-delete-family') || '';
+            const isHeading = family !== '' && family === data.heading;
+            const isBody = family !== '' && family === data.body;
+            let blockedMessage = '';
+
+            if (isHeading && isBody) {
+                blockedMessage = button.dataset.deleteBlockedBoth || '';
+            } else if (isHeading) {
+                blockedMessage = button.dataset.deleteBlockedHeading || '';
+            } else if (isBody) {
+                blockedMessage = button.dataset.deleteBlockedBody || '';
+            }
+
+            button.classList.toggle('is-disabled', blockedMessage !== '');
+            button.setAttribute('aria-disabled', blockedMessage !== '' ? 'true' : 'false');
+            button.setAttribute('title', blockedMessage || button.dataset.deleteReadyTitle || '');
+
+            if (blockedMessage !== '') {
+                button.setAttribute('data-delete-blocked', blockedMessage);
+                return;
+            }
+
+            button.removeAttribute('data-delete-blocked');
         });
 
         if (outputNames) {
@@ -640,7 +1191,7 @@
         const previewText = previewTextInput.value.trim();
         const text = previewText
             ? previewText
-            : 'The quick brown fox jumps over the lazy dog. 1234567890';
+            : getString('previewFallback', 'The quick brown fox jumps over the lazy dog. 1234567890');
 
         previewDynamicText.forEach((element) => {
             element.textContent = text;
@@ -655,7 +1206,7 @@
         const size = Number.parseInt(previewSizeInput.value, 10);
         const safeSize = Number.isFinite(size) && size > 0 ? size : 32;
 
-        previewCanvas.style.setProperty('--etch-preview-base', `${safeSize}px`);
+        previewCanvas.style.setProperty('--tasty-preview-base', `${safeSize}px`);
     }
 
     function updateInlineStackPreview(family) {
@@ -676,12 +1227,26 @@
         uploadRows(group).forEach((row) => updateUploadDetectedSuggestion(row));
     }
 
+    function setFamilyFallbackFeedback(form, message, tone) {
+        const feedback = form ? form.querySelector('[data-family-fallback-feedback]') : null;
+
+        if (!feedback) {
+            return;
+        }
+
+        feedback.textContent = message || '';
+        feedback.hidden = !message;
+        feedback.classList.toggle('is-success', tone === 'success');
+        feedback.classList.toggle('is-error', tone === 'error');
+        feedback.classList.toggle('is-saving', tone === 'saving');
+    }
+
     function syncFamilyFallbackSaveState(form) {
         if (!form) {
             return;
         }
 
-        const selector = form.querySelector('.etch-fonts-fallback-selector');
+        const selector = form.querySelector('.tasty-fonts-fallback-selector');
         const button = form.querySelector('[data-family-fallback-save]');
 
         if (!selector || !button) {
@@ -690,6 +1255,18 @@
 
         const isDirty = (selector.dataset.savedValue || 'sans-serif') !== (selector.value || 'sans-serif');
         button.disabled = !isDirty;
+    }
+
+    function buildFallbackSavedMessage(family, message) {
+        return message || formatMessage(getString('fallbackSaved', 'Saved fallback for %1$s.'), [family]);
+    }
+
+    function buildFallbackErrorMessage(error) {
+        return getErrorMessage(error, getString('fallbackSaveError', 'The fallback could not be saved.'));
+    }
+
+    function buildRoleDraftErrorMessage(error) {
+        return getErrorMessage(error, getString('rolesDraftSaveError', 'The role draft could not be saved.'));
     }
 
     // Family fallback persistence
@@ -714,6 +1291,7 @@
 
         selector.disabled = true;
         selector.setAttribute('aria-busy', 'true');
+        setFamilyFallbackFeedback(saveForm, getString('fallbackSaving', 'Saving fallback…'), 'saving');
         if (button) {
             button.disabled = true;
             button.setAttribute('aria-busy', 'true');
@@ -724,7 +1302,7 @@
         }
 
         try {
-            const payload = await postAjax('etch_fonts_save_family_fallback', config.saveFallbackNonce, {
+            const payload = await postAjax('tasty_fonts_save_family_fallback', config.saveFallbackNonce, {
                 family,
                 fallback: nextValue
             });
@@ -735,24 +1313,23 @@
 
             const data = payload.data || {};
             const savedFallback = data.fallback || nextValue;
+            const message = buildFallbackSavedMessage(family, data.message);
 
             selector.value = savedFallback;
             selector.dataset.savedValue = savedFallback;
             updateInlineStackPreview(family);
             syncFamilyFallbackSaveState(saveForm);
-            showToast(
-                data.message || formatMessage(getString('fallbackSaved', 'Saved fallback for %1$s.'), [family]),
-                'success'
-            );
+            setFamilyFallbackFeedback(saveForm, message, 'success');
+            showToast(message, 'success');
             return true;
         } catch (error) {
+            const message = buildFallbackErrorMessage(error);
+
             selector.value = previousValue;
             updateInlineStackPreview(family);
             syncFamilyFallbackSaveState(saveForm);
-            showToast(
-                getErrorMessage(error, getString('fallbackSaveError', 'The fallback could not be saved.')),
-                'error'
-            );
+            setFamilyFallbackFeedback(saveForm, message, 'error');
+            showToast(message, 'error');
             return false;
         } finally {
             selector.disabled = false;
@@ -767,12 +1344,72 @@
         }
     }
 
-    function copyText(text, button) {
+    async function saveRoleDraft(snapshotBeforeChange) {
+        if (!config.saveRolesNonce || !window.fetch || roleDraftSaveInFlight) {
+            return false;
+        }
+
+        setRoleDraftSavingState(true);
+
+        try {
+            const payload = await postAjax('tasty_fonts_save_role_draft', config.saveRolesNonce, {
+                heading: getElementValue(roleHeading, ''),
+                body: getElementValue(roleBody, ''),
+                heading_fallback: getElementValue(roleHeadingFallback, 'sans-serif'),
+                body_fallback: getElementValue(roleBodyFallback, 'sans-serif')
+            });
+
+            if (!payload.success) {
+                throw new Error(getPayloadMessage(payload, getString('rolesDraftSaveError', 'The role draft could not be saved.')));
+            }
+
+            const data = payload.data || {};
+            const roles = data.roles || {};
+
+            if (roleHeading && typeof roles.heading === 'string') {
+                roleHeading.value = roles.heading;
+            }
+
+            if (roleBody && typeof roles.body === 'string') {
+                roleBody.value = roles.body;
+            }
+
+            if (roleHeadingFallback && typeof roles.heading_fallback === 'string') {
+                roleHeadingFallback.value = roles.heading_fallback;
+            }
+
+            if (roleBodyFallback && typeof roles.body_fallback === 'string') {
+                roleBodyFallback.value = roles.body_fallback;
+            }
+
+            updateRoleOutputs();
+            syncRoleDeploymentState(data.role_deployment || null);
+            showToast(data.message || getString('rolesDraftSaved', 'Role draft saved.'), 'success');
+            return true;
+        } catch (error) {
+            restoreRoleFieldSnapshot(snapshotBeforeChange);
+            updateRoleOutputs();
+            showToast(buildRoleDraftErrorMessage(error), 'error');
+            return false;
+        } finally {
+            setRoleDraftSavingState(false);
+        }
+    }
+
+    function copyText(text, button, options = {}) {
         if (!text || !navigator.clipboard) {
             return;
         }
 
         navigator.clipboard.writeText(text).then(() => {
+            if (options.toastMessage) {
+                showToast(options.toastMessage, 'success');
+            }
+
+            if (options.preserveLabel) {
+                return;
+            }
+
             if (!button) {
                 return;
             }
@@ -786,18 +1423,75 @@
     }
 
     // Google search and import
-    function renderVariantOptions(variants) {
+    function renderVariantOptions(variants, familyName = '') {
         if (!variantsWrap) {
             return;
         }
 
+        const nextFamilyKey = normalizeFamilyKey(familyName || currentGoogleImportFamily());
+        const familyChanged = nextFamilyKey !== '' && nextFamilyKey !== renderedGoogleVariantFamily;
+        const seededTokens = manualVariants ? normalizeVariantTokens(manualVariants.value) : [];
+        const preserveEmptySelection = !!(manualVariants && manualVariants.dataset.explicitEmpty === 'true' && !familyChanged);
+
         variantsWrap.innerHTML = '';
 
-        (variants || []).forEach((variant, index) => {
+        (variants || []).forEach((variant) => {
             const label = document.createElement('label');
-            label.innerHTML = `<input type="checkbox" value="${variant}" ${index < 2 || variant === 'regular' ? 'checked' : ''}> <span>${variant}</span>`;
+            const input = document.createElement('input');
+            const mark = document.createElement('span');
+            const text = document.createElement('span');
+
+            label.className = 'tasty-fonts-variant-chip';
+            input.type = 'checkbox';
+            input.value = variant;
+            mark.className = 'tasty-fonts-variant-chip-mark';
+            mark.setAttribute('aria-hidden', 'true');
+            text.className = 'tasty-fonts-variant-chip-label';
+            text.textContent = variant;
+
+            label.append(input, mark, text);
             variantsWrap.appendChild(label);
         });
+
+        if (seededTokens.length > 0) {
+            if (manualVariants) {
+                delete manualVariants.dataset.explicitEmpty;
+            }
+            syncVariantChipsFromManualInput();
+        } else if (preserveEmptySelection) {
+            availableVariantInputs().forEach((input) => {
+                input.checked = false;
+                syncVariantChipState(input);
+            });
+
+            if (manualVariants) {
+                manualVariants.value = '';
+                manualVariants.dataset.explicitEmpty = 'true';
+            }
+        } else {
+            const inputs = availableVariantInputs();
+            const preferredInputs = inputs.filter((input) => {
+                const value = String(input.value).toLowerCase();
+
+                return value === 'regular' || value === '700';
+            });
+            const normalInputs = inputs.filter((input) => !String(input.value).toLowerCase().includes('italic'));
+            const defaultSelection = preferredInputs.length > 0
+                ? preferredInputs
+                : (normalInputs.length > 0 ? normalInputs.slice(0, Math.min(2, normalInputs.length)) : inputs.slice(0, 1));
+
+            inputs.forEach((input) => {
+                input.checked = defaultSelection.includes(input);
+                syncVariantChipState(input);
+            });
+            if (manualVariants) {
+                delete manualVariants.dataset.explicitEmpty;
+            }
+            syncManualVariantsInputFromChips();
+        }
+
+        renderedGoogleVariantFamily = nextFamilyKey;
+        updateGoogleImportSummary();
     }
 
     function renderSearchResults(items) {
@@ -809,30 +1503,65 @@
         googleResults.innerHTML = '';
 
         if (!searchResults.length) {
-            googleResults.innerHTML = `<div class="etch-fonts-empty">${getString('searchEmpty', 'No Google Fonts families matched that search.')}</div>`;
+            updateGooglePreviewStylesheet([]);
+            googleResults.innerHTML = `<div class="tasty-fonts-empty">${getString('searchEmpty', 'No Google Fonts families matched that search.')}</div>`;
             return;
         }
 
+        updateGooglePreviewStylesheet(searchResults);
+
         searchResults.forEach((item) => {
-            const card = document.createElement('button');
-            card.type = 'button';
-            card.className = 'etch-fonts-search-card';
+            const card = document.createElement('article');
+            const title = document.createElement('h3');
+            const preview = document.createElement('div');
+            const meta = document.createElement('div');
+            const category = document.createElement('span');
+            const variants = document.createElement('span');
+            const fallback = googlePreviewFallback(item.category);
+
+            card.className = 'tasty-fonts-search-card';
             card.dataset.family = item.family;
-            card.innerHTML = `
-                <h3>${item.family}</h3>
-                <div class="etch-fonts-muted">${item.category || ''}</div>
-                <div class="etch-fonts-muted">${(item.variants || []).length} variant(s)</div>
-            `;
+            card.setAttribute('role', 'button');
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('aria-label', formatMessage(getString('searchResultSelectLabel', 'Select %s'), [item.family]));
+            card.setAttribute('aria-pressed', !!selectedSearchFamily && selectedSearchFamily.family === item.family ? 'true' : 'false');
+            card.classList.toggle('is-active', !!selectedSearchFamily && selectedSearchFamily.family === item.family);
+
+            title.className = 'tasty-fonts-search-card-title';
+            title.textContent = item.family;
+
+            preview.className = 'tasty-fonts-search-card-preview';
+            preview.textContent = googlePreviewText();
+            preview.style.fontFamily = `"${item.family}", ${fallback}`;
+
+            meta.className = 'tasty-fonts-search-card-meta tasty-fonts-muted';
+            category.textContent = item.category || fallback;
+            variants.textContent = `${(item.variants || []).length} variant(s)`;
+
+            meta.append(category, variants);
+            card.append(title, preview, meta);
             googleResults.appendChild(card);
         });
+
+        const matchedFamily = findGoogleFamilyMatch(currentGoogleImportFamily());
+
+        if (matchedFamily) {
+            selectedSearchFamily = matchedFamily;
+
+            if (!availableVariantInputs().length) {
+                renderVariantOptions(matchedFamily.variants || [], matchedFamily.family || '');
+            }
+        }
     }
 
     function selectSearchFamily(familyName) {
         selectedSearchFamily = searchResults.find((item) => item.family === familyName) || null;
 
         if (googleResults) {
-            googleResults.querySelectorAll('.etch-fonts-search-card').forEach((card) => {
-                card.classList.toggle('is-active', card.dataset.family === familyName);
+            googleResults.querySelectorAll('.tasty-fonts-search-card').forEach((card) => {
+                const isActive = card.dataset.family === familyName;
+                card.classList.toggle('is-active', isActive);
+                card.setAttribute('aria-pressed', isActive ? 'true' : 'false');
             });
         }
 
@@ -841,7 +1570,7 @@
         }
 
         updateSelectedFamilyLabel(familyName);
-        renderVariantOptions(selectedSearchFamily ? selectedSearchFamily.variants : []);
+        renderVariantOptions(selectedSearchFamily ? selectedSearchFamily.variants : [], familyName);
     }
 
     // Local upload builder
@@ -1045,7 +1774,7 @@
         button.dataset.detectedFamily = detected.family;
         button.dataset.detectedWeight = detected.weight;
         button.dataset.detectedStyle = detected.style;
-        button.textContent = `${getString('uploadUseDetected', 'Use detected values')} · ${label}`;
+        button.textContent = `${getString('uploadUseDetected', 'Use Detected Values')} · ${label}`;
 
         return detected;
     }
@@ -1202,7 +1931,7 @@
         let hasAnyFile = false;
         let rowIndex = 0;
 
-        formData.append('action', 'etch_fonts_upload_local');
+        formData.append('action', 'tasty_fonts_upload_local');
         formData.append('nonce', config.uploadNonce || '');
 
         groups.forEach((group) => {
@@ -1243,7 +1972,7 @@
                 uploadSubmit.textContent = getString('uploadButtonBusy', 'Uploading…');
             } else {
                 uploadSubmit.removeAttribute('aria-busy');
-                uploadSubmit.textContent = getString('uploadButtonIdle', 'Upload to library');
+                uploadSubmit.textContent = getString('uploadButtonIdle', 'Upload to Library');
             }
         }
 
@@ -1335,20 +2064,23 @@
         }
 
         if (!config.googleApiEnabled) {
-            googleResults.innerHTML = `<div class="etch-fonts-empty">${getString('searchDisabled', '')}</div>`;
+            updateGooglePreviewStylesheet([]);
+            googleResults.innerHTML = `<div class="tasty-fonts-empty">${getString('searchDisabled', '')}</div>`;
             return;
         }
 
         if (query.trim().length < 2) {
+            updateGooglePreviewStylesheet([]);
             googleResults.innerHTML = '';
             return;
         }
 
-        googleResults.innerHTML = `<div class="etch-fonts-empty">${getString('searching', 'Searching Google Fonts…')}</div>`;
-        const payload = await postAjax('etch_fonts_search_google', config.searchNonce, { query });
+        googleResults.innerHTML = `<div class="tasty-fonts-empty">${getString('searching', 'Searching Google Fonts…')}</div>`;
+        const payload = await postAjax('tasty_fonts_search_google', config.searchNonce, { query });
 
         if (!payload.success) {
-            googleResults.innerHTML = `<div class="etch-fonts-empty">${getPayloadMessage(payload, getString('importError', 'Request failed.'))}</div>`;
+            updateGooglePreviewStylesheet([]);
+            googleResults.innerHTML = `<div class="tasty-fonts-empty">${getPayloadMessage(payload, getString('importError', 'Request failed.'))}</div>`;
             return;
         }
 
@@ -1377,7 +2109,7 @@
         }
 
         importButton.removeAttribute('aria-busy');
-        importButton.textContent = idleLabel || getString('importButtonIdle', 'Import and self-host');
+        importButton.textContent = idleLabel || getString('importButtonIdle', 'Import and Self-Host');
     }
 
     async function importGoogleVariant(family, variant, index, total) {
@@ -1388,7 +2120,7 @@
 
         setStatus(importStatus, progressMessage, 'progress', Math.round((index / total) * 100));
 
-        const payload = await postAjax('etch_fonts_import_google', config.importNonce, {
+        const payload = await postAjax('tasty_fonts_import_google', config.importNonce, {
             family,
             variant_tokens: variant,
             'variants[]': [variant]
@@ -1410,6 +2142,11 @@
         }
 
         const variants = Array.from(new Set(selectedVariantTokens()));
+        if (variants.length === 0) {
+            setStatus(importStatus, getString('importNoVariants', 'Select at least one variant to import.'), 'error');
+            return;
+        }
+
         const total = variants.length || 1;
         const originalLabel = importButton ? importButton.textContent : '';
         let importedCount = 0;
@@ -1508,32 +2245,118 @@
 
     // Library filtering
     function initLibraryFiltering() {
-        if (!librarySearch) {
+        if (!librarySearch && !librarySourceFilter) {
             return;
         }
 
-        const applyLibraryFilter = () => {
-            const query = librarySearch.value.trim().toLowerCase();
+        const libraryRows = Array.from(document.querySelectorAll('[data-font-row]'));
+        activeLibrarySourceFilter = librarySourceFilter ? (librarySourceFilter.value || 'all') : 'all';
 
-            document.querySelectorAll('[data-font-row]').forEach((row) => {
-                if (!query) {
+        function rowMatchesSource(row, sourceFilter) {
+            if (!row || !sourceFilter || sourceFilter === 'all') {
+                return true;
+            }
+
+            const sourceTokens = (row.getAttribute('data-font-sources') || '').split(/\s+/).filter(Boolean);
+
+            return sourceTokens.includes(sourceFilter);
+        }
+
+        const applyLibraryFilter = () => {
+            const query = librarySearch ? librarySearch.value.trim().toLowerCase() : '';
+            let visibleCount = 0;
+
+            libraryRows.forEach((row) => {
+                const name = row.getAttribute('data-font-name') || '';
+                const matchesQuery = !query || name.includes(query);
+                const matchesSource = rowMatchesSource(row, activeLibrarySourceFilter);
+                const matches = matchesQuery && matchesSource;
+
+                row.hidden = !matches;
+
+                if (!matches) {
                     resetRowAfterSearch(row);
                     return;
                 }
 
-                const name = row.getAttribute('data-font-name') || '';
-                const matches = name.includes(query);
+                visibleCount += 1;
 
-                row.hidden = !matches;
-
-                if (matches) {
+                if (query) {
                     expandRowForSearch(row);
+                    return;
                 }
+
+                resetRowAfterSearch(row);
             });
+
+            if (libraryFilteredEmpty) {
+                libraryFilteredEmpty.hidden = visibleCount !== 0;
+            }
         };
 
-        librarySearch.addEventListener('input', applyLibraryFilter);
-        librarySearch.addEventListener('search', applyLibraryFilter);
+        if (librarySearch) {
+            librarySearch.addEventListener('input', applyLibraryFilter);
+            librarySearch.addEventListener('search', applyLibraryFilter);
+        }
+
+        if (librarySourceFilter) {
+            librarySourceFilter.addEventListener('change', () => {
+                activeLibrarySourceFilter = librarySourceFilter.value || 'all';
+                applyLibraryFilter();
+            });
+        }
+
+        applyLibraryFilter();
+    }
+
+    function initActivityFiltering() {
+        if (!activityList || (!activityActorFilter && !activitySearch)) {
+            return;
+        }
+
+        const activityEntries = Array.from(activityList.querySelectorAll('[data-activity-entry]'));
+        const totalCount = activityEntries.length;
+
+        const applyActivityFilter = () => {
+            const actorFilter = activityActorFilter ? activityActorFilter.value.trim().toLowerCase() : '';
+            const query = activitySearch ? activitySearch.value.trim().toLowerCase() : '';
+            let visibleCount = 0;
+
+            activityEntries.forEach((entry) => {
+                const actor = (entry.getAttribute('data-activity-actor') || '').trim().toLowerCase();
+                const searchValue = (entry.getAttribute('data-activity-search') || '').trim().toLowerCase();
+                const matchesActor = !actorFilter || actor === actorFilter;
+                const matchesQuery = !query || searchValue.includes(query);
+                const matches = matchesActor && matchesQuery;
+
+                entry.hidden = !matches;
+
+                if (matches) {
+                    visibleCount += 1;
+                }
+            });
+
+            if (activityCount) {
+                activityCount.textContent = formatActivityCount(visibleCount, totalCount);
+            }
+
+            if (activityFilteredEmpty) {
+                activityFilteredEmpty.hidden = visibleCount !== 0;
+            }
+
+            activityList.hidden = visibleCount === 0;
+        };
+
+        if (activityActorFilter) {
+            activityActorFilter.addEventListener('change', applyActivityFilter);
+        }
+
+        if (activitySearch) {
+            activitySearch.addEventListener('input', applyActivityFilter);
+            activitySearch.addEventListener('search', applyActivityFilter);
+        }
+
+        applyActivityFilter();
     }
 
     function handleDisclosureToggleClick(event) {
@@ -1548,7 +2371,7 @@
 
         setDisclosureState(disclosureToggle, nextExpanded);
 
-        if (nextExpanded && disclosureToggle.getAttribute('data-disclosure-toggle') === 'etch-fonts-add-font-panel') {
+        if (nextExpanded && disclosureToggle.getAttribute('data-disclosure-toggle') === 'tasty-fonts-add-font-panel') {
             window.setTimeout(focusAddFontPanel, 0);
         }
 
@@ -1556,34 +2379,75 @@
     }
 
     function handleTabClick(event) {
-        const addFontTab = event.target.closest('[data-add-font-tab]');
-        if (addFontTab) {
-            activateAddFontTab(addFontTab.getAttribute('data-add-font-tab'));
-            return true;
-        }
+        const tab = event.target.closest('[data-tab-group][data-tab-target]');
 
-        const outputTab = event.target.closest('[data-output-tab]');
-        if (outputTab) {
-            activateOutputTab(outputTab.getAttribute('data-output-tab'));
-            return true;
-        }
-
-        const previewTab = event.target.closest('[data-preview-tab]');
-        if (previewTab) {
-            activatePreviewTab(previewTab.getAttribute('data-preview-tab'));
-            return true;
-        }
-
-        const studioTab = event.target.closest('[data-studio-tab]');
-        if (studioTab) {
-            activateStudioTab(studioTab.getAttribute('data-studio-tab'));
+        if (tab) {
+            activateTabGroup(tab.getAttribute('data-tab-group'), tab.getAttribute('data-tab-target'));
             return true;
         }
 
         return false;
     }
 
+    function handleTabKeydown(event) {
+        const tab = event.target.closest('[data-tab-group][data-tab-target][role="tab"]');
+
+        if (!tab) {
+            return false;
+        }
+
+        const group = tab.getAttribute('data-tab-group') || '';
+        const buttons = tabButtonsForGroup(group);
+
+        if (!group || buttons.length < 2) {
+            return false;
+        }
+
+        const currentIndex = buttons.indexOf(tab);
+        let nextIndex = currentIndex;
+
+        switch (event.key) {
+            case 'ArrowRight':
+            case 'ArrowDown':
+                nextIndex = (currentIndex + 1) % buttons.length;
+                break;
+            case 'ArrowLeft':
+            case 'ArrowUp':
+                nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+                break;
+            case 'Home':
+                nextIndex = 0;
+                break;
+            case 'End':
+                nextIndex = buttons.length - 1;
+                break;
+            default:
+                return false;
+        }
+
+        event.preventDefault();
+
+        const nextTab = buttons[nextIndex];
+        activateTabGroup(group, nextTab.getAttribute('data-tab-target'));
+        nextTab.focus();
+        return true;
+    }
+
     function handleCopyClick(event) {
+        const copyTextButton = event.target.closest('[data-copy-text]');
+
+        if (copyTextButton) {
+            copyText(
+                copyTextButton.getAttribute('data-copy-text') || '',
+                copyTextButton,
+                {
+                    preserveLabel: copyTextButton.hasAttribute('data-copy-static-label'),
+                    toastMessage: copyTextButton.getAttribute('data-copy-success') || ''
+                }
+            );
+            return true;
+        }
+
         const copyTarget = event.target.closest('[data-copy-target]');
 
         if (!copyTarget) {
@@ -1604,6 +2468,11 @@
 
         const family = roleTarget.getAttribute('data-font-family');
         const role = roleTarget.getAttribute('data-role-assign');
+        const snapshotBeforeChange = roleFieldSnapshot();
+
+        if ((role === 'heading' && snapshotBeforeChange.heading === family) || (role === 'body' && snapshotBeforeChange.body === family)) {
+            return true;
+        }
 
         if (role === 'heading' && roleHeading) {
             roleHeading.value = family;
@@ -1614,6 +2483,7 @@
         }
 
         updateRoleOutputs();
+        void saveRoleDraft(snapshotBeforeChange);
         return true;
     }
 
@@ -1643,13 +2513,40 @@
     }
 
     function handleSearchCardClick(event) {
-        const searchCard = event.target.closest('.etch-fonts-search-card');
+        const searchCard = event.target.closest('.tasty-fonts-search-card');
 
         if (!searchCard) {
             return false;
         }
 
         selectSearchFamily(searchCard.dataset.family || '');
+        return true;
+    }
+
+    function handleSearchCardKeydown(event) {
+        const searchCard = event.target.closest('.tasty-fonts-search-card[role="button"]');
+
+        if (!searchCard) {
+            return false;
+        }
+
+        if (event.key !== 'Enter' && event.key !== ' ') {
+            return false;
+        }
+
+        event.preventDefault();
+        selectSearchFamily(searchCard.dataset.family || '');
+        return true;
+    }
+
+    function handleGoogleVariantQuickSelect(event) {
+        const quickSelect = event.target.closest('[data-google-variant-select]');
+
+        if (!quickSelect) {
+            return false;
+        }
+
+        applyVariantQuickSelection(quickSelect.getAttribute('data-google-variant-select') || '');
         return true;
     }
 
@@ -1762,6 +2659,10 @@
             return;
         }
 
+        if (handleGoogleVariantQuickSelect(event)) {
+            return;
+        }
+
         if (handleUploadBuilderClick(event)) {
             return;
         }
@@ -1770,13 +2671,17 @@
     }
 
     function bindFamilyFallbackControls() {
-        document.querySelectorAll('.etch-fonts-fallback-selector').forEach((element) => {
+        document.querySelectorAll('.tasty-fonts-fallback-selector').forEach((element) => {
+            const form = element.closest('[data-family-fallback-form]');
+
             element.addEventListener('change', () => {
                 updateInlineStackPreview(element.dataset.fontFamily || '');
-                syncFamilyFallbackSaveState(element.closest('[data-family-fallback-form]'));
+
+                syncFamilyFallbackSaveState(form);
+                setFamilyFallbackFeedback(form, '', '');
             });
             updateInlineStackPreview(element.dataset.fontFamily || '');
-            syncFamilyFallbackSaveState(element.closest('[data-family-fallback-form]'));
+            syncFamilyFallbackSaveState(form);
         });
 
         document.querySelectorAll('[data-family-fallback-form]').forEach((form) => {
@@ -1787,7 +2692,7 @@
 
                 event.preventDefault();
 
-                const selector = form.querySelector('.etch-fonts-fallback-selector');
+                const selector = form.querySelector('.tasty-fonts-fallback-selector');
                 const saved = await saveFamilyFallback(selector, form);
 
                 if (!saved) {
@@ -1806,6 +2711,7 @@
 
         if (previewTextInput) {
             previewTextInput.addEventListener('input', updatePreviewDynamicText);
+            previewTextInput.addEventListener('input', updateGoogleImportSummary);
         }
 
         if (previewSizeInput) {
@@ -1826,10 +2732,68 @@
 
         if (manualFamily) {
             manualFamily.addEventListener('input', () => {
-                if (!selectedSearchFamily || manualFamily.value !== selectedSearchFamily.family) {
+                const familyName = manualFamily.value.trim();
+                const matchedFamily = findGoogleFamilyMatch(familyName);
+                const hasVariantInputs = !!(variantsWrap && variantsWrap.querySelector('input[type="checkbox"]'));
+
+                if (matchedFamily) {
+                    const shouldRenderVariants = !selectedSearchFamily
+                        || selectedSearchFamily.family !== matchedFamily.family
+                        || !hasVariantInputs;
+
+                    selectedSearchFamily = matchedFamily;
+
+                    if (shouldRenderVariants) {
+                        renderVariantOptions(matchedFamily.variants || [], matchedFamily.family || '');
+                        return;
+                    }
+                } else if (selectedSearchFamily || hasVariantInputs) {
                     selectedSearchFamily = null;
-                    updateSelectedFamilyLabel(manualFamily.value);
+                    renderedGoogleVariantFamily = '';
+
+                    if (variantsWrap) {
+                        variantsWrap.innerHTML = '';
+                    }
                 }
+
+                updateGoogleImportSummary();
+            });
+        }
+
+        if (manualVariants) {
+            manualVariants.addEventListener('input', () => {
+                if (normalizeVariantTokens(manualVariants.value).length === 0) {
+                    manualVariants.dataset.explicitEmpty = 'true';
+                } else {
+                    delete manualVariants.dataset.explicitEmpty;
+                }
+
+                if (!syncingGoogleVariants) {
+                    syncVariantChipsFromManualInput();
+                }
+
+                updateGoogleImportSummary();
+            });
+        }
+
+        if (variantsWrap) {
+            variantsWrap.addEventListener('change', (event) => {
+                const input = event.target.closest('input[type="checkbox"]');
+
+                if (!input) {
+                    return;
+                }
+
+                syncVariantChipState(input);
+                syncManualVariantsInputFromChips();
+                if (manualVariants) {
+                    if (selectedVariantTokens().length === 0) {
+                        manualVariants.dataset.explicitEmpty = 'true';
+                    } else {
+                        delete manualVariants.dataset.explicitEmpty;
+                    }
+                }
+                updateGoogleImportSummary();
             });
         }
 
@@ -1895,31 +2859,28 @@
     }
 
     function initializeTabs() {
-        const activeTab = outputTabs.find((tab) => tab.classList.contains('is-active')) || outputTabs[0];
-        const activePreviewTab = previewTabs.find((tab) => tab.classList.contains('is-active')) || previewTabs[0];
-        const activeStudioTab = studioTabs.find((tab) => tab.classList.contains('is-active')) || studioTabs[0];
-        const activeAddFontTab = addFontTabs.find((tab) => tab.classList.contains('is-active')) || addFontTabs[0];
+        const groups = new Set(tabButtons.map((tab) => tab.getAttribute('data-tab-group')).filter(Boolean));
 
-        if (activeTab) {
-            activateOutputTab(activeTab.getAttribute('data-output-tab'));
-        }
+        groups.forEach((group) => {
+            const buttons = tabButtonsForGroup(group);
+            const activeTab = buttons.find((tab) => tab.classList.contains('is-active')) || buttons[0];
 
-        if (activePreviewTab) {
-            activatePreviewTab(activePreviewTab.getAttribute('data-preview-tab'));
-        }
-
-        if (activeStudioTab) {
-            activateStudioTab(activeStudioTab.getAttribute('data-studio-tab'));
-        }
-
-        if (activeAddFontTab) {
-            activateAddFontTab(activeAddFontTab.getAttribute('data-add-font-tab'));
-        }
+            if (activeTab) {
+                activateTabGroup(group, activeTab.getAttribute('data-tab-target'));
+            }
+        });
     }
 
     // Bootstrap
     function bootstrap() {
         document.addEventListener('click', handleDocumentClick);
+        document.addEventListener('keydown', (event) => {
+            if (handleSearchCardKeydown(event)) {
+                return;
+            }
+
+            handleTabKeydown(event);
+        });
 
         bindFamilyFallbackControls();
         bindRolePreviewControls();
@@ -1931,9 +2892,11 @@
         initHelpTooltips();
         initUploadRows();
         initLibraryFiltering();
+        initActivityFiltering();
         updatePreviewDynamicText();
         updatePreviewScale();
         updateRoleOutputs();
+        updateGoogleImportSummary();
         initializeTabs();
     }
 

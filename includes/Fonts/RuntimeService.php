@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Fonts;
+namespace TastyFonts\Fonts;
 
-use EtchFonts\Adobe\AdobeProjectClient;
-use EtchFonts\Support\FontUtils;
+use TastyFonts\Adobe\AdobeProjectClient;
+use TastyFonts\Support\FontUtils;
 use WP_Theme_JSON_Data;
 
 final class RuntimeService
@@ -19,8 +19,8 @@ final class RuntimeService
 
     public function enqueueFrontend(): void
     {
-        $this->assets->enqueue('etch-fonts-frontend');
-        $this->enqueueAdobeStylesheet('etch-fonts-adobe-frontend');
+        $this->assets->enqueue('tasty-fonts-frontend');
+        $this->enqueueAdobeStylesheet('tasty-fonts-adobe-frontend');
 
         if ($this->hasEtchCanvasRequest()) {
             $this->enqueueEtchCanvasBridge();
@@ -29,24 +29,24 @@ final class RuntimeService
 
     public function enqueueEtchCanvas(): void
     {
-        $this->assets->enqueue('etch-fonts-etch');
-        $this->enqueueAdobeStylesheet('etch-fonts-adobe-etch');
+        $this->assets->enqueue('tasty-fonts-etch');
+        $this->enqueueAdobeStylesheet('tasty-fonts-adobe-etch');
     }
 
     public function enqueueBlockEditor(): void
     {
-        $this->assets->enqueue('etch-fonts-editor');
-        $this->enqueueAdobeStylesheet('etch-fonts-adobe-editor');
+        $this->assets->enqueue('tasty-fonts-editor');
+        $this->enqueueAdobeStylesheet('tasty-fonts-adobe-editor');
     }
 
     public function enqueueAdminScreenFonts(string $hookSuffix): void
     {
-        if (!\EtchFonts\Admin\AdminController::isPluginAdminHook($hookSuffix)) {
+        if (!\TastyFonts\Admin\AdminController::isPluginAdminHook($hookSuffix)) {
             return;
         }
 
-        $this->assets->enqueue('etch-fonts-admin-fonts');
-        $this->enqueueAdobeStylesheet('etch-fonts-adobe-admin');
+        $this->assets->enqueueFontFacesOnly('tasty-fonts-admin-fonts');
+        $this->enqueueAdobeStylesheet('tasty-fonts-adobe-admin');
     }
 
     public function injectEditorFontPresets(WP_Theme_JSON_Data $themeJson): WP_Theme_JSON_Data
@@ -81,16 +81,16 @@ final class RuntimeService
         }
 
         wp_enqueue_script(
-            'etch-fonts-canvas',
-            ETCH_FONTS_URL . 'assets/js/etch-canvas.js',
+            'tasty-fonts-canvas',
+            TASTY_FONTS_URL . 'assets/js/tasty-canvas.js',
             [],
-            ETCH_FONTS_VERSION,
+            TASTY_FONTS_VERSION,
             true
         );
 
         wp_localize_script(
-            'etch-fonts-canvas',
-            'EtchFontsCanvas',
+            'tasty-fonts-canvas',
+            'TastyFontsCanvas',
             [
                 'stylesheetUrl' => $stylesheetUrls[0] ?? '',
                 'stylesheetUrls' => $stylesheetUrls,

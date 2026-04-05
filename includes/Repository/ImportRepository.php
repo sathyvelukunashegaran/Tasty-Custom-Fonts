@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Repository;
+namespace TastyFonts\Repository;
 
 final class ImportRepository
 {
-    public const OPTION_IMPORTS = 'etch_fonts_imports';
+    public const OPTION_IMPORTS = 'tasty_fonts_imports';
+    private const LEGACY_OPTION_IMPORTS = 'etch_fonts_imports';
 
     public function all(): array
     {
@@ -60,8 +61,20 @@ final class ImportRepository
 
     private function getOptionArray(string $option): array
     {
-        $value = get_option($option, []);
+        $value = get_option($option, null);
 
-        return is_array($value) ? $value : [];
+        if (is_array($value)) {
+            return $value;
+        }
+
+        $legacyValue = get_option(self::LEGACY_OPTION_IMPORTS, null);
+
+        if (!is_array($legacyValue)) {
+            return [];
+        }
+
+        update_option($option, $legacyValue, false);
+
+        return $legacyValue;
     }
 }

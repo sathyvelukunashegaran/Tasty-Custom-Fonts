@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Repository;
+namespace TastyFonts\Repository;
 
 final class LogRepository
 {
-    public const OPTION_LOG = 'etch_fonts_log';
+    public const OPTION_LOG = 'tasty_fonts_log';
+    private const LEGACY_OPTION_LOG = 'etch_fonts_log';
     private const MAX_ENTRIES = 100;
 
     public function add(string $message): void
@@ -37,21 +38,33 @@ final class LogRepository
 
     private function getOptionArray(string $option): array
     {
-        $value = get_option($option, []);
+        $value = get_option($option, null);
 
-        return is_array($value) ? $value : [];
+        if (is_array($value)) {
+            return $value;
+        }
+
+        $legacyValue = get_option(self::LEGACY_OPTION_LOG, null);
+
+        if (!is_array($legacyValue)) {
+            return [];
+        }
+
+        update_option($option, $legacyValue, false);
+
+        return $legacyValue;
     }
 
     private function getActorLabel(): string
     {
         if (!is_user_logged_in()) {
-            return __('System', 'etch-fonts');
+            return __('System', 'tasty-fonts');
         }
 
         $user = wp_get_current_user();
 
         if (!$user instanceof \WP_User || !$user->exists()) {
-            return __('System', 'etch-fonts');
+            return __('System', 'tasty-fonts');
         }
 
         $displayName = trim((string) $user->display_name);
@@ -66,6 +79,6 @@ final class LogRepository
             return $userLogin;
         }
 
-        return __('System', 'etch-fonts');
+        return __('System', 'tasty-fonts');
     }
 }

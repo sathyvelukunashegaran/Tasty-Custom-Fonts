@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Google;
+namespace TastyFonts\Google;
 
-use EtchFonts\Repository\SettingsRepository;
-use EtchFonts\Support\FontUtils;
+use TastyFonts\Repository\SettingsRepository;
+use TastyFonts\Support\FontUtils;
 use WP_Error;
 
 final class GoogleFontsClient
 {
-    private const TRANSIENT_CATALOG = 'etch_fonts_google_catalog_v1';
+    private const TRANSIENT_CATALOG = 'tasty_fonts_google_catalog_v1';
     private const CATALOG_TTL = 12 * HOUR_IN_SECONDS;
     private const REQUEST_TIMEOUT = 20;
 
@@ -56,7 +56,7 @@ final class GoogleFontsClient
         if (is_wp_error($response)) {
             return [
                 'state' => 'unknown',
-                'message' => __('The Google Fonts API key could not be validated right now. Save it again to retry.', 'etch-fonts'),
+                'message' => __('The Google Fonts API key could not be validated right now. Save it again to retry.', 'tasty-fonts'),
             ];
         }
 
@@ -66,7 +66,7 @@ final class GoogleFontsClient
         if ($status === 200 && is_array($body) && isset($body['items']) && is_array($body['items'])) {
             return [
                 'state' => 'valid',
-                'message' => __('Google Fonts API key validated. Live search is ready.', 'etch-fonts'),
+                'message' => __('Google Fonts API key validated. Live search is ready.', 'tasty-fonts'),
             ];
         }
 
@@ -81,16 +81,16 @@ final class GoogleFontsClient
                 'state' => 'invalid',
                 'message' => $errorMessage !== ''
                     ? sprintf(
-                        __('Google Fonts API key is invalid: %s', 'etch-fonts'),
+                        __('Google Fonts API key is invalid: %s', 'tasty-fonts'),
                         $errorMessage
                     )
-                    : __('Google Fonts API key is invalid or rejected by Google.', 'etch-fonts'),
+                    : __('Google Fonts API key is invalid or rejected by Google.', 'tasty-fonts'),
             ];
         }
 
         return [
             'state' => 'unknown',
-            'message' => __('Google Fonts API key could not be verified because Google returned an unexpected response.', 'etch-fonts'),
+            'message' => __('Google Fonts API key could not be verified because Google returned an unexpected response.', 'tasty-fonts'),
         ];
     }
 
@@ -169,8 +169,8 @@ final class GoogleFontsClient
 
         if ($status !== 200) {
             return new WP_Error(
-                'etch_fonts_google_css_fetch_failed',
-                sprintf(__('Google Fonts CSS request failed with status %d.', 'etch-fonts'), $status)
+                'tasty_fonts_google_css_fetch_failed',
+                sprintf(__('Google Fonts CSS request failed with status %d.', 'tasty-fonts'), $status)
             );
         }
 
@@ -178,8 +178,8 @@ final class GoogleFontsClient
 
         if (!is_string($body) || trim($body) === '') {
             return new WP_Error(
-                'etch_fonts_google_css_empty',
-                __('Google Fonts returned an empty CSS response.', 'etch-fonts')
+                'tasty_fonts_google_css_empty',
+                __('Google Fonts returned an empty CSS response.', 'tasty-fonts')
             );
         }
 

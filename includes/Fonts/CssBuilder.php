@@ -2,15 +2,25 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Fonts;
+namespace TastyFonts\Fonts;
 
-use EtchFonts\Support\FontUtils;
+use TastyFonts\Support\FontUtils;
 
 final class CssBuilder
 {
     private const FORMAT_ORDER = ['eot', 'woff2', 'woff', 'ttf', 'otf', 'svg'];
 
     public function build(array $catalog, array $roles, array $settings): string
+    {
+        return $this->buildCss($catalog, $roles, $settings, true);
+    }
+
+    public function buildFontFaceOnly(array $catalog, array $settings): string
+    {
+        return $this->buildCss($catalog, [], $settings, false);
+    }
+
+    private function buildCss(array $catalog, array $roles, array $settings, bool $includeRoleUsage): string
     {
         $blocks = [];
 
@@ -24,7 +34,7 @@ final class CssBuilder
             }
         }
 
-        if (!empty($settings['auto_apply_roles'])) {
+        if ($includeRoleUsage && !empty($settings['auto_apply_roles'])) {
             $usageCss = $this->buildRoleUsageSnippet($roles);
 
             if ($usageCss !== '') {

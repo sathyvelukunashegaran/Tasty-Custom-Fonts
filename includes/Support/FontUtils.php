@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Support;
+namespace TastyFonts\Support;
 
 final class FontUtils
 {

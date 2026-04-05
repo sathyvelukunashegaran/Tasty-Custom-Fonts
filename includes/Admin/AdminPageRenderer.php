@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Admin;
+namespace TastyFonts\Admin;
 
-use EtchFonts\Support\FontUtils;
-use EtchFonts\Support\Storage;
+use TastyFonts\Support\FontUtils;
+use TastyFonts\Support\Storage;
 
 final class AdminPageRenderer
 {
@@ -20,95 +20,168 @@ final class AdminPageRenderer
         $availableFamilies = is_array($context['available_families'] ?? null) ? $context['available_families'] : array_keys($catalog);
         $roles = is_array($context['roles'] ?? null) ? $context['roles'] : [];
         $logs = is_array($context['logs'] ?? null) ? $context['logs'] : [];
-        $visibleLogs = is_array($context['visible_logs'] ?? null) ? $context['visible_logs'] : [];
-        $olderLogs = is_array($context['older_logs'] ?? null) ? $context['older_logs'] : [];
+        $activityActorOptions = is_array($context['activity_actor_options'] ?? null) ? $context['activity_actor_options'] : [];
         $familyFallbacks = is_array($context['family_fallbacks'] ?? null) ? $context['family_fallbacks'] : [];
         $previewText = (string) ($context['preview_text'] ?? '');
         $previewSize = (int) ($context['preview_size'] ?? 32);
+        $googleApiState = (string) ($context['google_api_state'] ?? 'empty');
         $googleApiEnabled = !empty($context['google_api_enabled']);
         $googleApiSaved = !empty($context['google_api_saved']);
         $googleAccessExpanded = !empty($context['google_access_expanded']);
+        $adobeProjectState = (string) ($context['adobe_project_state'] ?? 'empty');
         $googleStatusLabel = (string) ($context['google_status_label'] ?? '');
         $googleStatusClass = (string) ($context['google_status_class'] ?? '');
         $googleAccessCopy = (string) ($context['google_access_copy'] ?? '');
         $googleSearchDisabledCopy = (string) ($context['google_search_disabled_copy'] ?? '');
         $adobeProjectEnabled = !empty($context['adobe_project_enabled']);
         $adobeProjectSaved = !empty($context['adobe_project_saved']);
+        $adobeAccessExpanded = !empty($context['adobe_access_expanded']);
         $adobeProjectId = (string) ($context['adobe_project_id'] ?? '');
         $adobeStatusLabel = (string) ($context['adobe_status_label'] ?? '');
         $adobeStatusClass = (string) ($context['adobe_status_class'] ?? '');
         $adobeAccessCopy = (string) ($context['adobe_access_copy'] ?? '');
         $adobeProjectLink = (string) ($context['adobe_project_link'] ?? 'https://fonts.adobe.com/');
         $adobeDetectedFamilies = is_array($context['adobe_detected_families'] ?? null) ? $context['adobe_detected_families'] : [];
+        $googleAccessButtonLabel = $googleApiEnabled ? __('Edit Key', 'tasty-fonts') : __('Key Settings', 'tasty-fonts');
+        $adobeAccessButtonLabel = $adobeProjectSaved ? __('Project Settings', 'tasty-fonts') : __('Add Project', 'tasty-fonts');
+        $minifyCssOutput = !empty($context['minify_css_output']);
         $diagnosticItems = is_array($context['diagnostic_items'] ?? null) ? $context['diagnostic_items'] : [];
         $overviewMetrics = is_array($context['overview_metrics'] ?? null) ? $context['overview_metrics'] : [];
         $outputPanels = is_array($context['output_panels'] ?? null) ? $context['output_panels'] : [];
         $previewPanels = is_array($context['preview_panels'] ?? null) ? $context['preview_panels'] : [];
         $toasts = is_array($context['toasts'] ?? null) ? $context['toasts'] : [];
+        $applyEverywhere = !empty($context['apply_everywhere']);
+        $roleDeployment = is_array($context['role_deployment'] ?? null) ? $context['role_deployment'] : [];
+        $roleActionsClass = $applyEverywhere ? 'is-four-actions' : 'is-three-actions';
+        $headingFamily = (string) ($roles['heading'] ?? '');
+        $bodyFamily = (string) ($roles['body'] ?? '');
+        $headingFallback = (string) ($roles['heading_fallback'] ?? 'sans-serif');
+        $bodyFallback = (string) ($roles['body_fallback'] ?? 'sans-serif');
+        $headingStack = FontUtils::buildFontStack($headingFamily, $headingFallback);
+        $bodyStack = FontUtils::buildFontStack($bodyFamily, $bodyFallback);
+        $headingVariable = 'var(--font-heading)';
+        $bodyVariable = 'var(--font-body)';
+        $headingFamilyVariable = $this->buildFontVariableReference($headingFamily);
+        $bodyFamilyVariable = $this->buildFontVariableReference($bodyFamily);
         ?>
-        <div class="wrap etch-fonts-admin">
+        <div class="wrap tasty-fonts-admin">
             <?php $this->renderNotices($toasts); ?>
 
             <?php if (!$storage): ?>
-                <div class="notice notice-error"><p><?php esc_html_e('The uploads/fonts directory could not be initialized.', 'etch-fonts'); ?></p></div>
+                <div class="notice notice-error"><p><?php esc_html_e('The uploads/fonts directory could not be initialized.', 'tasty-fonts'); ?></p></div>
             <?php else: ?>
-                <div class="etch-fonts-shell">
-                    <section class="etch-fonts-card etch-fonts-overview-card">
-                        <div class="etch-fonts-overview-head">
-                            <div class="etch-fonts-hero-copy">
-                                <h1><?php esc_html_e('Etch Custom Fonts', 'etch-fonts'); ?></h1>
-                                <p class="etch-fonts-hero-text"><?php esc_html_e('Self-hosted typography for Etch, Gutenberg, and the frontend.', 'etch-fonts'); ?></p>
+                <div class="tasty-fonts-shell">
+                    <section class="tasty-fonts-card tasty-fonts-studio-card tasty-fonts-top-panel" id="tasty-fonts-roles-studio">
+                        <div class="tasty-fonts-top-panel-intro">
+                            <div class="tasty-fonts-overview-head tasty-fonts-top-panel-overview">
+                                <div class="tasty-fonts-hero-copy">
+                                    <h1><?php esc_html_e('Tasty Custom Fonts', 'tasty-fonts'); ?></h1>
+                                    <p class="tasty-fonts-hero-text"><?php esc_html_e('Self-hosted typography for Etch, Gutenberg, and the frontend.', 'tasty-fonts'); ?></p>
+                                </div>
+                            </div>
+
+                            <div class="tasty-fonts-metrics tasty-fonts-metrics--top-panel">
+                                <?php foreach ($overviewMetrics as $metric): ?>
+                                    <article class="tasty-fonts-metric">
+                                        <div class="tasty-fonts-metric-label"><?php echo esc_html((string) ($metric['label'] ?? '')); ?></div>
+                                        <div class="tasty-fonts-metric-value"><?php echo esc_html((string) ($metric['value'] ?? '')); ?></div>
+                                    </article>
+                                <?php endforeach; ?>
                             </div>
                         </div>
 
-                        <div class="etch-fonts-metrics">
-                            <?php foreach ($overviewMetrics as $metric): ?>
-                                <article class="etch-fonts-metric">
-                                    <div class="etch-fonts-metric-label"><?php echo esc_html((string) ($metric['label'] ?? '')); ?></div>
-                                    <div class="etch-fonts-metric-value"><?php echo esc_html((string) ($metric['value'] ?? '')); ?></div>
-                                </article>
-                            <?php endforeach; ?>
-                        </div>
-                    </section>
-
-                    <section class="etch-fonts-card etch-fonts-studio-card" id="etch-fonts-roles-studio">
-                        <div class="etch-fonts-card-head">
-                            <?php
-                            $this->renderSectionHeading(
-                                'h2',
-                                __('Font Roles', 'etch-fonts'),
-                                '',
-                                __('Choose the heading and body pairing used for saved output and optional sitewide typography.', 'etch-fonts')
-                            );
-                            ?>
-                        </div>
-                        <form method="post">
-                            <?php wp_nonce_field('etch_fonts_save_roles'); ?>
-                            <input type="hidden" name="etch_fonts_save_roles" value="1">
-                            <input type="hidden" id="etch_fonts_action_type" name="etch_fonts_action_type" value="save">
-                            <div class="etch-fonts-role-grid">
-                                <section class="etch-fonts-role-box">
-                                    <div class="etch-fonts-role-box-head">
-                                        <?php $this->renderSectionHeading('h3', __('Heading font', 'etch-fonts'), ''); ?>
+                        <form method="post" class="tasty-fonts-top-panel-form" data-role-form>
+                            <div class="tasty-fonts-card-head tasty-fonts-top-panel-roles-head">
+                                <?php
+                                $this->renderSectionHeading(
+                                    'h2',
+                                    __('Font Roles', 'tasty-fonts'),
+                                    __('Choose the heading and body pairing used for saved output and optional sitewide typography.', 'tasty-fonts')
+                                );
+                                ?>
+                                <div class="tasty-fonts-role-stacks">
+                                    <span class="tasty-fonts-role-stack">
+                                        <span class="tasty-fonts-role-stack-label"><?php esc_html_e('Heading', 'tasty-fonts'); ?></span>
+                                        <button
+                                            type="button"
+                                            class="tasty-fonts-kbd tasty-fonts-role-stack-copy"
+                                            id="tasty-fonts-role-heading-stack"
+                                            data-role-variable-copy="heading"
+                                            data-copy-text="<?php echo esc_attr($headingVariable); ?>"
+                                            data-copy-success="<?php esc_attr_e('Heading variable copied.', 'tasty-fonts'); ?>"
+                                            data-copy-static-label="1"
+                                            aria-label="<?php esc_attr_e('Copy heading font variable', 'tasty-fonts'); ?>"
+                                            title="<?php echo esc_attr(sprintf(__('Heading font variable: %1$s. Resolved stack: %2$s', 'tasty-fonts'), $headingVariable, $headingStack)); ?>"
+                                        >
+                                            <?php echo esc_html($headingVariable); ?>
+                                        </button>
+                                    </span>
+                                    <span class="tasty-fonts-role-stack">
+                                        <span class="tasty-fonts-role-stack-label"><?php esc_html_e('Body', 'tasty-fonts'); ?></span>
+                                        <button
+                                            type="button"
+                                            class="tasty-fonts-kbd tasty-fonts-role-stack-copy"
+                                            id="tasty-fonts-role-body-stack"
+                                            data-role-variable-copy="body"
+                                            data-copy-text="<?php echo esc_attr($bodyVariable); ?>"
+                                            data-copy-success="<?php esc_attr_e('Body variable copied.', 'tasty-fonts'); ?>"
+                                            data-copy-static-label="1"
+                                            aria-label="<?php esc_attr_e('Copy body font variable', 'tasty-fonts'); ?>"
+                                            title="<?php echo esc_attr(sprintf(__('Body font variable: %1$s. Resolved stack: %2$s', 'tasty-fonts'), $bodyVariable, $bodyStack)); ?>"
+                                        >
+                                            <?php echo esc_html($bodyVariable); ?>
+                                        </button>
+                                    </span>
+                                </div>
+                            </div>
+                            <?php if ($roleDeployment !== []): ?>
+                                <div class="tasty-fonts-role-deployment <?php echo esc_attr((string) ($roleDeployment['badge_class'] ?? '')); ?>" data-role-deployment>
+                                    <span class="tasty-fonts-status-label <?php echo esc_attr((string) ($roleDeployment['badge_class'] ?? '')); ?>" data-role-deployment-badge>
+                                        <?php echo esc_html((string) ($roleDeployment['badge'] ?? '')); ?>
+                                    </span>
+                                    <div class="tasty-fonts-role-deployment-copy">
+                                        <span class="tasty-fonts-role-deployment-title" data-role-deployment-title><?php echo esc_html((string) ($roleDeployment['title'] ?? '')); ?></span>
+                                        <span class="tasty-fonts-role-deployment-text" data-role-deployment-text><?php echo esc_html((string) ($roleDeployment['copy'] ?? '')); ?></span>
                                     </div>
-                                    <div class="etch-fonts-role-fields">
-                                        <label class="etch-fonts-stack-field">
-                                            <?php $this->renderFieldLabel(__('Family', 'etch-fonts')); ?>
-                                            <select name="etch_fonts_heading_font" id="etch_fonts_heading_font">
+                                </div>
+                            <?php endif; ?>
+                            <?php wp_nonce_field('tasty_fonts_save_roles'); ?>
+                            <input type="hidden" name="tasty_fonts_save_roles" value="1">
+                            <div class="tasty-fonts-role-grid">
+                                <section class="tasty-fonts-role-box">
+                                    <div class="tasty-fonts-role-box-head">
+                                        <?php $this->renderSectionHeading('h3', __('Heading Font', 'tasty-fonts'), ''); ?>
+                                        <button
+                                            type="button"
+                                            class="tasty-fonts-kbd tasty-fonts-role-stack-copy tasty-fonts-role-box-copy"
+                                            data-role-family-variable-copy="heading"
+                                            data-copy-text="<?php echo esc_attr($headingFamilyVariable); ?>"
+                                            data-copy-success="<?php esc_attr_e('Heading family variable copied.', 'tasty-fonts'); ?>"
+                                            data-copy-static-label="1"
+                                            aria-label="<?php esc_attr_e('Copy heading family variable', 'tasty-fonts'); ?>"
+                                            title="<?php echo esc_attr(sprintf(__('Heading family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s', 'tasty-fonts'), $headingFamilyVariable, $headingVariable, $headingStack)); ?>"
+                                        >
+                                            <?php echo esc_html($headingFamilyVariable); ?>
+                                        </button>
+                                    </div>
+                                    <div class="tasty-fonts-role-fields">
+                                        <label class="tasty-fonts-stack-field">
+                                            <?php $this->renderFieldLabel(__('Family', 'tasty-fonts')); ?>
+                                            <select name="tasty_fonts_heading_font" id="tasty_fonts_heading_font">
                                                 <?php foreach ($availableFamilies as $familyName): ?>
                                                     <option value="<?php echo esc_attr((string) $familyName); ?>" <?php selected($roles['heading'] ?? '', $familyName); ?>><?php echo esc_html((string) $familyName); ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </label>
-                                        <label class="etch-fonts-stack-field">
-                                            <?php $this->renderFieldLabel(__('Fallback', 'etch-fonts')); ?>
+                                        <label class="tasty-fonts-stack-field">
+                                            <?php $this->renderFieldLabel(__('Fallback', 'tasty-fonts')); ?>
                                             <?php
                                             $this->renderFallbackInput(
-                                                'etch_fonts_heading_fallback',
+                                                'tasty_fonts_heading_fallback',
                                                 (string) ($roles['heading_fallback'] ?? 'sans-serif'),
                                                 [
-                                                    'id' => 'etch_fonts_heading_fallback',
-                                                    'placeholder' => __('Example: system-ui, sans-serif', 'etch-fonts'),
+                                                    'id' => 'tasty_fonts_heading_fallback',
+                                                    'placeholder' => __('Example: system-ui, sans-serif', 'tasty-fonts'),
                                                 ]
                                             );
                                             ?>
@@ -116,28 +189,40 @@ final class AdminPageRenderer
                                     </div>
                                 </section>
 
-                                <section class="etch-fonts-role-box">
-                                    <div class="etch-fonts-role-box-head">
-                                        <?php $this->renderSectionHeading('h3', __('Body font', 'etch-fonts'), ''); ?>
+                                <section class="tasty-fonts-role-box">
+                                    <div class="tasty-fonts-role-box-head">
+                                        <?php $this->renderSectionHeading('h3', __('Body Font', 'tasty-fonts'), ''); ?>
+                                        <button
+                                            type="button"
+                                            class="tasty-fonts-kbd tasty-fonts-role-stack-copy tasty-fonts-role-box-copy"
+                                            data-role-family-variable-copy="body"
+                                            data-copy-text="<?php echo esc_attr($bodyFamilyVariable); ?>"
+                                            data-copy-success="<?php esc_attr_e('Body family variable copied.', 'tasty-fonts'); ?>"
+                                            data-copy-static-label="1"
+                                            aria-label="<?php esc_attr_e('Copy body family variable', 'tasty-fonts'); ?>"
+                                            title="<?php echo esc_attr(sprintf(__('Body family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s', 'tasty-fonts'), $bodyFamilyVariable, $bodyVariable, $bodyStack)); ?>"
+                                        >
+                                            <?php echo esc_html($bodyFamilyVariable); ?>
+                                        </button>
                                     </div>
-                                    <div class="etch-fonts-role-fields">
-                                        <label class="etch-fonts-stack-field">
-                                            <?php $this->renderFieldLabel(__('Family', 'etch-fonts')); ?>
-                                            <select name="etch_fonts_body_font" id="etch_fonts_body_font">
+                                    <div class="tasty-fonts-role-fields">
+                                        <label class="tasty-fonts-stack-field">
+                                            <?php $this->renderFieldLabel(__('Family', 'tasty-fonts')); ?>
+                                            <select name="tasty_fonts_body_font" id="tasty_fonts_body_font">
                                                 <?php foreach ($availableFamilies as $familyName): ?>
                                                     <option value="<?php echo esc_attr((string) $familyName); ?>" <?php selected($roles['body'] ?? '', $familyName); ?>><?php echo esc_html((string) $familyName); ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </label>
-                                        <label class="etch-fonts-stack-field">
-                                            <?php $this->renderFieldLabel(__('Fallback', 'etch-fonts')); ?>
+                                        <label class="tasty-fonts-stack-field">
+                                            <?php $this->renderFieldLabel(__('Fallback', 'tasty-fonts')); ?>
                                             <?php
                                             $this->renderFallbackInput(
-                                                'etch_fonts_body_fallback',
+                                                'tasty_fonts_body_fallback',
                                                 (string) ($roles['body_fallback'] ?? 'sans-serif'),
                                                 [
-                                                    'id' => 'etch_fonts_body_fallback',
-                                                    'placeholder' => __('Example: system-ui, sans-serif', 'etch-fonts'),
+                                                    'id' => 'tasty_fonts_body_fallback',
+                                                    'placeholder' => __('Example: system-ui, sans-serif', 'tasty-fonts'),
                                                 ]
                                             );
                                             ?>
@@ -146,93 +231,122 @@ final class AdminPageRenderer
                                 </section>
                             </div>
 
-                            <div class="etch-fonts-role-toolbar">
-                                <div class="etch-fonts-role-actions">
-                                    <button type="submit" class="button button-primary" onclick="document.getElementById('etch_fonts_action_type').value='apply';"><?php esc_html_e('Save and apply everywhere', 'etch-fonts'); ?></button>
-                                    <button type="submit" class="button" onclick="document.getElementById('etch_fonts_action_type').value='save';"><?php esc_html_e('Save roles only', 'etch-fonts'); ?></button>
-                                    <button
-                                        type="button"
-                                        class="button etch-fonts-disclosure-button etch-fonts-disclosure-button--preview"
-                                        data-disclosure-toggle="etch-fonts-role-advanced-panel"
-                                        data-expanded-label="<?php echo esc_attr__('Hide advanced tools', 'etch-fonts'); ?>"
-                                        data-collapsed-label="<?php echo esc_attr__('Open advanced tools', 'etch-fonts'); ?>"
-                                        aria-expanded="false"
-                                        aria-controls="etch-fonts-role-advanced-panel"
-                                    >
-                                        <?php esc_html_e('Open advanced tools', 'etch-fonts'); ?>
-                                    </button>
-                                </div>
-                                <div class="etch-fonts-role-stacks">
-                                    <span class="etch-fonts-role-stack">
-                                        <span class="etch-fonts-role-stack-label"><?php esc_html_e('Heading', 'etch-fonts'); ?></span>
-                                        <span class="etch-fonts-kbd" id="etch-fonts-role-heading-stack"><?php echo esc_html(FontUtils::buildFontStack((string) ($roles['heading'] ?? ''), (string) ($roles['heading_fallback'] ?? 'sans-serif'))); ?></span>
-                                    </span>
-                                    <span class="etch-fonts-role-stack">
-                                        <span class="etch-fonts-role-stack-label"><?php esc_html_e('Body', 'etch-fonts'); ?></span>
-                                        <span class="etch-fonts-kbd" id="etch-fonts-role-body-stack"><?php echo esc_html(FontUtils::buildFontStack((string) ($roles['body'] ?? ''), (string) ($roles['body_fallback'] ?? 'sans-serif'))); ?></span>
-                                    </span>
+                            <div class="tasty-fonts-role-toolbar">
+                                <div class="tasty-fonts-role-actions <?php echo esc_attr($roleActionsClass); ?>">
+                                    <div class="tasty-fonts-role-save-actions">
+                                        <div class="tasty-fonts-action-choice tasty-fonts-action-choice--primary">
+                                            <div class="tasty-fonts-button-with-help">
+                                                <button type="submit" class="button button-primary tasty-fonts-scope-button tasty-fonts-scope-button--apply" name="tasty_fonts_action_type" value="apply">
+                                                    <span class="tasty-fonts-scope-button-title"><?php esc_html_e('Apply Sitewide', 'tasty-fonts'); ?></span>
+                                                </button>
+                                                <?php $this->renderHelpTip(__('Updates frontend CSS, the editor, and Etch immediately.', 'tasty-fonts'), __('Apply Sitewide', 'tasty-fonts')); ?>
+                                            </div>
+                                        </div>
+                                        <div class="tasty-fonts-action-choice">
+                                            <div class="tasty-fonts-button-with-help">
+                                                <button type="submit" class="button tasty-fonts-scope-button tasty-fonts-scope-button--save" name="tasty_fonts_action_type" value="save">
+                                                    <span class="tasty-fonts-scope-button-title"><?php esc_html_e('Save Draft', 'tasty-fonts'); ?></span>
+                                                </button>
+                                                <?php $this->renderHelpTip(__('Saves the current heading and body pair here without changing what the frontend, editor, or Etch are currently using.', 'tasty-fonts'), __('Save Draft', 'tasty-fonts')); ?>
+                                            </div>
+                                        </div>
+                                        <?php if ($applyEverywhere): ?>
+                                            <div class="tasty-fonts-action-choice">
+                                                <div class="tasty-fonts-button-with-help">
+                                                    <button type="submit" class="button tasty-fonts-scope-button tasty-fonts-scope-button--save" name="tasty_fonts_action_type" value="disable">
+                                                        <span class="tasty-fonts-scope-button-title"><?php esc_html_e('Turn Off Sitewide', 'tasty-fonts'); ?></span>
+                                                    </button>
+                                                    <?php $this->renderHelpTip(__('Stops loading the applied role CSS on the frontend, editor, and Etch, while keeping the current fields saved as a draft.', 'tasty-fonts'), __('Turn Off Sitewide', 'tasty-fonts')); ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="tasty-fonts-button-with-help">
+                                        <button
+                                            type="button"
+                                            class="button tasty-fonts-disclosure-button tasty-fonts-disclosure-button--preview"
+                                            data-disclosure-toggle="tasty-fonts-role-advanced-panel"
+                                            data-expanded-label="<?php echo esc_attr__('Advanced Tools', 'tasty-fonts'); ?>"
+                                            data-collapsed-label="<?php echo esc_attr__('Advanced Tools', 'tasty-fonts'); ?>"
+                                            aria-expanded="false"
+                                            aria-controls="tasty-fonts-role-advanced-panel"
+                                        >
+                                            <?php esc_html_e('Advanced Tools', 'tasty-fonts'); ?>
+                                        </button>
+                                        <?php $this->renderHelpTip(__('Open the preview, snippets, and system details panels for the current role pairing.', 'tasty-fonts'), __('Advanced Tools', 'tasty-fonts')); ?>
+                                    </div>
                                 </div>
                             </div>
+                        </form>
 
-                            <div id="etch-fonts-role-advanced-panel" class="etch-fonts-role-advanced-panel" hidden>
-                                <div class="etch-fonts-studio-switcher" role="tablist" aria-label="<?php esc_attr_e('Advanced tools', 'etch-fonts'); ?>">
+                            <div id="tasty-fonts-role-advanced-panel" class="tasty-fonts-role-advanced-panel" hidden>
+                                <div class="tasty-fonts-studio-switcher tasty-fonts-tab-list" role="tablist" aria-label="<?php esc_attr_e('Advanced Tools', 'tasty-fonts'); ?>" aria-orientation="horizontal">
                                     <button
                                         type="button"
-                                        class="etch-fonts-studio-tab is-active"
-                                        id="etch-fonts-studio-tab-preview"
-                                        data-studio-tab="preview"
+                                        class="tasty-fonts-studio-tab tasty-fonts-tab-button is-active"
+                                        id="tasty-fonts-studio-tab-preview"
+                                        data-tab-group="studio"
+                                        data-tab-target="preview"
                                         aria-selected="true"
-                                        aria-controls="etch-fonts-studio-panel-preview"
+                                        tabindex="0"
+                                        aria-controls="tasty-fonts-studio-panel-preview"
                                         role="tab"
                                     >
-                                        <?php esc_html_e('Preview', 'etch-fonts'); ?>
+                                        <?php esc_html_e('Preview', 'tasty-fonts'); ?>
                                     </button>
                                     <button
                                         type="button"
-                                        class="etch-fonts-studio-tab"
-                                        id="etch-fonts-studio-tab-snippets"
-                                        data-studio-tab="snippets"
+                                        class="tasty-fonts-studio-tab tasty-fonts-tab-button"
+                                        id="tasty-fonts-studio-tab-snippets"
+                                        data-tab-group="studio"
+                                        data-tab-target="snippets"
                                         aria-selected="false"
-                                        aria-controls="etch-fonts-studio-panel-snippets"
+                                        tabindex="-1"
+                                        aria-controls="tasty-fonts-studio-panel-snippets"
                                         role="tab"
                                     >
-                                        <?php esc_html_e('Snippets', 'etch-fonts'); ?>
+                                        <?php esc_html_e('Snippets', 'tasty-fonts'); ?>
                                     </button>
                                     <button
                                         type="button"
-                                        class="etch-fonts-studio-tab"
-                                        id="etch-fonts-studio-tab-system"
-                                        data-studio-tab="system"
+                                        class="tasty-fonts-studio-tab tasty-fonts-tab-button"
+                                        id="tasty-fonts-studio-tab-system"
+                                        data-tab-group="studio"
+                                        data-tab-target="system"
                                         aria-selected="false"
-                                        aria-controls="etch-fonts-studio-panel-system"
+                                        tabindex="-1"
+                                        aria-controls="tasty-fonts-studio-panel-system"
                                         role="tab"
                                     >
-                                        <?php esc_html_e('System details', 'etch-fonts'); ?>
+                                        <?php esc_html_e('System Details', 'tasty-fonts'); ?>
                                     </button>
                                 </div>
 
                                 <section
-                                    id="etch-fonts-studio-panel-preview"
-                                    class="etch-fonts-studio-panel is-active"
-                                    data-studio-panel="preview"
+                                    id="tasty-fonts-studio-panel-preview"
+                                    class="tasty-fonts-studio-panel is-active"
+                                    data-tab-group="studio"
+                                    data-tab-panel="preview"
                                     role="tabpanel"
-                                    aria-labelledby="etch-fonts-studio-tab-preview"
+                                    aria-labelledby="tasty-fonts-studio-tab-preview"
                                 >
                                     <div
-                                        class="etch-fonts-preview-canvas"
-                                        id="etch-fonts-preview-canvas"
-                                        style="--etch-preview-base: <?php echo esc_attr((string) $previewSize); ?>px;"
+                                        class="tasty-fonts-preview-canvas"
+                                        id="tasty-fonts-preview-canvas"
+                                        style="--tasty-preview-base: <?php echo esc_attr((string) $previewSize); ?>px;"
                                     >
-                                        <div class="etch-fonts-preview-tabs" role="tablist" aria-label="<?php esc_attr_e('Preview scenarios', 'etch-fonts'); ?>">
+                                        <div class="tasty-fonts-preview-tabs tasty-fonts-tab-list" role="tablist" aria-label="<?php esc_attr_e('Preview scenarios', 'tasty-fonts'); ?>" aria-orientation="horizontal">
                                             <?php foreach ($previewPanels as $panel): ?>
-                                                <?php $buttonId = 'etch-fonts-preview-tab-' . $panel['key']; ?>
-                                                <?php $panelId = 'etch-fonts-preview-panel-' . $panel['key']; ?>
+                                                <?php $buttonId = 'tasty-fonts-preview-tab-' . $panel['key']; ?>
+                                                <?php $panelId = 'tasty-fonts-preview-panel-' . $panel['key']; ?>
                                                 <button
                                                     type="button"
-                                                    class="etch-fonts-preview-tab <?php echo !empty($panel['active']) ? 'is-active' : ''; ?>"
+                                                    class="tasty-fonts-preview-tab tasty-fonts-tab-button <?php echo !empty($panel['active']) ? 'is-active' : ''; ?>"
                                                     id="<?php echo esc_attr($buttonId); ?>"
-                                                    data-preview-tab="<?php echo esc_attr((string) $panel['key']); ?>"
+                                                    data-tab-group="preview"
+                                                    data-tab-target="<?php echo esc_attr((string) $panel['key']); ?>"
                                                     aria-selected="<?php echo !empty($panel['active']) ? 'true' : 'false'; ?>"
+                                                    tabindex="<?php echo !empty($panel['active']) ? '0' : '-1'; ?>"
                                                     aria-controls="<?php echo esc_attr($panelId); ?>"
                                                     role="tab"
                                                 >
@@ -242,12 +356,13 @@ final class AdminPageRenderer
                                         </div>
 
                                         <?php foreach ($previewPanels as $panel): ?>
-                                            <?php $buttonId = 'etch-fonts-preview-tab-' . $panel['key']; ?>
-                                            <?php $panelId = 'etch-fonts-preview-panel-' . $panel['key']; ?>
+                                            <?php $buttonId = 'tasty-fonts-preview-tab-' . $panel['key']; ?>
+                                            <?php $panelId = 'tasty-fonts-preview-panel-' . $panel['key']; ?>
                                             <section
                                                 id="<?php echo esc_attr($panelId); ?>"
-                                                class="etch-fonts-preview-scene etch-fonts-preview-scene--<?php echo esc_attr((string) $panel['key']); ?> <?php echo !empty($panel['active']) ? 'is-active' : ''; ?>"
-                                                data-preview-panel="<?php echo esc_attr((string) $panel['key']); ?>"
+                                                class="tasty-fonts-preview-scene tasty-fonts-preview-scene--<?php echo esc_attr((string) $panel['key']); ?> <?php echo !empty($panel['active']) ? 'is-active' : ''; ?>"
+                                                data-tab-group="preview"
+                                                data-tab-panel="<?php echo esc_attr((string) $panel['key']); ?>"
                                                 role="tabpanel"
                                                 aria-labelledby="<?php echo esc_attr($buttonId); ?>"
                                                 <?php echo !empty($panel['active']) ? '' : 'hidden'; ?>
@@ -259,24 +374,53 @@ final class AdminPageRenderer
                                 </section>
 
                                 <section
-                                    id="etch-fonts-studio-panel-snippets"
-                                    class="etch-fonts-studio-panel"
-                                    data-studio-panel="snippets"
+                                    id="tasty-fonts-studio-panel-snippets"
+                                    class="tasty-fonts-studio-panel"
+                                    data-tab-group="studio"
+                                    data-tab-panel="snippets"
                                     role="tabpanel"
-                                    aria-labelledby="etch-fonts-studio-tab-snippets"
+                                    aria-labelledby="tasty-fonts-studio-tab-snippets"
                                     hidden
                                 >
-                                    <div class="etch-fonts-code-card etch-fonts-code-card--embedded">
-                                        <div class="etch-fonts-code-tabs" role="tablist" aria-label="<?php esc_attr_e('Font snippet outputs', 'etch-fonts'); ?>">
+                                    <div class="tasty-fonts-code-card tasty-fonts-code-card--embedded">
+                                        <div class="tasty-fonts-output-settings-panel">
+                                            <div class="tasty-fonts-output-settings-copy">
+                                                <h3><?php esc_html_e('Output Settings', 'tasty-fonts'); ?></h3>
+                                                <p class="tasty-fonts-muted"><?php esc_html_e('Minify affects the generated stylesheet and the CSS snippets below. Keep it on for production output, or turn it off when you need readable CSS while auditing changes.', 'tasty-fonts'); ?></p>
+                                            </div>
+                                            <form method="post" class="tasty-fonts-output-settings-form">
+                                                <?php wp_nonce_field('tasty_fonts_save_settings'); ?>
+                                                <input type="hidden" name="tasty_fonts_save_settings" value="1">
+                                                <label class="tasty-fonts-toggle-field">
+                                                    <input
+                                                        type="checkbox"
+                                                        class="tasty-fonts-toggle-input"
+                                                        name="minify_css_output"
+                                                        value="1"
+                                                        <?php checked($minifyCssOutput); ?>
+                                                    >
+                                                    <span class="tasty-fonts-toggle-switch" aria-hidden="true"></span>
+                                                    <span class="tasty-fonts-toggle-copy">
+                                                        <span class="tasty-fonts-toggle-title"><?php esc_html_e('Minify generated CSS', 'tasty-fonts'); ?></span>
+                                                        <span class="tasty-fonts-toggle-description"><?php esc_html_e('Reduces whitespace in frontend CSS and snippet output.', 'tasty-fonts'); ?></span>
+                                                    </span>
+                                                </label>
+                                                <button type="submit" class="button"><?php esc_html_e('Save Output Settings', 'tasty-fonts'); ?></button>
+                                            </form>
+                                        </div>
+
+                                        <div class="tasty-fonts-code-tabs tasty-fonts-tab-list" role="tablist" aria-label="<?php esc_attr_e('Font snippet outputs', 'tasty-fonts'); ?>" aria-orientation="horizontal">
                                             <?php foreach ($outputPanels as $panel): ?>
-                                                <?php $buttonId = 'etch-fonts-output-tab-' . $panel['key']; ?>
-                                                <?php $panelId = 'etch-fonts-output-panel-' . $panel['key']; ?>
+                                                <?php $buttonId = 'tasty-fonts-output-tab-' . $panel['key']; ?>
+                                                <?php $panelId = 'tasty-fonts-output-panel-' . $panel['key']; ?>
                                                 <button
                                                     type="button"
-                                                    class="etch-fonts-code-tab <?php echo !empty($panel['active']) ? 'is-active' : ''; ?>"
+                                                    class="tasty-fonts-code-tab tasty-fonts-tab-button <?php echo !empty($panel['active']) ? 'is-active' : ''; ?>"
                                                     id="<?php echo esc_attr($buttonId); ?>"
-                                                    data-output-tab="<?php echo esc_attr((string) $panel['key']); ?>"
+                                                    data-tab-group="output"
+                                                    data-tab-target="<?php echo esc_attr((string) $panel['key']); ?>"
                                                     aria-selected="<?php echo !empty($panel['active']) ? 'true' : 'false'; ?>"
+                                                    tabindex="<?php echo !empty($panel['active']) ? '0' : '-1'; ?>"
                                                     aria-controls="<?php echo esc_attr($panelId); ?>"
                                                     role="tab"
                                                 >
@@ -286,40 +430,42 @@ final class AdminPageRenderer
                                         </div>
 
                                         <?php foreach ($outputPanels as $panel): ?>
-                                            <?php $buttonId = 'etch-fonts-output-tab-' . $panel['key']; ?>
-                                            <?php $panelId = 'etch-fonts-output-panel-' . $panel['key']; ?>
+                                            <?php $buttonId = 'tasty-fonts-output-tab-' . $panel['key']; ?>
+                                            <?php $panelId = 'tasty-fonts-output-panel-' . $panel['key']; ?>
                                             <section
                                                 id="<?php echo esc_attr($panelId); ?>"
-                                                class="etch-fonts-code-panel <?php echo !empty($panel['active']) ? 'is-active' : ''; ?>"
-                                                data-output-panel="<?php echo esc_attr((string) $panel['key']); ?>"
+                                                class="tasty-fonts-code-panel <?php echo !empty($panel['active']) ? 'is-active' : ''; ?>"
+                                                data-tab-group="output"
+                                                data-tab-panel="<?php echo esc_attr((string) $panel['key']); ?>"
                                                 role="tabpanel"
                                                 aria-labelledby="<?php echo esc_attr($buttonId); ?>"
                                                 <?php echo !empty($panel['active']) ? '' : 'hidden'; ?>
                                             >
-                                                <div class="etch-fonts-code-panel-head">
+                                                <div class="tasty-fonts-code-panel-head">
                                                     <span><?php echo esc_html((string) ($panel['label'] ?? '')); ?></span>
-                                                    <button type="button" class="button button-small" data-copy-target="<?php echo esc_attr((string) ($panel['target'] ?? '')); ?>"><?php esc_html_e('Copy', 'etch-fonts'); ?></button>
+                                                    <button type="button" class="button button-small" data-copy-target="<?php echo esc_attr((string) ($panel['target'] ?? '')); ?>"><?php esc_html_e('Copy', 'tasty-fonts'); ?></button>
                                                 </div>
-                                                <textarea id="<?php echo esc_attr((string) ($panel['target'] ?? '')); ?>" class="etch-fonts-output" readonly><?php echo esc_textarea((string) ($panel['value'] ?? '')); ?></textarea>
+                                                <textarea id="<?php echo esc_attr((string) ($panel['target'] ?? '')); ?>" class="tasty-fonts-output" readonly><?php echo esc_textarea((string) ($panel['value'] ?? '')); ?></textarea>
                                             </section>
                                         <?php endforeach; ?>
                                     </div>
                                 </section>
 
                                 <section
-                                    id="etch-fonts-studio-panel-system"
-                                    class="etch-fonts-studio-panel"
-                                    data-studio-panel="system"
+                                    id="tasty-fonts-studio-panel-system"
+                                    class="tasty-fonts-studio-panel"
+                                    data-tab-group="studio"
+                                    data-tab-panel="system"
                                     role="tabpanel"
-                                    aria-labelledby="etch-fonts-studio-tab-system"
+                                    aria-labelledby="tasty-fonts-studio-tab-system"
                                     hidden
                                 >
-                                    <div class="etch-fonts-system-details-panel">
-                                        <div class="etch-fonts-diagnostics-grid">
+                                    <div class="tasty-fonts-system-details-panel">
+                                        <div class="tasty-fonts-diagnostics-grid">
                                             <?php foreach ($diagnosticItems as $item): ?>
-                                                <div class="etch-fonts-diagnostic-item">
-                                                    <div class="etch-fonts-diagnostic-label"><?php echo esc_html((string) ($item['label'] ?? '')); ?></div>
-                                                    <div class="<?php echo !empty($item['code']) ? 'etch-fonts-diagnostic-value etch-fonts-code' : 'etch-fonts-diagnostic-value'; ?>">
+                                                <div class="tasty-fonts-diagnostic-item">
+                                                    <div class="tasty-fonts-diagnostic-label"><?php echo esc_html((string) ($item['label'] ?? '')); ?></div>
+                                                    <div class="<?php echo !empty($item['code']) ? 'tasty-fonts-diagnostic-value tasty-fonts-code' : 'tasty-fonts-diagnostic-value'; ?>">
                                                         <?php echo esc_html((string) ($item['value'] ?? '')); ?>
                                                     </div>
                                                 </div>
@@ -328,312 +474,401 @@ final class AdminPageRenderer
                                     </div>
                                 </section>
                             </div>
-                        </form>
                     </section>
 
-                    <section class="etch-fonts-card etch-fonts-library-card" id="etch-fonts-library">
-                        <div class="etch-fonts-card-head">
+                    <section class="tasty-fonts-card tasty-fonts-library-card" id="tasty-fonts-library">
+                        <div class="tasty-fonts-card-head tasty-fonts-card-head--library">
                             <?php
                             $this->renderSectionHeading(
                                 'h2',
-                                __('Local Library', 'etch-fonts'),
-                                __('Browse every self-hosted family, assign roles, inspect files, or add fonts from Google and direct uploads.', 'etch-fonts')
+                                __('Local Library', 'tasty-fonts'),
+                                __('Browse every self-hosted family, assign roles, inspect files, or add fonts from Google and direct uploads.', 'tasty-fonts')
                             );
                             ?>
-                            <div class="etch-fonts-library-tools">
-                                <div class="etch-fonts-search-field etch-fonts-search-field--compact">
-                                    <label class="screen-reader-text" for="etch-fonts-library-search"><?php esc_html_e('Library filter', 'etch-fonts'); ?></label>
-                                    <input
-                                        type="search"
-                                        id="etch-fonts-library-search"
-                                        class="regular-text"
-                                        placeholder="<?php esc_attr_e('Filter self-hosted fonts by name', 'etch-fonts'); ?>"
-                                        aria-label="<?php esc_attr_e('Filter self-hosted fonts by name', 'etch-fonts'); ?>"
-                                    >
+                            <div class="tasty-fonts-library-tools">
+                                <div class="tasty-fonts-library-filterbar">
+                                    <div class="tasty-fonts-search-field tasty-fonts-search-field--compact">
+                                        <label class="screen-reader-text" for="tasty-fonts-library-search"><?php esc_html_e('Filter fonts', 'tasty-fonts'); ?></label>
+                                        <input
+                                            type="search"
+                                            id="tasty-fonts-library-search"
+                                            class="regular-text"
+                                            placeholder="<?php esc_attr_e('Filter fonts', 'tasty-fonts'); ?>"
+                                            aria-label="<?php esc_attr_e('Filter fonts', 'tasty-fonts'); ?>"
+                                        >
+                                    </div>
+                                    <label class="screen-reader-text" for="tasty-fonts-library-source-filter"><?php esc_html_e('Filter fonts by source', 'tasty-fonts'); ?></label>
+                                    <span class="tasty-fonts-select-field tasty-fonts-library-select">
+                                        <select
+                                            id="tasty-fonts-library-source-filter"
+                                            data-library-source-filter
+                                            aria-label="<?php esc_attr_e('Filter fonts by source', 'tasty-fonts'); ?>"
+                                            title="<?php echo esc_attr__('Choose which font source to show in the library.', 'tasty-fonts'); ?>"
+                                        >
+                                            <option value="all"><?php esc_html_e('All Fonts', 'tasty-fonts'); ?></option>
+                                            <option value="used"><?php esc_html_e('In Use', 'tasty-fonts'); ?></option>
+                                            <option value="google"><?php esc_html_e('Google Fonts', 'tasty-fonts'); ?></option>
+                                            <option value="uploaded"><?php esc_html_e('File Uploads', 'tasty-fonts'); ?></option>
+                                            <option value="adobe"><?php esc_html_e('Adobe Fonts', 'tasty-fonts'); ?></option>
+                                        </select>
+                                    </span>
                                 </div>
-                                <div class="etch-fonts-actions etch-fonts-actions--library">
+                                <div class="tasty-fonts-actions tasty-fonts-actions--library">
                                     <form method="post">
-                                        <?php wp_nonce_field('etch_fonts_rescan_fonts'); ?>
-                                        <button type="submit" class="button" name="etch_fonts_rescan_fonts" value="1"><?php esc_html_e('Rescan fonts', 'etch-fonts'); ?></button>
+                                        <?php wp_nonce_field('tasty_fonts_rescan_fonts'); ?>
+                                        <button type="submit" class="button" name="tasty_fonts_rescan_fonts" value="1"><?php esc_html_e('Rescan Fonts', 'tasty-fonts'); ?></button>
                                     </form>
                                     <button
                                         type="button"
-                                        class="button button-primary"
-                                        data-disclosure-toggle="etch-fonts-add-font-panel"
-                                        data-expanded-label="<?php echo esc_attr__('Hide add font', 'etch-fonts'); ?>"
-                                        data-collapsed-label="<?php echo esc_attr__('Add Font', 'etch-fonts'); ?>"
+                                        class="button button-primary tasty-fonts-disclosure-button tasty-fonts-disclosure-button--library"
+                                        data-disclosure-toggle="tasty-fonts-add-font-panel"
+                                        data-expanded-label="<?php echo esc_attr__('Add Fonts', 'tasty-fonts'); ?>"
+                                        data-collapsed-label="<?php echo esc_attr__('Add Fonts', 'tasty-fonts'); ?>"
                                         aria-expanded="false"
-                                        aria-controls="etch-fonts-add-font-panel"
+                                        aria-controls="tasty-fonts-add-font-panel"
                                     >
-                                        <?php esc_html_e('Add Font', 'etch-fonts'); ?>
+                                        <?php esc_html_e('Add Fonts', 'tasty-fonts'); ?>
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="etch-fonts-add-font-panel" class="etch-fonts-import-shell" hidden>
-                            <div class="etch-fonts-import-head">
-                                <div class="etch-fonts-import-copy">
-                                    <h3><?php esc_html_e('Add fonts', 'etch-fonts'); ?></h3>
-                                    <p class="etch-fonts-muted"><?php esc_html_e('Search Google Fonts, connect an Adobe Fonts web project, or upload your own files directly into uploads/fonts.', 'etch-fonts'); ?></p>
-                                </div>
-                            </div>
-                            <div class="etch-fonts-add-font-tabs" role="tablist" aria-label="<?php esc_attr_e('Add font source', 'etch-fonts'); ?>">
-                                <button type="button" class="button etch-fonts-add-font-tab is-active" data-add-font-tab="google" aria-selected="true"><?php esc_html_e('Google Fonts', 'etch-fonts'); ?></button>
-                                <button type="button" class="button etch-fonts-add-font-tab" data-add-font-tab="adobe" aria-selected="false"><?php esc_html_e('Adobe Fonts', 'etch-fonts'); ?></button>
-                                <button type="button" class="button etch-fonts-add-font-tab" data-add-font-tab="upload" aria-selected="false"><?php esc_html_e('Upload files', 'etch-fonts'); ?></button>
+                        <div id="tasty-fonts-add-font-panel" class="tasty-fonts-import-shell" hidden>
+                            <div class="tasty-fonts-add-font-tabs tasty-fonts-tab-list" role="tablist" aria-label="<?php esc_attr_e('Add font source', 'tasty-fonts'); ?>" aria-orientation="horizontal">
+                                <button type="button" class="button tasty-fonts-add-font-tab tasty-fonts-tab-button is-active" id="tasty-fonts-add-font-tab-google" data-tab-group="add-font" data-tab-target="google" aria-selected="true" tabindex="0" aria-controls="tasty-fonts-add-font-panel-google" role="tab"><?php esc_html_e('Google Fonts', 'tasty-fonts'); ?></button>
+                                <button type="button" class="button tasty-fonts-add-font-tab tasty-fonts-tab-button" id="tasty-fonts-add-font-tab-adobe" data-tab-group="add-font" data-tab-target="adobe" aria-selected="false" tabindex="-1" aria-controls="tasty-fonts-add-font-panel-adobe" role="tab"><?php esc_html_e('Adobe Fonts', 'tasty-fonts'); ?></button>
+                                <button type="button" class="button tasty-fonts-add-font-tab tasty-fonts-tab-button" id="tasty-fonts-add-font-tab-upload" data-tab-group="add-font" data-tab-target="upload" aria-selected="false" tabindex="-1" aria-controls="tasty-fonts-add-font-panel-upload" role="tab"><?php esc_html_e('Upload Files', 'tasty-fonts'); ?></button>
                             </div>
 
-                            <div class="etch-fonts-add-font-panels">
-                                <section class="etch-fonts-add-font-panel is-active" data-add-font-panel="google">
-                                    <div class="etch-fonts-google-shell">
-                                        <div class="etch-fonts-google-access">
-                                            <div class="etch-fonts-google-access-head">
-                                                <div class="etch-fonts-google-access-title-row">
-                                                    <h4><?php esc_html_e('Google search access', 'etch-fonts'); ?></h4>
-                                                    <div class="etch-fonts-google-access-head-actions">
-                                                        <span class="etch-fonts-badge <?php echo esc_attr($googleStatusClass); ?>">
-                                                            <?php echo esc_html($googleStatusLabel); ?>
-                                                        </span>
-                                                        <button
-                                                            type="button"
-                                                            class="button etch-fonts-disclosure-button"
-                                                            data-disclosure-toggle="etch-fonts-google-access-panel"
-                                                            data-expanded-label="<?php echo esc_attr__('Hide key settings', 'etch-fonts'); ?>"
-                                                            data-collapsed-label="<?php echo esc_attr__('Manage key', 'etch-fonts'); ?>"
-                                                            aria-expanded="<?php echo $googleAccessExpanded ? 'true' : 'false'; ?>"
-                                                            aria-controls="etch-fonts-google-access-panel"
-                                                        >
-                                                            <?php echo $googleAccessExpanded ? esc_html__('Hide key settings', 'etch-fonts') : esc_html__('Manage key', 'etch-fonts'); ?>
-                                                        </button>
+                            <div class="tasty-fonts-add-font-panels">
+                                <section class="tasty-fonts-add-font-panel is-active" id="tasty-fonts-add-font-panel-google" data-tab-group="add-font" data-tab-panel="google" role="tabpanel" aria-labelledby="tasty-fonts-add-font-tab-google">
+                                    <div class="tasty-fonts-source-shell tasty-fonts-source-shell--google" data-source-state="<?php echo esc_attr($googleApiState); ?>">
+                                        <section class="tasty-fonts-source-card tasty-fonts-source-card--status tasty-fonts-google-access">
+                                            <div class="tasty-fonts-source-status-row">
+                                                <div class="tasty-fonts-source-status-copy">
+                                                    <span class="tasty-fonts-panel-kicker"><?php esc_html_e('Source Setup', 'tasty-fonts'); ?></span>
+                                                    <div class="tasty-fonts-source-status-title-row">
+                                                        <h4><?php esc_html_e('Google Fonts', 'tasty-fonts'); ?></h4>
                                                     </div>
+                                                    <p class="tasty-fonts-muted tasty-fonts-source-summary"><?php echo esc_html($googleAccessCopy); ?></p>
                                                 </div>
-                                                <p class="etch-fonts-muted"><?php echo esc_html($googleAccessCopy); ?></p>
+                                                <div class="tasty-fonts-source-status-actions">
+                                                    <span class="tasty-fonts-badge <?php echo esc_attr($googleStatusClass); ?>">
+                                                        <?php echo esc_html($googleStatusLabel); ?>
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        class="button tasty-fonts-disclosure-button"
+                                                        data-disclosure-toggle="tasty-fonts-google-access-panel"
+                                                        data-expanded-label="<?php echo esc_attr($googleAccessButtonLabel); ?>"
+                                                        data-collapsed-label="<?php echo esc_attr($googleAccessButtonLabel); ?>"
+                                                        aria-expanded="<?php echo esc_attr($googleAccessExpanded ? 'true' : 'false'); ?>"
+                                                        aria-controls="tasty-fonts-google-access-panel"
+                                                    >
+                                                        <?php echo esc_html($googleAccessButtonLabel); ?>
+                                                    </button>
+                                                </div>
                                             </div>
 
-                                            <div id="etch-fonts-google-access-panel" class="etch-fonts-google-access-panel" <?php echo $googleAccessExpanded ? '' : 'hidden'; ?>>
-                                                <form method="post" class="etch-fonts-google-access-form">
-                                                    <?php wp_nonce_field('etch_fonts_save_settings'); ?>
-                                                    <input type="hidden" name="etch_fonts_save_settings" value="1">
+                                            <div id="tasty-fonts-google-access-panel" class="tasty-fonts-google-access-panel" <?php echo $googleAccessExpanded ? '' : 'hidden'; ?>>
+                                                <form method="post" class="tasty-fonts-google-access-form">
+                                                    <?php wp_nonce_field('tasty_fonts_save_settings'); ?>
+                                                    <input type="hidden" name="tasty_fonts_save_settings" value="1">
                                                     <input
                                                         type="text"
                                                         class="hidden"
-                                                        name="etch_fonts_google_access_username"
+                                                        name="tasty_fonts_google_access_username"
                                                         value="<?php echo esc_attr((string) wp_get_current_user()->user_login); ?>"
                                                         autocomplete="username"
                                                         tabindex="-1"
                                                         aria-hidden="true"
                                                     >
-                                                    <div class="etch-fonts-google-access-grid">
-                                                        <label class="etch-fonts-stack-field etch-fonts-google-access-field">
-                                                            <?php $this->renderFieldLabel(__('Google Fonts API key', 'etch-fonts')); ?>
+                                                    <div class="tasty-fonts-google-access-grid">
+                                                        <label class="tasty-fonts-stack-field tasty-fonts-google-access-field">
+                                                            <?php $this->renderFieldLabel(__('Google Fonts API Key', 'tasty-fonts')); ?>
                                                             <input
                                                                 type="password"
                                                                 class="regular-text"
                                                                 name="google_api_key"
                                                                 value=""
-                                                                placeholder="<?php echo esc_attr($googleApiSaved ? __('Saved API key. Enter a new key to replace it.', 'etch-fonts') : __('Paste your Google Fonts API key', 'etch-fonts')); ?>"
+                                                                placeholder="<?php echo esc_attr($googleApiSaved ? __('Saved API key. Enter a new key to replace it.', 'tasty-fonts') : __('Paste your Google Fonts API key', 'tasty-fonts')); ?>"
                                                                 autocomplete="new-password"
                                                                 spellcheck="false"
                                                             >
                                                         </label>
 
-                                                        <div class="etch-fonts-google-access-footer">
-                                                            <div class="etch-fonts-settings-buttons">
-                                                                <button type="submit" class="button button-primary"><?php esc_html_e('Save key', 'etch-fonts'); ?></button>
+                                                        <div class="tasty-fonts-google-access-footer">
+                                                            <div class="tasty-fonts-settings-buttons">
+                                                                <button type="submit" class="button button-primary"><?php esc_html_e('Save Key', 'tasty-fonts'); ?></button>
                                                                 <?php if ($googleApiSaved): ?>
-                                                                    <button type="submit" class="button" name="etch_fonts_clear_google_api_key" value="1"><?php esc_html_e('Remove key', 'etch-fonts'); ?></button>
+                                                                    <button type="submit" class="button" name="tasty_fonts_clear_google_api_key" value="1"><?php esc_html_e('Remove Key', 'tasty-fonts'); ?></button>
                                                                 <?php endif; ?>
                                                             </div>
-                                                            <div class="etch-fonts-google-access-meta">
-                                                                <p class="etch-fonts-muted etch-fonts-settings-link">
-                                                                    <a href="https://developers.google.com/fonts/docs/developer_api" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Get a Google Fonts API key from the Google Fonts Developer API docs.', 'etch-fonts'); ?></a>
-                                                                </p>
+                                                            <div class="tasty-fonts-google-access-meta">
+                                                                <div class="tasty-fonts-access-note tasty-fonts-access-note--compact">
+                                                                    <span class="tasty-fonts-access-note-label"><?php esc_html_e('Need an API key?', 'tasty-fonts'); ?></span>
+                                                                    <a class="tasty-fonts-access-link" href="https://developers.google.com/fonts/docs/developer_api" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Open the Google Fonts Developer API docs.', 'tasty-fonts'); ?></a>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </form>
                                             </div>
-                                        </div>
+                                        </section>
 
-                                        <div class="etch-fonts-google-workflow">
-                                            <div class="etch-fonts-search-shell">
-                                                <div class="etch-fonts-panel-head">
-                                                    <h4><?php esc_html_e('Search the catalog', 'etch-fonts'); ?></h4>
+                                        <div class="tasty-fonts-google-workflow">
+                                            <section class="tasty-fonts-source-card tasty-fonts-source-card--task tasty-fonts-search-shell">
+                                                <div class="tasty-fonts-panel-head tasty-fonts-panel-head--workflow">
+                                                    <span class="tasty-fonts-panel-kicker"><?php esc_html_e('Step 1', 'tasty-fonts'); ?></span>
+                                                    <h4><?php esc_html_e('Find a Family', 'tasty-fonts'); ?></h4>
                                                 </div>
 
-                                                <label class="etch-fonts-stack-field">
-                                                    <span class="screen-reader-text"><?php esc_html_e('Search Google Fonts', 'etch-fonts'); ?></span>
+                                                <label class="tasty-fonts-stack-field">
+                                                    <span class="screen-reader-text"><?php esc_html_e('Search Google Fonts', 'tasty-fonts'); ?></span>
                                                     <input
                                                         type="search"
-                                                        id="etch-fonts-google-search"
+                                                        id="tasty-fonts-google-search"
                                                         class="regular-text"
-                                                        placeholder="<?php esc_attr_e('Search Google Fonts families', 'etch-fonts'); ?>"
+                                                        placeholder="<?php echo esc_attr($googleApiEnabled ? __('Search Google Fonts families', 'tasty-fonts') : __('Add or verify a Google Fonts API key to search', 'tasty-fonts')); ?>"
+                                                        <?php if (!$googleApiEnabled): ?>
+                                                            aria-describedby="tasty-fonts-google-search-note"
+                                                        <?php endif; ?>
                                                         <?php disabled(!$googleApiEnabled); ?>
                                                     >
                                                 </label>
                                                 <?php if (!$googleApiEnabled): ?>
-                                                    <p class="etch-fonts-muted etch-fonts-import-note"><?php echo esc_html($googleSearchDisabledCopy); ?></p>
+                                                    <p id="tasty-fonts-google-search-note" class="tasty-fonts-inline-note tasty-fonts-inline-note--warning">
+                                                        <strong><?php esc_html_e('Search disabled.', 'tasty-fonts'); ?></strong>
+                                                        <span><?php echo esc_html($googleSearchDisabledCopy); ?></span>
+                                                    </p>
                                                 <?php endif; ?>
-                                                <div id="etch-fonts-google-results" class="etch-fonts-search-results" aria-live="polite">
-                                                    <?php if (!$googleApiEnabled): ?>
-                                                        <div class="etch-fonts-empty"><?php esc_html_e('Google search is currently disabled.', 'etch-fonts'); ?></div>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
+                                                <div id="tasty-fonts-google-results" class="tasty-fonts-search-results" aria-live="polite"></div>
+                                            </section>
 
-                                            <div class="etch-fonts-import-panel etch-fonts-import-panel--google">
-                                                <div class="etch-fonts-panel-head">
-                                                    <h4><?php esc_html_e('Choose what to import', 'etch-fonts'); ?></h4>
+                                            <section class="tasty-fonts-source-card tasty-fonts-source-card--task tasty-fonts-import-panel tasty-fonts-import-panel--google">
+                                                <div class="tasty-fonts-panel-head tasty-fonts-panel-head--workflow">
+                                                    <span class="tasty-fonts-panel-kicker"><?php esc_html_e('Step 2', 'tasty-fonts'); ?></span>
+                                                    <h4><?php esc_html_e('Import Selected Files', 'tasty-fonts'); ?></h4>
                                                 </div>
 
-                                                <div class="etch-fonts-import-manual-grid">
-                                                    <label class="etch-fonts-stack-field">
-                                                        <?php $this->renderFieldLabel(__('Family name', 'etch-fonts')); ?>
-                                                        <input type="text" id="etch-fonts-manual-family" class="regular-text" placeholder="<?php esc_attr_e('Example: Inter', 'etch-fonts'); ?>">
+                                                <div class="tasty-fonts-import-manual-grid">
+                                                    <label class="tasty-fonts-stack-field">
+                                                        <?php $this->renderFieldLabel(__('Family Name', 'tasty-fonts')); ?>
+                                                        <input type="text" id="tasty-fonts-manual-family" class="regular-text" placeholder="<?php esc_attr_e('e.g. Inter', 'tasty-fonts'); ?>">
                                                     </label>
-                                                    <label class="etch-fonts-stack-field">
-                                                        <?php $this->renderFieldLabel(__('Manual variants', 'etch-fonts')); ?>
-                                                        <input type="text" id="etch-fonts-manual-variants" class="regular-text" value="regular,700">
+                                                    <label class="tasty-fonts-stack-field">
+                                                        <?php $this->renderFieldLabel(__('Manual Variants', 'tasty-fonts')); ?>
+                                                        <input type="text" id="tasty-fonts-manual-variants" class="regular-text" placeholder="<?php esc_attr_e('e.g. regular,700', 'tasty-fonts'); ?>">
                                                     </label>
                                                 </div>
 
-                                                <div class="etch-fonts-selected-wrap etch-fonts-selected-wrap--import">
-                                                    <div class="etch-fonts-selected-card">
-                                                        <?php $this->renderFieldLabel(__('Selected family', 'etch-fonts')); ?>
-                                                        <div id="etch-fonts-selected-family" class="etch-fonts-kbd"><?php esc_html_e('None selected yet', 'etch-fonts'); ?></div>
+                                                <div class="tasty-fonts-selected-wrap tasty-fonts-selected-wrap--import">
+                                                    <div class="tasty-fonts-selected-card tasty-fonts-selected-card--import-family">
+                                                        <div class="tasty-fonts-import-card-head">
+                                                            <div class="tasty-fonts-import-card-copy">
+                                                                <?php $this->renderFieldLabel(__('Selected Family', 'tasty-fonts')); ?>
+                                                                <div id="tasty-fonts-selected-family" class="tasty-fonts-import-selected-name"><?php esc_html_e('Choose a Google family or type one manually.', 'tasty-fonts'); ?></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="tasty-fonts-import-preview-shell">
+                                                            <span class="tasty-fonts-import-preview-label"><?php esc_html_e('Live Preview', 'tasty-fonts'); ?></span>
+                                                            <div id="tasty-fonts-selected-family-preview" class="tasty-fonts-import-selected-preview is-placeholder"><?php esc_html_e('Preview appears here after you choose a family.', 'tasty-fonts'); ?></div>
+                                                        </div>
                                                     </div>
-                                                    <div class="etch-fonts-selected-card">
-                                                        <?php $this->renderFieldLabel(__('Variants to import', 'etch-fonts')); ?>
-                                                        <div id="etch-fonts-google-variants" class="etch-fonts-variant-list"></div>
+
+                                                    <div class="tasty-fonts-selected-card tasty-fonts-selected-card--import-variants">
+                                                        <div class="tasty-fonts-import-card-head">
+                                                            <div class="tasty-fonts-import-card-copy">
+                                                                <?php $this->renderFieldLabel(__('Variants to Import', 'tasty-fonts')); ?>
+                                                                <p class="tasty-fonts-import-variant-note tasty-fonts-muted"><?php esc_html_e('Click chips or type a comma-separated list above. Both stay in sync.', 'tasty-fonts'); ?></p>
+                                                            </div>
+                                                            <div class="tasty-fonts-import-card-meta">
+                                                                <div id="tasty-fonts-import-selection-summary" class="tasty-fonts-import-selection-summary"><?php esc_html_e('0 Variants Selected', 'tasty-fonts'); ?></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="tasty-fonts-import-variant-toolbar">
+                                                            <div class="tasty-fonts-import-variant-actions">
+                                                                <button type="button" class="button tasty-fonts-filter-pill tasty-fonts-filter-pill--small tasty-fonts-variant-filter" data-google-variant-select="all"><?php esc_html_e('All', 'tasty-fonts'); ?></button>
+                                                                <button type="button" class="button tasty-fonts-filter-pill tasty-fonts-filter-pill--small tasty-fonts-variant-filter" data-google-variant-select="normal"><?php esc_html_e('Normal', 'tasty-fonts'); ?></button>
+                                                                <button type="button" class="button tasty-fonts-filter-pill tasty-fonts-filter-pill--small tasty-fonts-variant-filter" data-google-variant-select="italic"><?php esc_html_e('Italic', 'tasty-fonts'); ?></button>
+                                                                <button type="button" class="button tasty-fonts-filter-pill tasty-fonts-filter-pill--small tasty-fonts-variant-filter" data-google-variant-select="clear"><?php esc_html_e('Clear', 'tasty-fonts'); ?></button>
+                                                            </div>
+                                                        </div>
+                                                        <div id="tasty-fonts-google-variants" class="tasty-fonts-variant-list"></div>
                                                     </div>
                                                 </div>
 
-                                                <div id="etch-fonts-import-status" class="etch-fonts-import-status" aria-live="polite"></div>
+                                                <div class="tasty-fonts-import-footer">
+                                                    <div id="tasty-fonts-import-status" class="tasty-fonts-import-status" aria-live="polite"></div>
 
-                                                <div class="etch-fonts-actions etch-fonts-actions--import">
-                                                    <button type="button" class="button button-primary" id="etch-fonts-import-submit"><?php esc_html_e('Import and self-host', 'etch-fonts'); ?></button>
+                                                    <div class="tasty-fonts-actions tasty-fonts-actions--import">
+                                                        <button
+                                                            type="button"
+                                                            id="tasty-fonts-import-size-estimate"
+                                                            class="tasty-fonts-badge tasty-fonts-badge--interactive is-role"
+                                                            data-help-tooltip="<?php echo esc_attr__('The estimated transfer size only varies by family and subset.', 'tasty-fonts'); ?>"
+                                                            data-help-passive="1"
+                                                            aria-label="<?php esc_attr_e('Estimated transfer size information', 'tasty-fonts'); ?>"
+                                                            title="<?php echo esc_attr__('The estimated transfer size only varies by family and subset.', 'tasty-fonts'); ?>"
+                                                        ><?php esc_html_e('Approx. +0 KB WOFF2', 'tasty-fonts'); ?></button>
+                                                        <button type="button" class="button button-primary" id="tasty-fonts-import-submit"><?php esc_html_e('Import and Self-Host', 'tasty-fonts'); ?></button>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            </section>
                                         </div>
                                     </div>
                                 </section>
 
-                                <section class="etch-fonts-add-font-panel" data-add-font-panel="adobe" hidden>
-                                    <div class="etch-fonts-google-shell etch-fonts-adobe-shell">
-                                        <div class="etch-fonts-google-access etch-fonts-adobe-access">
-                                            <div class="etch-fonts-google-access-head">
-                                                <div class="etch-fonts-google-access-title-row">
-                                                    <h4><?php esc_html_e('Adobe web project', 'etch-fonts'); ?></h4>
-                                                    <span class="etch-fonts-badge <?php echo esc_attr($adobeStatusClass); ?>">
+                                <section class="tasty-fonts-add-font-panel" id="tasty-fonts-add-font-panel-adobe" data-tab-group="add-font" data-tab-panel="adobe" role="tabpanel" aria-labelledby="tasty-fonts-add-font-tab-adobe" hidden>
+                                    <div class="tasty-fonts-source-shell tasty-fonts-source-shell--adobe" data-source-state="<?php echo esc_attr($adobeProjectState); ?>">
+                                        <section class="tasty-fonts-source-card tasty-fonts-source-card--status tasty-fonts-adobe-access">
+                                            <div class="tasty-fonts-source-status-row">
+                                                <div class="tasty-fonts-source-status-copy">
+                                                    <span class="tasty-fonts-panel-kicker"><?php esc_html_e('Source Setup', 'tasty-fonts'); ?></span>
+                                                    <div class="tasty-fonts-source-status-title-row">
+                                                        <h4><?php esc_html_e('Adobe Fonts', 'tasty-fonts'); ?></h4>
+                                                    </div>
+                                                    <p class="tasty-fonts-muted tasty-fonts-source-summary"><?php echo esc_html($adobeAccessCopy); ?></p>
+                                                </div>
+                                                <div class="tasty-fonts-source-status-actions">
+                                                    <span class="tasty-fonts-badge <?php echo esc_attr($adobeStatusClass); ?>">
                                                         <?php echo esc_html($adobeStatusLabel); ?>
                                                     </span>
+                                                    <button
+                                                        type="button"
+                                                        class="button tasty-fonts-disclosure-button"
+                                                        data-disclosure-toggle="tasty-fonts-adobe-project-panel"
+                                                        data-expanded-label="<?php echo esc_attr($adobeAccessButtonLabel); ?>"
+                                                        data-collapsed-label="<?php echo esc_attr($adobeAccessButtonLabel); ?>"
+                                                        aria-expanded="<?php echo esc_attr($adobeAccessExpanded ? 'true' : 'false'); ?>"
+                                                        aria-controls="tasty-fonts-adobe-project-panel"
+                                                    >
+                                                        <?php echo esc_html($adobeAccessButtonLabel); ?>
+                                                    </button>
                                                 </div>
-                                                <p class="etch-fonts-muted"><?php echo esc_html($adobeAccessCopy); ?></p>
                                             </div>
 
-                                            <form method="post" class="etch-fonts-google-access-form">
-                                                <?php wp_nonce_field('etch_fonts_save_adobe_project'); ?>
-                                                <input type="hidden" name="etch_fonts_save_adobe_project" value="1">
-                                                <div class="etch-fonts-google-access-grid">
-                                                    <label class="etch-fonts-stack-field etch-fonts-google-access-field">
-                                                        <?php $this->renderFieldLabel(__('Adobe Fonts project ID', 'etch-fonts')); ?>
-                                                        <input
-                                                            type="text"
-                                                            class="regular-text"
-                                                            id="etch-fonts-adobe-project-id"
-                                                            name="adobe_project_id"
-                                                            value="<?php echo esc_attr($adobeProjectId); ?>"
-                                                            placeholder="<?php esc_attr_e('Example: abc1def', 'etch-fonts'); ?>"
-                                                            autocomplete="off"
-                                                            spellcheck="false"
-                                                        >
-                                                    </label>
+                                            <div id="tasty-fonts-adobe-project-panel" class="tasty-fonts-google-access-panel" <?php echo $adobeAccessExpanded ? '' : 'hidden'; ?>>
+                                                <form method="post" class="tasty-fonts-google-access-form">
+                                                    <?php wp_nonce_field('tasty_fonts_save_adobe_project'); ?>
+                                                    <input type="hidden" name="tasty_fonts_save_adobe_project" value="1">
+                                                    <div class="tasty-fonts-google-access-grid">
+                                                        <label class="tasty-fonts-stack-field tasty-fonts-google-access-field">
+                                                            <?php $this->renderFieldLabel(__('Adobe Fonts Project ID', 'tasty-fonts')); ?>
+                                                            <input
+                                                                type="text"
+                                                                class="regular-text"
+                                                                id="tasty-fonts-adobe-project-id"
+                                                                name="adobe_project_id"
+                                                                value="<?php echo esc_attr($adobeProjectId); ?>"
+                                                                placeholder="<?php esc_attr_e('Example: abc1def', 'tasty-fonts'); ?>"
+                                                                autocomplete="off"
+                                                                spellcheck="false"
+                                                            >
+                                                        </label>
 
-                                                    <label class="etch-fonts-inline-checkbox">
-                                                        <input type="checkbox" name="adobe_enabled" value="1" <?php checked($adobeProjectEnabled); ?>>
-                                                        <span><?php esc_html_e('Load this Adobe-hosted stylesheet on the frontend, editor, and Etch canvas.', 'etch-fonts'); ?></span>
-                                                    </label>
+                                                        <label class="tasty-fonts-inline-checkbox">
+                                                            <input type="checkbox" name="adobe_enabled" value="1" <?php checked($adobeProjectEnabled); ?>>
+                                                            <span><?php esc_html_e('Load this Adobe-hosted stylesheet on the frontend, editor, and Etch canvas.', 'tasty-fonts'); ?></span>
+                                                        </label>
 
-                                                    <div class="etch-fonts-google-access-footer">
-                                                        <div class="etch-fonts-settings-buttons">
-                                                            <button type="submit" class="button button-primary"><?php esc_html_e('Save project', 'etch-fonts'); ?></button>
-                                                            <?php if ($adobeProjectSaved): ?>
-                                                                <button type="submit" class="button" name="etch_fonts_resync_adobe_project" value="1"><?php esc_html_e('Resync project', 'etch-fonts'); ?></button>
-                                                                <button type="submit" class="button" name="etch_fonts_remove_adobe_project" value="1"><?php esc_html_e('Remove project', 'etch-fonts'); ?></button>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                        <div class="etch-fonts-google-access-meta">
-                                                            <p class="etch-fonts-muted"><?php esc_html_e('Adobe Fonts stays remotely hosted. Manage domains and enabled families in Adobe Fonts, not in this plugin.', 'etch-fonts'); ?></p>
-                                                            <p class="etch-fonts-muted etch-fonts-settings-link">
-                                                                <a href="<?php echo esc_url($adobeProjectLink); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Open Adobe Fonts Web Projects.', 'etch-fonts'); ?></a>
-                                                            </p>
+                                                        <div class="tasty-fonts-google-access-footer">
+                                                            <div class="tasty-fonts-settings-buttons">
+                                                                <button type="submit" class="button button-primary"><?php esc_html_e('Save Project', 'tasty-fonts'); ?></button>
+                                                                <?php if ($adobeProjectSaved): ?>
+                                                                    <button type="submit" class="button" name="tasty_fonts_resync_adobe_project" value="1"><?php esc_html_e('Resync Project', 'tasty-fonts'); ?></button>
+                                                                    <button type="submit" class="button" name="tasty_fonts_remove_adobe_project" value="1"><?php esc_html_e('Remove Project', 'tasty-fonts'); ?></button>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                            <div class="tasty-fonts-google-access-meta">
+                                                                <aside class="tasty-fonts-access-note tasty-fonts-access-note--external">
+                                                                    <span class="tasty-fonts-access-note-label"><?php esc_html_e('Managed in Adobe Fonts', 'tasty-fonts'); ?></span>
+                                                                    <p class="tasty-fonts-muted"><?php esc_html_e('Domains and enabled families still live in Adobe Fonts. Resync here after changing the web project.', 'tasty-fonts'); ?></p>
+                                                                    <a class="tasty-fonts-access-link" href="<?php echo esc_url($adobeProjectLink); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Open Adobe Fonts Web Projects', 'tasty-fonts'); ?></a>
+                                                                </aside>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </form>
-                                        </div>
-
-                                        <div class="etch-fonts-import-panel etch-fonts-import-panel--google">
-                                            <div class="etch-fonts-panel-head">
-                                                <h4><?php esc_html_e('Detected families', 'etch-fonts'); ?></h4>
+                                                </form>
                                             </div>
-                                            <p class="etch-fonts-muted etch-fonts-import-note"><?php esc_html_e('These family names come from the Adobe project stylesheet and are added to the role selectors when the project is available.', 'etch-fonts'); ?></p>
+                                        </section>
+
+                                        <section class="tasty-fonts-source-card tasty-fonts-source-card--secondary tasty-fonts-import-panel tasty-fonts-import-panel--detected">
+                                            <div class="tasty-fonts-panel-head tasty-fonts-panel-head--workflow">
+                                                <span class="tasty-fonts-panel-kicker"><?php esc_html_e('From the Project', 'tasty-fonts'); ?></span>
+                                                <h4><?php esc_html_e('Detected Families', 'tasty-fonts'); ?></h4>
+                                            </div>
 
                                             <?php if ($adobeDetectedFamilies === []): ?>
-                                                <div class="etch-fonts-empty"><?php esc_html_e('No Adobe families detected yet. Save or resync a valid Adobe Fonts project to load its stylesheet metadata.', 'etch-fonts'); ?></div>
+                                                <div class="tasty-fonts-empty tasty-fonts-empty--panel"><?php esc_html_e('No Adobe families detected yet.', 'tasty-fonts'); ?></div>
                                             <?php else: ?>
-                                                <div class="etch-fonts-adobe-family-list">
+                                                <div class="tasty-fonts-adobe-family-list">
                                                     <?php foreach ($adobeDetectedFamilies as $family): ?>
                                                         <?php $this->renderAdobeFamilyCard($family); ?>
                                                     <?php endforeach; ?>
                                                 </div>
                                             <?php endif; ?>
-                                        </div>
+                                        </section>
                                     </div>
                                 </section>
 
-                                <section class="etch-fonts-add-font-panel" data-add-font-panel="upload" hidden>
-                                    <div class="etch-fonts-upload-shell">
-                                        <div class="etch-fonts-upload-intro">
-                                            <p class="etch-fonts-muted"><?php esc_html_e('Use one box per family. Add multiple faces inside the same family, or add another family when you want to upload a separate typeface.', 'etch-fonts'); ?></p>
-                                            <div class="etch-fonts-upload-tip">
-                                                <strong><?php esc_html_e('Quick detect:', 'etch-fonts'); ?></strong>
-                                                <span><?php esc_html_e('If a filename follows a pattern like Abel-400.woff2 or Inter-700-italic.woff2, the plugin can suggest the family name, weight, and style automatically.', 'etch-fonts'); ?></span>
-                                            </div>
-                                        </div>
-
-                                        <form id="etch-fonts-upload-form" class="etch-fonts-upload-form" novalidate>
-                                            <div id="etch-fonts-upload-groups" class="etch-fonts-upload-groups">
-                                                <?php $this->renderUploadFamilyGroup(); ?>
-                                            </div>
-
-                                            <template id="etch-fonts-upload-group-template">
-                                                <?php $this->renderUploadFamilyGroup(); ?>
-                                            </template>
-
-                                            <template id="etch-fonts-upload-row-template">
-                                                <?php $this->renderUploadFaceRow(); ?>
-                                            </template>
-
-                                            <div class="etch-fonts-upload-actions">
-                                                <div class="etch-fonts-actions etch-fonts-actions--upload-builder">
-                                                    <button type="button" class="button" id="etch-fonts-upload-add-family"><?php esc_html_e('Add another family', 'etch-fonts'); ?></button>
+                                <section class="tasty-fonts-add-font-panel" id="tasty-fonts-add-font-panel-upload" data-tab-group="add-font" data-tab-panel="upload" role="tabpanel" aria-labelledby="tasty-fonts-add-font-tab-upload" hidden>
+                                    <div class="tasty-fonts-source-shell tasty-fonts-source-shell--upload">
+                                        <section class="tasty-fonts-source-card tasty-fonts-source-card--status tasty-fonts-upload-brief">
+                                            <div class="tasty-fonts-source-status-row tasty-fonts-source-status-row--upload">
+                                                <div class="tasty-fonts-source-status-copy">
+                                                    <span class="tasty-fonts-panel-kicker"><?php esc_html_e('Source Setup', 'tasty-fonts'); ?></span>
+                                                    <div class="tasty-fonts-source-status-title-row">
+                                                        <h4><?php esc_html_e('Upload Files', 'tasty-fonts'); ?></h4>
+                                                    </div>
+                                                    <p class="tasty-fonts-muted tasty-fonts-source-summary"><?php esc_html_e('Build one family at a time, keep every face for that typeface together, and add another family only when you are uploading a separate typeface.', 'tasty-fonts'); ?></p>
                                                 </div>
-                                                <button type="submit" class="button button-primary" id="etch-fonts-upload-submit"><?php esc_html_e('Upload to library', 'etch-fonts'); ?></button>
+                                                <aside class="tasty-fonts-access-note tasty-fonts-access-note--external tasty-fonts-access-note--upload">
+                                                    <span class="tasty-fonts-access-note-label"><?php esc_html_e('Auto-detect', 'tasty-fonts'); ?></span>
+                                                    <p class="tasty-fonts-muted"><?php esc_html_e('Filenames like Abel-400.woff2 or Inter-700-italic.woff2 can suggest the family name, weight, and style automatically.', 'tasty-fonts'); ?></p>
+                                                </aside>
+                                            </div>
+                                        </section>
+
+                                        <section class="tasty-fonts-source-card tasty-fonts-source-card--task tasty-fonts-upload-builder">
+                                            <div class="tasty-fonts-panel-head tasty-fonts-panel-head--workflow">
+                                                <span class="tasty-fonts-panel-kicker"><?php esc_html_e('Family Builder', 'tasty-fonts'); ?></span>
+                                                <h4><?php esc_html_e('Assemble Local Files', 'tasty-fonts'); ?></h4>
                                             </div>
 
-                                            <div id="etch-fonts-upload-status" class="etch-fonts-import-status" aria-live="polite"></div>
-                                        </form>
+                                            <form id="tasty-fonts-upload-form" class="tasty-fonts-upload-form tasty-fonts-upload-form--builder" novalidate>
+                                                <div id="tasty-fonts-upload-groups" class="tasty-fonts-upload-groups">
+                                                    <?php $this->renderUploadFamilyGroup(); ?>
+                                                </div>
+
+                                                <template id="tasty-fonts-upload-group-template">
+                                                    <?php $this->renderUploadFamilyGroup(); ?>
+                                                </template>
+
+                                                <template id="tasty-fonts-upload-row-template">
+                                                    <?php $this->renderUploadFaceRow(); ?>
+                                                </template>
+
+                                                <div class="tasty-fonts-upload-actions">
+                                                    <div class="tasty-fonts-actions tasty-fonts-actions--upload-builder">
+                                                        <button type="button" class="button" id="tasty-fonts-upload-add-family"><?php esc_html_e('Add Another Family', 'tasty-fonts'); ?></button>
+                                                    </div>
+                                                    <button type="submit" class="button button-primary" id="tasty-fonts-upload-submit"><?php esc_html_e('Upload to Library', 'tasty-fonts'); ?></button>
+                                                </div>
+
+                                                <div id="tasty-fonts-upload-status" class="tasty-fonts-import-status" aria-live="polite"></div>
+                                            </form>
+                                        </section>
                                     </div>
                                 </section>
                             </div>
                         </div>
 
                         <?php if ($catalog === []): ?>
-                            <div class="etch-fonts-empty etch-fonts-empty-state"><?php esc_html_e('No supported font files were found yet in uploads/fonts.', 'etch-fonts'); ?></div>
+                            <div class="tasty-fonts-empty tasty-fonts-empty-state"><?php esc_html_e('No supported font files were found yet in uploads/fonts.', 'tasty-fonts'); ?></div>
                         <?php else: ?>
-                            <div class="etch-fonts-library-grid">
+                            <div id="tasty-fonts-library-empty-filtered" class="tasty-fonts-empty tasty-fonts-empty-state" hidden><?php esc_html_e('No fonts match the current filters.', 'tasty-fonts'); ?></div>
+                            <div class="tasty-fonts-library-grid">
                                 <?php foreach ($catalog as $family): ?>
                                     <?php $this->renderFamilyRow($family, $roles, $familyFallbacks, $previewText); ?>
                                 <?php endforeach; ?>
@@ -641,68 +876,98 @@ final class AdminPageRenderer
                         <?php endif; ?>
                     </section>
 
-                    <section class="etch-fonts-card etch-fonts-activity-card">
-                        <div class="etch-fonts-card-head">
+                    <section class="tasty-fonts-card tasty-fonts-activity-card">
+                        <div class="tasty-fonts-card-head tasty-fonts-card-head--activity">
                             <?php
                             $this->renderSectionHeading(
                                 'h2',
-                                __('Activity', 'etch-fonts'),
-                                __('Recent scans, imports, deletes, and asset refreshes. Newest entries appear first.', 'etch-fonts')
+                                __('Activity', 'tasty-fonts'),
+                                __('Recent scans, imports, deletes, and asset refreshes. Newest entries appear first.', 'tasty-fonts')
                             );
+                            $logCount = count($logs);
                             ?>
-                            <form method="post">
-                                <?php wp_nonce_field('etch_fonts_clear_log'); ?>
-                                <button type="submit" class="button" name="etch_fonts_clear_log" value="1"><?php esc_html_e('Clear log', 'etch-fonts'); ?></button>
-                            </form>
+                            <div class="tasty-fonts-activity-head-actions">
+                                <?php if ($logs !== []): ?>
+                                    <div class="tasty-fonts-activity-toolbar" role="group" aria-label="<?php esc_attr_e('Activity filters', 'tasty-fonts'); ?>">
+                                        <span
+                                            id="tasty-fonts-activity-count"
+                                            class="tasty-fonts-badge"
+                                            data-activity-count
+                                            data-total-count="<?php echo esc_attr((string) $logCount); ?>"
+                                        >
+                                            <?php echo esc_html(sprintf($logCount === 1 ? __('%d entry', 'tasty-fonts') : __('%d entries', 'tasty-fonts'), $logCount)); ?>
+                                        </span>
+                                        <label class="screen-reader-text" for="tasty-fonts-activity-actor-filter"><?php esc_html_e('Filter activity by account', 'tasty-fonts'); ?></label>
+                                        <span class="tasty-fonts-select-field tasty-fonts-activity-select">
+                                            <select id="tasty-fonts-activity-actor-filter" data-activity-actor-filter>
+                                                <option value=""><?php esc_html_e('All Accounts', 'tasty-fonts'); ?></option>
+                                                <?php foreach ($activityActorOptions as $actor): ?>
+                                                    <option value="<?php echo esc_attr((string) $actor); ?>"><?php echo esc_html((string) $actor); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </span>
+                                        <label class="screen-reader-text" for="tasty-fonts-activity-search"><?php esc_html_e('Search activity', 'tasty-fonts'); ?></label>
+                                        <span class="tasty-fonts-search-field--compact tasty-fonts-search-field--activity">
+                                            <input
+                                                type="search"
+                                                id="tasty-fonts-activity-search"
+                                                placeholder="<?php esc_attr_e('Search activity', 'tasty-fonts'); ?>"
+                                                autocomplete="off"
+                                                data-activity-search
+                                            >
+                                        </span>
+                                        <form method="post">
+                                            <?php wp_nonce_field('tasty_fonts_clear_log'); ?>
+                                            <button type="submit" class="button" name="tasty_fonts_clear_log" value="1"><?php esc_html_e('Clear Log', 'tasty-fonts'); ?></button>
+                                        </form>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
                         </div>
 
                         <?php if ($logs === []): ?>
-                            <div class="etch-fonts-empty etch-fonts-empty-state"><?php esc_html_e('No log entries yet.', 'etch-fonts'); ?></div>
+                            <div class="tasty-fonts-empty tasty-fonts-empty-state"><?php esc_html_e('No log entries yet.', 'tasty-fonts'); ?></div>
                         <?php else: ?>
-                            <?php $this->renderLogList($visibleLogs); ?>
-                            <?php if ($olderLogs !== []): ?>
-                                <div class="etch-fonts-disclosure etch-fonts-activity-more">
-                                    <button
-                                        type="button"
-                                        class="button etch-fonts-disclosure-button"
-                                        data-disclosure-toggle="etch-fonts-activity-older"
-                                        data-expanded-label="<?php echo esc_attr__('Hide older activity', 'etch-fonts'); ?>"
-                                        data-collapsed-label="<?php echo esc_attr(sprintf(__('Show older activity (%d)', 'etch-fonts'), count($olderLogs))); ?>"
-                                        aria-expanded="false"
-                                        aria-controls="etch-fonts-activity-older"
-                                    >
-                                        <?php echo esc_html(sprintf(__('Show older activity (%d)', 'etch-fonts'), count($olderLogs))); ?>
-                                    </button>
-                                    <div id="etch-fonts-activity-older" hidden>
-                                        <?php $this->renderLogList($olderLogs, 'etch-fonts-log-list etch-fonts-log-list--older'); ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
+                            <div class="tasty-fonts-activity-shell">
+                                <div id="tasty-fonts-activity-empty-filtered" class="tasty-fonts-empty tasty-fonts-empty--panel tasty-fonts-activity-empty" hidden><?php esc_html_e('No activity matches the current filters.', 'tasty-fonts'); ?></div>
+                                <?php $this->renderLogList($logs); ?>
+                            </div>
                         <?php endif; ?>
                     </section>
                     <?php $this->renderFallbackSuggestionList(); ?>
-                    <div id="etch-fonts-help-tooltip-layer" class="etch-fonts-help-tooltip-layer" role="tooltip" hidden></div>
+                    <div id="tasty-fonts-help-tooltip-layer" class="tasty-fonts-help-tooltip-layer" role="tooltip" hidden></div>
                 </div>
             <?php endif; ?>
         </div>
         <?php
     }
 
-    private function renderLogList(array $entries, string $className = 'etch-fonts-log-list'): void
+    private function renderLogList(array $entries, string $className = 'tasty-fonts-log-list'): void
     {
         ?>
-        <ol class="<?php echo esc_attr($className); ?>">
+        <ol class="<?php echo esc_attr($className); ?>" data-activity-list>
             <?php foreach ($entries as $entry): ?>
-                <li class="etch-fonts-log-item">
-                    <span class="etch-fonts-log-marker" aria-hidden="true"></span>
-                    <div class="etch-fonts-log-content">
-                        <div class="etch-fonts-log-meta">
-                            <span class="etch-fonts-log-time"><?php echo esc_html((string) ($entry['time'] ?? '')); ?></span>
-                            <?php if (!empty($entry['actor'])): ?>
-                                <span class="etch-fonts-log-actor"><?php echo esc_html((string) $entry['actor']); ?></span>
+                <?php
+                $time = (string) ($entry['time'] ?? '');
+                $actor = trim((string) ($entry['actor'] ?? ''));
+                $message = (string) ($entry['message'] ?? '');
+                $searchValue = trim(implode(' ', array_filter([$time, $actor, $message], static fn ($value): bool => $value !== '')));
+                ?>
+                <li
+                    class="tasty-fonts-log-item"
+                    data-activity-entry
+                    data-activity-actor="<?php echo esc_attr($actor); ?>"
+                    data-activity-search="<?php echo esc_attr($searchValue); ?>"
+                >
+                    <span class="tasty-fonts-log-marker" aria-hidden="true"></span>
+                    <div class="tasty-fonts-log-content">
+                        <div class="tasty-fonts-log-message"><?php echo esc_html($message); ?></div>
+                        <div class="tasty-fonts-log-meta">
+                            <span class="tasty-fonts-log-time"><?php echo esc_html($time); ?></span>
+                            <?php if ($actor !== ''): ?>
+                                <span class="tasty-fonts-log-actor"><?php echo esc_html($actor); ?></span>
                             <?php endif; ?>
                         </div>
-                        <div><?php echo esc_html((string) ($entry['message'] ?? '')); ?></div>
                     </div>
                 </li>
             <?php endforeach; ?>
@@ -720,15 +985,15 @@ final class AdminPageRenderer
 
         $faceSummaryLabels = $this->buildFamilyFaceSummaryLabels((array) ($family['faces'] ?? []));
         ?>
-        <article class="etch-fonts-adobe-family-card">
-            <div class="etch-fonts-adobe-family-head">
+        <article class="tasty-fonts-adobe-family-card">
+            <div class="tasty-fonts-adobe-family-head">
                 <strong><?php echo esc_html($familyName); ?></strong>
-                <span class="etch-fonts-badge"><?php esc_html_e('Adobe', 'etch-fonts'); ?></span>
+                <span class="tasty-fonts-badge"><?php esc_html_e('Adobe', 'tasty-fonts'); ?></span>
             </div>
             <?php if ($faceSummaryLabels !== []): ?>
-                <div class="etch-fonts-face-pills">
+                <div class="tasty-fonts-face-pills">
                     <?php foreach ($faceSummaryLabels as $label): ?>
-                        <span class="etch-fonts-face-pill"><?php echo esc_html($label); ?></span>
+                        <span class="tasty-fonts-face-pill"><?php echo esc_html($label); ?></span>
                     <?php endforeach; ?>
                 </div>
             <?php endif; ?>
@@ -743,125 +1008,193 @@ final class AdminPageRenderer
         $isHeading = ($roles['heading'] ?? '') === $familyName;
         $isBody = ($roles['body'] ?? '') === $familyName;
         $isRoleFamily = $isHeading || $isBody;
+        $sourceTokens = $this->buildFamilySourceTokens((array) ($family['sources'] ?? []), $isRoleFamily);
         $deleteBlockedMessage = $this->buildDeleteBlockedMessage($familyName, $isHeading, $isBody);
+        $deleteBlockedMessageHeading = $this->buildDeleteBlockedMessage($familyName, true, false);
+        $deleteBlockedMessageBody = $this->buildDeleteBlockedMessage($familyName, false, true);
+        $deleteBlockedMessageBoth = $this->buildDeleteBlockedMessage($familyName, true, true);
         $savedFallback = FontUtils::sanitizeFallback((string) ($familyFallbacks[$familyName] ?? 'sans-serif'));
         $defaultStack = FontUtils::buildFontStack($familyName, $savedFallback);
         $facePreviewText = $this->buildFacePreviewText($previewText);
         $faceSummaryLabels = $this->buildFamilyFaceSummaryLabels((array) ($family['faces'] ?? []));
         $visibleFaceSummaryLabels = array_slice($faceSummaryLabels, 0, 4);
         $hiddenFaceSummaryCount = max(0, count($faceSummaryLabels) - count($visibleFaceSummaryLabels));
+        $faceCount = count((array) ($family['faces'] ?? []));
         $isExpanded = false;
-        $detailsId = 'etch-fonts-family-details-' . sanitize_html_class($familySlug !== '' ? $familySlug : FontUtils::slugify($familyName));
+        $detailsId = 'tasty-fonts-family-details-' . sanitize_html_class($familySlug !== '' ? $familySlug : FontUtils::slugify($familyName));
         ?>
         <article
-            class="etch-fonts-row etch-fonts-font-card <?php echo $isRoleFamily ? 'is-active' : ''; ?> <?php echo $isExpanded ? 'is-expanded' : ''; ?>"
+            class="tasty-fonts-row tasty-fonts-font-card <?php echo $isRoleFamily ? 'is-active' : ''; ?> <?php echo $isExpanded ? 'is-expanded' : ''; ?>"
             data-font-row
             data-font-name="<?php echo esc_attr(strtolower($familyName)); ?>"
             data-font-family="<?php echo esc_attr($familyName); ?>"
+            data-font-sources="<?php echo esc_attr(implode(' ', $sourceTokens)); ?>"
         >
-            <div class="etch-fonts-row-head">
-                <div class="etch-fonts-font-card-main">
-                    <div class="etch-fonts-font-card-top">
-                        <div class="etch-fonts-font-primary">
-                            <div class="etch-fonts-font-identity">
-                                <div class="etch-fonts-font-identity-top">
-                                    <h3><?php echo esc_html($familyName); ?></h3>
-                                    <div class="etch-fonts-badges">
+            <div class="tasty-fonts-row-head">
+                <div class="tasty-fonts-font-card-main">
+                    <div class="tasty-fonts-font-card-top">
+                        <div class="tasty-fonts-font-primary">
+                            <div class="tasty-fonts-font-identity">
+                                <div class="tasty-fonts-font-identity-top">
+                                    <div class="tasty-fonts-font-title-row">
+                                        <h3><?php echo esc_html($familyName); ?></h3>
+                                        <button
+                                            type="button"
+                                            class="tasty-fonts-stack-copy"
+                                            data-copy-text="<?php echo esc_attr($defaultStack); ?>"
+                                            data-copy-success="<?php esc_attr_e('Font stack copied.', 'tasty-fonts'); ?>"
+                                            data-copy-static-label="1"
+                                            aria-label="<?php echo esc_attr(sprintf(__('Copy font stack for %s', 'tasty-fonts'), $familyName)); ?>"
+                                            title="<?php echo esc_attr($defaultStack); ?>"
+                                        >
+                                            <?php echo esc_html($defaultStack); ?>
+                                        </button>
+                                    </div>
+                                    <div class="tasty-fonts-badges">
                                         <?php foreach ((array) ($family['sources'] ?? []) as $source): ?>
-                                            <span class="etch-fonts-badge"><?php echo esc_html(ucfirst((string) $source)); ?></span>
+                                            <span class="tasty-fonts-badge"><?php echo esc_html($this->buildFamilySourceLabel((string) $source)); ?></span>
                                         <?php endforeach; ?>
                                         <?php if ($isHeading): ?>
-                                            <span class="etch-fonts-badge is-role"><?php esc_html_e('Heading', 'etch-fonts'); ?></span>
+                                            <span class="tasty-fonts-badge is-role"><?php esc_html_e('Heading', 'tasty-fonts'); ?></span>
                                         <?php endif; ?>
                                         <?php if ($isBody): ?>
-                                            <span class="etch-fonts-badge is-role"><?php esc_html_e('Body', 'etch-fonts'); ?></span>
+                                            <span class="tasty-fonts-badge is-role"><?php esc_html_e('Body', 'tasty-fonts'); ?></span>
                                         <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
                             <?php if ($visibleFaceSummaryLabels !== []): ?>
-                                <div class="etch-fonts-font-loaded">
-                                    <div class="etch-fonts-face-pills">
+                                <div class="tasty-fonts-font-loaded">
+                                    <div class="tasty-fonts-face-pills">
                                         <?php foreach ($visibleFaceSummaryLabels as $label): ?>
-                                            <span class="etch-fonts-face-pill"><?php echo esc_html($label); ?></span>
+                                            <span class="tasty-fonts-face-pill"><?php echo esc_html($label); ?></span>
                                         <?php endforeach; ?>
                                         <?php if ($hiddenFaceSummaryCount > 0): ?>
-                                            <span class="etch-fonts-face-pill is-muted">
-                                                <?php echo esc_html(sprintf(__('+%d more', 'etch-fonts'), $hiddenFaceSummaryCount)); ?>
+                                            <span class="tasty-fonts-face-pill is-muted">
+                                                <?php echo esc_html(sprintf(__('+%d more', 'tasty-fonts'), $hiddenFaceSummaryCount)); ?>
                                             </span>
                                         <?php endif; ?>
                                     </div>
                                 </div>
                             <?php endif; ?>
+                            <div class="tasty-fonts-font-inline-preview" role="group" aria-label="<?php echo esc_attr(sprintf(__('Preview for %s', 'tasty-fonts'), $familyName)); ?>">
+                                <span class="tasty-fonts-font-inline-preview-label"><?php esc_html_e('Preview', 'tasty-fonts'); ?></span>
+                                <div
+                                    class="tasty-fonts-font-inline-preview-text"
+                                    data-font-preview-family="<?php echo esc_attr($familyName); ?>"
+                                    style="font-family:<?php echo esc_attr($defaultStack); ?>;"
+                                >
+                                    <?php echo esc_html($facePreviewText); ?>
+                                </div>
+                            </div>
+                            <div class="tasty-fonts-font-specimen" role="group" aria-label="<?php echo esc_attr(sprintf(__('Preview for %s', 'tasty-fonts'), $familyName)); ?>">
+                                <span class="tasty-fonts-font-specimen-label"><?php esc_html_e('Preview', 'tasty-fonts'); ?></span>
+                                <div
+                                    class="tasty-fonts-font-specimen-display"
+                                    data-font-preview-family="<?php echo esc_attr($familyName); ?>"
+                                    style="font-family:<?php echo esc_attr($defaultStack); ?>;"
+                                >
+                                    <?php echo esc_html($facePreviewText); ?>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="etch-fonts-font-sidebar">
-                            <div class="etch-fonts-family-meta">
-                                <form method="post" class="etch-fonts-family-fallback-form" data-family-fallback-form>
-                                    <?php wp_nonce_field('etch_fonts_save_family_fallback'); ?>
-                                    <input type="hidden" name="etch_fonts_save_family_fallback" value="1">
-                                    <input type="hidden" name="etch_fonts_family_name" value="<?php echo esc_attr($familyName); ?>">
-                                    <div class="etch-fonts-inline-field-row">
-                                        <label class="etch-fonts-inline-field etch-fonts-inline-field--select">
-                                            <span class="etch-fonts-field-label"><?php esc_html_e('Fallback', 'etch-fonts'); ?></span>
+                        <div class="tasty-fonts-font-sidebar">
+                            <div class="tasty-fonts-family-meta">
+                                <form method="post" class="tasty-fonts-family-fallback-form" data-family-fallback-form>
+                                    <?php wp_nonce_field('tasty_fonts_save_family_fallback'); ?>
+                                    <input type="hidden" name="tasty_fonts_save_family_fallback" value="1">
+                                    <input type="hidden" name="tasty_fonts_family_name" value="<?php echo esc_attr($familyName); ?>">
+                                    <div class="tasty-fonts-inline-field-row">
+                                        <label class="tasty-fonts-inline-field tasty-fonts-inline-field--select">
+                                            <span class="tasty-fonts-field-label"><?php esc_html_e('Fallback', 'tasty-fonts'); ?></span>
                                             <?php
                                             $this->renderFallbackInput(
-                                                'etch_fonts_family_fallback',
+                                                'tasty_fonts_family_fallback',
                                                 $savedFallback,
                                                 [
-                                                    'class' => 'etch-fonts-fallback-selector',
+                                                    'class' => 'tasty-fonts-fallback-selector',
                                                     'data-font-family' => $familyName,
                                                     'data-saved-value' => $savedFallback,
-                                                    'placeholder' => __('Example: system-ui, sans-serif', 'etch-fonts'),
+                                                    'placeholder' => __('Example: system-ui, sans-serif', 'tasty-fonts'),
                                                 ]
                                             );
                                             ?>
                                         </label>
                                         <button
                                             type="submit"
-                                            class="button etch-fonts-family-fallback-save"
+                                            class="button tasty-fonts-family-fallback-save"
                                             data-family-fallback-save
                                         >
-                                            <?php esc_html_e('Save', 'etch-fonts'); ?>
+                                            <?php esc_html_e('Save Fallback', 'tasty-fonts'); ?>
                                         </button>
                                     </div>
+                                    <p class="tasty-fonts-family-fallback-feedback" data-family-fallback-feedback aria-live="polite" hidden></p>
                                 </form>
-                                <div class="etch-fonts-stack-chip">
-                                    <span class="etch-fonts-field-label"><?php esc_html_e('Stack', 'etch-fonts'); ?></span>
-                                    <span class="etch-fonts-kbd" data-stack-preview="<?php echo esc_attr($familyName); ?>"><?php echo esc_html($defaultStack); ?></span>
-                                </div>
                             </div>
 
-                            <div class="etch-fonts-font-actions">
-                                <div class="etch-fonts-font-actions-primary">
-                                    <button type="button" class="button button-small" data-role-assign="heading" data-font-family="<?php echo esc_attr($familyName); ?>"><?php esc_html_e('Set heading', 'etch-fonts'); ?></button>
-                                    <button type="button" class="button button-small" data-role-assign="body" data-font-family="<?php echo esc_attr($familyName); ?>"><?php esc_html_e('Set body', 'etch-fonts'); ?></button>
+                            <div class="tasty-fonts-font-actions">
+                                <div class="tasty-fonts-font-actions-primary">
+                                    <div class="tasty-fonts-button-with-help">
+                                        <button
+                                            type="button"
+                                            class="button tasty-fonts-role-assign-button <?php echo $isHeading ? 'is-current' : ''; ?>"
+                                            data-role-assign="heading"
+                                            data-font-family="<?php echo esc_attr($familyName); ?>"
+                                            data-active-label="<?php echo esc_attr__('Heading (Selected)', 'tasty-fonts'); ?>"
+                                            data-idle-label="<?php echo esc_attr__('Select Heading', 'tasty-fonts'); ?>"
+                                            aria-pressed="<?php echo esc_attr($isHeading ? 'true' : 'false'); ?>"
+                                        >
+                                            <span class="tasty-fonts-role-assign-label"><?php echo $isHeading ? esc_html__('Heading (Selected)', 'tasty-fonts') : esc_html__('Select Heading', 'tasty-fonts'); ?></span>
+                                        </button>
+                                        <?php $this->renderHelpTip(__('Assign this family to the heading role and save it as the new draft immediately. Apply sitewide when you want the live CSS updated.', 'tasty-fonts'), __('Select Heading', 'tasty-fonts')); ?>
+                                    </div>
+                                    <div class="tasty-fonts-button-with-help">
+                                        <button
+                                            type="button"
+                                            class="button tasty-fonts-role-assign-button <?php echo $isBody ? 'is-current' : ''; ?>"
+                                            data-role-assign="body"
+                                            data-font-family="<?php echo esc_attr($familyName); ?>"
+                                            data-active-label="<?php echo esc_attr__('Body (Selected)', 'tasty-fonts'); ?>"
+                                            data-idle-label="<?php echo esc_attr__('Select Body', 'tasty-fonts'); ?>"
+                                            aria-pressed="<?php echo esc_attr($isBody ? 'true' : 'false'); ?>"
+                                        >
+                                            <span class="tasty-fonts-role-assign-label"><?php echo $isBody ? esc_html__('Body (Selected)', 'tasty-fonts') : esc_html__('Select Body', 'tasty-fonts'); ?></span>
+                                        </button>
+                                        <?php $this->renderHelpTip(__('Assign this family to the body role and save it as the new draft immediately. Apply sitewide when you want the live CSS updated.', 'tasty-fonts'), __('Select Body', 'tasty-fonts')); ?>
+                                    </div>
                                 </div>
-                                <div class="etch-fonts-font-actions-secondary">
+                                <div class="tasty-fonts-font-actions-secondary">
                                     <button
                                         type="button"
-                                        class="button button-small etch-fonts-disclosure-button etch-fonts-disclosure-button--card"
+                                        class="button tasty-fonts-disclosure-button tasty-fonts-disclosure-button--card"
                                         data-disclosure-toggle="<?php echo esc_attr($detailsId); ?>"
-                                        data-expanded-label="<?php echo esc_attr__('Hide details', 'etch-fonts'); ?>"
-                                        data-collapsed-label="<?php echo esc_attr__('View details', 'etch-fonts'); ?>"
-                                        aria-expanded="<?php echo $isExpanded ? 'true' : 'false'; ?>"
+                                        data-expanded-label="<?php echo esc_attr__('Details', 'tasty-fonts'); ?>"
+                                        data-collapsed-label="<?php echo esc_attr__('Details', 'tasty-fonts'); ?>"
+                                        aria-expanded="<?php echo esc_attr($isExpanded ? 'true' : 'false'); ?>"
                                         aria-controls="<?php echo esc_attr($detailsId); ?>"
                                     >
-                                        <?php echo $isExpanded ? esc_html__('Hide details', 'etch-fonts') : esc_html__('View details', 'etch-fonts'); ?>
+                                        <?php esc_html_e('Details', 'tasty-fonts'); ?>
                                     </button>
-                                    <form method="post" class="etch-fonts-delete-form">
-                                        <?php wp_nonce_field('etch_fonts_delete_family'); ?>
-                                        <input type="hidden" name="etch_fonts_delete_family" value="1">
-                                        <input type="hidden" name="etch_fonts_family_slug" value="<?php echo esc_attr($familySlug); ?>">
+                                    <form method="post" class="tasty-fonts-delete-form">
+                                        <?php wp_nonce_field('tasty_fonts_delete_family'); ?>
+                                        <input type="hidden" name="tasty_fonts_delete_family" value="1">
+                                        <input type="hidden" name="tasty_fonts_family_slug" value="<?php echo esc_attr($familySlug); ?>">
                                         <button
                                             type="submit"
-                                            class="button button-small etch-fonts-button-danger"
+                                            class="button tasty-fonts-button-danger <?php echo $isRoleFamily ? 'is-disabled' : ''; ?>"
                                             data-delete-family="<?php echo esc_attr($familyName); ?>"
+                                            data-delete-ready-title="<?php echo esc_attr(__('Delete this family and remove its files from uploads/fonts.', 'tasty-fonts')); ?>"
+                                            data-delete-blocked-heading="<?php echo esc_attr($deleteBlockedMessageHeading); ?>"
+                                            data-delete-blocked-body="<?php echo esc_attr($deleteBlockedMessageBody); ?>"
+                                            data-delete-blocked-both="<?php echo esc_attr($deleteBlockedMessageBoth); ?>"
+                                            aria-disabled="<?php echo esc_attr($isRoleFamily ? 'true' : 'false'); ?>"
+                                            title="<?php echo esc_attr($deleteBlockedMessage !== '' ? $deleteBlockedMessage : __('Delete this family and remove its files from uploads/fonts.', 'tasty-fonts')); ?>"
                                             <?php if ($deleteBlockedMessage !== '') : ?>
                                                 data-delete-blocked="<?php echo esc_attr($deleteBlockedMessage); ?>"
                                             <?php endif; ?>
                                         >
-                                            <?php esc_html_e('Delete', 'etch-fonts'); ?>
+                                            <?php esc_html_e('Delete', 'tasty-fonts'); ?>
                                         </button>
                                     </form>
                                 </div>
@@ -871,17 +1204,18 @@ final class AdminPageRenderer
                 </div>
             </div>
 
-            <div id="<?php echo esc_attr($detailsId); ?>" class="etch-fonts-family-details" <?php echo $isExpanded ? '' : 'hidden'; ?>>
-                <table class="widefat striped etch-fonts-table">
+            <div id="<?php echo esc_attr($detailsId); ?>" class="tasty-fonts-family-details" <?php echo $isExpanded ? '' : 'hidden'; ?>>
+                <table class="widefat striped tasty-fonts-table">
                     <thead>
                         <tr>
-                            <th><?php esc_html_e('Weight', 'etch-fonts'); ?></th>
-                            <th><?php esc_html_e('Style', 'etch-fonts'); ?></th>
-                            <th><?php esc_html_e('Preview', 'etch-fonts'); ?></th>
-                            <th><?php esc_html_e('Source', 'etch-fonts'); ?></th>
-                            <th><?php esc_html_e('Storage', 'etch-fonts'); ?></th>
-                            <th><?php esc_html_e('Formats', 'etch-fonts'); ?></th>
-                            <th><?php esc_html_e('Files', 'etch-fonts'); ?></th>
+                            <th><?php esc_html_e('Weight', 'tasty-fonts'); ?></th>
+                            <th><?php esc_html_e('Style', 'tasty-fonts'); ?></th>
+                            <th><?php esc_html_e('Preview', 'tasty-fonts'); ?></th>
+                            <th><?php esc_html_e('Source', 'tasty-fonts'); ?></th>
+                            <th><?php esc_html_e('Storage', 'tasty-fonts'); ?></th>
+                            <th><?php esc_html_e('Formats', 'tasty-fonts'); ?></th>
+                            <th><?php esc_html_e('Files', 'tasty-fonts'); ?></th>
+                            <th><?php esc_html_e('Action', 'tasty-fonts'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -889,33 +1223,64 @@ final class AdminPageRenderer
                             <?php
                             $faceWeight = (string) ($face['weight'] ?? '400');
                             $faceStyle = (string) ($face['style'] ?? 'normal');
+                            $faceSource = (string) ($face['source'] ?? 'local');
+                            $faceUnicodeRange = (string) ($face['unicode_range'] ?? '');
+                            $deleteVariantBlockedMessage = ($faceCount <= 1 && $isRoleFamily)
+                                ? $this->buildDeleteLastVariantBlockedMessage($familyName, $isHeading, $isBody)
+                                : '';
                             ?>
                             <tr>
-                                <td><?php echo esc_html($faceWeight); ?></td>
-                                <td><?php echo esc_html($faceStyle); ?></td>
-                                <td class="etch-fonts-face-preview-cell">
+                                <td data-column-label="<?php esc_attr_e('Weight', 'tasty-fonts'); ?>"><?php echo esc_html($faceWeight); ?></td>
+                                <td data-column-label="<?php esc_attr_e('Style', 'tasty-fonts'); ?>"><?php echo esc_html($faceStyle); ?></td>
+                                <td class="tasty-fonts-face-preview-cell" data-column-label="<?php esc_attr_e('Preview', 'tasty-fonts'); ?>">
                                     <div
-                                        class="etch-fonts-face-preview"
+                                        class="tasty-fonts-face-preview"
                                         data-font-preview-family="<?php echo esc_attr($familyName); ?>"
                                         style="font-family:<?php echo esc_attr($defaultStack); ?>; font-weight:<?php echo esc_attr($faceWeight); ?>; font-style:<?php echo esc_attr($faceStyle); ?>;"
                                     >
                                         <?php echo esc_html($facePreviewText); ?>
                                     </div>
                                 </td>
-                                <td><?php echo esc_html((string) ucfirst((string) ($face['source'] ?? 'local'))); ?></td>
-                                <td><?php echo esc_html($this->buildFaceStorageSummary((array) $face)); ?></td>
-                                <td>
+                                <td data-column-label="<?php esc_attr_e('Source', 'tasty-fonts'); ?>"><?php echo esc_html((string) ucfirst((string) ($face['source'] ?? 'local'))); ?></td>
+                                <td data-column-label="<?php esc_attr_e('Storage', 'tasty-fonts'); ?>"><?php echo esc_html($this->buildFaceStorageSummary((array) $face)); ?></td>
+                                <td data-column-label="<?php esc_attr_e('Formats', 'tasty-fonts'); ?>">
                                     <?php foreach (array_keys((array) ($face['files'] ?? [])) as $format): ?>
-                                        <span class="etch-fonts-chip"><?php echo esc_html(strtoupper((string) $format)); ?></span>
+                                        <span class="tasty-fonts-chip"><?php echo esc_html(strtoupper((string) $format)); ?></span>
                                     <?php endforeach; ?>
                                 </td>
-                                <td>
+                                <td data-column-label="<?php esc_attr_e('Files', 'tasty-fonts'); ?>">
                                     <?php foreach ((array) ($face['paths'] ?? []) as $format => $path): ?>
-                                        <div class="etch-fonts-file-path">
+                                        <div class="tasty-fonts-file-path">
                                             <strong><?php echo esc_html(strtoupper((string) $format)); ?>:</strong>
-                                            <div class="etch-fonts-code"><?php echo esc_html(FontUtils::compactRelativePath((string) $path)); ?></div>
+                                            <div class="tasty-fonts-code"><?php echo esc_html(FontUtils::compactRelativePath((string) $path)); ?></div>
                                         </div>
                                     <?php endforeach; ?>
+                                </td>
+                                <td data-column-label="<?php esc_attr_e('Action', 'tasty-fonts'); ?>">
+                                    <form method="post" class="tasty-fonts-delete-form tasty-fonts-delete-form--variant">
+                                        <?php wp_nonce_field('tasty_fonts_delete_variant'); ?>
+                                        <input type="hidden" name="tasty_fonts_delete_variant" value="1">
+                                        <input type="hidden" name="tasty_fonts_family_slug" value="<?php echo esc_attr($familySlug); ?>">
+                                        <input type="hidden" name="tasty_fonts_face_weight" value="<?php echo esc_attr($faceWeight); ?>">
+                                        <input type="hidden" name="tasty_fonts_face_style" value="<?php echo esc_attr($faceStyle); ?>">
+                                        <input type="hidden" name="tasty_fonts_face_source" value="<?php echo esc_attr($faceSource); ?>">
+                                        <input type="hidden" name="tasty_fonts_face_unicode_range" value="<?php echo esc_attr($faceUnicodeRange); ?>">
+                                        <button
+                                            type="submit"
+                                            class="button button-small tasty-fonts-button-danger <?php echo $deleteVariantBlockedMessage !== '' ? 'is-disabled' : ''; ?>"
+                                            data-delete-variant="1"
+                                            data-delete-family-name="<?php echo esc_attr($familyName); ?>"
+                                            data-delete-face-weight="<?php echo esc_attr($faceWeight); ?>"
+                                            data-delete-face-style="<?php echo esc_attr($faceStyle); ?>"
+                                            aria-disabled="<?php echo esc_attr($deleteVariantBlockedMessage !== '' ? 'true' : 'false'); ?>"
+                                            title="<?php echo esc_attr($deleteVariantBlockedMessage !== '' ? $deleteVariantBlockedMessage : __('Delete only this saved variant and keep the rest of the family.', 'tasty-fonts')); ?>"
+                                            <?php if ($deleteVariantBlockedMessage !== '') : ?>
+                                                data-delete-blocked="<?php echo esc_attr($deleteVariantBlockedMessage); ?>"
+                                            <?php endif; ?>
+                                        >
+                                            <?php esc_html_e('Delete Variant', 'tasty-fonts'); ?>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -930,26 +1295,98 @@ final class AdminPageRenderer
     {
         if ($isHeading && $isBody) {
             return sprintf(
-                __('%s is currently used for both heading and body. Choose different role fonts before deleting it.', 'etch-fonts'),
+                __('%s is currently used for both heading and body. Choose different role fonts before deleting it.', 'tasty-fonts'),
                 $familyName
             );
         }
 
         if ($isHeading) {
             return sprintf(
-                __('%s is currently used as the heading font. Choose a different heading font before deleting it.', 'etch-fonts'),
+                __('%s is currently used as the heading font. Choose a different heading font before deleting it.', 'tasty-fonts'),
                 $familyName
             );
         }
 
         if ($isBody) {
             return sprintf(
-                __('%s is currently used as the body font. Choose a different body font before deleting it.', 'etch-fonts'),
+                __('%s is currently used as the body font. Choose a different body font before deleting it.', 'tasty-fonts'),
                 $familyName
             );
         }
 
         return '';
+    }
+
+    private function buildDeleteLastVariantBlockedMessage(string $familyName, bool $isHeading, bool $isBody): string
+    {
+        if ($isHeading && $isBody) {
+            return sprintf(
+                __('%s is currently assigned to both heading and body, and this is the last saved variant. Choose different role fonts before deleting it.', 'tasty-fonts'),
+                $familyName
+            );
+        }
+
+        if ($isHeading) {
+            return sprintf(
+                __('%s is currently assigned to heading, and this is the last saved variant. Choose a different heading font before deleting it.', 'tasty-fonts'),
+                $familyName
+            );
+        }
+
+        if ($isBody) {
+            return sprintf(
+                __('%s is currently assigned to body, and this is the last saved variant. Choose a different body font before deleting it.', 'tasty-fonts'),
+                $familyName
+            );
+        }
+
+        return '';
+    }
+
+    private function buildFontVariableReference(string $familyName): string
+    {
+        $slug = FontUtils::slugify($familyName);
+
+        if ($slug === '') {
+            return '';
+        }
+
+        return sprintf('var(--font-%s)', $slug);
+    }
+
+    private function buildFamilySourceTokens(array $sources, bool $isRoleFamily = false): array
+    {
+        $tokens = [];
+
+        foreach ($sources as $source) {
+            $normalized = strtolower(trim((string) $source));
+
+            if ($normalized === '') {
+                continue;
+            }
+
+            $tokens[] = $normalized;
+
+            if ($normalized === 'local') {
+                $tokens[] = 'uploaded';
+            }
+        }
+
+        if ($isRoleFamily) {
+            $tokens[] = 'used';
+        }
+
+        return array_values(array_unique($tokens));
+    }
+
+    private function buildFamilySourceLabel(string $source): string
+    {
+        return match (strtolower(trim($source))) {
+            'local' => __('Uploaded', 'tasty-fonts'),
+            'google' => __('Google', 'tasty-fonts'),
+            'adobe' => __('Adobe', 'tasty-fonts'),
+            default => ucfirst(trim($source)),
+        };
     }
 
     private function buildFamilyFaceSummaryLabels(array $faces): array
@@ -1003,7 +1440,7 @@ final class AdminPageRenderer
         $normalized = is_string($normalized) ? $normalized : '';
 
         if ($normalized === '') {
-            return __('The quick brown fox…', 'etch-fonts');
+            return __('The quick brown fox…', 'tasty-fonts');
         }
 
         return wp_trim_words($normalized, 6, '…');
@@ -1043,13 +1480,13 @@ final class AdminPageRenderer
 
         if ($bytes <= 0) {
             return sprintf(
-                _n('%d file', '%d files', $fileCount, 'etch-fonts'),
+                _n('%d file', '%d files', $fileCount, 'tasty-fonts'),
                 $fileCount
             );
         }
 
         return sprintf(
-            _n('%1$d file · %2$s', '%1$d files · %2$s', $fileCount, 'etch-fonts'),
+            _n('%1$d file · %2$s', '%1$d files · %2$s', $fileCount, 'tasty-fonts'),
             $fileCount,
             size_format($bytes)
         );
@@ -1058,28 +1495,28 @@ final class AdminPageRenderer
     private function renderUploadFamilyGroup(): void
     {
         ?>
-        <section class="etch-fonts-upload-group" data-upload-group>
-            <div class="etch-fonts-upload-group-head">
-                <div class="etch-fonts-upload-group-fields">
-                    <label class="etch-fonts-stack-field">
-                        <?php $this->renderFieldLabel(__('Family name', 'etch-fonts')); ?>
+        <section class="tasty-fonts-upload-group" data-upload-group>
+            <div class="tasty-fonts-upload-group-head">
+                <div class="tasty-fonts-upload-group-fields">
+                    <label class="tasty-fonts-stack-field">
+                        <?php $this->renderFieldLabel(__('Family Name', 'tasty-fonts')); ?>
                         <input
                             type="text"
                             class="regular-text"
                             data-upload-group-field="family"
-                            placeholder="<?php esc_attr_e('Example: Satoshi', 'etch-fonts'); ?>"
+                            placeholder="<?php esc_attr_e('Example: Satoshi', 'tasty-fonts'); ?>"
                         >
                     </label>
 
-                    <label class="etch-fonts-stack-field">
-                        <?php $this->renderFieldLabel(__('Fallback', 'etch-fonts')); ?>
+                    <label class="tasty-fonts-stack-field">
+                        <?php $this->renderFieldLabel(__('Fallback', 'tasty-fonts')); ?>
                         <?php
                         $this->renderFallbackInput(
                             '',
                             'sans-serif',
                             [
                                 'data-upload-group-field' => 'fallback',
-                                'placeholder' => __('Example: system-ui, sans-serif', 'etch-fonts'),
+                                'placeholder' => __('Example: system-ui, sans-serif', 'tasty-fonts'),
                             ]
                         );
                         ?>
@@ -1088,26 +1525,28 @@ final class AdminPageRenderer
 
                 <button
                     type="button"
-                    class="button etch-fonts-upload-group-remove"
+                    class="button tasty-fonts-upload-group-remove"
                     data-upload-remove-group
                 >
-                    <?php esc_html_e('Remove family', 'etch-fonts'); ?>
+                    <?php esc_html_e('Remove Family', 'tasty-fonts'); ?>
                 </button>
             </div>
 
-            <div class="etch-fonts-upload-face-headings" aria-hidden="true">
-                <span><?php esc_html_e('Font file', 'etch-fonts'); ?></span>
-                <span><?php esc_html_e('Weight', 'etch-fonts'); ?></span>
-                <span><?php esc_html_e('Style', 'etch-fonts'); ?></span>
-                <span><?php esc_html_e('Action', 'etch-fonts'); ?></span>
+            <div class="tasty-fonts-upload-face-shell">
+                <div class="tasty-fonts-upload-face-headings" aria-hidden="true">
+                    <span><?php esc_html_e('Font File', 'tasty-fonts'); ?></span>
+                    <span><?php esc_html_e('Weight', 'tasty-fonts'); ?></span>
+                    <span><?php esc_html_e('Style', 'tasty-fonts'); ?></span>
+                    <span><?php esc_html_e('Action', 'tasty-fonts'); ?></span>
+                </div>
+
+                <div class="tasty-fonts-upload-face-list" data-upload-face-list>
+                    <?php $this->renderUploadFaceRow(); ?>
+                </div>
             </div>
 
-            <div class="etch-fonts-upload-face-list" data-upload-face-list>
-                <?php $this->renderUploadFaceRow(); ?>
-            </div>
-
-            <div class="etch-fonts-upload-group-actions">
-                <button type="button" class="button" data-upload-add-face><?php esc_html_e('Add face', 'etch-fonts'); ?></button>
+            <div class="tasty-fonts-upload-group-actions">
+                <button type="button" class="button" data-upload-add-face><?php esc_html_e('Add Face', 'tasty-fonts'); ?></button>
             </div>
         </section>
         <?php
@@ -1116,24 +1555,24 @@ final class AdminPageRenderer
     private function renderUploadFaceRow(): void
     {
         ?>
-        <div class="etch-fonts-upload-face-row" data-upload-row>
-            <div class="etch-fonts-upload-face-grid">
-                <label class="etch-fonts-stack-field etch-fonts-upload-file-field">
-                    <span class="screen-reader-text"><?php esc_html_e('Font file', 'etch-fonts'); ?></span>
-                    <span class="etch-fonts-upload-file-picker">
+        <div class="tasty-fonts-upload-face-row" data-upload-row>
+            <div class="tasty-fonts-upload-face-grid">
+                <label class="tasty-fonts-stack-field tasty-fonts-upload-file-field">
+                    <span class="screen-reader-text"><?php esc_html_e('Font File', 'tasty-fonts'); ?></span>
+                    <span class="tasty-fonts-upload-file-picker">
                         <input
                             type="file"
-                            class="etch-fonts-upload-native-file"
+                            class="tasty-fonts-upload-native-file"
                             data-upload-field="file"
                             accept=".woff2,.woff,.ttf,.otf"
                         >
-                        <span class="etch-fonts-upload-file-button"><?php esc_html_e('Select font', 'etch-fonts'); ?></span>
-                        <span class="etch-fonts-upload-file-name" data-upload-file-name><?php esc_html_e('No file chosen', 'etch-fonts'); ?></span>
+                        <span class="tasty-fonts-upload-file-button"><?php esc_html_e('Select Font', 'tasty-fonts'); ?></span>
+                        <span class="tasty-fonts-upload-file-name" data-upload-file-name><?php esc_html_e('No file chosen', 'tasty-fonts'); ?></span>
                     </span>
                 </label>
 
-                <label class="etch-fonts-stack-field">
-                    <span class="screen-reader-text"><?php esc_html_e('Weight', 'etch-fonts'); ?></span>
+                <label class="tasty-fonts-stack-field">
+                    <span class="screen-reader-text"><?php esc_html_e('Weight', 'tasty-fonts'); ?></span>
                     <select data-upload-field="weight">
                         <?php foreach (range(100, 900, 100) as $weight): ?>
                             <option value="<?php echo esc_attr((string) $weight); ?>" <?php selected((string) $weight, '400'); ?>><?php echo esc_html((string) $weight); ?></option>
@@ -1141,28 +1580,28 @@ final class AdminPageRenderer
                     </select>
                 </label>
 
-                <label class="etch-fonts-stack-field">
-                    <span class="screen-reader-text"><?php esc_html_e('Style', 'etch-fonts'); ?></span>
+                <label class="tasty-fonts-stack-field">
+                    <span class="screen-reader-text"><?php esc_html_e('Style', 'tasty-fonts'); ?></span>
                     <select data-upload-field="style">
-                        <option value="normal"><?php esc_html_e('Normal', 'etch-fonts'); ?></option>
-                        <option value="italic"><?php esc_html_e('Italic', 'etch-fonts'); ?></option>
-                        <option value="oblique"><?php esc_html_e('Oblique', 'etch-fonts'); ?></option>
+                        <option value="normal"><?php esc_html_e('Normal', 'tasty-fonts'); ?></option>
+                        <option value="italic"><?php esc_html_e('Italic', 'tasty-fonts'); ?></option>
+                        <option value="oblique"><?php esc_html_e('Oblique', 'tasty-fonts'); ?></option>
                     </select>
                 </label>
 
                 <button
                     type="button"
-                    class="button etch-fonts-upload-row-remove"
+                    class="button tasty-fonts-upload-row-remove"
                     data-upload-remove
-                    aria-label="<?php esc_attr_e('Remove row', 'etch-fonts'); ?>"
+                    aria-label="<?php esc_attr_e('Remove row', 'tasty-fonts'); ?>"
                 >
-                    <?php esc_html_e('Remove', 'etch-fonts'); ?>
+                    <?php esc_html_e('Remove', 'tasty-fonts'); ?>
                 </button>
             </div>
 
-            <div class="etch-fonts-upload-row-foot">
-                <button type="button" class="button etch-fonts-upload-detected" data-upload-detected-apply hidden></button>
-                <div class="etch-fonts-upload-row-status" data-upload-row-status></div>
+            <div class="tasty-fonts-upload-row-foot">
+                <button type="button" class="button tasty-fonts-upload-detected" data-upload-detected-apply hidden></button>
+                <div class="tasty-fonts-upload-row-status" data-upload-row-status></div>
             </div>
         </div>
         <?php
@@ -1173,110 +1612,110 @@ final class AdminPageRenderer
         switch ($key) {
             case 'editorial':
                 ?>
-                <div class="etch-fonts-preview-showcase">
-                    <div class="etch-fonts-preview-specimen-board">
-                        <aside class="etch-fonts-preview-specimen-rail">
-                            <div class="etch-fonts-preview-specimen-glyph" data-role-preview="heading">Aa</div>
-                            <div class="etch-fonts-preview-specimen-key">
-                                <span class="etch-fonts-preview-specimen-key-label"><?php esc_html_e('Heading family', 'etch-fonts'); ?></span>
-                                <strong class="etch-fonts-preview-specimen-key-value" data-role-preview="heading"><?php echo esc_html((string) ($roles['heading'] ?? '')); ?></strong>
+                <div class="tasty-fonts-preview-showcase">
+                    <div class="tasty-fonts-preview-specimen-board">
+                        <aside class="tasty-fonts-preview-specimen-rail">
+                            <div class="tasty-fonts-preview-specimen-glyph" data-role-preview="heading">Aa</div>
+                            <div class="tasty-fonts-preview-specimen-key">
+                                <span class="tasty-fonts-preview-specimen-key-label"><?php esc_html_e('Heading Family', 'tasty-fonts'); ?></span>
+                                <strong class="tasty-fonts-preview-specimen-key-value" data-role-preview="heading"><?php echo esc_html((string) ($roles['heading'] ?? '')); ?></strong>
                             </div>
-                            <div class="etch-fonts-preview-specimen-key">
-                                <span class="etch-fonts-preview-specimen-key-label"><?php esc_html_e('Body family', 'etch-fonts'); ?></span>
-                                <strong class="etch-fonts-preview-specimen-key-value" data-role-preview="body"><?php echo esc_html((string) ($roles['body'] ?? '')); ?></strong>
+                            <div class="tasty-fonts-preview-specimen-key">
+                                <span class="tasty-fonts-preview-specimen-key-label"><?php esc_html_e('Body Family', 'tasty-fonts'); ?></span>
+                                <strong class="tasty-fonts-preview-specimen-key-value" data-role-preview="body"><?php echo esc_html((string) ($roles['body'] ?? '')); ?></strong>
                             </div>
                         </aside>
 
-                        <div class="etch-fonts-preview-specimen-scale">
-                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--1" data-role-preview="heading"><?php esc_html_e('Heading 1', 'etch-fonts'); ?></div>
-                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--2" data-role-preview="heading"><?php esc_html_e('Heading 2', 'etch-fonts'); ?></div>
-                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--3" data-role-preview="heading"><?php esc_html_e('Heading 3', 'etch-fonts'); ?></div>
-                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--4" data-role-preview="heading"><?php esc_html_e('Heading 4', 'etch-fonts'); ?></div>
-                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--5" data-role-preview="heading"><?php esc_html_e('Heading 5', 'etch-fonts'); ?></div>
-                            <div class="etch-fonts-preview-specimen-scale-item etch-fonts-preview-specimen-scale-item--6" data-role-preview="heading"><?php esc_html_e('Heading 6', 'etch-fonts'); ?></div>
+                        <div class="tasty-fonts-preview-specimen-scale">
+                            <div class="tasty-fonts-preview-specimen-scale-item tasty-fonts-preview-specimen-scale-item--1" data-role-preview="heading"><?php esc_html_e('Heading 1', 'tasty-fonts'); ?></div>
+                            <div class="tasty-fonts-preview-specimen-scale-item tasty-fonts-preview-specimen-scale-item--2" data-role-preview="heading"><?php esc_html_e('Heading 2', 'tasty-fonts'); ?></div>
+                            <div class="tasty-fonts-preview-specimen-scale-item tasty-fonts-preview-specimen-scale-item--3" data-role-preview="heading"><?php esc_html_e('Heading 3', 'tasty-fonts'); ?></div>
+                            <div class="tasty-fonts-preview-specimen-scale-item tasty-fonts-preview-specimen-scale-item--4" data-role-preview="heading"><?php esc_html_e('Heading 4', 'tasty-fonts'); ?></div>
+                            <div class="tasty-fonts-preview-specimen-scale-item tasty-fonts-preview-specimen-scale-item--5" data-role-preview="heading"><?php esc_html_e('Heading 5', 'tasty-fonts'); ?></div>
+                            <div class="tasty-fonts-preview-specimen-scale-item tasty-fonts-preview-specimen-scale-item--6" data-role-preview="heading"><?php esc_html_e('Heading 6', 'tasty-fonts'); ?></div>
                         </div>
 
-                        <div class="etch-fonts-preview-specimen-copy">
-                            <div class="etch-fonts-preview-specimen-copy-row">
-                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Lead', 'etch-fonts'); ?></span>
-                                <div class="etch-fonts-preview-specimen-copy-body">
-                                    <p class="etch-fonts-preview-specimen-lead" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
+                        <div class="tasty-fonts-preview-specimen-copy">
+                            <div class="tasty-fonts-preview-specimen-copy-row">
+                                <span class="tasty-fonts-preview-specimen-copy-label"><?php esc_html_e('Lead', 'tasty-fonts'); ?></span>
+                                <div class="tasty-fonts-preview-specimen-copy-body">
+                                    <p class="tasty-fonts-preview-specimen-lead" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
                                 </div>
                             </div>
-                            <div class="etch-fonts-preview-specimen-copy-row">
-                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Body / 16', 'etch-fonts'); ?></span>
-                                <div class="etch-fonts-preview-specimen-copy-body">
-                                    <p class="etch-fonts-preview-specimen-body-large" data-role-preview="body"><?php esc_html_e('Apparently we had reached a great height in the atmosphere, for the sky was a dead black, and the stars had ceased to twinkle.', 'etch-fonts'); ?></p>
+                            <div class="tasty-fonts-preview-specimen-copy-row">
+                                <span class="tasty-fonts-preview-specimen-copy-label"><?php esc_html_e('Body / 16', 'tasty-fonts'); ?></span>
+                                <div class="tasty-fonts-preview-specimen-copy-body">
+                                    <p class="tasty-fonts-preview-specimen-body-large" data-role-preview="body"><?php esc_html_e('Apparently we had reached a great height in the atmosphere, for the sky was a dead black, and the stars had ceased to twinkle.', 'tasty-fonts'); ?></p>
                                 </div>
                             </div>
-                            <div class="etch-fonts-preview-specimen-copy-row">
-                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Body / 14', 'etch-fonts'); ?></span>
-                                <div class="etch-fonts-preview-specimen-copy-body">
-                                    <p class="etch-fonts-preview-specimen-body" data-role-preview="body"><?php esc_html_e('Apparently we had reached a great height in the atmosphere, for the sky was a dead black, and the stars had ceased to twinkle.', 'etch-fonts'); ?></p>
+                            <div class="tasty-fonts-preview-specimen-copy-row">
+                                <span class="tasty-fonts-preview-specimen-copy-label"><?php esc_html_e('Body / 14', 'tasty-fonts'); ?></span>
+                                <div class="tasty-fonts-preview-specimen-copy-body">
+                                    <p class="tasty-fonts-preview-specimen-body" data-role-preview="body"><?php esc_html_e('Apparently we had reached a great height in the atmosphere, for the sky was a dead black, and the stars had ceased to twinkle.', 'tasty-fonts'); ?></p>
                                 </div>
                             </div>
-                            <div class="etch-fonts-preview-specimen-copy-row">
-                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Quote', 'etch-fonts'); ?></span>
-                                <div class="etch-fonts-preview-specimen-copy-body">
-                                    <blockquote class="etch-fonts-preview-specimen-quote" data-role-preview="heading"><?php esc_html_e('“The sky was cloudless and of a deep dark blue.”', 'etch-fonts'); ?></blockquote>
+                            <div class="tasty-fonts-preview-specimen-copy-row">
+                                <span class="tasty-fonts-preview-specimen-copy-label"><?php esc_html_e('Quote', 'tasty-fonts'); ?></span>
+                                <div class="tasty-fonts-preview-specimen-copy-body">
+                                    <blockquote class="tasty-fonts-preview-specimen-quote" data-role-preview="heading"><?php esc_html_e('“The sky was cloudless and of a deep dark blue.”', 'tasty-fonts'); ?></blockquote>
                                 </div>
                             </div>
-                            <div class="etch-fonts-preview-specimen-copy-row">
-                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Capitalized', 'etch-fonts'); ?></span>
-                                <div class="etch-fonts-preview-specimen-copy-body">
-                                    <p class="etch-fonts-preview-specimen-caps" data-role-preview="body"><?php esc_html_e('Brainstorm alternative ideas', 'etch-fonts'); ?></p>
+                            <div class="tasty-fonts-preview-specimen-copy-row">
+                                <span class="tasty-fonts-preview-specimen-copy-label"><?php esc_html_e('Capitalized', 'tasty-fonts'); ?></span>
+                                <div class="tasty-fonts-preview-specimen-copy-body">
+                                    <p class="tasty-fonts-preview-specimen-caps" data-role-preview="body"><?php esc_html_e('Brainstorm alternative ideas', 'tasty-fonts'); ?></p>
                                 </div>
                             </div>
-                            <div class="etch-fonts-preview-specimen-copy-row">
-                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Small', 'etch-fonts'); ?></span>
-                                <div class="etch-fonts-preview-specimen-copy-body">
-                                    <p class="etch-fonts-preview-specimen-small" data-role-preview="body"><?php esc_html_e('Value your time', 'etch-fonts'); ?></p>
+                            <div class="tasty-fonts-preview-specimen-copy-row">
+                                <span class="tasty-fonts-preview-specimen-copy-label"><?php esc_html_e('Small', 'tasty-fonts'); ?></span>
+                                <div class="tasty-fonts-preview-specimen-copy-body">
+                                    <p class="tasty-fonts-preview-specimen-small" data-role-preview="body"><?php esc_html_e('Value your time', 'tasty-fonts'); ?></p>
                                 </div>
                             </div>
-                            <div class="etch-fonts-preview-specimen-copy-row">
-                                <span class="etch-fonts-preview-specimen-copy-label"><?php esc_html_e('Tiny', 'etch-fonts'); ?></span>
-                                <div class="etch-fonts-preview-specimen-copy-body">
-                                    <p class="etch-fonts-preview-specimen-tiny" data-role-preview="body"><?php esc_html_e('Nothing is impossible', 'etch-fonts'); ?></p>
+                            <div class="tasty-fonts-preview-specimen-copy-row">
+                                <span class="tasty-fonts-preview-specimen-copy-label"><?php esc_html_e('Tiny', 'tasty-fonts'); ?></span>
+                                <div class="tasty-fonts-preview-specimen-copy-body">
+                                    <p class="tasty-fonts-preview-specimen-tiny" data-role-preview="body"><?php esc_html_e('Nothing is impossible', 'tasty-fonts'); ?></p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="etch-fonts-preview-support-grid">
-                        <article class="etch-fonts-preview-support-card">
-                            <span class="etch-fonts-preview-support-label" data-role-preview="body"><?php esc_html_e('Hero lockup', 'etch-fonts'); ?></span>
-                            <h3 class="etch-fonts-preview-support-title" data-role-preview="heading"><?php esc_html_e('A type pairing that feels intentional at every scale', 'etch-fonts'); ?></h3>
-                            <p class="etch-fonts-preview-support-copy" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
-                            <div class="etch-fonts-preview-support-meta">
-                                <span><?php esc_html_e('Landing page', 'etch-fonts'); ?></span>
-                                <strong data-role-preview="heading"><?php esc_html_e('Ready', 'etch-fonts'); ?></strong>
+                    <div class="tasty-fonts-preview-support-grid">
+                        <article class="tasty-fonts-preview-support-card">
+                            <span class="tasty-fonts-preview-support-label" data-role-preview="body"><?php esc_html_e('Hero Lockup', 'tasty-fonts'); ?></span>
+                            <h3 class="tasty-fonts-preview-support-title" data-role-preview="heading"><?php esc_html_e('A type pairing that feels intentional at every scale', 'tasty-fonts'); ?></h3>
+                            <p class="tasty-fonts-preview-support-copy" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
+                            <div class="tasty-fonts-preview-support-meta">
+                                <span><?php esc_html_e('Landing Page', 'tasty-fonts'); ?></span>
+                                <strong data-role-preview="heading"><?php esc_html_e('Ready', 'tasty-fonts'); ?></strong>
                             </div>
                         </article>
 
-                        <article class="etch-fonts-preview-support-card">
-                            <span class="etch-fonts-preview-support-label" data-role-preview="body"><?php esc_html_e('Feature module', 'etch-fonts'); ?></span>
-                            <h3 class="etch-fonts-preview-support-title" data-role-preview="heading"><?php esc_html_e('Clean cards with enough contrast for product copy', 'etch-fonts'); ?></h3>
-                            <p class="etch-fonts-preview-support-copy" data-role-preview="body"><?php esc_html_e('Use this sample to judge title tone, supporting copy rhythm, and whether the body face stays calm inside UI surfaces.', 'etch-fonts'); ?></p>
-                            <div class="etch-fonts-preview-support-meta">
-                                <span><?php esc_html_e('Surface check', 'etch-fonts'); ?></span>
-                                <strong data-role-preview="heading"><?php esc_html_e('Balanced', 'etch-fonts'); ?></strong>
+                        <article class="tasty-fonts-preview-support-card">
+                            <span class="tasty-fonts-preview-support-label" data-role-preview="body"><?php esc_html_e('Feature Module', 'tasty-fonts'); ?></span>
+                            <h3 class="tasty-fonts-preview-support-title" data-role-preview="heading"><?php esc_html_e('Clean cards with enough contrast for product copy', 'tasty-fonts'); ?></h3>
+                            <p class="tasty-fonts-preview-support-copy" data-role-preview="body"><?php esc_html_e('Use this sample to judge title tone, supporting copy rhythm, and whether the body face stays calm inside UI surfaces.', 'tasty-fonts'); ?></p>
+                            <div class="tasty-fonts-preview-support-meta">
+                                <span><?php esc_html_e('Surface Check', 'tasty-fonts'); ?></span>
+                                <strong data-role-preview="heading"><?php esc_html_e('Balanced', 'tasty-fonts'); ?></strong>
                             </div>
                         </article>
 
-                        <article class="etch-fonts-preview-support-card">
-                            <span class="etch-fonts-preview-support-label" data-role-preview="body"><?php esc_html_e('Metrics panel', 'etch-fonts'); ?></span>
-                            <div class="etch-fonts-preview-support-stats">
-                                <div class="etch-fonts-preview-support-stat">
-                                    <span data-role-preview="body"><?php esc_html_e('Visitors', 'etch-fonts'); ?></span>
+                        <article class="tasty-fonts-preview-support-card">
+                            <span class="tasty-fonts-preview-support-label" data-role-preview="body"><?php esc_html_e('Metrics Panel', 'tasty-fonts'); ?></span>
+                            <div class="tasty-fonts-preview-support-stats">
+                                <div class="tasty-fonts-preview-support-stat">
+                                    <span data-role-preview="body"><?php esc_html_e('Visitors', 'tasty-fonts'); ?></span>
                                     <strong data-role-preview="heading">12.4k</strong>
                                 </div>
-                                <div class="etch-fonts-preview-support-stat">
-                                    <span data-role-preview="body"><?php esc_html_e('Conversion', 'etch-fonts'); ?></span>
+                                <div class="tasty-fonts-preview-support-stat">
+                                    <span data-role-preview="body"><?php esc_html_e('Conversion', 'tasty-fonts'); ?></span>
                                     <strong data-role-preview="heading">4.8%</strong>
                                 </div>
-                                <div class="etch-fonts-preview-support-stat">
-                                    <span data-role-preview="body"><?php esc_html_e('Launch', 'etch-fonts'); ?></span>
-                                    <strong data-role-preview="heading"><?php esc_html_e('Soon', 'etch-fonts'); ?></strong>
+                                <div class="tasty-fonts-preview-support-stat">
+                                    <span data-role-preview="body"><?php esc_html_e('Launch', 'tasty-fonts'); ?></span>
+                                    <strong data-role-preview="heading"><?php esc_html_e('Soon', 'tasty-fonts'); ?></strong>
                                 </div>
                             </div>
                         </article>
@@ -1287,52 +1726,52 @@ final class AdminPageRenderer
 
             case 'card':
                 ?>
-                <div class="etch-fonts-preview-card-board">
-                    <div class="etch-fonts-preview-card-gallery">
-                        <article class="etch-fonts-preview-card-frame">
-                            <div class="etch-fonts-preview-card-media">
+                <div class="tasty-fonts-preview-card-board">
+                    <div class="tasty-fonts-preview-card-gallery">
+                        <article class="tasty-fonts-preview-card-frame">
+                            <div class="tasty-fonts-preview-card-media">
                                 <span class="dashicons dashicons-format-image" aria-hidden="true"></span>
                             </div>
-                            <div class="etch-fonts-preview-card-body">
-                                <span class="etch-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Feature card', 'etch-fonts'); ?></span>
-                                <h3 class="etch-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('Title', 'etch-fonts'); ?></h3>
-                                <p class="etch-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Subtitle', 'etch-fonts'); ?></p>
-                                <p class="etch-fonts-preview-card-copy" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
-                                <div class="etch-fonts-preview-card-actions">
-                                    <span class="button" aria-hidden="true"><?php esc_html_e('Action', 'etch-fonts'); ?></span>
-                                    <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Action', 'etch-fonts'); ?></span>
+                            <div class="tasty-fonts-preview-card-body">
+                                <span class="tasty-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Feature Card', 'tasty-fonts'); ?></span>
+                                <h3 class="tasty-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('Title', 'tasty-fonts'); ?></h3>
+                                <p class="tasty-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Subtitle', 'tasty-fonts'); ?></p>
+                                <p class="tasty-fonts-preview-card-copy" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
+                                <div class="tasty-fonts-preview-card-actions">
+                                    <span class="button" aria-hidden="true"><?php esc_html_e('Action', 'tasty-fonts'); ?></span>
+                                    <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Action', 'tasty-fonts'); ?></span>
                                 </div>
                             </div>
                         </article>
 
-                        <article class="etch-fonts-preview-card-frame">
-                            <div class="etch-fonts-preview-card-media">
+                        <article class="tasty-fonts-preview-card-frame">
+                            <div class="tasty-fonts-preview-card-media">
                                 <span class="dashicons dashicons-format-gallery" aria-hidden="true"></span>
                             </div>
-                            <div class="etch-fonts-preview-card-body">
-                                <span class="etch-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Collection', 'etch-fonts'); ?></span>
-                                <h3 class="etch-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('Modern layouts', 'etch-fonts'); ?></h3>
-                                <p class="etch-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Structured and calm', 'etch-fonts'); ?></p>
-                                <p class="etch-fonts-preview-card-copy" data-role-preview="body"><?php esc_html_e('Compare how the chosen heading face holds attention while the body face keeps supporting detail easy to scan.', 'etch-fonts'); ?></p>
-                                <div class="etch-fonts-preview-card-actions">
-                                    <span class="button" aria-hidden="true"><?php esc_html_e('Review', 'etch-fonts'); ?></span>
-                                    <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Select', 'etch-fonts'); ?></span>
+                            <div class="tasty-fonts-preview-card-body">
+                                <span class="tasty-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Collection', 'tasty-fonts'); ?></span>
+                                <h3 class="tasty-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('Modern Layouts', 'tasty-fonts'); ?></h3>
+                                <p class="tasty-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Structured and calm', 'tasty-fonts'); ?></p>
+                                <p class="tasty-fonts-preview-card-copy" data-role-preview="body"><?php esc_html_e('Compare how the chosen heading face holds attention while the body face keeps supporting detail easy to scan.', 'tasty-fonts'); ?></p>
+                                <div class="tasty-fonts-preview-card-actions">
+                                    <span class="button" aria-hidden="true"><?php esc_html_e('Review', 'tasty-fonts'); ?></span>
+                                    <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Select', 'tasty-fonts'); ?></span>
                                 </div>
                             </div>
                         </article>
 
-                        <article class="etch-fonts-preview-card-frame">
-                            <div class="etch-fonts-preview-card-media">
+                        <article class="tasty-fonts-preview-card-frame">
+                            <div class="tasty-fonts-preview-card-media">
                                 <span class="dashicons dashicons-screenoptions" aria-hidden="true"></span>
                             </div>
-                            <div class="etch-fonts-preview-card-body">
-                                <span class="etch-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Product card', 'etch-fonts'); ?></span>
-                                <h3 class="etch-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('System-ready', 'etch-fonts'); ?></h3>
-                                <p class="etch-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Useful in real UI', 'etch-fonts'); ?></p>
-                                <p class="etch-fonts-preview-card-copy" data-role-preview="body"><?php esc_html_e('This view is intentionally compact so you can judge hierarchy, spacing, and button copy without oversized demo content.', 'etch-fonts'); ?></p>
-                                <div class="etch-fonts-preview-card-actions">
-                                    <span class="button" aria-hidden="true"><?php esc_html_e('Later', 'etch-fonts'); ?></span>
-                                    <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Launch', 'etch-fonts'); ?></span>
+                            <div class="tasty-fonts-preview-card-body">
+                                <span class="tasty-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Product Card', 'tasty-fonts'); ?></span>
+                                <h3 class="tasty-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('System-ready', 'tasty-fonts'); ?></h3>
+                                <p class="tasty-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Useful in real UI', 'tasty-fonts'); ?></p>
+                                <p class="tasty-fonts-preview-card-copy" data-role-preview="body"><?php esc_html_e('This view is intentionally compact so you can judge hierarchy, spacing, and button copy without oversized demo content.', 'tasty-fonts'); ?></p>
+                                <div class="tasty-fonts-preview-card-actions">
+                                    <span class="button" aria-hidden="true"><?php esc_html_e('Later', 'tasty-fonts'); ?></span>
+                                    <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Launch', 'tasty-fonts'); ?></span>
                                 </div>
                             </div>
                         </article>
@@ -1343,23 +1782,23 @@ final class AdminPageRenderer
 
             case 'reading':
                 ?>
-                <article class="etch-fonts-preview-reading-sheet">
-                    <div class="etch-fonts-preview-reading-head">
-                        <span class="etch-fonts-preview-reading-label" data-role-preview="body"><?php esc_html_e('Long-form reading', 'etch-fonts'); ?></span>
-                        <h3 class="etch-fonts-preview-reading-title" data-role-preview="heading"><?php esc_html_e('Readable paragraphs with steady rhythm', 'etch-fonts'); ?></h3>
+                <article class="tasty-fonts-preview-reading-sheet">
+                    <div class="tasty-fonts-preview-reading-head">
+                        <span class="tasty-fonts-preview-reading-label" data-role-preview="body"><?php esc_html_e('Long-Form Reading', 'tasty-fonts'); ?></span>
+                        <h3 class="tasty-fonts-preview-reading-title" data-role-preview="heading"><?php esc_html_e('Readable paragraphs with steady rhythm', 'tasty-fonts'); ?></h3>
                     </div>
-                    <p class="etch-fonts-preview-reading-lead" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
-                    <div class="etch-fonts-preview-reading-layout">
-                        <div class="etch-fonts-preview-reading-copy">
-                            <p data-role-preview="body"><?php esc_html_e('Apparently we had reached a great height in the atmosphere, for the sky was a dead black, and the stars had ceased to twinkle.', 'etch-fonts'); ?></p>
-                            <p data-role-preview="body"><?php esc_html_e('A strong reading font should stay calm across longer passages and still leave enough contrast for section headings and pull quotes.', 'etch-fonts'); ?></p>
+                    <p class="tasty-fonts-preview-reading-lead" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
+                    <div class="tasty-fonts-preview-reading-layout">
+                        <div class="tasty-fonts-preview-reading-copy">
+                            <p data-role-preview="body"><?php esc_html_e('Apparently we had reached a great height in the atmosphere, for the sky was a dead black, and the stars had ceased to twinkle.', 'tasty-fonts'); ?></p>
+                            <p data-role-preview="body"><?php esc_html_e('A strong reading font should stay calm across longer passages and still leave enough contrast for section headings and pull quotes.', 'tasty-fonts'); ?></p>
                         </div>
-                        <aside class="etch-fonts-preview-reading-aside">
-                            <h4 class="etch-fonts-preview-reading-aside-title" data-role-preview="heading"><?php esc_html_e('Checklist', 'etch-fonts'); ?></h4>
-                            <ul class="etch-fonts-preview-reading-list" data-role-preview="body">
-                                <li><?php esc_html_e('Paragraph spacing', 'etch-fonts'); ?></li>
-                                <li><?php esc_html_e('Line length at body sizes', 'etch-fonts'); ?></li>
-                                <li><?php esc_html_e('Subheading emphasis', 'etch-fonts'); ?></li>
+                        <aside class="tasty-fonts-preview-reading-aside">
+                            <h4 class="tasty-fonts-preview-reading-aside-title" data-role-preview="heading"><?php esc_html_e('Checklist', 'tasty-fonts'); ?></h4>
+                            <ul class="tasty-fonts-preview-reading-list" data-role-preview="body">
+                                <li><?php esc_html_e('Paragraph spacing', 'tasty-fonts'); ?></li>
+                                <li><?php esc_html_e('Line length at body sizes', 'tasty-fonts'); ?></li>
+                                <li><?php esc_html_e('Subheading emphasis', 'tasty-fonts'); ?></li>
                             </ul>
                         </aside>
                     </div>
@@ -1370,44 +1809,44 @@ final class AdminPageRenderer
             case 'interface':
             default:
                 ?>
-                <div class="etch-fonts-preview-ui-shell">
-                    <div class="etch-fonts-preview-ui-topbar">
-                        <span class="etch-fonts-preview-ui-topbar-label" data-role-preview="body"><?php esc_html_e('Workspace', 'etch-fonts'); ?></span>
-                        <span class="etch-fonts-preview-ui-topbar-status"><?php esc_html_e('Live', 'etch-fonts'); ?></span>
+                <div class="tasty-fonts-preview-ui-shell">
+                    <div class="tasty-fonts-preview-ui-topbar">
+                        <span class="tasty-fonts-preview-ui-topbar-label" data-role-preview="body"><?php esc_html_e('Workspace', 'tasty-fonts'); ?></span>
+                        <span class="tasty-fonts-preview-ui-topbar-status"><?php esc_html_e('Live', 'tasty-fonts'); ?></span>
                     </div>
-                    <div class="etch-fonts-preview-ui-grid">
-                        <div class="etch-fonts-preview-ui-panel">
-                            <span class="etch-fonts-preview-ui-label" data-role-preview="body"><?php esc_html_e('Project name', 'etch-fonts'); ?></span>
-                            <h3 class="etch-fonts-preview-ui-title" data-role-preview="heading"><?php esc_html_e('Launch planning', 'etch-fonts'); ?></h3>
-                            <p class="etch-fonts-preview-ui-copy" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
+                    <div class="tasty-fonts-preview-ui-grid">
+                        <div class="tasty-fonts-preview-ui-panel">
+                            <span class="tasty-fonts-preview-ui-label" data-role-preview="body"><?php esc_html_e('Project Name', 'tasty-fonts'); ?></span>
+                            <h3 class="tasty-fonts-preview-ui-title" data-role-preview="heading"><?php esc_html_e('Launch Planning', 'tasty-fonts'); ?></h3>
+                            <p class="tasty-fonts-preview-ui-copy" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
                         </div>
-                        <div class="etch-fonts-preview-ui-panel">
-                            <span class="etch-fonts-preview-ui-label" data-role-preview="body"><?php esc_html_e('Metrics', 'etch-fonts'); ?></span>
-                            <div class="etch-fonts-preview-ui-stats">
-                                <div class="etch-fonts-preview-stat">
-                                    <span data-role-preview="body"><?php esc_html_e('Visitors', 'etch-fonts'); ?></span>
+                        <div class="tasty-fonts-preview-ui-panel">
+                            <span class="tasty-fonts-preview-ui-label" data-role-preview="body"><?php esc_html_e('Metrics', 'tasty-fonts'); ?></span>
+                            <div class="tasty-fonts-preview-ui-stats">
+                                <div class="tasty-fonts-preview-stat">
+                                    <span data-role-preview="body"><?php esc_html_e('Visitors', 'tasty-fonts'); ?></span>
                                     <strong data-role-preview="heading">12.4k</strong>
                                 </div>
-                                <div class="etch-fonts-preview-stat">
-                                    <span data-role-preview="body"><?php esc_html_e('Signups', 'etch-fonts'); ?></span>
+                                <div class="tasty-fonts-preview-stat">
+                                    <span data-role-preview="body"><?php esc_html_e('Signups', 'tasty-fonts'); ?></span>
                                     <strong data-role-preview="heading">318</strong>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="etch-fonts-preview-ui-list">
-                        <div class="etch-fonts-preview-ui-list-row">
-                            <span data-role-preview="body"><?php esc_html_e('Headline lockup', 'etch-fonts'); ?></span>
-                            <strong data-role-preview="heading"><?php esc_html_e('Approved', 'etch-fonts'); ?></strong>
+                    <div class="tasty-fonts-preview-ui-list">
+                        <div class="tasty-fonts-preview-ui-list-row">
+                            <span data-role-preview="body"><?php esc_html_e('Headline Lockup', 'tasty-fonts'); ?></span>
+                            <strong data-role-preview="heading"><?php esc_html_e('Approved', 'tasty-fonts'); ?></strong>
                         </div>
-                        <div class="etch-fonts-preview-ui-list-row">
-                            <span data-role-preview="body"><?php esc_html_e('Landing page copy', 'etch-fonts'); ?></span>
-                            <strong data-role-preview="heading"><?php esc_html_e('In review', 'etch-fonts'); ?></strong>
+                        <div class="tasty-fonts-preview-ui-list-row">
+                            <span data-role-preview="body"><?php esc_html_e('Landing Page Copy', 'tasty-fonts'); ?></span>
+                            <strong data-role-preview="heading"><?php esc_html_e('In Review', 'tasty-fonts'); ?></strong>
                         </div>
                     </div>
-                    <div class="etch-fonts-preview-ui-actions">
-                        <span class="button" aria-hidden="true"><?php esc_html_e('Save draft', 'etch-fonts'); ?></span>
-                        <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Publish', 'etch-fonts'); ?></span>
+                    <div class="tasty-fonts-preview-ui-actions">
+                        <span class="button" aria-hidden="true"><?php esc_html_e('Save Draft', 'tasty-fonts'); ?></span>
+                        <span class="button button-primary" aria-hidden="true"><?php esc_html_e('Publish', 'tasty-fonts'); ?></span>
                     </div>
                 </div>
                 <?php
@@ -1422,16 +1861,16 @@ final class AdminPageRenderer
         }
 
         ?>
-        <div class="etch-fonts-toast-stack" aria-live="polite" aria-atomic="true">
+        <div class="tasty-fonts-toast-stack" aria-live="polite" aria-atomic="true">
             <?php foreach ($toasts as $toast): ?>
                 <div
-                    class="etch-fonts-toast is-<?php echo esc_attr((string) ($toast['tone'] ?? 'success')); ?>"
+                    class="tasty-fonts-toast is-<?php echo esc_attr((string) ($toast['tone'] ?? 'success')); ?>"
                     data-toast
                     data-toast-tone="<?php echo esc_attr((string) ($toast['tone'] ?? 'success')); ?>"
                     role="<?php echo esc_attr((string) ($toast['role'] ?? 'status')); ?>"
                 >
-                    <div class="etch-fonts-toast-message"><?php echo esc_html((string) ($toast['message'] ?? '')); ?></div>
-                    <button type="button" class="etch-fonts-toast-dismiss" data-toast-dismiss aria-label="<?php esc_attr_e('Dismiss notification', 'etch-fonts'); ?>">
+                    <div class="tasty-fonts-toast-message"><?php echo esc_html((string) ($toast['message'] ?? '')); ?></div>
+                    <button type="button" class="tasty-fonts-toast-dismiss" data-toast-dismiss aria-label="<?php esc_attr_e('Dismiss notification', 'tasty-fonts'); ?>">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -1442,24 +1881,31 @@ final class AdminPageRenderer
 
     private function renderHelpTip(string $copy, string $label = ''): void
     {
-        $tooltipId = wp_unique_id('etch-fonts-help-');
+        $tooltipId = wp_unique_id('tasty-fonts-help-');
         $ariaLabel = $label !== ''
             ? sprintf(
                 /* translators: %s: UI label */
-                __('More information about %s', 'etch-fonts'),
+                __('More information about %s', 'tasty-fonts'),
                 $label
             )
-            : __('More information', 'etch-fonts');
+            : __('More information', 'tasty-fonts');
         ?>
-        <span class="etch-fonts-help-wrap">
+        <span class="tasty-fonts-help-wrap">
             <button
                 type="button"
-                class="etch-fonts-help-button"
+                class="tasty-fonts-help-button"
                 aria-label="<?php echo esc_attr($ariaLabel); ?>"
                 aria-describedby="<?php echo esc_attr($tooltipId); ?>"
+                aria-controls="tasty-fonts-help-tooltip-layer"
                 data-help-tooltip="<?php echo esc_attr($copy); ?>"
             >
-                <span class="etch-fonts-help-glyph" aria-hidden="true">i</span>
+                <span class="tasty-fonts-help-glyph" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" focusable="false">
+                        <circle cx="8" cy="8" r="6.25"></circle>
+                        <circle class="tasty-fonts-help-glyph-dot" cx="8" cy="4.5" r="1"></circle>
+                        <path d="M8 7v4"></path>
+                    </svg>
+                </span>
             </button>
             <span id="<?php echo esc_attr($tooltipId); ?>" class="screen-reader-text"><?php echo esc_html($copy); ?></span>
         </span>
@@ -1469,15 +1915,15 @@ final class AdminPageRenderer
     private function renderSectionHeading(string $tag, string $title, string $help, string $copy = ''): void
     {
         ?>
-        <div class="etch-fonts-section-heading">
-            <div class="etch-fonts-section-title-row">
-                <<?php echo esc_html($tag); ?> class="etch-fonts-section-title"><?php echo esc_html($title); ?></<?php echo esc_html($tag); ?>>
+        <div class="tasty-fonts-section-heading">
+            <div class="tasty-fonts-section-title-row">
+                <<?php echo esc_html($tag); ?> class="tasty-fonts-section-title"><?php echo esc_html($title); ?></<?php echo esc_html($tag); ?>>
                 <?php if ($help !== '') : ?>
                     <?php $this->renderHelpTip($help, $title); ?>
                 <?php endif; ?>
             </div>
             <?php if ($copy !== ''): ?>
-                <p class="etch-fonts-section-copy"><?php echo esc_html($copy); ?></p>
+                <p class="tasty-fonts-section-copy"><?php echo esc_html($copy); ?></p>
             <?php endif; ?>
         </div>
         <?php
@@ -1486,8 +1932,8 @@ final class AdminPageRenderer
     private function renderFieldLabel(string $label, string $help = ''): void
     {
         ?>
-        <span class="etch-fonts-field-label-row">
-            <span class="etch-fonts-field-label-text"><?php echo esc_html($label); ?></span>
+        <span class="tasty-fonts-field-label-row">
+            <span class="tasty-fonts-field-label-text"><?php echo esc_html($label); ?></span>
             <?php if ($help !== ''): ?>
                 <?php $this->renderHelpTip($help, $label); ?>
             <?php endif; ?>
@@ -1506,11 +1952,12 @@ final class AdminPageRenderer
         $inputAttributes = array_merge(
             [
                 'type' => 'text',
-                'list' => 'etch-fonts-fallback-options',
+                'list' => 'tasty-fonts-fallback-options',
                 'value' => FontUtils::sanitizeFallback($value),
                 'class' => $className,
                 'spellcheck' => 'false',
                 'autocomplete' => 'off',
+                'aria-autocomplete' => 'list',
             ],
             $attributes
         );
@@ -1519,6 +1966,7 @@ final class AdminPageRenderer
             $inputAttributes['name'] = $name;
         }
 
+        echo '<span class="tasty-fonts-combobox-field">';
         echo '<input';
 
         foreach ($inputAttributes as $key => $attributeValue) {
@@ -1535,12 +1983,13 @@ final class AdminPageRenderer
         }
 
         echo '>';
+        echo '</span>';
     }
 
     private function renderFallbackSuggestionList(): void
     {
         ?>
-        <datalist id="etch-fonts-fallback-options">
+        <datalist id="tasty-fonts-fallback-options">
             <?php foreach (FontUtils::FALLBACK_SUGGESTIONS as $fallback): ?>
                 <option value="<?php echo esc_attr($fallback); ?>"></option>
             <?php endforeach; ?>

@@ -1,5 +1,5 @@
 (function () {
-    var config = window.EtchFontsCanvas || {};
+    var config = window.TastyFontsCanvas || {};
     var stylesheetUrls = Array.isArray(config.stylesheetUrls)
         ? config.stylesheetUrls.filter(Boolean)
         : (config.stylesheetUrl ? [config.stylesheetUrl] : []);
@@ -23,7 +23,7 @@
             return false;
         }
 
-        var existing = Array.from(doc.querySelectorAll('link[data-etch-fonts-runtime="1"]'));
+        var existing = Array.from(doc.querySelectorAll('link[data-tasty-fonts-runtime="1"]'));
 
         existing.forEach(function (node, index) {
             if (index >= stylesheetUrls.length && node.parentNode) {
@@ -32,7 +32,7 @@
         });
 
         stylesheetUrls.forEach(function (stylesheetUrl, index) {
-            var current = doc.querySelector('link[data-etch-fonts-runtime="1"][data-etch-fonts-runtime-index="' + index + '"]');
+            var current = doc.querySelector('link[data-tasty-fonts-runtime="1"][data-tasty-fonts-runtime-index="' + index + '"]');
 
             if (current) {
                 if (current.href !== stylesheetUrl) {
@@ -45,8 +45,8 @@
             var link = doc.createElement('link');
             link.rel = 'stylesheet';
             link.href = stylesheetUrl;
-            link.setAttribute('data-etch-fonts-runtime', '1');
-            link.setAttribute('data-etch-fonts-runtime-index', String(index));
+            link.setAttribute('data-tasty-fonts-runtime', '1');
+            link.setAttribute('data-tasty-fonts-runtime-index', String(index));
             doc.head.appendChild(link);
         });
 
@@ -54,11 +54,11 @@
     }
 
     function bindIframe(iframe) {
-        if (!iframe || iframe.dataset.etchFontsBound === '1') {
+        if (!iframe || iframe.dataset.tastyFontsBound === '1') {
             return;
         }
 
-        iframe.dataset.etchFontsBound = '1';
+        iframe.dataset.tastyFontsBound = '1';
 
         iframe.addEventListener('load', function () {
             injectIntoIframe(iframe);

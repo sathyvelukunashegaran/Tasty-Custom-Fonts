@@ -1,14 +1,14 @@
 <?php
 /*
-Plugin Name: Etch Custom Fonts
-Plugin URI: https://github.com/sathyvelukunashegaran/Etch-Custom-Fonts
+Plugin Name: Tasty Custom Fonts
+Plugin URI: https://github.com/sathyvelukunashegaran/Tasty-Custom-Fonts
 Description: Self-host local and Google Fonts, with optional Adobe Fonts web project support for Etch, Gutenberg, and the frontend.
-Version: 1.1.0
+Version: 1.2.0
 Author: Tasty WP
 Author URI: https://github.com/sathyvelukunashegaran
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
-Text Domain: etch-fonts
+Text Domain: tasty-fonts
 Requires at least: 6.1
 Requires PHP: 8.1
 */
@@ -19,21 +19,21 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('ETCH_FONTS_VERSION', '1.1.0');
-define('ETCH_FONTS_FILE', __FILE__);
-define('ETCH_FONTS_DIR', plugin_dir_path(__FILE__));
-define('ETCH_FONTS_URL', plugin_dir_url(__FILE__));
+define('TASTY_FONTS_VERSION', '1.2.0');
+define('TASTY_FONTS_FILE', __FILE__);
+define('TASTY_FONTS_DIR', plugin_dir_path(__FILE__));
+define('TASTY_FONTS_URL', plugin_dir_url(__FILE__));
 
 spl_autoload_register(
     static function (string $class): void {
-        $prefix = 'EtchFonts\\';
+        $prefix = 'TastyFonts\\';
 
         if (strncmp($class, $prefix, strlen($prefix)) !== 0) {
             return;
         }
 
         $relative = substr($class, strlen($prefix));
-        $file = ETCH_FONTS_DIR . 'includes/' . str_replace('\\', '/', $relative) . '.php';
+        $file = TASTY_FONTS_DIR . 'includes/' . str_replace('\\', '/', $relative) . '.php';
 
         if (is_readable($file)) {
             require_once $file;
@@ -41,6 +41,6 @@ spl_autoload_register(
     }
 );
 
-register_activation_hook(__FILE__, ['EtchFonts\\Plugin', 'activate']);
+register_activation_hook(__FILE__, ['TastyFonts\\Plugin', 'activate']);
 
-EtchFonts\Plugin::instance()->boot();
+TastyFonts\Plugin::instance()->boot();

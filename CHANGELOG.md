@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-04-05
+
+### Added
+
+- Added a draft-versus-live role workflow with explicit applied role tracking, inline deployment status, and immediate draft saves when assigning heading or body roles from library cards.
+- Added compact activity filtering with account selection, text search, filtered counts, and a retained audit entry after clearing the log.
+- Added per-variant deletion from family detail tables, with safeguards when a family is still assigned to a role.
+- Added richer Google import tools including live search previews, variant quick actions, manual variant sync, selection counts, and approximate WOFF2 transfer estimates.
+
+### Changed
+
+- Reworked the entire admin dashboard into a flatter WordPress-style interface with tokenized spacing, consistent controls, compact headers, and a redesigned Font Roles workspace.
+- Rebuilt the Add Fonts flow so Google, Adobe, and Upload panels share one consistent design language and a more compact, responsive layout.
+- Redesigned the local library cards with inline previews, copyable variable pills, better role actions, dropdown source filtering, and stronger empty/filter states.
+- Updated the generated admin font loading path so the plugin dashboard only loads font faces for previews instead of applying live sitewide role CSS to the admin chrome.
+- Renamed the project assets, runtime bridge, translations, and documentation from the older Etch naming to Tasty Custom Fonts while keeping the plugin directory stable for upgrades.
+
+### Fixed
+
+- Fixed draft role saves so they no longer overwrite the currently applied sitewide role pair when live roles were already active.
+- Fixed vague settings notices by surfacing more specific save messages, clearer activity entries, and consistent toast behavior across destructive and validation flows.
+- Fixed Google search result truncation, Step 2 import sync issues, preview rendering glitches, and several spacing/alignment inconsistencies across the dashboard.
+- Expanded the local PHP test suite to cover font-face-only admin CSS, activity option building, draft/live role persistence, and related admin regressions.
+
 ## [1.1.0] - 2026-04-04
 
 ### Added
@@ -40,7 +64,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Replaced dynamic text-domain constants with the literal `'etch-fonts'` so WordPress i18n tooling can extract every translatable string, and added the generated POT file.
+- Replaced dynamic text-domain constants with the literal `'tasty-fonts'` so WordPress i18n tooling can extract every translatable string, and added the generated POT file.
 - Fixed settings persistence for CSS delivery mode, `font-display`, CSS minification, and the preview sentence in the admin settings form.
 - Narrowed settings writes to allowlisted form fields and sanitized generated font URLs and `font-weight` values to avoid malformed CSS output.
 - Removed suppressed filesystem calls during directory cleanup, preserved the active `theme.json` schema version for Block Editor font presets, and stored plugin log timestamps in UTC.
@@ -57,4 +81,4 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Initial public release of Etch Custom Fonts.
+- Initial public release of Tasty Custom Fonts.

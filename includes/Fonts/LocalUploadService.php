@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Fonts;
+namespace TastyFonts\Fonts;
 
-use EtchFonts\Repository\LogRepository;
-use EtchFonts\Repository\SettingsRepository;
-use EtchFonts\Support\FontUtils;
-use EtchFonts\Support\Storage;
+use TastyFonts\Repository\LogRepository;
+use TastyFonts\Repository\SettingsRepository;
+use TastyFonts\Support\FontUtils;
+use TastyFonts\Support\Storage;
 use WP_Error;
 
 final class LocalUploadService
@@ -29,8 +29,8 @@ final class LocalUploadService
     {
         if (!$this->storage->ensureRootDirectory()) {
             return $this->error(
-                'etch_fonts_upload_storage_unavailable',
-                __('The uploads/fonts storage directory could not be created.', 'etch-fonts')
+                'tasty_fonts_upload_storage_unavailable',
+                __('The uploads/fonts storage directory could not be created.', 'tasty-fonts')
             );
         }
 
@@ -70,7 +70,7 @@ final class LocalUploadService
                 $results[] = $this->buildRowResult(
                     $index,
                     'error',
-                    __('Use one fallback per family in a single upload batch.', 'etch-fonts')
+                    __('Use one fallback per family in a single upload batch.', 'tasty-fonts')
                 );
                 $errorCount++;
                 continue;
@@ -92,7 +92,7 @@ final class LocalUploadService
                     $index,
                     'skipped',
                     sprintf(
-                        __('%1$s %2$s %3$s already exists as a %4$s file.', 'etch-fonts'),
+                        __('%1$s %2$s %3$s already exists as a %4$s file.', 'tasty-fonts'),
                         $familyName,
                         $weight,
                         $style,
@@ -117,7 +117,7 @@ final class LocalUploadService
                 $index,
                 'imported',
                 sprintf(
-                    __('Saved %1$s %2$s %3$s as %4$s.', 'etch-fonts'),
+                    __('Saved %1$s %2$s %3$s as %4$s.', 'tasty-fonts'),
                     $familyName,
                     $weight,
                     $style,
@@ -165,11 +165,11 @@ final class LocalUploadService
         $error = '';
 
         if ($familyInput === '') {
-            $error = __('Enter a font family name for each uploaded row.', 'etch-fonts');
+            $error = __('Enter a font family name for each uploaded row.', 'tasty-fonts');
         } elseif (!in_array($weight, self::ALLOWED_WEIGHTS, true)) {
-            $error = __('Choose a valid font weight before uploading.', 'etch-fonts');
+            $error = __('Choose a valid font weight before uploading.', 'tasty-fonts');
         } elseif (!in_array($style, self::ALLOWED_STYLES, true)) {
-            $error = __('Choose a valid font style before uploading.', 'etch-fonts');
+            $error = __('Choose a valid font style before uploading.', 'tasty-fonts');
         }
 
         return [
@@ -222,40 +222,40 @@ final class LocalUploadService
         $size = (int) ($file['size'] ?? 0);
 
         if ($error === UPLOAD_ERR_NO_FILE || $name === '' || $tmpName === '') {
-            return $this->error('etch_fonts_upload_missing_file', __('Choose a font file to upload.', 'etch-fonts'));
+            return $this->error('tasty_fonts_upload_missing_file', __('Choose a font file to upload.', 'tasty-fonts'));
         }
 
         if ($error !== UPLOAD_ERR_OK) {
-            return $this->error('etch_fonts_upload_failed', __('The uploaded file could not be processed by WordPress.', 'etch-fonts'));
+            return $this->error('tasty_fonts_upload_failed', __('The uploaded file could not be processed by WordPress.', 'tasty-fonts'));
         }
 
         if ($size <= 0) {
-            return $this->error('etch_fonts_upload_empty_file', __('The uploaded file was empty.', 'etch-fonts'));
+            return $this->error('tasty_fonts_upload_empty_file', __('The uploaded file was empty.', 'tasty-fonts'));
         }
 
         $uploadLimit = (int) wp_max_upload_size();
 
         if ($uploadLimit > 0 && $size > $uploadLimit) {
-            return $this->error('etch_fonts_upload_too_large', __('The uploaded file exceeded the current WordPress upload size limit.', 'etch-fonts'));
+            return $this->error('tasty_fonts_upload_too_large', __('The uploaded file exceeded the current WordPress upload size limit.', 'tasty-fonts'));
         }
 
         if (!is_readable($tmpName)) {
-            return $this->error('etch_fonts_upload_missing_tmp', __('The uploaded file was not readable on the server.', 'etch-fonts'));
+            return $this->error('tasty_fonts_upload_missing_tmp', __('The uploaded file was not readable on the server.', 'tasty-fonts'));
         }
 
         $originalExtension = strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
 
         if ($originalExtension === 'zip') {
             return $this->error(
-                'etch_fonts_upload_zip_not_supported',
-                __('Upload a WOFF2, WOFF, TTF, or OTF file directly. ZIP archives are not supported.', 'etch-fonts')
+                'tasty_fonts_upload_zip_not_supported',
+                __('Upload a WOFF2, WOFF, TTF, or OTF file directly. ZIP archives are not supported.', 'tasty-fonts')
             );
         }
 
         if (!in_array($originalExtension, self::ALLOWED_EXTENSIONS, true)) {
             return $this->error(
-                'etch_fonts_upload_invalid_extension',
-                __('Upload a WOFF2, WOFF, TTF, or OTF font file. Other formats are not accepted here.', 'etch-fonts')
+                'tasty_fonts_upload_invalid_extension',
+                __('Upload a WOFF2, WOFF, TTF, or OTF font file. Other formats are not accepted here.', 'tasty-fonts')
             );
         }
 
@@ -263,15 +263,15 @@ final class LocalUploadService
 
         if ($detectedExtension === 'zip') {
             return $this->error(
-                'etch_fonts_upload_zip_not_supported',
-                __('Upload a WOFF2, WOFF, TTF, or OTF file directly. ZIP archives are not supported.', 'etch-fonts')
+                'tasty_fonts_upload_zip_not_supported',
+                __('Upload a WOFF2, WOFF, TTF, or OTF file directly. ZIP archives are not supported.', 'tasty-fonts')
             );
         }
 
         if ($detectedExtension === null || !in_array($detectedExtension, self::ALLOWED_EXTENSIONS, true)) {
             return $this->error(
-                'etch_fonts_upload_invalid_file',
-                __('That file does not look like a supported font. Upload WOFF2, WOFF, TTF, or OTF only.', 'etch-fonts')
+                'tasty_fonts_upload_invalid_file',
+                __('That file does not look like a supported font. Upload WOFF2, WOFF, TTF, or OTF only.', 'tasty-fonts')
             );
         }
 
@@ -324,8 +324,8 @@ final class LocalUploadService
 
         if (!$root) {
             return $this->error(
-                'etch_fonts_upload_storage_unavailable',
-                __('The uploads/fonts storage directory could not be created.', 'etch-fonts')
+                'tasty_fonts_upload_storage_unavailable',
+                __('The uploads/fonts storage directory could not be created.', 'tasty-fonts')
             );
         }
 
@@ -333,8 +333,8 @@ final class LocalUploadService
 
         if (!$this->storage->ensureDirectory($familyDirectory)) {
             return $this->error(
-                'etch_fonts_upload_family_directory_failed',
-                __('The font family directory could not be created inside uploads/fonts.', 'etch-fonts')
+                'tasty_fonts_upload_family_directory_failed',
+                __('The font family directory could not be created inside uploads/fonts.', 'tasty-fonts')
             );
         }
 
@@ -343,8 +343,8 @@ final class LocalUploadService
 
         if (file_exists($targetPath)) {
             return $this->error(
-                'etch_fonts_upload_duplicate_file',
-                __('That font file already exists in the library.', 'etch-fonts')
+                'tasty_fonts_upload_duplicate_file',
+                __('That font file already exists in the library.', 'tasty-fonts')
             );
         }
 
@@ -352,15 +352,15 @@ final class LocalUploadService
 
         if (!is_string($contents) || $contents === '') {
             return $this->error(
-                'etch_fonts_upload_read_failed',
-                __('The uploaded font file could not be read from the temporary upload location.', 'etch-fonts')
+                'tasty_fonts_upload_read_failed',
+                __('The uploaded font file could not be read from the temporary upload location.', 'tasty-fonts')
             );
         }
 
         if (!$this->storage->writeAbsoluteFile($targetPath, $contents)) {
             return $this->error(
-                'etch_fonts_upload_write_failed',
-                __('The uploaded font file could not be written into uploads/fonts.', 'etch-fonts')
+                'tasty_fonts_upload_write_failed',
+                __('The uploaded font file could not be written into uploads/fonts.', 'tasty-fonts')
             );
         }
 
@@ -426,13 +426,13 @@ final class LocalUploadService
     {
         $familySummary = $families !== []
             ? ' ' . sprintf(
-                __('Families: %s.', 'etch-fonts'),
+                __('Families: %s.', 'tasty-fonts'),
                 implode(', ', $families)
             )
             : '';
 
         return sprintf(
-            __('Local font upload finished: %1$d imported, %2$d skipped, %3$d error%4$s.%5$s', 'etch-fonts'),
+            __('Local font upload finished: %1$d imported, %2$d skipped, %3$d error%4$s.%5$s', 'tasty-fonts'),
             $importedCount,
             $skippedCount,
             $errorCount,

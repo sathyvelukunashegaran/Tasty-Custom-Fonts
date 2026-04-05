@@ -2,24 +2,39 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Admin;
+namespace TastyFonts\Admin;
 
-use EtchFonts\Adobe\AdobeProjectClient;
-use EtchFonts\Fonts\AssetService;
-use EtchFonts\Fonts\CatalogService;
-use EtchFonts\Fonts\CssBuilder;
-use EtchFonts\Fonts\LibraryService;
-use EtchFonts\Fonts\LocalUploadService;
-use EtchFonts\Google\GoogleFontsClient;
-use EtchFonts\Google\GoogleImportService;
-use EtchFonts\Repository\LogRepository;
-use EtchFonts\Repository\SettingsRepository;
-use EtchFonts\Support\FontUtils;
-use EtchFonts\Support\Storage;
+use TastyFonts\Adobe\AdobeProjectClient;
+use TastyFonts\Fonts\AssetService;
+use TastyFonts\Fonts\CatalogService;
+use TastyFonts\Fonts\CssBuilder;
+use TastyFonts\Fonts\LibraryService;
+use TastyFonts\Fonts\LocalUploadService;
+use TastyFonts\Google\GoogleFontsClient;
+use TastyFonts\Google\GoogleImportService;
+use TastyFonts\Repository\LogRepository;
+use TastyFonts\Repository\SettingsRepository;
+use TastyFonts\Support\FontUtils;
+use TastyFonts\Support\Storage;
 
 final class AdminController
 {
-    public const MENU_SLUG = 'etch-custom-fonts';
+    public const MENU_SLUG = 'tasty-custom-fonts';
+    private const NOTICE_MESSAGES = [
+        'settings_saved' => 'Plugin settings saved.',
+        'adobe_project_saved' => 'Adobe Fonts project saved.',
+        'adobe_project_removed' => 'Adobe Fonts project removed.',
+        'adobe_project_resynced' => 'Adobe Fonts project resynced.',
+        'google_key_saved' => 'Google Fonts API key saved and validated.',
+        'google_key_cleared' => 'Google Fonts API key removed.',
+        'fallback_saved' => 'Font fallback saved.',
+        'roles_saved' => 'Font roles saved.',
+        'rescan' => 'Fonts rescanned.',
+        'log_cleared' => 'Activity log cleared.',
+        'family_deleted' => 'Font family deleted.',
+        'variant_deleted' => 'Font variant deleted.',
+    ];
+    private const ROLE_KEYS = ['heading', 'body'];
 
     private readonly AdminPageRenderer $renderer;
 
@@ -42,8 +57,8 @@ final class AdminController
     public function registerMenu(): void
     {
         add_menu_page(
-            __('Etch Custom Fonts', 'etch-fonts'),
-            __('Etch Fonts', 'etch-fonts'),
+            __('Tasty Custom Fonts', 'tasty-fonts'),
+            __('Tasty Fonts', 'tasty-fonts'),
             'manage_options',
             self::MENU_SLUG,
             [$this, 'renderPage'],
@@ -62,29 +77,30 @@ final class AdminController
         $googleSearchEnabled = $this->googleClient->canSearch();
 
         wp_enqueue_style(
-            'etch-fonts-admin',
-            ETCH_FONTS_URL . 'assets/css/admin.css',
+            'tasty-fonts-admin',
+            TASTY_FONTS_URL . 'assets/css/admin.css',
             [],
             $this->assetVersionFor('assets/css/admin.css')
         );
 
         wp_enqueue_script(
-            'etch-fonts-admin',
-            ETCH_FONTS_URL . 'assets/js/admin.js',
+            'tasty-fonts-admin',
+            TASTY_FONTS_URL . 'assets/js/admin.js',
             [],
             $this->assetVersionFor('assets/js/admin.js'),
             true
         );
 
         wp_localize_script(
-            'etch-fonts-admin',
-            'EtchFontsAdmin',
+            'tasty-fonts-admin',
+            'TastyFontsAdmin',
             [
                 'ajaxUrl' => admin_url('admin-ajax.php'),
-                'searchNonce' => wp_create_nonce('etch_fonts_search_google'),
-                'importNonce' => wp_create_nonce('etch_fonts_import_google'),
-                'uploadNonce' => wp_create_nonce('etch_fonts_upload_local'),
-                'saveFallbackNonce' => wp_create_nonce('etch_fonts_save_family_fallback'),
+                'searchNonce' => wp_create_nonce('tasty_fonts_search_google'),
+                'importNonce' => wp_create_nonce('tasty_fonts_import_google'),
+                'uploadNonce' => wp_create_nonce('tasty_fonts_upload_local'),
+                'saveFallbackNonce' => wp_create_nonce('tasty_fonts_save_family_fallback'),
+                'saveRolesNonce' => wp_create_nonce('tasty_fonts_save_role_draft'),
                 'googleApiEnabled' => $googleSearchEnabled,
                 'strings' => $this->buildAdminStrings($this->buildSearchDisabledMessage($googleApiStatus)),
             ]
@@ -117,6 +133,10 @@ final class AdminController
             return;
         }
 
+        if ($this->handleDeleteVariantAction()) {
+            return;
+        }
+
         if ($this->handleDeleteFamilyAction()) {
             return;
         }
@@ -126,11 +146,11 @@ final class AdminController
 
     public function ajaxSearchGoogle(): void
     {
-        $this->assertManageOptionsAjax(__('You are not allowed to search Google Fonts.', 'etch-fonts'));
-        check_ajax_referer('etch_fonts_search_google', 'nonce');
+        $this->assertManageOptionsAjax(__('You are not allowed to search Google Fonts.', 'tasty-fonts'));
+        check_ajax_referer('tasty_fonts_search_google', 'nonce');
 
         if (!$this->googleClient->canSearch()) {
-            $this->sendAjaxError(__('Search is unavailable until a Google Fonts API key is saved.', 'etch-fonts'), 400);
+            $this->sendAjaxError(__('Search is unavailable until a Google Fonts API key is saved.', 'tasty-fonts'), 400);
         }
 
         wp_send_json_success(['items' => $this->googleClient->searchFamilies($this->getPostedText('query'), 20)]);
@@ -138,8 +158,8 @@ final class AdminController
 
     public function ajaxImportGoogle(): void
     {
-        $this->assertManageOptionsAjax(__('You are not allowed to import Google Fonts.', 'etch-fonts'));
-        check_ajax_referer('etch_fonts_import_google', 'nonce');
+        $this->assertManageOptionsAjax(__('You are not allowed to import Google Fonts.', 'tasty-fonts'));
+        check_ajax_referer('tasty_fonts_import_google', 'nonce');
 
         $result = $this->googleImport->importFamily(
             $this->getPostedText('family'),
@@ -155,13 +175,13 @@ final class AdminController
 
     public function ajaxUploadLocal(): void
     {
-        $this->assertManageOptionsAjax(__('You are not allowed to upload local fonts.', 'etch-fonts'));
-        check_ajax_referer('etch_fonts_upload_local', 'nonce');
+        $this->assertManageOptionsAjax(__('You are not allowed to upload local fonts.', 'tasty-fonts'));
+        check_ajax_referer('tasty_fonts_upload_local', 'nonce');
 
         $rows = $this->getPostedUploadRows();
 
         if ($rows === []) {
-            $this->sendAjaxError(__('Add at least one upload row before submitting.', 'etch-fonts'), 400);
+            $this->sendAjaxError(__('Add at least one upload row before submitting.', 'tasty-fonts'), 400);
         }
 
         $result = $this->localUpload->uploadRows($rows);
@@ -175,14 +195,14 @@ final class AdminController
 
     public function ajaxSaveFamilyFallback(): void
     {
-        $this->assertManageOptionsAjax(__('You are not allowed to update font fallback settings.', 'etch-fonts'));
-        check_ajax_referer('etch_fonts_save_family_fallback', 'nonce');
+        $this->assertManageOptionsAjax(__('You are not allowed to update font fallback settings.', 'tasty-fonts'));
+        check_ajax_referer('tasty_fonts_save_family_fallback', 'nonce');
 
         $family = $this->getPostedText('family');
         $fallback = $this->getPostedFallback('fallback');
 
         if ($family === '') {
-            $this->sendAjaxError(__('A font family is required before saving its fallback.', 'etch-fonts'), 400);
+            $this->sendAjaxError(__('A font family is required before saving its fallback.', 'tasty-fonts'), 400);
         }
 
         $this->settings->saveFamilyFallback($family, $fallback);
@@ -193,9 +213,49 @@ final class AdminController
                 'fallback' => $fallback,
                 'stack' => FontUtils::buildFontStack($family, $fallback),
                 'message' => sprintf(
-                    __('Saved fallback for %s.', 'etch-fonts'),
+                    __('Saved fallback for %s.', 'tasty-fonts'),
                     $family
                 ),
+            ]
+        );
+    }
+
+    public function ajaxSaveRoleDraft(): void
+    {
+        $this->assertManageOptionsAjax(__('You are not allowed to update font roles.', 'tasty-fonts'));
+        check_ajax_referer('tasty_fonts_save_role_draft', 'nonce');
+
+        $availableFamilies = $this->buildSelectableFamilyNames($this->catalog->getCatalog());
+        $settings = $this->settings->getSettings();
+
+        if (!empty($settings['auto_apply_roles'])) {
+            $this->settings->ensureAppliedRolesInitialized($availableFamilies);
+        }
+
+        $roles = $this->settings->saveRoles(
+            [
+                'heading' => $this->getPostedText('heading'),
+                'body' => $this->getPostedText('body'),
+                'heading_fallback' => $this->getPostedFallback('heading_fallback'),
+                'body_fallback' => $this->getPostedFallback('body_fallback'),
+            ],
+            $availableFamilies
+        );
+
+        $settings = $this->settings->getSettings();
+        $applyEverywhere = !empty($settings['auto_apply_roles']);
+        $appliedRoles = $this->settings->getAppliedRoles($availableFamilies);
+
+        $this->assets->refreshGeneratedAssets(false);
+
+        $message = $this->buildRolesSavedMessage('save', $roles, $appliedRoles, $applyEverywhere);
+        $this->log->add($message);
+
+        wp_send_json_success(
+            [
+                'message' => $message,
+                'roles' => $roles,
+                'role_deployment' => $this->buildRoleDeploymentContext($roles, $appliedRoles, $applyEverywhere),
             ]
         );
     }
@@ -211,42 +271,44 @@ final class AdminController
 
     private function handleClearLogAction(): bool
     {
-        if (!isset($_POST['etch_fonts_clear_log'])) {
+        if (!isset($_POST['tasty_fonts_clear_log'])) {
             return false;
         }
 
-        check_admin_referer('etch_fonts_clear_log');
+        check_admin_referer('tasty_fonts_clear_log');
         $this->log->clear();
+        $this->log->add(__('Activity log cleared. Older entries removed.', 'tasty-fonts'));
         $this->redirect(['log_cleared' => '1']);
     }
 
     private function handleRescanFontsAction(): bool
     {
-        if (!isset($_POST['etch_fonts_rescan_fonts'])) {
+        if (!isset($_POST['tasty_fonts_rescan_fonts'])) {
             return false;
         }
 
-        check_admin_referer('etch_fonts_rescan_fonts');
+        check_admin_referer('tasty_fonts_rescan_fonts');
         $this->assets->refreshGeneratedAssets();
-        $this->log->add(__('Fonts rescanned.', 'etch-fonts'));
+        $this->log->add(__('Fonts rescanned.', 'tasty-fonts'));
         $this->redirect(['rescan' => '1']);
     }
 
     private function handleSaveSettingsAction(): bool
     {
-        if (!isset($_POST['etch_fonts_save_settings'])) {
+        if (!isset($_POST['tasty_fonts_save_settings'])) {
             return false;
         }
 
-        check_admin_referer('etch_fonts_save_settings');
+        check_admin_referer('tasty_fonts_save_settings');
 
+        $previousSettings = $this->settings->getSettings();
         $submittedGoogleKey = $this->getPostedText('google_api_key');
-        $clearGoogleKey = !empty($_POST['etch_fonts_clear_google_api_key']);
+        $clearGoogleKey = !empty($_POST['tasty_fonts_clear_google_api_key']);
 
-        $this->settings->saveSettings(
+        $savedSettings = $this->settings->saveSettings(
             [
                 'google_api_key' => wp_unslash($_POST['google_api_key'] ?? ''),
-                'etch_fonts_clear_google_api_key' => wp_unslash($_POST['etch_fonts_clear_google_api_key'] ?? ''),
+                'tasty_fonts_clear_google_api_key' => wp_unslash($_POST['tasty_fonts_clear_google_api_key'] ?? ''),
                 'css_delivery_mode' => wp_unslash($_POST['css_delivery_mode'] ?? ''),
                 'font_display' => wp_unslash($_POST['font_display'] ?? ''),
                 'minify_css_output' => $_POST['minify_css_output'] ?? '',
@@ -257,7 +319,7 @@ final class AdminController
 
         if ($clearGoogleKey) {
             $this->settings->saveGoogleApiKeyStatus('empty');
-            $this->log->add(__('Google Fonts API key removed.', 'etch-fonts'));
+            $this->log->add(__('Google Fonts API key removed.', 'tasty-fonts'));
             $this->redirect(['google_key_cleared' => '1']);
         }
 
@@ -270,41 +332,48 @@ final class AdminController
             );
 
             if (($validation['state'] ?? 'unknown') === 'valid') {
-                $this->log->add(__('Google Fonts API key validated.', 'etch-fonts'));
+                $this->log->add(__('Google Fonts API key validated.', 'tasty-fonts'));
                 $this->redirect(['google_key_saved' => '1']);
             }
 
-            $this->log->add(__('Google Fonts API key validation failed.', 'etch-fonts'));
+            $this->log->add(__('Google Fonts API key validation failed.', 'tasty-fonts'));
             $this->redirect(
                 [
-                    'etch_fonts_error' => (string) (
+                    'tasty_fonts_error' => (string) (
                         $validation['message']
-                        ?? __('Google Fonts API key could not be validated.', 'etch-fonts')
+                        ?? __('Google Fonts API key could not be validated.', 'tasty-fonts')
                     ),
                 ]
             );
         }
 
-        $this->log->add(__('Plugin settings updated.', 'etch-fonts'));
-        $this->redirect(['settings_saved' => '1']);
+        $settingsMessage = $this->buildSettingsSavedMessage($previousSettings, $savedSettings);
+
+        $this->log->add($settingsMessage);
+        $this->redirect(
+            [
+                'settings_saved' => '1',
+                'settings_saved_message' => $settingsMessage,
+            ]
+        );
     }
 
     private function handleSaveFamilyFallbackAction(): bool
     {
-        if (!isset($_POST['etch_fonts_save_family_fallback'])) {
+        if (!isset($_POST['tasty_fonts_save_family_fallback'])) {
             return false;
         }
 
-        check_admin_referer('etch_fonts_save_family_fallback');
+        check_admin_referer('tasty_fonts_save_family_fallback');
 
-        $family = $this->getPostedText('etch_fonts_family_name');
-        $fallback = $this->getPostedFallback('etch_fonts_family_fallback');
+        $family = $this->getPostedText('tasty_fonts_family_name');
+        $fallback = $this->getPostedFallback('tasty_fonts_family_fallback');
 
         if ($family !== '') {
             $this->settings->saveFamilyFallback($family, $fallback);
             $this->log->add(
                 sprintf(
-                    __('Saved fallback for %1$s: %2$s.', 'etch-fonts'),
+                    __('Saved fallback for %1$s: %2$s.', 'tasty-fonts'),
                     $family,
                     $fallback
                 )
@@ -316,59 +385,107 @@ final class AdminController
 
     private function handleDeleteFamilyAction(): bool
     {
-        if (!isset($_POST['etch_fonts_delete_family'])) {
+        if (!isset($_POST['tasty_fonts_delete_family'])) {
             return false;
         }
 
-        check_admin_referer('etch_fonts_delete_family');
+        check_admin_referer('tasty_fonts_delete_family');
 
-        $result = $this->library->deleteFamily($this->getPostedText('etch_fonts_family_slug'));
+        $result = $this->library->deleteFamily($this->getPostedText('tasty_fonts_family_slug'));
 
         if (is_wp_error($result)) {
-            $this->redirect(['etch_fonts_error' => $result->get_error_message()]);
+            $this->redirect(['tasty_fonts_error' => $result->get_error_message()]);
         }
 
         $this->redirect(['family_deleted' => '1']);
     }
 
+    private function handleDeleteVariantAction(): bool
+    {
+        if (!isset($_POST['tasty_fonts_delete_variant'])) {
+            return false;
+        }
+
+        check_admin_referer('tasty_fonts_delete_variant');
+
+        $result = $this->library->deleteFaceVariant(
+            $this->getPostedText('tasty_fonts_family_slug'),
+            $this->getPostedText('tasty_fonts_face_weight'),
+            $this->getPostedText('tasty_fonts_face_style'),
+            $this->getPostedText('tasty_fonts_face_source', 'local'),
+            $this->getPostedText('tasty_fonts_face_unicode_range')
+        );
+
+        if (is_wp_error($result)) {
+            $this->redirect(['tasty_fonts_error' => $result->get_error_message()]);
+        }
+
+        $message = sprintf(
+            __('Variant deleted: %1$s %2$s %3$s.', 'tasty-fonts'),
+            (string) ($result['family'] ?? __('Font', 'tasty-fonts')),
+            (string) ($result['weight'] ?? '400'),
+            (string) ($result['style'] ?? 'normal')
+        );
+
+        $this->redirect([
+            'variant_deleted' => '1',
+            'variant_deleted_message' => $message,
+        ]);
+    }
+
     private function handleSaveRolesAction(): void
     {
-        if (!isset($_POST['etch_fonts_save_roles'])) {
+        if (!isset($_POST['tasty_fonts_save_roles'])) {
             return;
         }
 
-        check_admin_referer('etch_fonts_save_roles');
+        check_admin_referer('tasty_fonts_save_roles');
 
         $catalog = $this->catalog->getCatalog();
         $availableFamilies = $this->buildSelectableFamilyNames($catalog);
+        $actionType = $this->getPostedText('tasty_fonts_action_type', 'save');
+        $settings = $this->settings->getSettings();
+        $wasAppliedSitewide = !empty($settings['auto_apply_roles']);
+
+        if ($actionType !== 'apply' && $wasAppliedSitewide) {
+            $this->settings->ensureAppliedRolesInitialized($availableFamilies);
+        }
+
         $roles = $this->settings->saveRoles(
             [
-                'heading' => $this->getPostedText('etch_fonts_heading_font'),
-                'body' => $this->getPostedText('etch_fonts_body_font'),
-                'heading_fallback' => $this->getPostedFallback('etch_fonts_heading_fallback'),
-                'body_fallback' => $this->getPostedFallback('etch_fonts_body_fallback'),
+                'heading' => $this->getPostedText('tasty_fonts_heading_font'),
+                'body' => $this->getPostedText('tasty_fonts_body_font'),
+                'heading_fallback' => $this->getPostedFallback('tasty_fonts_heading_fallback'),
+                'body_fallback' => $this->getPostedFallback('tasty_fonts_body_fallback'),
             ],
             $availableFamilies
         );
 
-        $actionType = $this->getPostedText('etch_fonts_action_type', 'save');
-        $applyEverywhere = $actionType === 'apply';
+        $settings = $this->settings->getSettings();
+        $appliedRoles = $this->settings->getAppliedRoles($availableFamilies);
 
-        $this->settings->setAutoApplyRoles($applyEverywhere);
+        if ($actionType === 'apply') {
+            $this->settings->saveAppliedRoles($roles, $availableFamilies);
+            $this->settings->setAutoApplyRoles(true);
+        } elseif ($actionType === 'disable') {
+            $this->settings->setAutoApplyRoles(false);
+        }
+
         $this->assets->refreshGeneratedAssets(false);
 
-        $this->log->add(
-            sprintf(
-                __('Roles saved. Heading: %1$s; Body: %2$s. %3$s', 'etch-fonts'),
-                $roles['heading'],
-                $roles['body'],
-                $applyEverywhere
-                    ? __('Applied everywhere.', 'etch-fonts')
-                    : __('Saved without global auto-apply.', 'etch-fonts')
-            )
+        $message = $this->buildRolesSavedMessage(
+            $actionType,
+            $roles,
+            $appliedRoles,
+            $wasAppliedSitewide
         );
 
-        $this->redirect(['roles_saved' => '1']);
+        $this->log->add($message);
+
+        $this->redirect([
+            'roles_saved' => '1',
+            'roles_saved_message' => $message,
+        ]);
     }
 
     private function buildPageContext(): array
@@ -380,26 +497,29 @@ final class AdminController
         $counts = $this->catalog->getCounts();
         $assetStatus = $this->assets->getStatus();
         $familyFallbacks = is_array($settings['family_fallbacks'] ?? null) ? $settings['family_fallbacks'] : [];
-        $visibleLogs = array_slice($logs, 0, 5);
-        $olderLogs = array_slice($logs, 5);
         $applyEverywhere = !empty($settings['auto_apply_roles']);
         $previewContext = $this->buildPreviewContext($settings);
         $adobeAccessContext = $this->buildAdobeAccessContext();
         $availableFamilies = $this->buildSelectableFamilyNames($catalog);
         $roles = $this->settings->getRoles($availableFamilies);
+        $appliedRoles = $this->settings->getAppliedRoles($availableFamilies);
         $googleAccessContext = $this->buildGoogleAccessContext();
+        $roleDeploymentContext = $this->buildRoleDeploymentContext($roles, $appliedRoles, $applyEverywhere);
 
         return [
             'storage' => $storage,
             'catalog' => $catalog,
             'available_families' => $availableFamilies,
             'roles' => $roles,
+            'applied_roles' => $appliedRoles,
+            'apply_everywhere' => $applyEverywhere,
+            'role_deployment' => $roleDeploymentContext,
             'logs' => $logs,
-            'visible_logs' => $visibleLogs,
-            'older_logs' => $olderLogs,
+            'activity_actor_options' => $this->buildActivityActorOptions($logs),
             'family_fallbacks' => $familyFallbacks,
             'preview_text' => $previewContext['preview_text'],
             'preview_size' => $previewContext['preview_size'],
+            'google_api_state' => $googleAccessContext['google_api_state'],
             'google_api_enabled' => $googleAccessContext['google_api_enabled'],
             'google_api_saved' => $googleAccessContext['google_api_saved'],
             'google_access_expanded' => $googleAccessContext['google_access_expanded'],
@@ -407,16 +527,19 @@ final class AdminController
             'google_status_class' => $googleAccessContext['google_status_class'],
             'google_access_copy' => $googleAccessContext['google_access_copy'],
             'google_search_disabled_copy' => $googleAccessContext['google_search_disabled_copy'],
+            'adobe_project_state' => $adobeAccessContext['adobe_project_state'],
             'adobe_project_enabled' => $adobeAccessContext['adobe_project_enabled'],
             'adobe_project_saved' => $adobeAccessContext['adobe_project_saved'],
+            'adobe_access_expanded' => $adobeAccessContext['adobe_access_expanded'],
             'adobe_project_id' => $adobeAccessContext['adobe_project_id'],
             'adobe_status_label' => $adobeAccessContext['adobe_status_label'],
             'adobe_status_class' => $adobeAccessContext['adobe_status_class'],
             'adobe_access_copy' => $adobeAccessContext['adobe_access_copy'],
             'adobe_project_link' => $adobeAccessContext['adobe_project_link'],
             'adobe_detected_families' => $adobeAccessContext['adobe_detected_families'],
+            'minify_css_output' => !empty($settings['minify_css_output']),
             'diagnostic_items' => $this->buildDiagnosticItems($assetStatus, $storage, $settings, $counts),
-            'overview_metrics' => $this->buildOverviewMetrics($counts, $applyEverywhere),
+            'overview_metrics' => $this->buildOverviewMetrics($counts, $applyEverywhere, $assetStatus),
             'output_panels' => $this->buildOutputPanels($roles),
             'preview_panels' => $this->buildPreviewPanels(),
             'toasts' => $this->buildNoticeToasts(),
@@ -431,84 +554,89 @@ final class AdminController
 
         return [
             [
-                'label' => __('Generated CSS file', 'etch-fonts'),
-                'value' => $cssPath !== '' ? $cssPath : __('Not available', 'etch-fonts'),
+                'label' => __('Generated CSS File', 'tasty-fonts'),
+                'value' => $cssPath !== '' ? $cssPath : __('Not available', 'tasty-fonts'),
                 'code' => true,
             ],
             [
-                'label' => __('CSS request URL', 'etch-fonts'),
-                'value' => $cssUrl !== '' ? $cssUrl : __('Not available', 'etch-fonts'),
+                'label' => __('CSS Request URL', 'tasty-fonts'),
+                'value' => $cssUrl !== '' ? $cssUrl : __('Not available', 'tasty-fonts'),
                 'code' => true,
             ],
             [
-                'label' => __('Stylesheet size', 'etch-fonts'),
-                'value' => $cssExists ? size_format((int) ($assetStatus['size'] ?? 0)) : __('Not generated', 'etch-fonts'),
+                'label' => __('Stylesheet Size', 'tasty-fonts'),
+                'value' => $cssExists ? size_format((int) ($assetStatus['size'] ?? 0)) : __('Not generated', 'tasty-fonts'),
                 'code' => false,
             ],
             [
-                'label' => __('Last generated', 'etch-fonts'),
+                'label' => __('Last Generated', 'tasty-fonts'),
                 'value' => $cssExists
                     ? wp_date(get_option('date_format') . ' ' . get_option('time_format'), (int) filemtime($cssPath))
-                    : __('Not available', 'etch-fonts'),
+                    : __('Not available', 'tasty-fonts'),
                 'code' => false,
             ],
             [
-                'label' => __('Fonts directory', 'etch-fonts'),
-                'value' => is_array($storage) ? (string) ($storage['dir'] ?? __('Not available', 'etch-fonts')) : __('Not available', 'etch-fonts'),
+                'label' => __('Fonts Directory', 'tasty-fonts'),
+                'value' => is_array($storage) ? (string) ($storage['dir'] ?? __('Not available', 'tasty-fonts')) : __('Not available', 'tasty-fonts'),
                 'code' => true,
             ],
             [
-                'label' => __('Fonts public URL', 'etch-fonts'),
+                'label' => __('Fonts Public URL', 'tasty-fonts'),
                 'value' => is_array($storage)
-                    ? (string) ($storage['url_full'] ?? $storage['url'] ?? __('Not available', 'etch-fonts'))
-                    : __('Not available', 'etch-fonts'),
+                    ? (string) ($storage['url_full'] ?? $storage['url'] ?? __('Not available', 'tasty-fonts'))
+                    : __('Not available', 'tasty-fonts'),
                 'code' => true,
             ],
             [
-                'label' => __('Google import folder', 'etch-fonts'),
-                'value' => is_array($storage) ? (string) ($storage['google_dir'] ?? __('Not available', 'etch-fonts')) : __('Not available', 'etch-fonts'),
+                'label' => __('Google Import Folder', 'tasty-fonts'),
+                'value' => is_array($storage) ? (string) ($storage['google_dir'] ?? __('Not available', 'tasty-fonts')) : __('Not available', 'tasty-fonts'),
                 'code' => true,
             ],
             [
-                'label' => __('Library inventory', 'etch-fonts'),
+                'label' => __('Library Inventory', 'tasty-fonts'),
                 'value' => sprintf(
-                    __('%1$d families / %2$d files', 'etch-fonts'),
+                    __('%1$d families / %2$d files', 'tasty-fonts'),
                     (int) ($counts['families'] ?? 0),
                     (int) ($counts['files'] ?? 0)
                 ),
                 'code' => false,
             ],
             [
-                'label' => __('Delivery mode', 'etch-fonts'),
+                'label' => __('Delivery Mode', 'tasty-fonts'),
                 'value' => (string) ($settings['css_delivery_mode'] ?? 'file'),
                 'code' => false,
             ],
             [
-                'label' => __('Font display', 'etch-fonts'),
+                'label' => __('Font Display', 'tasty-fonts'),
                 'value' => (string) ($settings['font_display'] ?? 'swap'),
                 'code' => false,
             ],
         ];
     }
 
-    private function buildOverviewMetrics(array $counts, bool $applyEverywhere): array
+    private function buildOverviewMetrics(array $counts, bool $applyEverywhere, array $assetStatus): array
     {
+        $cssExists = !empty($assetStatus['exists']);
+        $cssSize = $cssExists
+            ? size_format((int) ($assetStatus['size'] ?? 0))
+            : __('Not generated', 'tasty-fonts');
+
         return [
             [
-                'label' => __('Font families', 'etch-fonts'),
+                'label' => __('Font Families', 'tasty-fonts'),
                 'value' => (string) ($counts['families'] ?? 0),
             ],
             [
-                'label' => __('Font files', 'etch-fonts'),
+                'label' => __('Font Files', 'tasty-fonts'),
                 'value' => (string) ($counts['files'] ?? 0),
             ],
             [
-                'label' => __('Google families', 'etch-fonts'),
-                'value' => (string) ($counts['google_families'] ?? 0),
+                'label' => __('Apply Everywhere', 'tasty-fonts'),
+                'value' => $applyEverywhere ? __('On', 'tasty-fonts') : __('Off', 'tasty-fonts'),
             ],
             [
-                'label' => __('Apply everywhere', 'etch-fonts'),
-                'value' => $applyEverywhere ? __('On', 'etch-fonts') : __('Off', 'etch-fonts'),
+                'label' => __('Final CSS', 'tasty-fonts'),
+                'value' => $cssSize,
             ],
         ];
     }
@@ -518,29 +646,29 @@ final class AdminController
         return [
             [
                 'key' => 'usage',
-                'label' => __('Site snippet', 'etch-fonts'),
-                'target' => 'etch-fonts-output-usage',
+                'label' => __('Site Snippet', 'tasty-fonts'),
+                'target' => 'tasty-fonts-output-usage',
                 'value' => $this->cssBuilder->buildRoleUsageSnippet($roles),
                 'active' => true,
             ],
             [
                 'key' => 'variables',
-                'label' => __('CSS variables', 'etch-fonts'),
-                'target' => 'etch-fonts-output-vars',
+                'label' => __('CSS Variables', 'tasty-fonts'),
+                'target' => 'tasty-fonts-output-vars',
                 'value' => $this->cssBuilder->buildRoleVariableSnippet($roles),
                 'active' => false,
             ],
             [
                 'key' => 'stacks',
-                'label' => __('Font stacks', 'etch-fonts'),
-                'target' => 'etch-fonts-output-stacks',
+                'label' => __('Font Stacks', 'tasty-fonts'),
+                'target' => 'tasty-fonts-output-stacks',
                 'value' => $this->cssBuilder->buildRoleStackSnippet($roles),
                 'active' => false,
             ],
             [
                 'key' => 'names',
-                'label' => __('Font names', 'etch-fonts'),
-                'target' => 'etch-fonts-output-names',
+                'label' => __('Font Names', 'tasty-fonts'),
+                'target' => 'tasty-fonts-output-names',
                 'value' => $this->cssBuilder->buildRoleNameSnippet($roles),
                 'active' => false,
             ],
@@ -552,22 +680,22 @@ final class AdminController
         return [
             [
                 'key' => 'editorial',
-                'label' => __('Specimen', 'etch-fonts'),
+                'label' => __('Specimen', 'tasty-fonts'),
                 'active' => true,
             ],
             [
                 'key' => 'card',
-                'label' => __('Card', 'etch-fonts'),
+                'label' => __('Card', 'tasty-fonts'),
                 'active' => false,
             ],
             [
                 'key' => 'reading',
-                'label' => __('Reading', 'etch-fonts'),
+                'label' => __('Reading', 'tasty-fonts'),
                 'active' => false,
             ],
             [
                 'key' => 'interface',
-                'label' => __('Interface', 'etch-fonts'),
+                'label' => __('Interface', 'tasty-fonts'),
                 'active' => false,
             ],
         ];
@@ -575,37 +703,34 @@ final class AdminController
 
     private function buildNoticeToasts(): array
     {
-        $noticeMap = [
-            'settings_saved' => __('Plugin settings saved.', 'etch-fonts'),
-            'adobe_project_saved' => __('Adobe Fonts project saved.', 'etch-fonts'),
-            'adobe_project_removed' => __('Adobe Fonts project removed.', 'etch-fonts'),
-            'adobe_project_resynced' => __('Adobe Fonts project resynced.', 'etch-fonts'),
-            'google_key_saved' => __('Google Fonts API key saved and validated.', 'etch-fonts'),
-            'google_key_cleared' => __('Google Fonts API key removed.', 'etch-fonts'),
-            'fallback_saved' => __('Font fallback saved.', 'etch-fonts'),
-            'roles_saved' => __('Font roles saved.', 'etch-fonts'),
-            'rescan' => __('Fonts rescanned.', 'etch-fonts'),
-            'log_cleared' => __('Activity log cleared.', 'etch-fonts'),
-            'family_deleted' => __('Font family deleted.', 'etch-fonts'),
-        ];
         $toasts = [];
 
-        foreach ($noticeMap as $key => $message) {
+        foreach (self::NOTICE_MESSAGES as $key => $message) {
             if (!isset($_GET[$key]) || $_GET[$key] !== '1') {
                 continue;
             }
 
+            $resolvedMessage = $message;
+
+            if ($key === 'settings_saved' && !empty($_GET['settings_saved_message'])) {
+                $resolvedMessage = sanitize_text_field(wp_unslash((string) $_GET['settings_saved_message']));
+            }
+
+            if (in_array($key, ['roles_saved', 'family_deleted', 'variant_deleted'], true) && !empty($_GET[$key . '_message'])) {
+                $resolvedMessage = sanitize_text_field(wp_unslash((string) $_GET[$key . '_message']));
+            }
+
             $toasts[] = [
                 'tone' => 'success',
-                'message' => $message,
+                'message' => __($resolvedMessage, 'tasty-fonts'),
                 'role' => 'status',
             ];
         }
 
-        if (!empty($_GET['etch_fonts_error'])) {
+        if (!empty($_GET['tasty_fonts_error'])) {
             $toasts[] = [
                 'tone' => 'error',
-                'message' => sanitize_text_field(wp_unslash((string) $_GET['etch_fonts_error'])),
+                'message' => sanitize_text_field(wp_unslash((string) $_GET['tasty_fonts_error'])),
                 'role' => 'alert',
             ];
         }
@@ -613,62 +738,236 @@ final class AdminController
         return $toasts;
     }
 
+    private function buildSettingsSavedMessage(array $before, array $after): string
+    {
+        $changes = [];
+
+        if (($before['css_delivery_mode'] ?? '') !== ($after['css_delivery_mode'] ?? '')) {
+            $changes[] = sprintf(
+                __('delivery mode set to %s', 'tasty-fonts'),
+                $this->formatCssDeliveryModeLabel((string) ($after['css_delivery_mode'] ?? 'file'))
+            );
+        }
+
+        if (($before['font_display'] ?? '') !== ($after['font_display'] ?? '')) {
+            $changes[] = sprintf(
+                __('font-display set to %s', 'tasty-fonts'),
+                (string) ($after['font_display'] ?? 'swap')
+            );
+        }
+
+        if (!empty($before['minify_css_output']) !== !empty($after['minify_css_output'])) {
+            $changes[] = !empty($after['minify_css_output'])
+                ? __('CSS minification enabled', 'tasty-fonts')
+                : __('CSS minification disabled', 'tasty-fonts');
+        }
+
+        if (($before['preview_sentence'] ?? '') !== ($after['preview_sentence'] ?? '')) {
+            $changes[] = __('preview text updated', 'tasty-fonts');
+        }
+
+        if ($changes === []) {
+            return __('Plugin settings saved.', 'tasty-fonts');
+        }
+
+        return sprintf(
+            __('Plugin settings saved: %s.', 'tasty-fonts'),
+            implode(', ', $changes)
+        );
+    }
+
+    private function formatCssDeliveryModeLabel(string $mode): string
+    {
+        return match ($mode) {
+            'inline' => __('inline CSS', 'tasty-fonts'),
+            default => __('generated file', 'tasty-fonts'),
+        };
+    }
+
     private function assetVersionFor(string $relativePath): string
     {
-        $path = ETCH_FONTS_DIR . ltrim($relativePath, '/');
+        $path = TASTY_FONTS_DIR . ltrim($relativePath, '/');
 
-        return file_exists($path) ? (string) filemtime($path) : ETCH_FONTS_VERSION;
+        if (!file_exists($path) || !is_readable($path)) {
+            return TASTY_FONTS_VERSION;
+        }
+
+        $hash = md5_file($path);
+
+        if ($hash === false) {
+            return (string) filemtime($path);
+        }
+
+        return substr($hash, 0, 12);
     }
 
     private function buildAdminStrings(string $searchDisabledMessage): array
     {
         return [
-            'searching' => __('Searching Google Fonts…', 'etch-fonts'),
-            'searchEmpty' => __('No Google Fonts families matched that search.', 'etch-fonts'),
+            'previewFallback' => __('The quick brown fox jumps over the lazy dog. 1234567890', 'tasty-fonts'),
+            'importPreviewSample' => __("Aa Bb Cc Dd Ee Ff Gg Hh\n0123456789", 'tasty-fonts'),
+            'searching' => __('Searching Google Fonts…', 'tasty-fonts'),
+            'searchEmpty' => __('No Google Fonts families matched that search.', 'tasty-fonts'),
             'searchDisabled' => $searchDisabledMessage,
-            'selectFamily' => __('Select a family from search results or type one manually.', 'etch-fonts'),
-            'importing' => __('Importing and self-hosting selected files…', 'etch-fonts'),
-            'importSuccess' => __('Font imported successfully. Reloading…', 'etch-fonts'),
-            'importError' => __('The Google Fonts import failed.', 'etch-fonts'),
-            'importProgress' => __('Importing %1$s: %2$d of %3$d (%4$s)…', 'etch-fonts'),
-            'importSummary' => __('Imported %1$d variant%2$s. %3$d skipped. Reloading…', 'etch-fonts'),
-            'importAlreadyExists' => __('%s already exists in the library for the selected variants.', 'etch-fonts'),
-            'importButtonIdle' => __('Import and self-host', 'etch-fonts'),
-            'importButtonBusy' => __('Importing…', 'etch-fonts'),
-            'uploadReady' => __('Upload WOFF2, WOFF, TTF, or OTF files. Each row imports one face.', 'etch-fonts'),
-            'uploadSubmitting' => __('Uploading font files…', 'etch-fonts'),
-            'uploadProgress' => __('Uploading files… %1$d%%', 'etch-fonts'),
-            'uploadSuccess' => __('Upload complete. Refreshing the library…', 'etch-fonts'),
-            'uploadError' => __('The font upload failed.', 'etch-fonts'),
-            'uploadNoFile' => __('No file chosen', 'etch-fonts'),
-            'uploadButtonIdle' => __('Upload to library', 'etch-fonts'),
-            'uploadButtonBusy' => __('Uploading…', 'etch-fonts'),
-            'uploadRowQueued' => __('Queued', 'etch-fonts'),
-            'uploadRowUploading' => __('Uploading…', 'etch-fonts'),
-            'uploadRowImported' => __('Imported', 'etch-fonts'),
-            'uploadRowSkipped' => __('Skipped', 'etch-fonts'),
-            'uploadRowError' => __('Error', 'etch-fonts'),
-            'uploadAddFace' => __('Add face', 'etch-fonts'),
-            'uploadAddFamily' => __('Add another family', 'etch-fonts'),
-            'uploadUseDetected' => __('Use detected values', 'etch-fonts'),
-            'uploadDetectedSummary' => __('Detected: %1$s / %2$s / %3$s', 'etch-fonts'),
-            'uploadDetectedWeightStyle' => __('Detected: %1$s / %2$s', 'etch-fonts'),
-            'uploadRemoveRow' => __('Remove row', 'etch-fonts'),
-            'uploadRequiresRows' => __('Add at least one upload row before submitting.', 'etch-fonts'),
-            'deleteConfirm' => __('Delete "%s" and remove its files from uploads/fonts?', 'etch-fonts'),
-            'fallbackSaved' => __('Saved fallback for %1$s.', 'etch-fonts'),
-            'fallbackSaveError' => __('The fallback could not be saved.', 'etch-fonts'),
-            'copied' => __('Copied', 'etch-fonts'),
-            'copy' => __('Copy', 'etch-fonts'),
+            'selectFamily' => __('Select a family from search results or type one manually.', 'tasty-fonts'),
+            'importFamilyEmpty' => __('Choose a Google family or type one manually.', 'tasty-fonts'),
+            'importPreviewEmpty' => __('Preview appears here after you choose a family.', 'tasty-fonts'),
+            'importing' => __('Importing and self-hosting selected files…', 'tasty-fonts'),
+            'importSuccess' => __('Font imported successfully. Reloading…', 'tasty-fonts'),
+            'importError' => __('The Google Fonts import failed.', 'tasty-fonts'),
+            'importProgress' => __('Importing %1$s: %2$d of %3$d (%4$s)…', 'tasty-fonts'),
+            'importSummary' => __('Imported %1$d variant%2$s. %3$d skipped. Reloading…', 'tasty-fonts'),
+            'importAlreadyExists' => __('%s already exists in the library for the selected variants.', 'tasty-fonts'),
+            'importNoVariants' => __('Select at least one variant to import.', 'tasty-fonts'),
+            'importButtonIdle' => __('Import and Self-Host', 'tasty-fonts'),
+            'importButtonBusy' => __('Importing…', 'tasty-fonts'),
+            'importEstimateFiles' => __('%1$d File%2$s Selected', 'tasty-fonts'),
+            'importEstimateSize' => __('Approx. +%1$s WOFF2', 'tasty-fonts'),
+            'importSelectionSummaryEmpty' => __('0 Variants Selected', 'tasty-fonts'),
+            'importSelectionSummaryAvailable' => __('%1$d of %2$d Variants Selected', 'tasty-fonts'),
+            'importSelectionSummaryManual' => __('%1$d Variant%2$s Selected', 'tasty-fonts'),
+            'uploadReady' => __('Upload WOFF2, WOFF, TTF, or OTF files. Each row imports one face.', 'tasty-fonts'),
+            'uploadSubmitting' => __('Uploading font files…', 'tasty-fonts'),
+            'uploadProgress' => __('Uploading files… %1$d%%', 'tasty-fonts'),
+            'uploadSuccess' => __('Upload complete. Refreshing the library…', 'tasty-fonts'),
+            'uploadError' => __('The font upload failed.', 'tasty-fonts'),
+            'uploadNoFile' => __('No file chosen', 'tasty-fonts'),
+            'uploadButtonIdle' => __('Upload to Library', 'tasty-fonts'),
+            'uploadButtonBusy' => __('Uploading…', 'tasty-fonts'),
+            'uploadRowQueued' => __('Queued', 'tasty-fonts'),
+            'uploadRowUploading' => __('Uploading…', 'tasty-fonts'),
+            'uploadRowImported' => __('Imported', 'tasty-fonts'),
+            'uploadRowSkipped' => __('Skipped', 'tasty-fonts'),
+            'uploadRowError' => __('Error', 'tasty-fonts'),
+            'uploadAddFace' => __('Add Face', 'tasty-fonts'),
+            'uploadAddFamily' => __('Add Another Family', 'tasty-fonts'),
+            'uploadUseDetected' => __('Use Detected Values', 'tasty-fonts'),
+            'uploadDetectedSummary' => __('Detected: %1$s / %2$s / %3$s', 'tasty-fonts'),
+            'uploadDetectedWeightStyle' => __('Detected: %1$s / %2$s', 'tasty-fonts'),
+            'uploadRemoveRow' => __('Remove Row', 'tasty-fonts'),
+            'uploadRequiresRows' => __('Add at least one upload row before submitting.', 'tasty-fonts'),
+            'rolesDraftSaving' => __('Saving role draft…', 'tasty-fonts'),
+            'rolesDraftSaved' => __('Role draft saved.', 'tasty-fonts'),
+            'rolesDraftSaveError' => __('The role draft could not be saved.', 'tasty-fonts'),
+            'fallbackSaving' => __('Saving fallback…', 'tasty-fonts'),
+            'deleteConfirm' => __('Delete "%s" and remove its files from uploads/fonts?', 'tasty-fonts'),
+            'fallbackSaved' => __('Saved fallback for %1$s.', 'tasty-fonts'),
+            'fallbackSaveError' => __('The fallback could not be saved.', 'tasty-fonts'),
+            'copied' => __('Copied', 'tasty-fonts'),
+            'copy' => __('Copy', 'tasty-fonts'),
+            'activityCountSingle' => __('%1$d entry', 'tasty-fonts'),
+            'activityCountMultiple' => __('%1$d entries', 'tasty-fonts'),
+            'activityCountFilteredSingle' => __('%1$d of %2$d entry', 'tasty-fonts'),
+            'activityCountFilteredMultiple' => __('%1$d of %2$d entries', 'tasty-fonts'),
+            'activityNoMatches' => __('No activity matches the current filters.', 'tasty-fonts'),
         ];
+    }
+
+    private function buildRoleDeploymentContext(array $draftRoles, array $appliedRoles, bool $applyEverywhere): array
+    {
+        if (!$applyEverywhere) {
+            return [
+                'badge' => __('Saved Only', 'tasty-fonts'),
+                'badge_class' => 'is-warning',
+                'title' => __('Draft Saved Only', 'tasty-fonts'),
+                'copy' => sprintf(
+                    __('Sitewide roles are off. Apply Heading %1$s / Body %2$s when you want the frontend, editor, and Etch to use this pair.', 'tasty-fonts'),
+                    (string) ($draftRoles['heading'] ?? ''),
+                    (string) ($draftRoles['body'] ?? '')
+                ),
+            ];
+        }
+
+        if ($this->roleSetsMatch($draftRoles, $appliedRoles)) {
+            return [
+                'badge' => __('Live', 'tasty-fonts'),
+                'badge_class' => 'is-success',
+                'title' => __('Live Pair Active', 'tasty-fonts'),
+                'copy' => sprintf(
+                    __('Frontend, editor, and Etch are using Heading %1$s / Body %2$s.', 'tasty-fonts'),
+                    (string) ($draftRoles['heading'] ?? ''),
+                    (string) ($draftRoles['body'] ?? '')
+                ),
+            ];
+        }
+
+        return [
+            'badge' => __('Pending', 'tasty-fonts'),
+            'badge_class' => 'is-warning',
+            'title' => __('Draft Differs From Live', 'tasty-fonts'),
+            'copy' => sprintf(
+                __('Draft %1$s / %2$s. Live %3$s / %4$s. Apply Sitewide to publish the draft pair.', 'tasty-fonts'),
+                (string) ($draftRoles['heading'] ?? ''),
+                (string) ($draftRoles['body'] ?? ''),
+                (string) ($appliedRoles['heading'] ?? ''),
+                (string) ($appliedRoles['body'] ?? '')
+            ),
+        ];
+    }
+
+    private function roleSetsMatch(array $left, array $right): bool
+    {
+        foreach (['heading', 'body', 'heading_fallback', 'body_fallback'] as $key) {
+            if ((string) ($left[$key] ?? '') !== (string) ($right[$key] ?? '')) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function buildRolesSavedMessage(string $actionType, array $roles, array $appliedRoles, bool $wasAppliedSitewide): string
+    {
+        return match ($actionType) {
+            'apply' => sprintf(
+                __('Role pair applied sitewide. Heading: %1$s; Body: %2$s.', 'tasty-fonts'),
+                (string) ($roles['heading'] ?? ''),
+                (string) ($roles['body'] ?? '')
+            ),
+            'disable' => sprintf(
+                __('Sitewide role CSS turned off. Draft kept as Heading: %1$s; Body: %2$s.', 'tasty-fonts'),
+                (string) ($roles['heading'] ?? ''),
+                (string) ($roles['body'] ?? '')
+            ),
+            default => $wasAppliedSitewide
+                ? sprintf(
+                    __('Role draft saved. Live site still uses Heading: %1$s; Body: %2$s until you apply the draft.', 'tasty-fonts'),
+                    (string) ($appliedRoles['heading'] ?? ''),
+                    (string) ($appliedRoles['body'] ?? '')
+                )
+                : sprintf(
+                    __('Role draft saved. Sitewide roles stay off until you apply Heading: %1$s; Body: %2$s.', 'tasty-fonts'),
+                    (string) ($roles['heading'] ?? ''),
+                    (string) ($roles['body'] ?? '')
+                ),
+        };
+    }
+
+    private function buildActivityActorOptions(array $logs): array
+    {
+        $actors = [];
+
+        foreach ($logs as $entry) {
+            $actor = trim((string) ($entry['actor'] ?? ''));
+
+            if ($actor === '') {
+                continue;
+            }
+
+            $actors[$actor] = $actor;
+        }
+
+        natcasesort($actors);
+
+        return array_values($actors);
     }
 
     private function buildSearchDisabledMessage(array $googleApiStatus): string
     {
         return match ((string) ($googleApiStatus['state'] ?? 'empty')) {
-            'invalid' => __('Search is disabled because the saved Google Fonts API key is invalid.', 'etch-fonts'),
-            'unknown' => __('Search is unavailable until the saved Google Fonts API key is validated.', 'etch-fonts'),
-            default => __('Add a Google Fonts API key to enable search, or use manual import below.', 'etch-fonts'),
+            'invalid' => __('Search is disabled because the saved Google Fonts API key is invalid. Replace it above to re-enable catalog search.', 'tasty-fonts'),
+            'unknown' => __('Search is unavailable until the saved Google Fonts API key is validated. Re-save or replace the key above to continue.', 'tasty-fonts'),
+            default => __('Add a Google Fonts API key above to enable search, or use manual import below.', 'tasty-fonts'),
         };
     }
 
@@ -678,6 +977,9 @@ final class AdminController
             ? wp_strip_all_tags(sanitize_text_field(wp_unslash((string) $_GET['preview_text'])))
             : (string) ($settings['preview_sentence'] ?? '');
         $previewSize = isset($_GET['preview_size']) ? absint($_GET['preview_size']) : 32;
+        $previewText = $previewText !== ''
+            ? $previewText
+            : __('The quick brown fox jumps over the lazy dog. 1234567890', 'tasty-fonts');
 
         return [
             'preview_text' => $previewText,
@@ -698,8 +1000,10 @@ final class AdminController
             : [];
 
         return [
+            'adobe_project_state' => $projectState,
             'adobe_project_enabled' => $projectEnabled,
             'adobe_project_saved' => $projectSaved,
+            'adobe_access_expanded' => !$projectSaved || in_array($projectState, ['empty', 'invalid', 'unknown'], true),
             'adobe_project_id' => $projectId,
             'adobe_status_label' => $this->buildAdobeStatusLabel($projectState, $projectEnabled),
             'adobe_status_class' => $this->buildAdobeStatusClass($projectState, $projectEnabled),
@@ -718,6 +1022,7 @@ final class AdminController
         $googleApiStatusMessage = (string) ($googleApiStatus['message'] ?? '');
 
         return [
+            'google_api_state' => $googleApiState,
             'google_api_enabled' => $googleApiEnabled,
             'google_api_saved' => $googleApiSaved,
             'google_access_expanded' => !$googleApiEnabled,
@@ -731,10 +1036,10 @@ final class AdminController
     private function buildGoogleStatusLabel(string $googleApiState): string
     {
         return match ($googleApiState) {
-            'valid' => __('Valid key', 'etch-fonts'),
-            'invalid' => __('Invalid key', 'etch-fonts'),
-            'unknown' => __('Needs check', 'etch-fonts'),
-            default => __('API key needed', 'etch-fonts'),
+            'valid' => __('Valid Key', 'tasty-fonts'),
+            'invalid' => __('Invalid Key', 'tasty-fonts'),
+            'unknown' => __('Needs Check', 'tasty-fonts'),
+            default => __('API Key Needed', 'tasty-fonts'),
         };
     }
 
@@ -755,33 +1060,33 @@ final class AdminController
         }
 
         return match ($googleApiState) {
-            'valid' => __('Google search is ready. Open key settings only when you want to replace or remove the saved key.', 'etch-fonts'),
-            'invalid' => __('The saved Google Fonts API key was rejected. Update it to re-enable live search.', 'etch-fonts'),
-            'unknown' => __('This saved key has not been verified yet. Save it again to validate before using live search.', 'etch-fonts'),
-            default => __('Enable live family search with a Google Fonts Developer API key. Imported files are still downloaded and stored locally after import.', 'etch-fonts'),
+            'valid' => __('Google search is ready. Open key settings only when you want to replace or remove the saved key.', 'tasty-fonts'),
+            'invalid' => __('The saved Google Fonts API key was rejected. Update it to re-enable live search.', 'tasty-fonts'),
+            'unknown' => __('This saved key has not been verified yet. Save it again to validate before using live search.', 'tasty-fonts'),
+            default => __('Enable live family search with a Google Fonts Developer API key. Imported files are still downloaded and stored locally after import.', 'tasty-fonts'),
         };
     }
 
     private function buildGoogleSearchDisabledCopy(string $googleApiState): string
     {
         return match ($googleApiState) {
-            'invalid' => __('Search is disabled because the saved API key is invalid. Update or remove it to continue.', 'etch-fonts'),
-            'unknown' => __('Search is disabled until the saved API key has been validated.', 'etch-fonts'),
-            default => __('Search is disabled until you save a Google Fonts API key.', 'etch-fonts'),
+            'invalid' => __('Search is disabled because the saved API key is invalid. Update or remove it to continue.', 'tasty-fonts'),
+            'unknown' => __('Search is disabled until the saved API key has been validated.', 'tasty-fonts'),
+            default => __('Search is disabled until you save a Google Fonts API key.', 'tasty-fonts'),
         };
     }
 
     private function buildAdobeStatusLabel(string $projectState, bool $projectEnabled): string
     {
         if (!$projectEnabled && $projectState === 'valid') {
-            return __('Saved project', 'etch-fonts');
+            return __('Saved Project', 'tasty-fonts');
         }
 
         return match ($projectState) {
-            'valid' => __('Project ready', 'etch-fonts'),
-            'invalid' => __('Invalid project', 'etch-fonts'),
-            'unknown' => __('Needs check', 'etch-fonts'),
-            default => __('Project ID needed', 'etch-fonts'),
+            'valid' => __('Project Ready', 'tasty-fonts'),
+            'invalid' => __('Invalid Project', 'tasty-fonts'),
+            'unknown' => __('Needs Check', 'tasty-fonts'),
+            default => __('Project ID Needed', 'tasty-fonts'),
         };
     }
 
@@ -803,7 +1108,7 @@ final class AdminController
     {
         if ($projectStatusMessage !== '') {
             if (!$projectEnabled && $projectState === 'valid') {
-                return __('The Adobe project is saved and validated but currently disabled. Enable it to load Adobe-hosted fonts on the site and in editors.', 'etch-fonts');
+                return __('The Adobe project is saved and validated but currently disabled. Enable it to load Adobe-hosted fonts on the site and in editors.', 'tasty-fonts');
             }
 
             return $projectStatusMessage;
@@ -811,11 +1116,11 @@ final class AdminController
 
         return match ($projectState) {
             'valid' => $projectEnabled
-                ? __('This Adobe Fonts project will load remotely from use.typekit.net. Manage families and domains in Adobe Fonts, then resync here when needed.', 'etch-fonts')
-                : __('The Adobe project is saved, but remote loading is disabled until you enable it below.', 'etch-fonts'),
-            'invalid' => __('Adobe rejected the saved web project ID. Check the project ID and allowed domains in Adobe Fonts before saving again.', 'etch-fonts'),
-            'unknown' => __('This Adobe project has not been validated yet. Save or resync it to fetch the project stylesheet and detected families.', 'etch-fonts'),
-            default => __('Connect an existing Adobe Fonts web project to make its hosted families available for previews, roles, Gutenberg, and the Etch canvas.', 'etch-fonts'),
+                ? __('This Adobe Fonts project will load remotely from use.typekit.net. Manage families and domains in Adobe Fonts, then resync here when needed.', 'tasty-fonts')
+                : __('The Adobe project is saved, but remote loading is disabled until you enable it below.', 'tasty-fonts'),
+            'invalid' => __('Adobe rejected the saved web project ID. Check the project ID and allowed domains in Adobe Fonts before saving again.', 'tasty-fonts'),
+            'unknown' => __('This Adobe project has not been validated yet. Save or resync it to fetch the project stylesheet and detected families.', 'tasty-fonts'),
+            default => __('Connect an existing Adobe Fonts web project to make its hosted families available for previews, roles, Gutenberg, and the Etch canvas.', 'tasty-fonts'),
         };
     }
 
@@ -835,7 +1140,7 @@ final class AdminController
 
         $storedRoles = $this->settings->getRoles([]);
 
-        foreach (['heading', 'body'] as $roleKey) {
+        foreach (self::ROLE_KEYS as $roleKey) {
             $familyName = trim((string) ($storedRoles[$roleKey] ?? ''));
 
             if ($familyName !== '') {
@@ -851,41 +1156,40 @@ final class AdminController
 
     private function handleSaveAdobeProjectAction(): bool
     {
-        if (
-            !isset($_POST['etch_fonts_save_adobe_project'])
-            && !isset($_POST['etch_fonts_remove_adobe_project'])
-            && !isset($_POST['etch_fonts_resync_adobe_project'])
-        ) {
+        $isRemove = isset($_POST['tasty_fonts_remove_adobe_project']);
+        $isResync = isset($_POST['tasty_fonts_resync_adobe_project']);
+        $isSave = isset($_POST['tasty_fonts_save_adobe_project']);
+
+        if (!$isSave && !$isRemove && !$isResync) {
             return false;
         }
 
-        check_admin_referer('etch_fonts_save_adobe_project');
+        check_admin_referer('tasty_fonts_save_adobe_project');
 
-        if (isset($_POST['etch_fonts_remove_adobe_project'])) {
+        if ($isRemove) {
             $existingProjectId = $this->settings->getAdobeProjectId();
 
             $this->settings->clearAdobeProject();
             $this->adobe->clearProjectCache($existingProjectId);
-            $this->log->add(__('Adobe Fonts project removed.', 'etch-fonts'));
+            $this->log->add(__('Adobe Fonts project removed.', 'tasty-fonts'));
             $this->redirect(['adobe_project_removed' => '1']);
         }
 
-        $projectId = isset($_POST['etch_fonts_resync_adobe_project'])
+        $projectId = $isResync
             ? $this->settings->getAdobeProjectId()
             : $this->getPostedText('adobe_project_id');
-        $enabled = isset($_POST['etch_fonts_resync_adobe_project'])
+        $enabled = $isResync
             ? $this->settings->isAdobeEnabled()
             : !empty($_POST['adobe_enabled']);
-
         $existingProjectId = $this->settings->getAdobeProjectId();
 
-        if (!isset($_POST['etch_fonts_resync_adobe_project'])) {
+        if (!$isResync) {
             $this->settings->saveAdobeProject($projectId, $enabled);
         }
 
         if ($projectId === '') {
             $this->adobe->clearProjectCache($existingProjectId);
-            $this->log->add(__('Adobe Fonts project cleared.', 'etch-fonts'));
+            $this->log->add(__('Adobe Fonts project cleared.', 'tasty-fonts'));
             $this->redirect(['adobe_project_removed' => '1']);
         }
 
@@ -898,27 +1202,21 @@ final class AdminController
         );
 
         if (($validation['state'] ?? 'unknown') !== 'valid') {
-            $this->log->add(__('Adobe Fonts project validation failed.', 'etch-fonts'));
+            $this->log->add(__('Adobe Fonts project validation failed.', 'tasty-fonts'));
             $this->redirect(
                 [
-                    'etch_fonts_error' => (string) (
+                    'tasty_fonts_error' => (string) (
                         $validation['message']
-                        ?? __('Adobe Fonts project could not be validated.', 'etch-fonts')
+                        ?? __('Adobe Fonts project could not be validated.', 'tasty-fonts')
                     ),
                 ]
             );
         }
 
-        $this->log->add(
-            isset($_POST['etch_fonts_resync_adobe_project'])
-                ? __('Adobe Fonts project resynced.', 'etch-fonts')
-                : __('Adobe Fonts project saved.', 'etch-fonts')
-        );
-        $this->redirect(
-            [
-                isset($_POST['etch_fonts_resync_adobe_project']) ? 'adobe_project_resynced' : 'adobe_project_saved' => '1',
-            ]
-        );
+        $this->log->add($isResync
+            ? __('Adobe Fonts project resynced.', 'tasty-fonts')
+            : __('Adobe Fonts project saved.', 'tasty-fonts'));
+        $this->redirect([$isResync ? 'adobe_project_resynced' : 'adobe_project_saved' => '1']);
     }
 
     private function assertManageOptionsAjax(string $message): void

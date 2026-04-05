@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Adobe;
+namespace TastyFonts\Adobe;
 
-use EtchFonts\Repository\SettingsRepository;
-use EtchFonts\Support\FontUtils;
+use TastyFonts\Repository\SettingsRepository;
+use TastyFonts\Support\FontUtils;
 use WP_Error;
 
 final class AdobeProjectClient
 {
-    private const TRANSIENT_PREFIX = 'etch_fonts_adobe_project_v1_';
+    private const TRANSIENT_PREFIX = 'tasty_fonts_adobe_project_v1_';
     private const CACHE_TTL = 12 * HOUR_IN_SECONDS;
     private const REQUEST_TIMEOUT = 20;
 
@@ -72,9 +72,9 @@ final class AdobeProjectClient
         return [
             'state' => 'valid',
             'message' => sprintf(
-                __('Adobe Fonts project connected. %1$d %2$s detected.', 'etch-fonts'),
+                __('Adobe Fonts project connected. %1$d %2$s detected.', 'tasty-fonts'),
                 $familyCount,
-                $familyCount === 1 ? __('family', 'etch-fonts') : __('families', 'etch-fonts')
+                $familyCount === 1 ? __('family', 'tasty-fonts') : __('families', 'tasty-fonts')
             ),
         ];
     }
@@ -142,8 +142,8 @@ final class AdobeProjectClient
 
         if ($projectId === '') {
             return new WP_Error(
-                'etch_fonts_adobe_missing_project',
-                __('Save an Adobe Fonts web project ID before using Adobe support.', 'etch-fonts')
+                'tasty_fonts_adobe_missing_project',
+                __('Save an Adobe Fonts web project ID before using Adobe support.', 'tasty-fonts')
             );
         }
 
@@ -167,8 +167,8 @@ final class AdobeProjectClient
 
         if (is_wp_error($response)) {
             return new WP_Error(
-                'etch_fonts_adobe_project_unreachable',
-                __('The Adobe Fonts project could not be validated right now. Try again in a moment.', 'etch-fonts')
+                'tasty_fonts_adobe_project_unreachable',
+                __('The Adobe Fonts project could not be validated right now. Try again in a moment.', 'tasty-fonts')
             );
         }
 
@@ -176,15 +176,15 @@ final class AdobeProjectClient
 
         if (in_array($status, [401, 403, 404], true)) {
             return new WP_Error(
-                'etch_fonts_adobe_project_invalid',
-                __('Adobe rejected that web project ID. Check the project ID and domain settings in Adobe Fonts.', 'etch-fonts')
+                'tasty_fonts_adobe_project_invalid',
+                __('Adobe rejected that web project ID. Check the project ID and domain settings in Adobe Fonts.', 'tasty-fonts')
             );
         }
 
         if ($status !== 200) {
             return new WP_Error(
-                'etch_fonts_adobe_project_unknown',
-                sprintf(__('Adobe Fonts returned an unexpected status (%d). Try again later.', 'etch-fonts'), $status)
+                'tasty_fonts_adobe_project_unknown',
+                sprintf(__('Adobe Fonts returned an unexpected status (%d). Try again later.', 'tasty-fonts'), $status)
             );
         }
 
@@ -192,8 +192,8 @@ final class AdobeProjectClient
 
         if (!is_string($css) || trim($css) === '') {
             return new WP_Error(
-                'etch_fonts_adobe_project_invalid',
-                __('Adobe Fonts returned an empty stylesheet for that project.', 'etch-fonts')
+                'tasty_fonts_adobe_project_invalid',
+                __('Adobe Fonts returned an empty stylesheet for that project.', 'tasty-fonts')
             );
         }
 
@@ -201,8 +201,8 @@ final class AdobeProjectClient
 
         if ($families === []) {
             return new WP_Error(
-                'etch_fonts_adobe_project_invalid',
-                __('No usable font families were detected in that Adobe Fonts project.', 'etch-fonts')
+                'tasty_fonts_adobe_project_invalid',
+                __('No usable font families were detected in that Adobe Fonts project.', 'tasty-fonts')
             );
         }
 
@@ -234,7 +234,7 @@ final class AdobeProjectClient
     private function errorState(WP_Error $error): string
     {
         return match ($error->get_error_code()) {
-            'etch_fonts_adobe_project_invalid' => 'invalid',
+            'tasty_fonts_adobe_project_invalid' => 'invalid',
             default => 'unknown',
         };
     }

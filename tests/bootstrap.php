@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 spl_autoload_register(
     static function (string $class): void {
-        $prefix = 'EtchFonts\\';
+        $prefix = 'TastyFonts\\';
 
         if (strncmp($class, $prefix, strlen($prefix)) !== 0) {
             return;
@@ -37,4 +37,13 @@ function assertContainsValue(string $needle, string $haystack, string $message):
     }
 
     throw new RuntimeException($message . "\nMissing: " . $needle . "\nHaystack: " . $haystack);
+}
+
+function assertNotContainsValue(string $needle, string $haystack, string $message): void
+{
+    if (!str_contains($haystack, $needle)) {
+        return;
+    }
+
+    throw new RuntimeException($message . "\nUnexpected: " . $needle . "\nHaystack: " . $haystack);
 }

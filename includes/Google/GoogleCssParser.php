@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace EtchFonts\Google;
+namespace TastyFonts\Google;
 
-use EtchFonts\Support\FontUtils;
+use TastyFonts\Support\FontUtils;
 
 final class GoogleCssParser
 {
