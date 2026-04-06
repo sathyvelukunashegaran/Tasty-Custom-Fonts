@@ -412,7 +412,7 @@ final class LibraryService
     }
 
     /**
-     * Delete a single self-hosted face variant from the active delivery profile.
+     * Delete a single face variant from the active delivery profile.
      *
      * @since 1.4.0
      *
@@ -442,13 +442,6 @@ final class LibraryService
 
         $activeDelivery = is_array($family['active_delivery'] ?? null) ? $family['active_delivery'] : [];
 
-        if (!$this->isSelfHostedProfile($activeDelivery)) {
-            return $this->error(
-                'tasty_fonts_variant_not_local',
-                __('Only self-hosted variants can be deleted individually.', 'tasty-fonts')
-            );
-        }
-
         $normalizedWeight = FontUtils::normalizeWeight($weight);
         $normalizedStyle = FontUtils::normalizeStyle($style);
         $normalizedSource = trim($source) !== '' ? strtolower(trim($source)) : 'local';
@@ -475,29 +468,27 @@ final class LibraryService
         }
 
         $relativePaths = $this->collectFaceRelativePaths($face);
+        $storedFamily = $this->imports->getFamily($familySlug);
+        $deliveryId = (string) ($activeDelivery['id'] ?? '');
+        $hasStoredActiveProfile = $storedFamily !== null
+            && $deliveryId !== ''
+            && isset(($storedFamily['delivery_profiles'] ?? [])[$deliveryId]);
 
-        if ($relativePaths === []) {
+        if ($relativePaths === [] && !$hasStoredActiveProfile) {
             return $this->error(
-                'tasty_fonts_variant_not_local',
-                __('Only self-hosted variants can be deleted individually.', 'tasty-fonts')
+                'tasty_fonts_variant_delete_unsupported',
+                __('That font variant cannot be deleted individually from this delivery.', 'tasty-fonts')
             );
         }
 
-        if (!$this->storage->deleteRelativeFiles($relativePaths)) {
+        if ($relativePaths !== [] && !$this->storage->deleteRelativeFiles($relativePaths)) {
             return $this->error(
                 'tasty_fonts_delete_failed',
                 __('The font files for that variant could not be deleted from uploads/fonts.', 'tasty-fonts')
             );
         }
 
-        $storedFamily = $this->imports->getFamily($familySlug);
-        $deliveryId = (string) ($activeDelivery['id'] ?? '');
-
-        if (
-            $storedFamily !== null
-            && $deliveryId !== ''
-            && isset(($storedFamily['delivery_profiles'] ?? [])[$deliveryId])
-        ) {
+        if ($hasStoredActiveProfile) {
             unset($faces[$faceIndex]);
 
             $profile = (array) $storedFamily['delivery_profiles'][$deliveryId];
@@ -510,10 +501,6 @@ final class LibraryService
                 (string) ($storedFamily['publish_state'] ?? 'published'),
                 (string) ($storedFamily['active_delivery_id'] ?? '') === $deliveryId
             );
-        }
-
-        if ($this->isManagedImportSource($normalizedSource)) {
-            $this->storage->deleteRelativeDirectory($normalizedSource . '/' . $familySlug);
         }
 
         $this->assets->refreshGeneratedAssets();

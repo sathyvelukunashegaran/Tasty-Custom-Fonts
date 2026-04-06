@@ -250,6 +250,10 @@ final class CatalogService
             'faces' => is_array($activeDelivery['faces'] ?? null) ? $activeDelivery['faces'] : [],
             'delivery_badges' => $this->buildDeliveryBadges($family, $activeDelivery),
             'delivery_filter_tokens' => $this->buildDeliveryFilterTokens($family, $activeDelivery),
+            'font_category' => $this->resolveFamilyCategory($family, $activeDelivery, $availableDeliveries),
+            'font_category_tokens' => $this->buildFamilyCategoryTokens(
+                $this->resolveFamilyCategory($family, $activeDelivery, $availableDeliveries)
+            ),
         ];
     }
 
@@ -647,6 +651,10 @@ final class CatalogService
         $type = strtolower(trim((string) ($activeDelivery['type'] ?? 'self_hosted')));
         $tokens = [$publishState];
 
+        if ($publishState === 'role_active') {
+            $tokens[] = 'published';
+        }
+
         if ($type === 'self_hosted') {
             $tokens[] = 'same-origin';
         } elseif ($provider === 'adobe') {
@@ -665,6 +673,103 @@ final class CatalogService
 
         if ($provider === 'adobe') {
             $tokens[] = 'adobe-hosted';
+        }
+
+        return array_values(array_unique(array_filter($tokens, 'strlen')));
+    }
+
+    private function resolveFamilyCategory(array $family, array $activeDelivery, array $availableDeliveries): string
+    {
+        $candidates = [];
+
+        if (is_array($activeDelivery['meta'] ?? null)) {
+            $candidates[] = (string) ($activeDelivery['meta']['category'] ?? '');
+        }
+
+        foreach ($availableDeliveries as $profile) {
+            if (!is_array($profile) || !is_array($profile['meta'] ?? null)) {
+                continue;
+            }
+
+            $candidates[] = (string) ($profile['meta']['category'] ?? '');
+        }
+
+        foreach ($candidates as $candidate) {
+            $normalized = $this->normalizeFamilyCategory($candidate);
+
+            if ($normalized !== '') {
+                return $normalized;
+            }
+        }
+
+        return $this->normalizeFamilyCategory((string) ($family['family'] ?? ''));
+    }
+
+    private function normalizeFamilyCategory(string $category): string
+    {
+        $normalized = strtolower(trim($category));
+
+        if ($normalized === '') {
+            return '';
+        }
+
+        if (str_contains($normalized, 'slab') && str_contains($normalized, 'serif')) {
+            return 'slab-serif';
+        }
+
+        if (str_contains($normalized, 'mono')) {
+            return 'monospace';
+        }
+
+        if (str_contains($normalized, 'sans')) {
+            return 'sans-serif';
+        }
+
+        if (str_contains($normalized, 'serif')) {
+            return 'serif';
+        }
+
+        if (str_contains($normalized, 'display') || str_contains($normalized, 'decorative')) {
+            return 'display';
+        }
+
+        if (str_contains($normalized, 'script')) {
+            return 'script';
+        }
+
+        if (str_contains($normalized, 'cursive')) {
+            return 'cursive';
+        }
+
+        if (str_contains($normalized, 'hand')) {
+            return 'handwriting';
+        }
+
+        return $normalized;
+    }
+
+    private function buildFamilyCategoryTokens(string $category): array
+    {
+        $normalized = $this->normalizeFamilyCategory($category);
+
+        if ($normalized === '') {
+            return ['uncategorized'];
+        }
+
+        $tokens = [$normalized];
+
+        if ($normalized === 'slab-serif') {
+            $tokens[] = 'serif';
+        }
+
+        if (in_array($normalized, ['handwriting', 'script', 'cursive'], true)) {
+            $tokens[] = 'handwriting';
+            $tokens[] = 'script';
+            $tokens[] = 'cursive';
+        }
+
+        if ($normalized === 'display') {
+            $tokens[] = 'decorative';
         }
 
         return array_values(array_unique(array_filter($tokens, 'strlen')));
@@ -739,6 +844,17 @@ final class CatalogService
             || !is_array($cached['counts'])
         ) {
             return false;
+        }
+
+        foreach ($cached['families'] as $family) {
+            if (
+                !is_array($family)
+                || !array_key_exists('delivery_filter_tokens', $family)
+                || !array_key_exists('font_category', $family)
+                || !array_key_exists('font_category_tokens', $family)
+            ) {
+                return false;
+            }
         }
 
         $this->catalog = $cached['families'];

@@ -7,6 +7,7 @@ namespace TastyFonts\Repository;
 defined('ABSPATH') || exit;
 
 use TastyFonts\Support\FontUtils;
+use TastyFonts\Support\SiteEnvironment;
 
 final class SettingsRepository
 {
@@ -14,7 +15,6 @@ final class SettingsRepository
     public const OPTION_ROLES = 'tasty_fonts_roles';
     public const OPTION_GOOGLE_API_KEY_DATA = 'tasty_fonts_google_api_key_data';
     private const ROLE_FAMILY_KEYS = ['heading', 'body', 'monospace'];
-    private const REQUIRED_ROLE_FAMILY_KEYS = ['heading', 'body'];
     private const LEGACY_OPTION_SETTINGS = 'etch_fonts_settings';
     private const LEGACY_OPTION_ROLES = 'etch_fonts_roles';
     private const DEFAULT_SETTINGS = [
@@ -26,6 +26,7 @@ final class SettingsRepository
         'minify_css_output' => true,
         'preload_primary_fonts' => true,
         'remote_connection_hints' => true,
+        'block_editor_font_library_sync_enabled' => null,
         'training_wheels_off' => false,
         'monospace_role_enabled' => false,
         'preview_sentence' => 'The quick brown fox jumps over the lazy dog. 1234567890',
@@ -67,6 +68,9 @@ final class SettingsRepository
         $settings['minify_css_output'] = !empty($settings['minify_css_output']);
         $settings['preload_primary_fonts'] = !empty($settings['preload_primary_fonts']);
         $settings['remote_connection_hints'] = !empty($settings['remote_connection_hints']);
+        $settings['block_editor_font_library_sync_enabled'] = $this->normalizeBlockEditorFontLibrarySyncSetting(
+            $settings['block_editor_font_library_sync_enabled'] ?? null
+        );
         $settings['training_wheels_off'] = !empty($settings['training_wheels_off']);
         $settings['monospace_role_enabled'] = !empty($settings['monospace_role_enabled']);
         $settings['adobe_enabled'] = !empty($settings['adobe_enabled']);
@@ -138,6 +142,11 @@ final class SettingsRepository
 
         if (array_key_exists('remote_connection_hints', $input)) {
             $settings['remote_connection_hints'] = !empty($input['remote_connection_hints']);
+            $settingsChanged = true;
+        }
+
+        if (array_key_exists('block_editor_font_library_sync_enabled', $input)) {
+            $settings['block_editor_font_library_sync_enabled'] = !empty($input['block_editor_font_library_sync_enabled']);
             $settingsChanged = true;
         }
 
@@ -277,6 +286,11 @@ final class SettingsRepository
     public function isAdobeEnabled(): bool
     {
         return !empty($this->getSettings()['adobe_enabled']);
+    }
+
+    public function isBlockEditorFontLibrarySyncEnabled(): bool
+    {
+        return !empty($this->getSettings()['block_editor_font_library_sync_enabled']);
     }
 
     public function getAdobeProjectId(): string
@@ -440,13 +454,9 @@ final class SettingsRepository
 
     private function getDefaultRoles(array $catalog): array
     {
-        $families = $this->extractFamilyNames($catalog);
-        $heading = $families[0] ?? '';
-        $body = $families[1] ?? ($families[0] ?? '');
-
         return self::DEFAULT_ROLE_FALLBACKS + [
-            'heading' => $heading,
-            'body' => $body,
+            'heading' => '',
+            'body' => '',
             'monospace' => '',
         ];
     }
@@ -470,27 +480,10 @@ final class SettingsRepository
         return $legacyValue;
     }
 
-    private function normalizeRoleFamilies(array $roles, array $families, array $defaults): array
-    {
-        if ($families === []) {
-            return $roles;
-        }
-
-        foreach (self::REQUIRED_ROLE_FAMILY_KEYS as $roleKey) {
-            if (trim((string) ($roles[$roleKey] ?? '')) === '') {
-                $roles[$roleKey] = $defaults[$roleKey];
-            }
-        }
-
-        return $roles;
-    }
-
     private function normalizeRoleSet(array $roles, array $catalog): array
     {
         $defaults = $this->getDefaultRoles($catalog);
-        $families = $this->extractFamilyNames($catalog);
         $normalizedRoles = wp_parse_args($roles, $defaults);
-        $normalizedRoles = $this->normalizeRoleFamilies($normalizedRoles, $families, $defaults);
         $normalizedRoles['heading'] = $this->sanitizeTextValue($normalizedRoles['heading'] ?? '');
         $normalizedRoles['body'] = $this->sanitizeTextValue($normalizedRoles['body'] ?? '');
         $normalizedRoles['monospace'] = $this->sanitizeTextValue($normalizedRoles['monospace'] ?? '');
@@ -499,6 +492,27 @@ final class SettingsRepository
         $normalizedRoles['monospace_fallback'] = $this->normalizeRoleFallback($normalizedRoles['monospace_fallback'] ?? '', 'monospace');
 
         return $normalizedRoles;
+    }
+
+    private function normalizeBlockEditorFontLibrarySyncSetting(mixed $value): bool
+    {
+        if ($value === null || $value === '') {
+            return $this->defaultBlockEditorFontLibrarySyncEnabled();
+        }
+
+        return !empty($value);
+    }
+
+    private function defaultBlockEditorFontLibrarySyncEnabled(): bool
+    {
+        if (!function_exists('rest_url')) {
+            return true;
+        }
+
+        return !SiteEnvironment::isLikelyLocalEnvironment(
+            rest_url(''),
+            SiteEnvironment::currentEnvironmentType()
+        );
     }
 
     private function normalizeRoleFallback(mixed $value, string $default): string

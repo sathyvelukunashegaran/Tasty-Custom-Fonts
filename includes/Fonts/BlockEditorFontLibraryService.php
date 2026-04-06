@@ -6,10 +6,12 @@ namespace TastyFonts\Fonts;
 
 defined('ABSPATH') || exit;
 
+use TastyFonts\Admin\AdminController;
 use TastyFonts\Repository\ImportRepository;
 use TastyFonts\Repository\LogRepository;
 use TastyFonts\Repository\SettingsRepository;
 use TastyFonts\Support\FontUtils;
+use TastyFonts\Support\SiteEnvironment;
 use TastyFonts\Support\Storage;
 use WP_Error;
 
@@ -165,6 +167,10 @@ final class BlockEditorFontLibraryService
 
     private function shouldSync(array $result, string $provider): bool
     {
+        if (!$this->settings->isBlockEditorFontLibrarySyncEnabled()) {
+            return false;
+        }
+
         if (!apply_filters('tasty_fonts_sync_block_editor_font_library', true, $result, $provider)) {
             return false;
         }
@@ -515,12 +521,48 @@ final class BlockEditorFontLibraryService
             return;
         }
 
+        if (SiteEnvironment::isLoopbackTlsTrustError($message)) {
+            $this->log->add(
+                sprintf(
+                    __('Block Editor Font Library sync failed for %1$s because PHP could not verify this site\'s HTTPS certificate during the editor sync request. Open Plugin Behavior to turn this feature off for local development, or turn it back on after PHP/cURL trusts the site certificate.', 'tasty-fonts'),
+                    $familyName
+                ),
+                $this->buildPluginBehaviorLogAction()
+            );
+
+            return;
+        }
+
+        $context = SiteEnvironment::isLikelyLocalEnvironment($this->restBaseUrl(), SiteEnvironment::currentEnvironmentType())
+            ? $this->buildPluginBehaviorLogAction()
+            : [];
+
         $this->log->add(
             sprintf(
                 __('Block Editor Font Library sync failed for %1$s: %2$s', 'tasty-fonts'),
                 $familyName,
                 $message
-            )
+            ),
+            $context
         );
+    }
+
+    private function buildPluginBehaviorLogAction(): array
+    {
+        if (!function_exists('admin_url')) {
+            return [];
+        }
+
+        return [
+            'action_label' => __('Open Plugin Behavior', 'tasty-fonts'),
+            'action_url' => add_query_arg(
+                [
+                    'page' => AdminController::MENU_SLUG,
+                    'tf_advanced' => '1',
+                    'tf_studio' => 'plugin-behavior',
+                ],
+                admin_url('admin.php')
+            ),
+        ];
     }
 }

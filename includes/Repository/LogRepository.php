@@ -12,17 +12,25 @@ final class LogRepository
     private const LEGACY_OPTION_LOG = 'etch_fonts_log';
     private const MAX_ENTRIES = 100;
 
-    public function add(string $message): void
+    public function add(string $message, array $context = []): void
     {
         $log = $this->all();
+        $actionLabel = sanitize_text_field((string) ($context['action_label'] ?? ''));
+        $actionUrl = esc_url_raw((string) ($context['action_url'] ?? ''));
+        $entry = [
+            'time' => current_time('mysql', true),
+            'message' => $message,
+            'actor' => $this->getActorLabel(),
+        ];
+
+        if ($actionLabel !== '' && $actionUrl !== '') {
+            $entry['action_label'] = $actionLabel;
+            $entry['action_url'] = $actionUrl;
+        }
 
         array_unshift(
             $log,
-            [
-                'time' => current_time('mysql', true),
-                'message' => $message,
-                'actor' => $this->getActorLabel(),
-            ]
+            $entry
         );
 
         update_option(self::OPTION_LOG, array_slice($log, 0, self::MAX_ENTRIES), false);

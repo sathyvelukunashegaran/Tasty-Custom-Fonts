@@ -50,7 +50,7 @@ final class RuntimeAssetPlanner
 
     public function getAdminPreviewStylesheets(): array
     {
-        return $this->buildExternalStylesheets($this->getPreviewFamilies());
+        return $this->buildExternalStylesheets($this->getPreviewFamilies(), 'swap');
     }
 
     public function getEditorFontFamilies(): array
@@ -200,7 +200,7 @@ final class RuntimeAssetPlanner
         return $catalog;
     }
 
-    private function buildExternalStylesheets(array $families): array
+    private function buildExternalStylesheets(array $families, string $displayOverride = ''): array
     {
         $stylesheets = [];
 
@@ -213,7 +213,8 @@ final class RuntimeAssetPlanner
             $stylesheet = $this->buildStylesheetDescriptor(
                 (string) ($family['family'] ?? ''),
                 (string) ($family['slug'] ?? ''),
-                $activeDelivery
+                $activeDelivery,
+                $displayOverride
             );
 
             if ($stylesheet === null) {
@@ -226,7 +227,7 @@ final class RuntimeAssetPlanner
         return array_values($stylesheets);
     }
 
-    private function buildStylesheetDescriptor(string $familyName, string $familySlug, array $delivery): ?array
+    private function buildStylesheetDescriptor(string $familyName, string $familySlug, array $delivery, string $displayOverride = ''): ?array
     {
         $provider = strtolower(trim((string) ($delivery['provider'] ?? '')));
         $type = strtolower(trim((string) ($delivery['type'] ?? '')));
@@ -236,8 +237,8 @@ final class RuntimeAssetPlanner
         }
 
         $url = match ($provider . ':' . $type) {
-            'google:cdn' => $this->google->buildCssUrl($familyName, (array) ($delivery['variants'] ?? []), $this->effectiveFontDisplay($familyName)),
-            'bunny:cdn' => $this->bunny->buildCssUrl($familyName, (array) ($delivery['variants'] ?? []), $this->effectiveFontDisplay($familyName)),
+            'google:cdn' => $this->google->buildCssUrl($familyName, (array) ($delivery['variants'] ?? []), $this->effectiveFontDisplay($familyName, $displayOverride)),
+            'bunny:cdn' => $this->bunny->buildCssUrl($familyName, (array) ($delivery['variants'] ?? []), $this->effectiveFontDisplay($familyName, $displayOverride)),
             'adobe:adobe_hosted' => $this->adobeStylesheetUrl($delivery),
             default => '',
         };
@@ -261,8 +262,12 @@ final class RuntimeAssetPlanner
         return $projectId === '' ? '' : $this->adobe->getStylesheetUrl($projectId);
     }
 
-    private function effectiveFontDisplay(string $familyName): string
+    private function effectiveFontDisplay(string $familyName, string $displayOverride = ''): string
     {
+        if ($displayOverride !== '') {
+            return $displayOverride;
+        }
+
         $settings = $this->settings->getSettings();
         $saved = $this->settings->getFamilyFontDisplay($familyName);
 

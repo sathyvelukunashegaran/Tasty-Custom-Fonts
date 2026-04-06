@@ -236,7 +236,7 @@ final class AssetService
     {
         $catalog = $this->planner->getLocalPreviewCatalog();
         $settings = $this->settings->getSettings();
-        $css = $this->cssBuilder->buildFontFaceOnly($catalog, $settings);
+        $css = $this->cssBuilder->buildFontFaceOnly($catalog, $settings, 'swap');
 
         wp_register_style($handle, false);
         wp_enqueue_style($handle);

@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Added a full role preview workspace with editorial, card, reading, interface, and code scenarios, plus draft/live baseline seeding, inline role pickers, preview CSS copy, and quick draft/save actions.
+- Added a dedicated Plugin Behavior panel with controls for Block Editor Font Library sync, the optional monospace role, training wheels, and uninstall cleanup settings.
+- Added normalized font category metadata and library type filters so families can be browsed by categories such as serif, sans-serif, script, display, and monospace.
+- Added local-environment guidance for Block Editor Font Library sync, including dismissible notices and activity log actions that deep-link back to Plugin Behavior when loopback TLS trust fails.
+
+### Changed
+
+- Reworked the Font Roles dashboard into explicit deployment controls for draft-only versus sitewide delivery, with clearer status pills, utility actions, and preview-oriented workflows.
+- Defaulted heading, body, and monospace role selectors to fallback-only mode until a saved family is chosen, instead of auto-selecting library entries.
+- Forced admin preview font loading to use `font-display: swap` for both self-hosted previews and remote preview stylesheets so specimen text stays visible during preview refreshes.
+- Updated library filtering so live role families still match Published views, and surfaced delivery/category badges more consistently across library cards and details.
+
+### Fixed
+
+- Improved local development behavior by defaulting Block Editor Font Library sync off on likely local hosts, while preserving the saved preference once a user explicitly changes it.
+- Added more actionable sync failure logging for certificate-verification problems during authenticated loopback editor requests.
+- Expanded the local PHP test harness to cover preview workspace behavior, category filtering, fallback-only roles, admin preview font-display overrides, and local-environment sync safeguards.
+
 ## [1.4.0] - 2026-04-06
 
 ### Added

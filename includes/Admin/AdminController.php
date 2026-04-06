@@ -20,6 +20,7 @@ use TastyFonts\Google\GoogleImportService;
 use TastyFonts\Repository\LogRepository;
 use TastyFonts\Repository\SettingsRepository;
 use TastyFonts\Support\FontUtils;
+use TastyFonts\Support\SiteEnvironment;
 use TastyFonts\Support\Storage;
 use WP_Error;
 
@@ -27,6 +28,9 @@ final class AdminController
 {
     public const MENU_SLUG = 'tasty-custom-fonts';
     private const ACTION_DOWNLOAD_GENERATED_CSS = 'tasty_fonts_download_generated_css';
+    private const LOCAL_ENV_NOTICE_OPTION = 'tasty_fonts_local_environment_notice_preferences';
+    private const LOCAL_ENV_NOTICE_FORM_FIELD = 'tasty_fonts_local_environment_notice';
+    private const LOCAL_ENV_NOTICE_ACTION_FIELD = 'tasty_fonts_local_environment_notice_action';
     private const NOTICE_TTL = 300;
     private const NOTICE_TRANSIENT_PREFIX = 'tasty_fonts_admin_notices_';
     private const BASE_ROLE_KEYS = ['heading', 'body'];
@@ -75,6 +79,11 @@ final class AdminController
         }
 
         $settings = $this->settings->getSettings();
+        $catalog = $this->catalog->getCatalog();
+        $availableFamilies = $this->buildSelectableFamilyNames($catalog);
+        $roles = $this->settings->getRoles($availableFamilies);
+        $appliedRoles = $this->settings->getAppliedRoles($availableFamilies);
+        $applyEverywhere = !empty($settings['auto_apply_roles']);
         $googleApiStatus = $this->googleClient->getApiKeyStatus();
         $googleSearchEnabled = $this->googleClient->canSearch();
 
@@ -116,8 +125,17 @@ final class AdminController
                 'restNonce' => wp_create_nonce('wp_rest'),
                 'routes' => RestController::routeMap(),
                 'googleApiEnabled' => $googleSearchEnabled,
+                'applyEverywhere' => $applyEverywhere,
                 'trainingWheelsOff' => !empty($settings['training_wheels_off']),
                 'monospaceRoleEnabled' => !empty($settings['monospace_role_enabled']),
+                'previewBootstrap' => [
+                    'roles' => $roles,
+                    'appliedRoles' => $appliedRoles,
+                    'baselineSource' => $applyEverywhere ? 'live_sitewide' : 'draft',
+                    'baselineLabel' => $applyEverywhere
+                        ? __('Live sitewide', 'tasty-fonts')
+                        : __('Current draft', 'tasty-fonts'),
+                ],
                 'runtimeStrings' => [
                     'searchDisabled' => $this->buildSearchDisabledMessage($googleApiStatus),
                 ],
@@ -140,6 +158,10 @@ final class AdminController
         }
 
         if ($this->handleRescanFontsAction()) {
+            return;
+        }
+
+        if ($this->handleLocalEnvironmentNoticeAction()) {
             return;
         }
 
@@ -442,6 +464,24 @@ final class AdminController
         $this->redirectWithNoticeKey('rescan');
     }
 
+    private function handleLocalEnvironmentNoticeAction(): bool
+    {
+        if (!isset($_POST[self::LOCAL_ENV_NOTICE_FORM_FIELD], $_POST[self::LOCAL_ENV_NOTICE_ACTION_FIELD])) {
+            return false;
+        }
+
+        check_admin_referer('tasty_fonts_local_environment_notice');
+
+        $action = $this->getPostedText(self::LOCAL_ENV_NOTICE_ACTION_FIELD);
+        $message = $this->applyLocalEnvironmentNoticeAction($action);
+
+        if ($message === '') {
+            $this->redirect();
+        }
+
+        $this->redirectWithSuccess($message);
+    }
+
     private function handleSaveSettingsAction(): bool
     {
         if (!isset($_POST['tasty_fonts_save_settings'])) {
@@ -470,7 +510,7 @@ final class AdminController
             }
         }
 
-        foreach (['minify_css_output', 'preload_primary_fonts', 'remote_connection_hints', 'delete_uploaded_files_on_uninstall', 'training_wheels_off'] as $field) {
+        foreach (['minify_css_output', 'preload_primary_fonts', 'remote_connection_hints', 'block_editor_font_library_sync_enabled', 'delete_uploaded_files_on_uninstall', 'training_wheels_off'] as $field) {
             if (array_key_exists($field, $_POST)) {
                 $settingsInput[$field] = $_POST[$field];
             }
@@ -630,9 +670,12 @@ final class AdminController
 
         $catalog = $this->catalog->getCatalog();
         $availableFamilies = $this->buildSelectableFamilyNames($catalog);
-        $actionType = $this->getPostedText('tasty_fonts_action_type', 'save');
         $settings = $this->settings->getSettings();
         $wasAppliedSitewide = !empty($settings['auto_apply_roles']);
+        $actionType = $this->resolveRoleFormActionType(
+            $this->getPostedText('tasty_fonts_action_type', 'save'),
+            $wasAppliedSitewide
+        );
 
         if ($actionType !== 'apply' && $wasAppliedSitewide) {
             $this->settings->ensureAppliedRolesInitialized($availableFamilies);
@@ -689,6 +732,25 @@ final class AdminController
         $this->redirectWithSuccess($message);
     }
 
+    private function resolveRoleFormActionType(string $requestedActionType, bool $wasAppliedSitewide): string
+    {
+        if ($requestedActionType === 'apply' || $requestedActionType === 'disable') {
+            return $requestedActionType;
+        }
+
+        $sitewideEnabled = $this->getPostedText('tasty_fonts_sitewide_enabled', $wasAppliedSitewide ? '1' : '0') === '1';
+
+        if ($sitewideEnabled && !$wasAppliedSitewide) {
+            return 'apply';
+        }
+
+        if (!$sitewideEnabled && $wasAppliedSitewide) {
+            return 'disable';
+        }
+
+        return 'save';
+    }
+
     private function handleDownloadGeneratedCssAction(): bool
     {
         if (($this->getQueryText('page') !== self::MENU_SLUG) || !isset($_GET[self::ACTION_DOWNLOAD_GENERATED_CSS])) {
@@ -732,6 +794,11 @@ final class AdminController
         $appliedRoles = $this->settings->getAppliedRoles($availableFamilies);
         $googleAccessContext = $this->buildGoogleAccessContext();
         $roleDeploymentContext = $this->buildRoleDeploymentContext($roles, $appliedRoles, $applyEverywhere, $settings);
+        $localEnvironmentNotice = $this->buildLocalEnvironmentNotice($settings);
+        $previewBaselineSource = $applyEverywhere ? 'live_sitewide' : 'draft';
+        $previewBaselineLabel = $applyEverywhere
+            ? __('Live sitewide', 'tasty-fonts')
+            : __('Current draft', 'tasty-fonts');
 
         return [
             'storage' => $storage,
@@ -739,6 +806,8 @@ final class AdminController
             'available_families' => $availableFamilies,
             'roles' => $roles,
             'applied_roles' => $appliedRoles,
+            'preview_baseline_source' => $previewBaselineSource,
+            'preview_baseline_label' => $previewBaselineLabel,
             'apply_everywhere' => $applyEverywhere,
             'role_deployment' => $roleDeploymentContext,
             'logs' => $logs,
@@ -771,6 +840,7 @@ final class AdminController
             'minify_css_output' => !empty($settings['minify_css_output']),
             'preload_primary_fonts' => !empty($settings['preload_primary_fonts']),
             'remote_connection_hints' => !empty($settings['remote_connection_hints']),
+            'block_editor_font_library_sync_enabled' => !empty($settings['block_editor_font_library_sync_enabled']),
             'training_wheels_off' => !empty($settings['training_wheels_off']),
             'monospace_role_enabled' => !empty($settings['monospace_role_enabled']),
             'delete_uploaded_files_on_uninstall' => !empty($settings['delete_uploaded_files_on_uninstall']),
@@ -779,6 +849,7 @@ final class AdminController
             'output_panels' => $this->buildOutputPanels($roles, $settings),
             'generated_css_panel' => $this->buildGeneratedCssPanel($settings),
             'preview_panels' => $this->buildPreviewPanels(),
+            'local_environment_notice' => $localEnvironmentNotice,
             'toasts' => $this->buildNoticeToasts(),
         ];
     }
@@ -987,6 +1058,11 @@ final class AdminController
                 'label' => __('Interface', 'tasty-fonts'),
                 'active' => false,
             ],
+            [
+                'key' => 'code',
+                'label' => __('Code', 'tasty-fonts'),
+                'active' => false,
+            ],
         ];
     }
 
@@ -1065,6 +1141,12 @@ final class AdminController
             $changes[] = !empty($after['remote_connection_hints'])
                 ? __('remote connection hints enabled', 'tasty-fonts')
                 : __('remote connection hints disabled', 'tasty-fonts');
+        }
+
+        if (!empty($before['block_editor_font_library_sync_enabled']) !== !empty($after['block_editor_font_library_sync_enabled'])) {
+            $changes[] = !empty($after['block_editor_font_library_sync_enabled'])
+                ? __('Block Editor Font Library sync enabled', 'tasty-fonts')
+                : __('Block Editor Font Library sync disabled', 'tasty-fonts');
         }
 
         if (!empty($before['training_wheels_off']) !== !empty($after['training_wheels_off'])) {
@@ -1263,6 +1345,114 @@ final class AdminController
             'unknown' => __('Search is unavailable until the saved Google Fonts API key is validated. Re-save or replace the key above to continue.', 'tasty-fonts'),
             default => __('Add a Google Fonts API key above to enable search, or use manual import below.', 'tasty-fonts'),
         };
+    }
+
+    private function buildLocalEnvironmentNotice(array $settings): array
+    {
+        if (!$this->shouldShowLocalEnvironmentNotice()) {
+            return [];
+        }
+
+        $syncEnabled = !empty($settings['block_editor_font_library_sync_enabled']);
+
+        return [
+            'tone' => 'warning',
+            'title' => __('Local environment detected', 'tasty-fonts'),
+            'message' => $syncEnabled
+                ? __('Block Editor Font Library sync is enabled on this local site. Keep it on only when this site can complete authenticated loopback REST requests without SSL or certificate errors. If Activity shows cURL 60 or certificate verification failures, open Plugin Behavior and turn the sync back off for local development.', 'tasty-fonts')
+                : __('Block Editor Font Library sync is off by default on local environments because editor sync uses authenticated loopback REST requests, and local HTTPS certificates often fail PHP/cURL verification. Turn it on when you want imported fonts mirrored into the core WordPress Font Library and your local PHP/cURL setup trusts this site certificate.', 'tasty-fonts'),
+            'settings_label' => __('Open Plugin Behavior', 'tasty-fonts'),
+            'settings_url' => $this->buildPluginBehaviorUrl(),
+        ];
+    }
+
+    private function shouldShowLocalEnvironmentNotice(): bool
+    {
+        if (!SiteEnvironment::isLikelyLocalEnvironment(rest_url(''), SiteEnvironment::currentEnvironmentType())) {
+            return false;
+        }
+
+        $preference = $this->getLocalEnvironmentNoticePreference();
+
+        if (!empty($preference['dismissed_forever'])) {
+            return false;
+        }
+
+        return (int) ($preference['hidden_until'] ?? 0) <= time();
+    }
+
+    private function applyLocalEnvironmentNoticeAction(string $action): string
+    {
+        return match ($action) {
+            'remind_tomorrow' => $this->snoozeLocalEnvironmentNotice(DAY_IN_SECONDS, __('Local environment reminder hidden until tomorrow.', 'tasty-fonts')),
+            'remind_week' => $this->snoozeLocalEnvironmentNotice(7 * DAY_IN_SECONDS, __('Local environment reminder hidden for 1 week.', 'tasty-fonts')),
+            'dismiss_forever' => $this->dismissLocalEnvironmentNoticeForever(),
+            default => '',
+        };
+    }
+
+    private function snoozeLocalEnvironmentNotice(int $duration, string $message): string
+    {
+        $this->saveLocalEnvironmentNoticePreference([
+            'hidden_until' => time() + max(0, $duration),
+            'dismissed_forever' => false,
+        ]);
+
+        return $message;
+    }
+
+    private function dismissLocalEnvironmentNoticeForever(): string
+    {
+        $this->saveLocalEnvironmentNoticePreference([
+            'hidden_until' => 0,
+            'dismissed_forever' => true,
+        ]);
+
+        return __('Local environment reminder hidden permanently for this account.', 'tasty-fonts');
+    }
+
+    private function getLocalEnvironmentNoticePreference(): array
+    {
+        $preferences = get_option(self::LOCAL_ENV_NOTICE_OPTION, []);
+        $userId = max(0, (int) get_current_user_id());
+
+        if ($userId <= 0 || !is_array($preferences)) {
+            return [
+                'hidden_until' => 0,
+                'dismissed_forever' => false,
+            ];
+        }
+
+        $preference = is_array($preferences[$userId] ?? null) ? $preferences[$userId] : [];
+
+        return [
+            'hidden_until' => max(0, (int) ($preference['hidden_until'] ?? 0)),
+            'dismissed_forever' => !empty($preference['dismissed_forever']),
+        ];
+    }
+
+    private function saveLocalEnvironmentNoticePreference(array $preference): void
+    {
+        $userId = max(0, (int) get_current_user_id());
+
+        if ($userId <= 0) {
+            return;
+        }
+
+        $preferences = get_option(self::LOCAL_ENV_NOTICE_OPTION, []);
+        $preferences = is_array($preferences) ? $preferences : [];
+        $normalized = [
+            'hidden_until' => max(0, (int) ($preference['hidden_until'] ?? 0)),
+            'dismissed_forever' => !empty($preference['dismissed_forever']),
+        ];
+
+        if (empty($normalized['dismissed_forever']) && (int) $normalized['hidden_until'] === 0) {
+            unset($preferences[$userId]);
+        } else {
+            $preferences[$userId] = $normalized;
+        }
+
+        update_option(self::LOCAL_ENV_NOTICE_OPTION, $preferences, false);
     }
 
     private function buildPreviewContext(array $settings): array
@@ -1916,6 +2106,18 @@ final class AdminController
         );
     }
 
+    private function buildPluginBehaviorUrl(): string
+    {
+        return add_query_arg(
+            [
+                'page' => self::MENU_SLUG,
+                'tf_advanced' => '1',
+                'tf_studio' => 'plugin-behavior',
+            ],
+            admin_url('admin.php')
+        );
+    }
+
     private function getQueryText(string $key, string $default = ''): string
     {
         if (!array_key_exists($key, $_GET)) {
@@ -1984,7 +2186,7 @@ final class AdminController
 
         return match ($key) {
             'tf_studio' => in_array($value, ['preview', 'snippets', 'generated', 'system', 'output-settings', 'plugin-behavior'], true) ? $value : '',
-            'tf_preview' => in_array($value, ['editorial', 'card', 'reading', 'interface'], true) ? $value : '',
+            'tf_preview' => in_array($value, ['editorial', 'card', 'reading', 'interface', 'code'], true) ? $value : '',
             'tf_output' => in_array($value, ['usage', 'variables', 'stacks', 'names'], true) ? $value : '',
             'tf_source' => in_array($value, ['google', 'bunny', 'adobe', 'upload'], true) ? $value : '',
             default => '',

@@ -16,6 +16,12 @@
     const roleBodyFallback = document.getElementById('tasty_fonts_body_fallback');
     const roleMonospaceFallback = document.getElementById('tasty_fonts_monospace_fallback');
     const roleForm = document.querySelector('[data-role-form]');
+    const roleActionTypeInput = document.querySelector('[data-role-action-type]');
+    const roleFormSubmitButtons = roleForm ? Array.from(roleForm.querySelectorAll('button[name="tasty_fonts_action_type"]')) : [];
+    const roleApplyLiveButton = document.querySelector('[data-role-apply-live]');
+    const roleApplyLiveWrap = document.querySelector('[data-role-apply-live-wrap]');
+    const roleSaveDraftButton = document.querySelector('[data-role-save-draft]');
+    const roleSaveDraftWrap = document.querySelector('[data-role-save-draft-wrap]');
     const roleStudio = document.getElementById('tasty-fonts-roles-studio');
     const roleDeployment = document.querySelector('[data-role-deployment]');
     const roleDeploymentBadge = document.querySelector('[data-role-deployment-badge]');
@@ -29,6 +35,19 @@
     const bodyFamilyVariableCopies = Array.from(document.querySelectorAll('[data-role-family-variable-copy="body"]'));
     const monospaceFamilyVariableCopies = Array.from(document.querySelectorAll('[data-role-family-variable-copy="monospace"]'));
     const previewCanvas = document.getElementById('tasty-fonts-preview-canvas');
+    const previewTray = document.querySelector('[data-preview-tray]');
+    const previewSourceLabel = document.querySelector('[data-preview-source-label]');
+    const previewDirtyIndicator = document.querySelector('[data-preview-dirty-indicator]');
+    const previewCopyCssButton = document.querySelector('[data-preview-copy-css]');
+    const previewResetButton = document.querySelector('[data-preview-reset]');
+    const previewSyncDraftButton = document.querySelector('[data-preview-sync-draft]');
+    const previewSaveDraftButton = document.querySelector('[data-preview-save-draft]');
+    const previewApplyLiveButton = document.querySelector('[data-preview-apply-live]');
+    const previewRoleSelects = {
+        heading: document.querySelector('[data-preview-role-select="heading"]'),
+        body: document.querySelector('[data-preview-role-select="body"]'),
+        monospace: document.querySelector('[data-preview-role-select="monospace"]'),
+    };
     const previewTextInput = document.getElementById('tasty-fonts-preview-text');
     const previewSizeInput = document.getElementById('tasty-fonts-preview-size');
     const roleAssignButtons = Array.from(document.querySelectorAll('[data-role-assign]'));
@@ -49,6 +68,7 @@
     const disclosureToggles = Array.from(document.querySelectorAll('[data-disclosure-toggle]'));
     const librarySearch = document.getElementById('tasty-fonts-library-search');
     const librarySourceFilter = document.querySelector('[data-library-source-filter]');
+    const libraryCategoryFilter = document.querySelector('[data-library-category-filter]');
     const libraryFilteredEmpty = document.getElementById('tasty-fonts-library-empty-filtered');
     const googleSearch = document.getElementById('tasty-fonts-google-search');
     const bunnySearch = document.getElementById('tasty-fonts-bunny-search');
@@ -87,7 +107,7 @@
     const uploadStatus = document.getElementById('tasty-fonts-upload-status');
     const addFontsPanelToggle = document.getElementById('tasty-fonts-add-font-panel-toggle');
     const toastItems = Array.from(document.querySelectorAll('[data-toast]'));
-    const helpButtons = Array.from(document.querySelectorAll('[data-help-tooltip]'));
+    let helpButtons = [];
     const helpTooltipLayer = document.getElementById('tasty-fonts-help-tooltip-layer');
     const activityActorFilter = document.querySelector('[data-activity-actor-filter]');
     const activitySearch = document.querySelector('[data-activity-search]');
@@ -111,11 +131,16 @@
     let nextUploadGroupIndex = uploadGroupsWrap ? uploadGroupsWrap.querySelectorAll('[data-upload-group]').length : 0;
     let nextUploadRowIndex = uploadGroupsWrap ? uploadGroupsWrap.querySelectorAll('[data-upload-row]').length : 0;
     let activeLibrarySourceFilter = 'all';
+    let activeLibraryCategoryFilter = 'all';
     let syncingGoogleVariants = false;
     let renderedGoogleVariantFamily = '';
     let syncingBunnyVariants = false;
     let renderedBunnyVariantFamily = '';
     let roleDraftSaveInFlight = false;
+    let previewRoleState = null;
+    let previewWorkspaceInitialized = false;
+    let previewDirty = false;
+    let previewFollowsDraft = false;
     let defaultTrackedUiState = null;
     const pendingUiStateKey = 'tastyFontsPendingUiState';
     const trackedUiQueryKeys = [
@@ -130,6 +155,7 @@
     ];
     const trackedUiTabGroups = new Set(['studio', 'preview', 'output', 'add-font']);
     const trackedUiDisclosureTargets = new Set([
+        'tasty-fonts-role-preview-panel',
         'tasty-fonts-role-advanced-panel',
         'tasty-fonts-add-font-panel',
         'tasty-fonts-google-access-panel',
@@ -185,6 +211,9 @@
         uploadRequiresRows: __('Add at least one upload row before submitting.', 'tasty-fonts'),
         rolesDraftSaved: __('Roles saved.', 'tasty-fonts'),
         rolesDraftSaveError: __('The roles could not be saved.', 'tasty-fonts'),
+        roleSaveDisabledNoChanges: __('No draft changes to save.', 'tasty-fonts'),
+        roleApplyLiveDisabledNoChanges: __('No live role changes to publish.', 'tasty-fonts'),
+        roleApplyLiveDisabledSitewideOff: __('Apply Sitewide is off. Turn it on before publishing role changes.', 'tasty-fonts'),
         roleFallbackOnly: __('Fallback only (%1$s)', 'tasty-fonts'),
         fallbackSaving: __('Saving fallback…', 'tasty-fonts'),
         fallbackSaved: __('Saved fallback for %1$s.', 'tasty-fonts'),
@@ -198,6 +227,8 @@
         familyPublishStateSaving: __('Updating publish state…', 'tasty-fonts'),
         familyPublishStateSaved: __('Publish state updated.', 'tasty-fonts'),
         familyPublishStateSaveError: __('The publish state could not be updated.', 'tasty-fonts'),
+        previewCurrentDraft: __('Current draft', 'tasty-fonts'),
+        previewLiveSitewide: __('Live sitewide', 'tasty-fonts'),
         deliveryDeleteConfirm: __('Delete the "%1$s" delivery from %2$s?', 'tasty-fonts'),
         deliveryDeleteError: __('The delivery profile could not be deleted.', 'tasty-fonts'),
         deleteConfirm: __('Delete "%s" and remove its files from uploads/fonts?', 'tasty-fonts'),
@@ -260,6 +291,66 @@
 
     function buildRoleSelectionKey(roleKeys) {
         return ['heading', 'body', 'monospace'].filter((roleKey) => roleKeys.includes(roleKey)).join('-');
+    }
+
+    function normalizeRoleState(input = {}) {
+        return {
+            heading: String(input.heading || '').trim(),
+            body: String(input.body || '').trim(),
+            monospace: monospaceRoleEnabled ? String(input.monospace || '').trim() : '',
+            headingFallback: sanitizeFallback(input.headingFallback || input.heading_fallback, 'sans-serif'),
+            bodyFallback: sanitizeFallback(input.bodyFallback || input.body_fallback, 'sans-serif'),
+            monospaceFallback: sanitizeFallback(input.monospaceFallback || input.monospace_fallback, 'monospace'),
+        };
+    }
+
+    function buildRoleDataFromValues(values = {}) {
+        const normalized = normalizeRoleState(values);
+        const heading = normalized.heading;
+        const body = normalized.body;
+        const monospace = monospaceRoleEnabled ? normalized.monospace : '';
+
+        return {
+            includeMonospace: monospaceRoleEnabled,
+            heading,
+            body,
+            monospace,
+            headingFallback: normalized.headingFallback,
+            bodyFallback: normalized.bodyFallback,
+            monospaceFallback: normalized.monospaceFallback,
+            headingSlug: heading ? slugify(heading) : '',
+            bodySlug: body ? slugify(body) : '',
+            monospaceSlug: monospace ? slugify(monospace) : '',
+            headingVariable: 'var(--font-heading)',
+            bodyVariable: 'var(--font-body)',
+            monospaceVariable: 'var(--font-monospace)',
+            headingFamilyVariable: heading ? buildFontVariable(heading) : buildStack('', normalized.headingFallback),
+            bodyFamilyVariable: body ? buildFontVariable(body) : buildStack('', normalized.bodyFallback),
+            monospaceFamilyVariable: monospace
+                ? buildFontVariable(monospace)
+                : buildStack('', normalized.monospaceFallback, 'monospace'),
+            headingStack: buildStack(heading, normalized.headingFallback),
+            bodyStack: buildStack(body, normalized.bodyFallback),
+            monospaceStack: buildStack(monospace, normalized.monospaceFallback, 'monospace')
+        };
+    }
+
+    function previewBootstrap() {
+        const bootstrapConfig = config.previewBootstrap && typeof config.previewBootstrap === 'object'
+            ? config.previewBootstrap
+            : {};
+
+        return {
+            roles: normalizeRoleState(bootstrapConfig.roles || {}),
+            appliedRoles: normalizeRoleState(bootstrapConfig.appliedRoles || {}),
+            baselineSource: bootstrapConfig.baselineSource === 'live_sitewide' ? 'live_sitewide' : 'draft',
+            baselineLabel: String(
+                bootstrapConfig.baselineLabel
+                || (bootstrapConfig.baselineSource === 'live_sitewide'
+                    ? getString('previewLiveSitewide', 'Live sitewide')
+                    : getString('previewCurrentDraft', 'Current draft'))
+            ),
+        };
     }
 
     function selectedRoleKeysForFamily(family, data) {
@@ -525,11 +616,17 @@
         const params = url.searchParams;
         const state = {};
 
-        if (params.get('tf_advanced') === '1' && disclosureToggleByTargetId('tasty-fonts-role-advanced-panel')) {
-            state.advancedOpen = true;
-        }
-
         const studio = String(params.get('tf_studio') || '');
+        const previewToggle = disclosureToggleByTargetId('tasty-fonts-role-preview-panel');
+        const advancedToggle = disclosureToggleByTargetId('tasty-fonts-role-advanced-panel');
+
+        if (params.get('tf_advanced') === '1') {
+            if (studio === 'preview' && previewToggle) {
+                state.previewOpen = true;
+            } else if (advancedToggle) {
+                state.advancedOpen = true;
+            }
+        }
 
         if (state.advancedOpen && isAllowedTabKey('studio', studio)) {
             state.studio = studio;
@@ -537,7 +634,7 @@
 
         const preview = String(params.get('tf_preview') || '');
 
-        if (state.studio === 'preview' && isAllowedTabKey('preview', preview)) {
+        if (state.previewOpen && isAllowedTabKey('preview', preview)) {
             state.preview = preview;
         }
 
@@ -580,13 +677,17 @@
 
     function applyTrackedUiState(state) {
         const nextState = state && typeof state === 'object' ? state : {};
+        const previewToggle = disclosureToggleByTargetId('tasty-fonts-role-preview-panel');
         const advancedToggle = disclosureToggleByTargetId('tasty-fonts-role-advanced-panel');
         const addFontsOpen = trackedUiStateHas(nextState, 'addFontsOpen')
             ? Boolean(nextState.addFontsOpen)
             : defaultTrackedUiFlag('addFontsOpen');
-        const advancedOpen = trackedUiStateHas(nextState, 'advancedOpen')
+        const previewOpen = trackedUiStateHas(nextState, 'previewOpen')
+            ? Boolean(nextState.previewOpen)
+            : defaultTrackedUiFlag('previewOpen');
+        const advancedOpen = !previewOpen && (trackedUiStateHas(nextState, 'advancedOpen')
             ? Boolean(nextState.advancedOpen)
-            : defaultTrackedUiFlag('advancedOpen');
+            : defaultTrackedUiFlag('advancedOpen'));
         const studio = resolveTrackedTabKey(
             'studio',
             trackedUiStateHas(nextState, 'studio') ? String(nextState.studio || '') : defaultTrackedUiTabKey('studio')
@@ -614,15 +715,19 @@
                 : defaultTrackedUiFlag('adobeProjectOpen'))
             : false;
 
+        if (previewToggle) {
+            setDisclosureState(previewToggle, previewOpen);
+        }
+
         if (advancedToggle) {
             setDisclosureState(advancedToggle, advancedOpen);
         }
 
-        if (studio) {
+        if (advancedOpen && studio) {
             activateTabGroup('studio', studio);
         }
 
-        if (preview) {
+        if (previewOpen && preview) {
             activateTabGroup('preview', preview);
         }
 
@@ -653,25 +758,26 @@
 
     function captureTrackedUiState() {
         const state = {};
+        const previewToggle = disclosureToggleByTargetId('tasty-fonts-role-preview-panel');
         const advancedToggle = disclosureToggleByTargetId('tasty-fonts-role-advanced-panel');
         const googleAccessToggle = disclosureToggleByTargetId('tasty-fonts-google-access-panel');
         const adobeProjectToggle = disclosureToggleByTargetId('tasty-fonts-adobe-project-panel');
 
-        if (isDisclosureExpanded(advancedToggle)) {
+        if (isDisclosureExpanded(previewToggle)) {
+            state.previewOpen = true;
+
+            const preview = activeTabKeyForGroup('preview');
+
+            if (isAllowedTabKey('preview', preview)) {
+                state.preview = preview;
+            }
+        } else if (isDisclosureExpanded(advancedToggle)) {
             state.advancedOpen = true;
 
             const studio = activeTabKeyForGroup('studio');
 
             if (isAllowedTabKey('studio', studio)) {
                 state.studio = studio;
-
-                if (studio === 'preview') {
-                    const preview = activeTabKeyForGroup('preview');
-
-                    if (isAllowedTabKey('preview', preview)) {
-                        state.preview = preview;
-                    }
-                }
 
                 if (studio === 'snippets') {
                     const output = activeTabKeyForGroup('output');
@@ -723,15 +829,18 @@
             nextUrl.searchParams.delete(key);
         });
 
-        if (state.advancedOpen) {
+        if (state.previewOpen) {
+            nextUrl.searchParams.set('tf_advanced', '1');
+            nextUrl.searchParams.set('tf_studio', 'preview');
+        } else if (state.advancedOpen) {
             nextUrl.searchParams.set('tf_advanced', '1');
         }
 
-        if (state.studio) {
+        if (state.advancedOpen && state.studio) {
             nextUrl.searchParams.set('tf_studio', state.studio);
         }
 
-        if (state.preview) {
+        if (state.previewOpen && state.preview) {
             nextUrl.searchParams.set('tf_preview', state.preview);
         }
 
@@ -1075,9 +1184,27 @@
             button.setAttribute('aria-busy', isSaving ? 'true' : 'false');
         });
 
+        [previewSaveDraftButton, previewApplyLiveButton].forEach((button) => {
+            if (!button) {
+                return;
+            }
+
+            button.disabled = isSaving;
+            button.setAttribute('aria-busy', isSaving ? 'true' : 'false');
+        });
+
         if (roleForm) {
             roleForm.classList.toggle('is-saving', isSaving);
             roleForm.setAttribute('aria-busy', isSaving ? 'true' : 'false');
+        }
+
+        roleFormSubmitButtons.forEach((button) => {
+            button.disabled = isSaving;
+            button.setAttribute('aria-busy', isSaving ? 'true' : 'false');
+        });
+
+        if (!isSaving) {
+            syncRoleActionButtonStates();
         }
     }
 
@@ -1111,7 +1238,7 @@
         }
 
         if (roleDeploymentPill) {
-            roleDeploymentPill.className = `tasty-fonts-role-status-pill${badgeClass ? ` ${badgeClass}` : ''}`;
+            roleDeploymentPill.className = `tasty-fonts-pill tasty-fonts-pill--status tasty-fonts-pill--interactive tasty-fonts-pill--help tasty-fonts-role-status-pill${badgeClass ? ` ${badgeClass}` : ''}`;
             setPassiveHelpTooltip(roleDeploymentPill, tooltip);
         }
 
@@ -2138,6 +2265,25 @@
         button.setAttribute('title', nextCopy);
     }
 
+    function upgradePillTooltips(scope = document) {
+        const candidates = Array.from(scope.querySelectorAll('.tasty-fonts-pill[title], .tasty-fonts-badge[title], .tasty-fonts-chip[title], .tasty-fonts-face-pill[title], .tasty-fonts-preview-pill[title], .tasty-fonts-kbd[title], .tasty-fonts-stack-copy[title]'));
+
+        candidates.forEach((button) => {
+            if (button.hasAttribute('data-help-tooltip')) {
+                return;
+            }
+
+            const copy = button.getAttribute('title');
+
+            if (!copy) {
+                return;
+            }
+
+            button.setAttribute('data-help-tooltip', copy);
+            button.setAttribute('data-help-passive', '1');
+        });
+    }
+
     function showHelpTooltip(button) {
         if (!button || !helpTooltipLayer) {
             return;
@@ -2164,7 +2310,14 @@
     }
 
     function initHelpTooltips() {
-        if (!helpTooltipLayer || !helpButtons.length) {
+        if (!helpTooltipLayer) {
+            return;
+        }
+
+        upgradePillTooltips();
+        helpButtons = Array.from(document.querySelectorAll('[data-help-tooltip]'));
+
+        if (!helpButtons.length) {
             return;
         }
 
@@ -2321,36 +2474,287 @@
 
     // Role preview and output state
     function currentRoleData() {
-        const heading = getElementValue(roleHeading, '');
-        const body = getElementValue(roleBody, '');
-        const headingFallbackValue = getElementValue(roleHeadingFallback, 'sans-serif');
-        const bodyFallbackValue = getElementValue(roleBodyFallback, 'sans-serif');
-        const monospace = monospaceRoleEnabled ? getElementValue(roleMonospace, '') : '';
-        const monospaceFallbackValue = monospaceRoleEnabled ? getElementValue(roleMonospaceFallback, 'monospace') : 'monospace';
+        return buildRoleDataFromValues({
+            heading: getElementValue(roleHeading, ''),
+            body: getElementValue(roleBody, ''),
+            monospace: monospaceRoleEnabled ? getElementValue(roleMonospace, '') : '',
+            headingFallback: getElementValue(roleHeadingFallback, 'sans-serif'),
+            bodyFallback: getElementValue(roleBodyFallback, 'sans-serif'),
+            monospaceFallback: monospaceRoleEnabled ? getElementValue(roleMonospaceFallback, 'monospace') : 'monospace',
+        });
+    }
+
+    function currentDraftRoleState() {
+        return normalizeRoleState({
+            heading: getElementValue(roleHeading, ''),
+            body: getElementValue(roleBody, ''),
+            monospace: monospaceRoleEnabled ? getElementValue(roleMonospace, '') : '',
+            headingFallback: getElementValue(roleHeadingFallback, 'sans-serif'),
+            bodyFallback: getElementValue(roleBodyFallback, 'sans-serif'),
+            monospaceFallback: monospaceRoleEnabled ? getElementValue(roleMonospaceFallback, 'monospace') : 'monospace',
+        });
+    }
+
+    function currentAppliedRoleState() {
+        return previewBootstrap().appliedRoles;
+    }
+
+    const initialDraftRoleState = roleForm ? currentDraftRoleState() : normalizeRoleState({});
+
+    function roleStatesMatch(left = {}, right = {}) {
+        const leftState = normalizeRoleState(left);
+        const rightState = normalizeRoleState(right);
+        const keys = monospaceRoleEnabled
+            ? ['heading', 'body', 'monospace', 'headingFallback', 'bodyFallback', 'monospaceFallback']
+            : ['heading', 'body', 'headingFallback', 'bodyFallback'];
+
+        return keys.every((key) => leftState[key] === rightState[key]);
+    }
+
+    function syncDisabledRoleActionHelp(target, disabled, copy) {
+        if (!target) {
+            return;
+        }
+
+        const nextCopy = disabled ? copy : '';
+
+        target.classList.toggle('has-disabled-reason', !!nextCopy);
+        target.tabIndex = disabled && !trainingWheelsOff ? 0 : -1;
+        target.setAttribute('aria-label', nextCopy);
+        setPassiveHelpTooltip(target, nextCopy);
+
+        if (activeHelpButton === target) {
+            if (!nextCopy || trainingWheelsOff) {
+                hideHelpTooltip();
+            } else if (helpTooltipLayer && !helpTooltipLayer.hidden) {
+                helpTooltipLayer.textContent = nextCopy;
+                positionHelpTooltip(target);
+            }
+        }
+    }
+
+    function syncRoleActionButtonStates() {
+        const draftChanged = !roleStatesMatch(currentDraftRoleState(), initialDraftRoleState);
+        const hasPendingLiveChanges = !!config.applyEverywhere && !roleStatesMatch(currentDraftRoleState(), currentAppliedRoleState());
+
+        if (roleApplyLiveButton) {
+            roleApplyLiveButton.classList.toggle('button-primary', hasPendingLiveChanges);
+            roleApplyLiveButton.classList.toggle('is-pending-live-change', hasPendingLiveChanges);
+            roleApplyLiveButton.setAttribute('aria-disabled', hasPendingLiveChanges ? 'false' : 'true');
+            roleApplyLiveButton.disabled = !hasPendingLiveChanges;
+        }
+
+        if (roleSaveDraftButton) {
+            roleSaveDraftButton.setAttribute('aria-disabled', draftChanged ? 'false' : 'true');
+            roleSaveDraftButton.disabled = !draftChanged;
+        }
+
+        syncDisabledRoleActionHelp(
+            roleApplyLiveWrap,
+            !hasPendingLiveChanges,
+            config.applyEverywhere
+                ? getString('roleApplyLiveDisabledNoChanges', 'No live role changes to publish.')
+                : getString('roleApplyLiveDisabledSitewideOff', 'Apply Sitewide is off. Turn it on before publishing role changes.')
+        );
+        syncDisabledRoleActionHelp(
+            roleSaveDraftWrap,
+            !draftChanged,
+            getString('roleSaveDisabledNoChanges', 'No draft changes to save.')
+        );
+    }
+
+    function currentPreviewData() {
+        return buildRoleDataFromValues(previewRoleState || currentDraftRoleState());
+    }
+
+    function computePreviewBaseline() {
+        const bootstrapData = previewBootstrap();
+
+        if (bootstrapData.baselineSource === 'live_sitewide' && (bootstrapData.appliedRoles.heading || bootstrapData.appliedRoles.body || bootstrapData.appliedRoles.monospace)) {
+            return {
+                source: 'live_sitewide',
+                label: bootstrapData.baselineLabel,
+                roles: bootstrapData.appliedRoles,
+            };
+        }
 
         return {
-            includeMonospace: monospaceRoleEnabled,
-            heading,
-            body,
-            monospace,
-            headingFallback: headingFallbackValue,
-            bodyFallback: bodyFallbackValue,
-            monospaceFallback: monospaceFallbackValue,
-            headingSlug: heading ? slugify(heading) : '',
-            bodySlug: body ? slugify(body) : '',
-            monospaceSlug: monospace ? slugify(monospace) : '',
-            headingVariable: 'var(--font-heading)',
-            bodyVariable: 'var(--font-body)',
-            monospaceVariable: 'var(--font-monospace)',
-            headingFamilyVariable: buildFontVariable(heading),
-            bodyFamilyVariable: buildFontVariable(body),
-            monospaceFamilyVariable: monospace
-                ? buildFontVariable(monospace)
-                : buildStack('', monospaceFallbackValue, 'monospace'),
-            headingStack: buildStack(heading, headingFallbackValue),
-            bodyStack: buildStack(body, bodyFallbackValue),
-            monospaceStack: buildStack(monospace, monospaceFallbackValue, 'monospace')
+            source: 'draft',
+            label: bootstrapData.baselineSource === 'live_sitewide'
+                ? getString('previewCurrentDraft', 'Current draft')
+                : bootstrapData.baselineLabel,
+            roles: currentDraftRoleState(),
         };
+    }
+
+    function setPreviewSourceLabel(label) {
+        if (previewSourceLabel) {
+            previewSourceLabel.textContent = label || getString('previewCurrentDraft', 'Current draft');
+        }
+    }
+
+    function buildPreviewCustomCss(data) {
+        const lines = [':root {'];
+        const variableLines = [];
+
+        if (data.headingSlug) {
+            variableLines.push(`  --font-${data.headingSlug}: ${data.headingStack};`);
+            variableLines.push(`  --font-heading: var(--font-${data.headingSlug});`);
+        } else {
+            variableLines.push(`  --font-heading: ${data.headingStack};`);
+        }
+
+        if (data.bodySlug) {
+            variableLines.push(`  --font-${data.bodySlug}: ${data.bodyStack};`);
+            variableLines.push(`  --font-body: var(--font-${data.bodySlug});`);
+        } else {
+            variableLines.push(`  --font-body: ${data.bodyStack};`);
+        }
+
+        if (data.includeMonospace) {
+            if (data.monospaceSlug) {
+                variableLines.push(`  --font-${data.monospaceSlug}: ${data.monospaceStack};`);
+                variableLines.push(`  --font-monospace: var(--font-${data.monospaceSlug});`);
+            } else {
+                variableLines.push(`  --font-monospace: ${data.monospaceStack};`);
+            }
+        }
+
+        lines.push(...variableLines);
+        lines.push('}', '');
+        lines.push('body {');
+        lines.push('  font-family: var(--font-body);');
+        lines.push('}', '');
+        lines.push('h1, h2, h3, h4, h5, h6 {');
+        lines.push('  font-family: var(--font-heading);');
+        lines.push('}');
+
+        if (data.includeMonospace) {
+            lines.push('');
+            lines.push('code, pre, kbd, samp {');
+            lines.push('  font-family: var(--font-monospace);');
+            lines.push('}');
+        }
+
+        return lines.join('\n');
+    }
+
+    function updatePreviewCopyCssButton(data) {
+        if (!previewCopyCssButton) {
+            return;
+        }
+
+        const previewData = data && typeof data === 'object' ? data : currentPreviewData();
+        previewCopyCssButton.setAttribute('data-copy-text', buildPreviewCustomCss(previewData));
+    }
+
+    function updatePreviewDirtyState() {
+        if (previewDirtyIndicator) {
+            previewDirtyIndicator.hidden = !previewDirty;
+        }
+    }
+
+    function syncPreviewControlsFromState() {
+        const state = normalizeRoleState(previewRoleState || currentDraftRoleState());
+
+        Object.entries(previewRoleSelects).forEach(([roleKey, element]) => {
+            if (!element) {
+                return;
+            }
+
+            element.value = state[roleKey] || '';
+        });
+    }
+
+    function applyPreviewOutputs(sourceLabel = '') {
+        const data = currentPreviewData();
+
+        if (previewCanvas) {
+            previewCanvas.style.setProperty('--tasty-preview-heading-stack', data.headingStack);
+            previewCanvas.style.setProperty('--tasty-preview-body-stack', data.bodyStack);
+            previewCanvas.style.setProperty('--tasty-preview-monospace-stack', data.monospaceStack);
+        }
+
+        roleHeadingPreviews.forEach((element) => {
+            element.style.fontFamily = data.headingStack;
+        });
+
+        roleBodyPreviews.forEach((element) => {
+            element.style.fontFamily = data.bodyStack;
+        });
+
+        roleMonospacePreviews.forEach((element) => {
+            element.style.fontFamily = data.monospaceStack;
+        });
+
+        roleHeadingPreviewNames.forEach((element) => {
+            element.textContent = previewRoleName(data.heading, data.headingFallback, 'sans-serif', true);
+        });
+
+        roleBodyPreviewNames.forEach((element) => {
+            element.textContent = previewRoleName(data.body, data.bodyFallback, 'sans-serif', true);
+        });
+
+        roleMonospacePreviewNames.forEach((element) => {
+            element.textContent = previewRoleName(data.monospace, data.monospaceFallback, 'monospace', true);
+        });
+
+        syncPreviewControlsFromState();
+        updatePreviewCopyCssButton(data);
+        setPreviewSourceLabel(sourceLabel);
+        updatePreviewDirtyState();
+    }
+
+    function resetPreviewWorkspace() {
+        const baseline = computePreviewBaseline();
+        previewRoleState = normalizeRoleState(baseline.roles);
+        previewDirty = false;
+        previewFollowsDraft = baseline.source === 'draft';
+        applyPreviewOutputs(baseline.label);
+    }
+
+    function applyPreviewStateToRoleFields() {
+        const state = normalizeRoleState(previewRoleState || currentDraftRoleState());
+
+        if (roleHeading) {
+            roleHeading.value = state.heading || '';
+        }
+
+        if (roleBody) {
+            roleBody.value = state.body || '';
+        }
+
+        if (roleHeadingFallback) {
+            roleHeadingFallback.value = state.headingFallback || 'sans-serif';
+        }
+
+        if (roleBodyFallback) {
+            roleBodyFallback.value = state.bodyFallback || 'sans-serif';
+        }
+
+        if (monospaceRoleEnabled && roleMonospace) {
+            roleMonospace.value = state.monospace || '';
+        }
+
+        if (monospaceRoleEnabled && roleMonospaceFallback) {
+            roleMonospaceFallback.value = state.monospaceFallback || 'monospace';
+        }
+    }
+
+    function syncPreviewWorkspaceToDraft({ markDirty = false } = {}) {
+        previewRoleState = currentDraftRoleState();
+        previewFollowsDraft = true;
+        previewDirty = markDirty;
+        applyPreviewOutputs(getString('previewCurrentDraft', 'Current draft'));
+    }
+
+    function initializePreviewWorkspace() {
+        if (previewWorkspaceInitialized) {
+            return;
+        }
+
+        previewWorkspaceInitialized = true;
+        resetPreviewWorkspace();
     }
 
     function updateRoleOutputs() {
@@ -2377,13 +2781,23 @@
         headingFamilyVariableCopies.forEach((button) => {
             button.textContent = data.headingFamilyVariable;
             button.setAttribute('data-copy-text', data.headingFamilyVariable);
-            button.setAttribute('title', `Heading family variable: ${data.headingFamilyVariable}. Role alias: ${data.headingVariable}. Resolved stack: ${data.headingStack}`);
+            button.setAttribute(
+                'title',
+                data.heading
+                    ? `Heading family variable: ${data.headingFamilyVariable}. Role alias: ${data.headingVariable}. Resolved stack: ${data.headingStack}`
+                    : `Heading uses the fallback stack directly: ${data.headingStack}. Role alias: ${data.headingVariable}`
+            );
         });
 
         bodyFamilyVariableCopies.forEach((button) => {
             button.textContent = data.bodyFamilyVariable;
             button.setAttribute('data-copy-text', data.bodyFamilyVariable);
-            button.setAttribute('title', `Body family variable: ${data.bodyFamilyVariable}. Role alias: ${data.bodyVariable}. Resolved stack: ${data.bodyStack}`);
+            button.setAttribute(
+                'title',
+                data.body
+                    ? `Body family variable: ${data.bodyFamilyVariable}. Role alias: ${data.bodyVariable}. Resolved stack: ${data.bodyStack}`
+                    : `Body uses the fallback stack directly: ${data.bodyStack}. Role alias: ${data.bodyVariable}`
+            );
         });
 
         monospaceFamilyVariableCopies.forEach((button) => {
@@ -2397,29 +2811,7 @@
             );
         });
 
-        roleHeadingPreviews.forEach((element) => {
-            element.style.fontFamily = data.headingStack;
-        });
-
-        roleBodyPreviews.forEach((element) => {
-            element.style.fontFamily = data.bodyStack;
-        });
-
-        roleMonospacePreviews.forEach((element) => {
-            element.style.fontFamily = data.monospaceStack;
-        });
-
-        roleHeadingPreviewNames.forEach((element) => {
-            element.textContent = previewRoleName(data.heading, data.headingFallback);
-        });
-
-        roleBodyPreviewNames.forEach((element) => {
-            element.textContent = previewRoleName(data.body, data.bodyFallback);
-        });
-
-        roleMonospacePreviewNames.forEach((element) => {
-            element.textContent = previewRoleName(data.monospace, data.monospaceFallback, 'monospace', true);
-        });
+        syncRoleActionButtonStates();
 
         roleAssignButtons.forEach((button) => {
             const family = button.getAttribute('data-font-family') || '';
@@ -2525,31 +2917,35 @@
         if (outputUsage) {
             if (!variableSnippet) {
                 outputUsage.value = '';
-                return;
-            }
-
-            const usageLines = [
-                variableSnippet,
-                '',
-                'body {',
-                '  font-family: var(--font-body);',
-                '}',
-                '',
-                'h1, h2, h3, h4, h5, h6 {',
-                '  font-family: var(--font-heading);',
-                '}'
-            ];
-
-            if (data.includeMonospace) {
-                usageLines.push(
+            } else {
+                const usageLines = [
+                    variableSnippet,
                     '',
-                    'code, pre {',
-                    '  font-family: var(--font-monospace);',
+                    'body {',
+                    '  font-family: var(--font-body);',
+                    '}',
+                    '',
+                    'h1, h2, h3, h4, h5, h6 {',
+                    '  font-family: var(--font-heading);',
                     '}'
-                );
-            }
+                ];
 
-            outputUsage.value = usageLines.join('\n');
+                if (data.includeMonospace) {
+                    usageLines.push(
+                        '',
+                        'code, pre {',
+                        '  font-family: var(--font-monospace);',
+                        '}'
+                    );
+                }
+
+                outputUsage.value = usageLines.join('\n');
+            }
+        }
+
+        if (previewWorkspaceInitialized && previewFollowsDraft) {
+            previewRoleState = currentDraftRoleState();
+            applyPreviewOutputs(getString('previewCurrentDraft', 'Current draft'));
         }
     }
 
@@ -3129,12 +3525,30 @@
         }
     }
 
+    function markCopyButton(button) {
+        if (!button) {
+            return;
+        }
+
+        if (button.copyFeedbackTimeoutId) {
+            window.clearTimeout(button.copyFeedbackTimeoutId);
+        }
+
+        button.classList.add('is-copied');
+        button.copyFeedbackTimeoutId = window.setTimeout(() => {
+            button.classList.remove('is-copied');
+            button.copyFeedbackTimeoutId = 0;
+        }, 1200);
+    }
+
     function copyText(text, button, options = {}) {
         if (!text || !navigator.clipboard) {
             return;
         }
 
         navigator.clipboard.writeText(text).then(() => {
+            markCopyButton(button);
+
             if (options.toastMessage) {
                 showToast(options.toastMessage, 'success');
             }
@@ -4381,8 +4795,6 @@
             return;
         }
 
-        row.hidden = false;
-
         const toggle = row.querySelector('[data-disclosure-toggle]');
 
         if (!toggle || toggle.dataset.searchExpanded !== 'true') {
@@ -4395,12 +4807,13 @@
 
     // Library filtering
     function initLibraryFiltering() {
-        if (!librarySearch && !librarySourceFilter) {
+        if (!librarySearch && !librarySourceFilter && !libraryCategoryFilter) {
             return;
         }
 
         const libraryRows = Array.from(document.querySelectorAll('[data-font-row]'));
         activeLibrarySourceFilter = librarySourceFilter ? (librarySourceFilter.value || 'all') : 'all';
+        activeLibraryCategoryFilter = libraryCategoryFilter ? (libraryCategoryFilter.value || 'all') : 'all';
 
         function rowMatchesSource(row, sourceFilter) {
             if (!row || !sourceFilter || sourceFilter === 'all') {
@@ -4409,7 +4822,21 @@
 
             const sourceTokens = (row.getAttribute('data-font-sources') || '').split(/\s+/).filter(Boolean);
 
+            if (sourceFilter === 'published' && sourceTokens.includes('role_active')) {
+                return true;
+            }
+
             return sourceTokens.includes(sourceFilter);
+        }
+
+        function rowMatchesCategory(row, categoryFilter) {
+            if (!row || !categoryFilter || categoryFilter === 'all') {
+                return true;
+            }
+
+            const categoryTokens = (row.getAttribute('data-font-categories') || '').split(/\s+/).filter(Boolean);
+
+            return categoryTokens.includes(categoryFilter);
         }
 
         const applyLibraryFilter = () => {
@@ -4420,7 +4847,8 @@
                 const name = row.getAttribute('data-font-name') || '';
                 const matchesQuery = !query || name.includes(query);
                 const matchesSource = rowMatchesSource(row, activeLibrarySourceFilter);
-                const matches = matchesQuery && matchesSource;
+                const matchesCategory = rowMatchesCategory(row, activeLibraryCategoryFilter);
+                const matches = matchesQuery && matchesSource && matchesCategory;
 
                 row.hidden = !matches;
 
@@ -4452,6 +4880,13 @@
         if (librarySourceFilter) {
             librarySourceFilter.addEventListener('change', () => {
                 activeLibrarySourceFilter = librarySourceFilter.value || 'all';
+                applyLibraryFilter();
+            });
+        }
+
+        if (libraryCategoryFilter) {
+            libraryCategoryFilter.addEventListener('change', () => {
+                activeLibraryCategoryFilter = libraryCategoryFilter.value || 'all';
                 applyLibraryFilter();
             });
         }
@@ -4518,6 +4953,19 @@
 
         const isExpanded = disclosureToggle.getAttribute('aria-expanded') === 'true';
         const nextExpanded = !isExpanded;
+        const targetId = disclosureToggle.getAttribute('data-disclosure-toggle') || '';
+        const isRoleToolToggle = targetId === 'tasty-fonts-role-preview-panel' || targetId === 'tasty-fonts-role-advanced-panel';
+
+        if (nextExpanded && isRoleToolToggle) {
+            const pairedTargetId = targetId === 'tasty-fonts-role-preview-panel'
+                ? 'tasty-fonts-role-advanced-panel'
+                : 'tasty-fonts-role-preview-panel';
+            const pairedToggle = disclosureToggleByTargetId(pairedTargetId);
+
+            if (pairedToggle) {
+                setDisclosureState(pairedToggle, false);
+            }
+        }
 
         setDisclosureState(disclosureToggle, nextExpanded);
 
@@ -4527,6 +4975,10 @@
 
         if (nextExpanded && disclosureToggle.getAttribute('data-disclosure-toggle') === 'tasty-fonts-add-font-panel') {
             window.setTimeout(focusAddFontPanel, 0);
+        }
+
+        if (nextExpanded && disclosureToggle.getAttribute('data-disclosure-toggle') === 'tasty-fonts-role-preview-panel') {
+            initializePreviewWorkspace();
         }
 
         return true;
@@ -4639,7 +5091,38 @@
         }
 
         const target = document.getElementById(copyTarget.getAttribute('data-copy-target'));
-        copyText(target ? target.value : '', copyTarget);
+        const targetValue = target
+            ? ('value' in target ? target.value : target.textContent || '')
+            : '';
+        copyText(targetValue, copyTarget);
+        return true;
+    }
+
+    function handleSnippetDisplayToggle(event) {
+        const toggle = event.target.closest('[data-snippet-display-toggle]');
+
+        if (!toggle) {
+            return false;
+        }
+
+        const codePanel = toggle.closest('.tasty-fonts-code-panel');
+        const rawView = codePanel ? codePanel.querySelector('[data-snippet-view="raw"]') : null;
+        const readableView = codePanel ? codePanel.querySelector('[data-snippet-view="readable"]') : null;
+
+        if (!rawView || !readableView) {
+            return false;
+        }
+
+        event.preventDefault();
+
+        const showReadable = toggle.getAttribute('aria-pressed') !== 'true';
+        const defaultLabel = toggle.getAttribute('data-label-default') || '';
+        const activeLabel = toggle.getAttribute('data-label-active') || '';
+
+        toggle.setAttribute('aria-pressed', showReadable ? 'true' : 'false');
+        toggle.textContent = showReadable ? activeLabel : defaultLabel;
+        rawView.hidden = showReadable;
+        readableView.hidden = !showReadable;
         return true;
     }
 
@@ -4680,6 +5163,70 @@
                 highlightRoleSelector(role);
             }
         });
+        return true;
+    }
+
+    function handlePreviewWorkspaceClick(event) {
+        const resetTarget = event.target.closest('[data-preview-reset]');
+
+        if (resetTarget) {
+            initializePreviewWorkspace();
+            resetPreviewWorkspace();
+            return true;
+        }
+
+        const syncTarget = event.target.closest('[data-preview-sync-draft]');
+
+        if (!syncTarget) {
+            return false;
+        }
+
+        initializePreviewWorkspace();
+        const baseline = computePreviewBaseline();
+        syncPreviewWorkspaceToDraft({ markDirty: baseline.source === 'live_sitewide' });
+        return true;
+    }
+
+    function handlePreviewSelectionActions(event) {
+        const saveDraftTarget = event.target.closest('[data-preview-save-draft]');
+
+        if (saveDraftTarget) {
+            initializePreviewWorkspace();
+            const snapshotBeforeChange = roleFieldSnapshot();
+            applyPreviewStateToRoleFields();
+            updateRoleOutputs();
+            void saveRoleDraft(snapshotBeforeChange).then((saved) => {
+                if (saved) {
+                    previewDirty = false;
+                    previewFollowsDraft = true;
+                    previewRoleState = currentDraftRoleState();
+                    applyPreviewOutputs(getString('previewCurrentDraft', 'Current draft'));
+                }
+            });
+            return true;
+        }
+
+        const applyLiveTarget = event.target.closest('[data-preview-apply-live]');
+
+        if (!applyLiveTarget || !roleForm) {
+            return false;
+        }
+
+        initializePreviewWorkspace();
+        applyPreviewStateToRoleFields();
+        updateRoleOutputs();
+        savePendingUiState(captureTrackedUiState());
+
+        if (roleActionTypeInput) {
+            roleActionTypeInput.value = 'apply';
+        }
+
+        if (typeof roleForm.requestSubmit === 'function') {
+            roleForm.requestSubmit();
+        } else {
+            roleForm.submit();
+        }
+
         return true;
     }
 
@@ -4889,11 +5436,23 @@
             return;
         }
 
+        if (handleSnippetDisplayToggle(event)) {
+            return;
+        }
+
         if (handleCopyClick(event)) {
             return;
         }
 
         if (handleRoleAssignClick(event)) {
+            return;
+        }
+
+        if (handlePreviewWorkspaceClick(event)) {
+            return;
+        }
+
+        if (handlePreviewSelectionActions(event)) {
             return;
         }
 
@@ -5065,6 +5624,29 @@
                 element.addEventListener('change', updateRoleOutputs);
             }
         });
+
+        Object.entries(previewRoleSelects).forEach(([roleKey, element]) => {
+            if (!element) {
+                return;
+            }
+
+            element.addEventListener('change', () => {
+                initializePreviewWorkspace();
+                previewRoleState = normalizeRoleState({
+                    ...(previewRoleState || currentDraftRoleState()),
+                    [roleKey]: element.value || '',
+                });
+                previewDirty = true;
+                previewFollowsDraft = false;
+                applyPreviewOutputs(previewSourceLabel ? previewSourceLabel.textContent : '');
+            });
+        });
+
+        if (roleForm) {
+            roleForm.addEventListener('submit', () => {
+                savePendingUiState(captureTrackedUiState());
+            });
+        }
 
         if (previewTextInput) {
             previewTextInput.addEventListener('input', updatePreviewDynamicText);
@@ -5398,6 +5980,10 @@
         defaultTrackedUiState = captureTrackedUiState();
         applyTrackedUiState(initialTrackedUiState);
         syncTrackedUiUrl('replace');
+        const previewToggle = disclosureToggleByTargetId('tasty-fonts-role-preview-panel');
+        if (previewToggle && isDisclosureExpanded(previewToggle)) {
+            initializePreviewWorkspace();
+        }
         applyPendingUiState();
     }
 

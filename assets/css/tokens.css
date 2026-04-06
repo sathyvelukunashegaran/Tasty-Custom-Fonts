@@ -97,8 +97,15 @@
     --tasty-control-height-compact: 32px;
     --tasty-control-height: var(--tasty-control-height-regular);
     --tasty-control-adornment: var(--tasty-control-height-regular);
-    --tasty-pill-height: 22px;
-    --tasty-pill-padding-x: 12px;
+    --tasty-pill-height-compact: 22px;
+    --tasty-pill-height-regular: 26px;
+    --tasty-pill-height-emphasis: 32px;
+    --tasty-pill-height: var(--tasty-pill-height-compact);
+    --tasty-pill-padding-x-compact: 12px;
+    --tasty-pill-padding-x-regular: 12px;
+    --tasty-pill-padding-x-emphasis: 14px;
+    --tasty-pill-padding-x: var(--tasty-pill-padding-x-compact);
+    --tasty-pill-gap: 6px;
 
     /* Control aliases */
     --tasty-control-border: var(--tasty-ctrl-border);

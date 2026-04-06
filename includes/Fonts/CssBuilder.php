@@ -17,12 +17,12 @@ final class CssBuilder
         return $this->buildCss($catalog, $roles, $settings, true);
     }
 
-    public function buildFontFaceOnly(array $catalog, array $settings): string
+    public function buildFontFaceOnly(array $catalog, array $settings, string $displayOverride = ''): string
     {
-        return $this->buildCss($catalog, [], $settings, false);
+        return $this->buildCss($catalog, [], $settings, false, $displayOverride);
     }
 
-    private function buildCss(array $catalog, array $roles, array $settings, bool $includeRoleUsage): string
+    private function buildCss(array $catalog, array $roles, array $settings, bool $includeRoleUsage, string $displayOverride = ''): string
     {
         $blocks = [];
         $defaultDisplay = $this->resolveFontDisplay((string) ($settings['font_display'] ?? 'optional'));
@@ -31,7 +31,9 @@ final class CssBuilder
 
         foreach ($catalog as $family) {
             $familyName = is_array($family) ? (string) ($family['family'] ?? '') : '';
-            $display = $this->resolveFamilyFontDisplay($familyName, $familyDisplays, $defaultDisplay);
+            $display = $displayOverride !== ''
+                ? $this->resolveFontDisplay($displayOverride)
+                : $this->resolveFamilyFontDisplay($familyName, $familyDisplays, $defaultDisplay);
 
             foreach ((array) ($family['faces'] ?? []) as $face) {
                 $rule = $this->buildFaceRule($face, $display);
