@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Added a maintainable multi-file local test harness layout while keeping `php tests/run.php` as the single entry point, plus new direct coverage for hosted CSS parsing, local-environment detection, native upload validation, activation hooks, and generated-asset refresh paths.
+- Added a lightweight zero-dependency JavaScript contract test layer for shared admin helpers and the Etch canvas iframe stylesheet bridge.
+- Added a pull request and branch CI workflow that runs PHP lint, the PHP test suite, and the JavaScript contract tests before changes reach release tagging.
+
+### Changed
+
+- Updated the release workflow and local release helper to run automated quality gates before packaging or publishing a version.
+- Extracted shared admin and canvas runtime helper contracts into standalone browser/Node-compatible scripts so the shipped assets and local smoke tests exercise the same logic.
+- Refined the admin dashboard hero messaging and kept it visible when training wheels are disabled.
+
 ## [1.5.1] - 2026-04-07
 
 ### Added

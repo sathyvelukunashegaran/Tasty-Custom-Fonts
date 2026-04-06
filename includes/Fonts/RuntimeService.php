@@ -158,9 +158,17 @@ final class RuntimeService
         }
 
         wp_enqueue_script(
+            'tasty-fonts-canvas-contracts',
+            TASTY_FONTS_URL . 'assets/js/canvas-contracts.js',
+            [],
+            TASTY_FONTS_VERSION,
+            true
+        );
+
+        wp_enqueue_script(
             'tasty-fonts-canvas',
             TASTY_FONTS_URL . 'assets/js/tasty-canvas.js',
-            [],
+            ['tasty-fonts-canvas-contracts'],
             TASTY_FONTS_VERSION,
             true
         );

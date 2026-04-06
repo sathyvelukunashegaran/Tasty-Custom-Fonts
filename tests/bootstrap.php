@@ -30,6 +30,44 @@ function assertSameValue(mixed $expected, mixed $actual, string $message): void
     );
 }
 
+function assertTrueValue(bool $actual, string $message): void
+{
+    assertSameValue(true, $actual, $message);
+}
+
+function assertFalseValue(bool $actual, string $message): void
+{
+    assertSameValue(false, $actual, $message);
+}
+
+function assertArrayHasKeys(array $expectedKeys, array $actual, string $message): void
+{
+    $missingKeys = array_values(array_diff($expectedKeys, array_keys($actual)));
+
+    if ($missingKeys === []) {
+        return;
+    }
+
+    throw new RuntimeException(
+        $message
+        . "\nMissing keys: " . implode(', ', $missingKeys)
+        . "\nActual keys: " . implode(', ', array_keys($actual))
+    );
+}
+
+function assertWpErrorCode(string $expectedCode, mixed $actual, string $message): WP_Error
+{
+    if (!$actual instanceof WP_Error) {
+        throw new RuntimeException(
+            $message . "\nExpected a WP_Error but received: " . get_debug_type($actual)
+        );
+    }
+
+    assertSameValue($expectedCode, $actual->get_error_code(), $message);
+
+    return $actual;
+}
+
 function assertContainsValue(string $needle, string $haystack, string $message): void
 {
     if (str_contains($haystack, $needle)) {

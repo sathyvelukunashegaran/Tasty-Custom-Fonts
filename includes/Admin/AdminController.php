@@ -102,9 +102,17 @@ final class AdminController
         );
 
         wp_enqueue_script(
+            'tasty-fonts-admin-contracts',
+            TASTY_FONTS_URL . 'assets/js/admin-contracts.js',
+            [],
+            $this->assetVersionFor(),
+            true
+        );
+
+        wp_enqueue_script(
             'tasty-fonts-admin',
             TASTY_FONTS_URL . 'assets/js/admin.js',
-            ['wp-i18n'],
+            ['wp-i18n', 'tasty-fonts-admin-contracts'],
             $this->assetVersionFor(),
             true
         );

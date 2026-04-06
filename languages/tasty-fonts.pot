@@ -543,8 +543,8 @@ msgstr ""
 msgid "The uploads/fonts directory could not be initialized."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:60
-msgid "Self-hosted typography for Etch, Gutenberg, and the frontend."
+#: includes/Admin/AdminPageRenderer.php:156
+msgid "Professional Typography Management For WordPress"
 msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:79

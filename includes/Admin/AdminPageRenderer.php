@@ -153,7 +153,7 @@ final class AdminPageRenderer
                                             </a>
                                         <?php endif; ?>
                                     </div>
-                                    <p class="tasty-fonts-hero-text"><?php esc_html_e('Typography management for Etch, Gutenberg, and the frontend.', 'tasty-fonts'); ?></p>
+                                    <p class="tasty-fonts-hero-text"><?php esc_html_e('Professional Typography Management For WordPress', 'tasty-fonts'); ?></p>
                                 </div>
                             </div>
 

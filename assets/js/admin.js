@@ -1,6 +1,7 @@
 (function () {
     // DOM references
     const config = window.TastyFontsAdmin || {};
+    const adminContracts = window.TastyFontsAdminContracts || {};
     const runtimeStrings = {
         ...(config.strings || {}),
         ...(config.runtimeStrings || {}),
@@ -240,24 +241,26 @@
     };
 
     // Shared helpers
-    function slugify(value) {
-        return value.toLowerCase().replace(/[^a-z0-9\-_]+/g, '-').replace(/^-+|-+$/g, '') || 'font';
-    }
+    const slugify = typeof adminContracts.slugify === 'function'
+        ? adminContracts.slugify
+        : (value) => String(value || '').toLowerCase().replace(/[^a-z0-9\-_]+/g, '-').replace(/^-+|-+$/g, '') || 'font';
 
-    function sanitizeFallback(fallback, defaultValue = 'sans-serif') {
-        const sanitized = String(fallback || '')
-            .trim()
-            .replace(/[^a-zA-Z0-9,\- "'`]+/g, '')
-            .replace(/\s*,\s*/g, ', ')
-            .replace(/\s+/g, ' ')
-            .replace(/^[,\s]+|[,\s]+$/g, '');
+    const sanitizeFallback = typeof adminContracts.sanitizeFallback === 'function'
+        ? adminContracts.sanitizeFallback
+        : (fallback, defaultValue = 'sans-serif') => {
+            const sanitized = String(fallback || '')
+                .trim()
+                .replace(/[^a-zA-Z0-9,\- "'`]+/g, '')
+                .replace(/\s*,\s*/g, ', ')
+                .replace(/\s+/g, ' ')
+                .replace(/^[,\s]+|[,\s]+$/g, '');
 
-        return sanitized || defaultValue;
-    }
+            return sanitized || defaultValue;
+        };
 
-    function escapeFontFamily(family) {
-        return String(family || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    }
+    const escapeFontFamily = typeof adminContracts.escapeFontFamily === 'function'
+        ? adminContracts.escapeFontFamily
+        : (family) => String(family || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
     function buildStack(family, fallback, defaultFallback = 'sans-serif') {
         const sanitizedFallback = sanitizeFallback(fallback, defaultFallback);

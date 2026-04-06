@@ -1,20 +1,59 @@
 (function () {
     const config = window.TastyFontsCanvas || {};
-    const stylesheetUrls = Array.isArray(config.stylesheetUrls)
-        ? config.stylesheetUrls.filter(Boolean)
-        : (config.stylesheetUrl ? [config.stylesheetUrl] : []);
+    const canvasContracts = window.TastyFontsCanvasContracts || {};
+    const normalizeStylesheetUrls = typeof canvasContracts.normalizeStylesheetUrls === 'function'
+        ? canvasContracts.normalizeStylesheetUrls
+        : (runtimeConfig) => Array.isArray(runtimeConfig.stylesheetUrls)
+            ? runtimeConfig.stylesheetUrls.filter(Boolean)
+            : (runtimeConfig.stylesheetUrl ? [runtimeConfig.stylesheetUrl] : []);
+    const getIframeDocument = typeof canvasContracts.getIframeDocument === 'function'
+        ? canvasContracts.getIframeDocument
+        : (iframe) => {
+            if (!iframe || !iframe.contentDocument || !iframe.contentDocument.head) {
+                return null;
+            }
+
+            return iframe.contentDocument;
+        };
+    const syncIframeStylesheets = typeof canvasContracts.syncIframeStylesheets === 'function'
+        ? canvasContracts.syncIframeStylesheets
+        : (doc, runtimeStylesheetUrls) => {
+            let existingIndex = 0;
+
+            for (const node of doc.querySelectorAll('link[data-tasty-fonts-runtime="1"]')) {
+                if (existingIndex >= runtimeStylesheetUrls.length && node.parentNode) {
+                    node.parentNode.removeChild(node);
+                }
+
+                existingIndex += 1;
+            }
+
+            for (const [index, stylesheetUrl] of runtimeStylesheetUrls.entries()) {
+                const current = doc.querySelector(`link[data-tasty-fonts-runtime="1"][data-tasty-fonts-runtime-index="${index}"]`);
+
+                if (current) {
+                    if (current.href !== stylesheetUrl) {
+                        current.href = stylesheetUrl;
+                    }
+
+                    continue;
+                }
+
+                const link = doc.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = stylesheetUrl;
+                link.setAttribute('data-tasty-fonts-runtime', '1');
+                link.setAttribute('data-tasty-fonts-runtime-index', String(index));
+                doc.head.appendChild(link);
+            }
+
+            return true;
+        };
+    const stylesheetUrls = normalizeStylesheetUrls(config);
 
     if (!stylesheetUrls.length) {
         return;
     }
-
-    const getIframeDocument = (iframe) => {
-        if (!iframe || !iframe.contentDocument || !iframe.contentDocument.head) {
-            return null;
-        }
-
-        return iframe.contentDocument;
-    };
 
     const injectIntoIframe = (iframe) => {
         const doc = getIframeDocument(iframe);
@@ -23,36 +62,7 @@
             return false;
         }
 
-        let existingIndex = 0;
-
-        for (const node of doc.querySelectorAll('link[data-tasty-fonts-runtime="1"]')) {
-            if (existingIndex >= stylesheetUrls.length && node.parentNode) {
-                node.parentNode.removeChild(node);
-            }
-
-            existingIndex += 1;
-        }
-
-        for (const [index, stylesheetUrl] of stylesheetUrls.entries()) {
-            const current = doc.querySelector(`link[data-tasty-fonts-runtime="1"][data-tasty-fonts-runtime-index="${index}"]`);
-
-            if (current) {
-                if (current.href !== stylesheetUrl) {
-                    current.href = stylesheetUrl;
-                }
-
-                continue;
-            }
-
-            const link = doc.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = stylesheetUrl;
-            link.setAttribute('data-tasty-fonts-runtime', '1');
-            link.setAttribute('data-tasty-fonts-runtime-index', String(index));
-            doc.head.appendChild(link);
-        }
-
-        return true;
+        return syncIframeStylesheets(doc, stylesheetUrls);
     };
 
     const bindIframe = (iframe) => {
