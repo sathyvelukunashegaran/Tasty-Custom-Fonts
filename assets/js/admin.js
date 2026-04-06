@@ -106,6 +106,7 @@
     let syncingBunnyVariants = false;
     let renderedBunnyVariantFamily = '';
     let roleDraftSaveInFlight = false;
+    let defaultTrackedUiState = null;
     const pendingUiStateKey = 'tastyFontsPendingUiState';
     const trackedUiQueryKeys = [
         'tf_advanced',
@@ -394,6 +395,55 @@
         return tabButtonsForGroup(group).some((tab) => tab.getAttribute('data-tab-target') === key);
     }
 
+    function trackedUiStateHas(state, key) {
+        return Boolean(state) && Object.prototype.hasOwnProperty.call(state, key);
+    }
+
+    function defaultTrackedUiFlag(key) {
+        return trackedUiStateHas(defaultTrackedUiState, key) ? Boolean(defaultTrackedUiState[key]) : false;
+    }
+
+    function defaultTrackedUiTabKey(group) {
+        if (!defaultTrackedUiState || typeof defaultTrackedUiState !== 'object') {
+            return '';
+        }
+
+        switch (group) {
+            case 'studio':
+                return String(defaultTrackedUiState.studio || '');
+            case 'preview':
+                return String(defaultTrackedUiState.preview || '');
+            case 'output':
+                return String(defaultTrackedUiState.output || '');
+            case 'add-font':
+                return String(defaultTrackedUiState.source || '');
+            default:
+                return '';
+        }
+    }
+
+    function firstTabKeyForGroup(group) {
+        const firstButton = tabButtonsForGroup(group)[0];
+
+        return firstButton ? String(firstButton.getAttribute('data-tab-target') || '') : '';
+    }
+
+    function resolveTrackedTabKey(group, requestedKey) {
+        if (isAllowedTabKey(group, requestedKey)) {
+            return requestedKey;
+        }
+
+        const defaultKey = defaultTrackedUiTabKey(group);
+
+        if (isAllowedTabKey(group, defaultKey)) {
+            return defaultKey;
+        }
+
+        const firstKey = firstTabKeyForGroup(group);
+
+        return isAllowedTabKey(group, firstKey) ? firstKey : '';
+    }
+
     function readTrackedUiState(locationValue) {
         const url = locationValue instanceof URL
             ? locationValue
@@ -455,50 +505,75 @@
     }
 
     function applyTrackedUiState(state) {
-        if (!state || typeof state !== 'object') {
-            return;
-        }
-
+        const nextState = state && typeof state === 'object' ? state : {};
         const advancedToggle = disclosureToggleByTargetId('tasty-fonts-role-advanced-panel');
+        const addFontsOpen = trackedUiStateHas(nextState, 'addFontsOpen')
+            ? Boolean(nextState.addFontsOpen)
+            : defaultTrackedUiFlag('addFontsOpen');
+        const advancedOpen = trackedUiStateHas(nextState, 'advancedOpen')
+            ? Boolean(nextState.advancedOpen)
+            : defaultTrackedUiFlag('advancedOpen');
+        const studio = resolveTrackedTabKey(
+            'studio',
+            trackedUiStateHas(nextState, 'studio') ? String(nextState.studio || '') : defaultTrackedUiTabKey('studio')
+        );
+        const preview = resolveTrackedTabKey(
+            'preview',
+            trackedUiStateHas(nextState, 'preview') ? String(nextState.preview || '') : defaultTrackedUiTabKey('preview')
+        );
+        const output = resolveTrackedTabKey(
+            'output',
+            trackedUiStateHas(nextState, 'output') ? String(nextState.output || '') : defaultTrackedUiTabKey('output')
+        );
+        const source = resolveTrackedTabKey(
+            'add-font',
+            trackedUiStateHas(nextState, 'source') ? String(nextState.source || '') : defaultTrackedUiTabKey('add-font')
+        );
+        const googleAccessOpen = addFontsOpen && source === 'google'
+            ? (trackedUiStateHas(nextState, 'googleAccessOpen')
+                ? Boolean(nextState.googleAccessOpen)
+                : defaultTrackedUiFlag('googleAccessOpen'))
+            : false;
+        const adobeProjectOpen = addFontsOpen && source === 'adobe'
+            ? (trackedUiStateHas(nextState, 'adobeProjectOpen')
+                ? Boolean(nextState.adobeProjectOpen)
+                : defaultTrackedUiFlag('adobeProjectOpen'))
+            : false;
 
-        if (state.advancedOpen && advancedToggle) {
-            setDisclosureState(advancedToggle, true);
+        if (advancedToggle) {
+            setDisclosureState(advancedToggle, advancedOpen);
         }
 
-        if (state.advancedOpen && state.studio) {
-            activateTabGroup('studio', state.studio);
+        if (studio) {
+            activateTabGroup('studio', studio);
         }
 
-        if (state.studio === 'preview' && state.preview) {
-            activateTabGroup('preview', state.preview);
+        if (preview) {
+            activateTabGroup('preview', preview);
         }
 
-        if (state.studio === 'snippets' && state.output) {
-            activateTabGroup('output', state.output);
+        if (output) {
+            activateTabGroup('output', output);
         }
 
-        if (state.addFontsOpen && addFontsPanelToggle) {
-            setDisclosureState(addFontsPanelToggle, true);
+        if (addFontsPanelToggle) {
+            setDisclosureState(addFontsPanelToggle, addFontsOpen);
         }
 
-        if (state.addFontsOpen && state.source) {
-            activateTabGroup('add-font', state.source);
+        if (source) {
+            activateTabGroup('add-font', source);
         }
 
-        if (state.addFontsOpen && state.source === 'google' && state.googleAccessOpen) {
-            const googleAccessToggle = disclosureToggleByTargetId('tasty-fonts-google-access-panel');
+        const googleAccessToggle = disclosureToggleByTargetId('tasty-fonts-google-access-panel');
 
-            if (googleAccessToggle) {
-                setDisclosureState(googleAccessToggle, true);
-            }
+        if (googleAccessToggle) {
+            setDisclosureState(googleAccessToggle, googleAccessOpen);
         }
 
-        if (state.addFontsOpen && state.source === 'adobe' && state.adobeProjectOpen) {
-            const adobeProjectToggle = disclosureToggleByTargetId('tasty-fonts-adobe-project-panel');
+        const adobeProjectToggle = disclosureToggleByTargetId('tasty-fonts-adobe-project-panel');
 
-            if (adobeProjectToggle) {
-                setDisclosureState(adobeProjectToggle, true);
-            }
+        if (adobeProjectToggle) {
+            setDisclosureState(adobeProjectToggle, adobeProjectOpen);
         }
     }
 
@@ -555,8 +630,14 @@
         return state;
     }
 
-    function syncTrackedUiUrl() {
-        if (!window.history || typeof window.history.replaceState !== 'function') {
+    function syncTrackedUiUrl(historyMode = 'replace') {
+        if (!window.history) {
+            return;
+        }
+
+        const method = historyMode === 'push' ? 'pushState' : 'replaceState';
+
+        if (typeof window.history[method] !== 'function') {
             return;
         }
 
@@ -604,7 +685,11 @@
             return;
         }
 
-        window.history.replaceState(window.history.state, '', nextUrl.toString());
+        window.history[method](window.history.state, '', nextUrl.toString());
+    }
+
+    function handleTrackedUiPopState() {
+        applyTrackedUiState(readTrackedUiState(window.location));
     }
 
     function deliveryButtonLabel(mode, provider) {
@@ -1107,7 +1192,7 @@
         activateTabGroup('add-font', panelKey);
 
         if (syncUrl) {
-            syncTrackedUiUrl();
+            syncTrackedUiUrl('push');
         }
     }
 
@@ -1761,11 +1846,13 @@
             return stack;
         }
 
+        const toastRoot = document.querySelector('.tasty-fonts-admin') || document.body;
+
         stack = document.createElement('div');
         stack.className = 'tasty-fonts-toast-stack';
         stack.setAttribute('aria-live', 'polite');
         stack.setAttribute('aria-atomic', 'true');
-        document.body.appendChild(stack);
+        toastRoot.appendChild(stack);
 
         return stack;
     }
@@ -4191,7 +4278,7 @@
         setDisclosureState(disclosureToggle, nextExpanded);
 
         if (isTrackedDisclosureToggle(disclosureToggle)) {
-            syncTrackedUiUrl();
+            syncTrackedUiUrl('push');
         }
 
         if (nextExpanded && disclosureToggle.getAttribute('data-disclosure-toggle') === 'tasty-fonts-add-font-panel') {
@@ -4214,7 +4301,7 @@
             setDisclosureState(addFontsPanelToggle, true);
         }
 
-        syncTrackedUiUrl();
+        syncTrackedUiUrl('push');
         window.setTimeout(focusAddFontPanel, 0);
         return true;
     }
@@ -4228,7 +4315,7 @@
             activateTabGroup(group, tab.getAttribute('data-tab-target'));
 
             if (isTrackedTabGroup(group)) {
-                syncTrackedUiUrl();
+                syncTrackedUiUrl('push');
             }
 
             return true;
@@ -4279,7 +4366,7 @@
         activateTabGroup(group, nextTab.getAttribute('data-tab-target'));
 
         if (isTrackedTabGroup(group)) {
-            syncTrackedUiUrl();
+            syncTrackedUiUrl('push');
         }
 
         nextTab.focus();
@@ -5032,6 +5119,7 @@
 
             handleTabKeydown(event);
         });
+        window.addEventListener('popstate', handleTrackedUiPopState);
 
         bindFamilyFallbackControls();
         bindFamilyFontDisplayControls();
@@ -5055,8 +5143,9 @@
         updateBunnyImportSummary();
         syncImportDeliveryButtons();
         initializeTabs();
+        defaultTrackedUiState = captureTrackedUiState();
         applyTrackedUiState(initialTrackedUiState);
-        syncTrackedUiUrl();
+        syncTrackedUiUrl('replace');
         applyPendingUiState();
     }
 

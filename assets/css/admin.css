@@ -394,6 +394,9 @@
     grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--tasty-space-3);
     align-items: start;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     width: min(360px, calc(100vw - 32px));
     min-width: 0;
     padding: 12px 12px 12px 14px;
@@ -408,16 +411,37 @@
     transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
+.tasty-fonts-toast::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background: transparent;
+    pointer-events: none;
+}
+
+.tasty-fonts-toast > * {
+    position: relative;
+    z-index: 1;
+}
+
 .tasty-fonts-toast.is-success {
     border-color: var(--tasty-border-success-soft);
     border-left-color: var(--tasty-success);
-    background: var(--tasty-surface-success);
+}
+
+.tasty-fonts-toast.is-success::before {
+    background: rgba(var(--tasty-success-rgb), 0.06);
 }
 
 .tasty-fonts-toast.is-error {
     border-color: var(--tasty-border-danger-soft);
     border-left-color: var(--tasty-danger);
-    background: var(--tasty-surface-danger);
+}
+
+.tasty-fonts-toast.is-error::before {
+    background: rgba(var(--tasty-danger-rgb), 0.06);
 }
 
 .tasty-fonts-toast-message {
