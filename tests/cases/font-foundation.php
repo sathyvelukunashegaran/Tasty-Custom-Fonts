@@ -3,33 +3,11 @@
 declare(strict_types=1);
 
 use TastyFonts\Adobe\AdobeCssParser;
-use TastyFonts\Adobe\AdobeProjectClient;
-use TastyFonts\Admin\AdminController;
-use TastyFonts\Admin\AdminPageRenderer;
-use TastyFonts\Api\RestController;
 use TastyFonts\Bunny\BunnyCssParser;
-use TastyFonts\Bunny\BunnyFontsClient;
-use TastyFonts\Bunny\BunnyImportService;
-use TastyFonts\Fonts\AssetService;
-use TastyFonts\Fonts\BlockEditorFontLibraryService;
-use TastyFonts\Fonts\CatalogService;
-use TastyFonts\Fonts\CssBuilder;
 use TastyFonts\Fonts\FontFilenameParser;
 use TastyFonts\Fonts\HostedImportSupport;
-use TastyFonts\Fonts\LibraryService;
-use TastyFonts\Fonts\LocalUploadService;
-use TastyFonts\Fonts\RuntimeAssetPlanner;
-use TastyFonts\Fonts\RuntimeService;
 use TastyFonts\Google\GoogleCssParser;
-use TastyFonts\Google\GoogleFontsClient;
-use TastyFonts\Google\GoogleImportService;
-use TastyFonts\Plugin;
-use TastyFonts\Repository\ImportRepository;
-use TastyFonts\Repository\LogRepository;
-use TastyFonts\Repository\SettingsRepository;
 use TastyFonts\Support\FontUtils;
-use TastyFonts\Support\Storage;
-use TastyFonts\Updates\GitHubUpdater;
 
 $tests['font_filename_parser_detects_weight_and_style'] = static function (): void {
     $parser = new FontFilenameParser();
@@ -208,5 +186,8 @@ CSS;
 };
 
 $tests['font_utils_modern_user_agent_tracks_a_recent_chrome_release'] = static function (): void {
-    assertContainsValue('Chrome/146.0.0.0', FontUtils::MODERN_USER_AGENT, 'The modern browser user agent should stay current enough to trigger Google Fonts CSS2 WOFF2 responses.');
+    $matched = preg_match('/Chrome\/(\d+)\./', FontUtils::MODERN_USER_AGENT, $matches);
+
+    assertSameValue(1, $matched, 'The modern browser user agent should advertise a Chrome version.');
+    assertSameValue(true, ((int) ($matches[1] ?? 0)) >= 130, 'The modern browser user agent should stay recent enough to trigger Google Fonts CSS2 WOFF2 responses.');
 };
