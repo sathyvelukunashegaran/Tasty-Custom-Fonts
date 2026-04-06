@@ -53,7 +53,13 @@ final class FontUtils
 
     public static function buildFontStack(string $family, string $fallback = 'sans-serif'): string
     {
-        return '"' . self::escapeFontFamily($family) . '", ' . self::sanitizeFallback($fallback);
+        $sanitizedFallback = self::sanitizeFallback($fallback);
+
+        if (trim($family) === '') {
+            return $sanitizedFallback;
+        }
+
+        return '"' . self::escapeFontFamily($family) . '", ' . $sanitizedFallback;
     }
 
     public static function normalizeStyle(string $style): string

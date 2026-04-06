@@ -605,7 +605,7 @@ final class CatalogService
             'role_active' => [
                 'label' => __('In Use', 'tasty-fonts'),
                 'class' => 'is-success',
-                'copy' => __('This family is active through the current live heading/body role pair.', 'tasty-fonts'),
+                'copy' => __('This family is active through the current live roles.', 'tasty-fonts'),
             ],
             default => [
                 'label' => __('Published', 'tasty-fonts'),

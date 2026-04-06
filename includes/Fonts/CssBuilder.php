@@ -27,6 +27,7 @@ final class CssBuilder
         $blocks = [];
         $defaultDisplay = $this->resolveFontDisplay((string) ($settings['font_display'] ?? 'optional'));
         $familyDisplays = is_array($settings['family_font_displays'] ?? null) ? $settings['family_font_displays'] : [];
+        $includeMonospace = !empty($settings['monospace_role_enabled']);
 
         foreach ($catalog as $family) {
             $familyName = is_array($family) ? (string) ($family['family'] ?? '') : '';
@@ -42,7 +43,7 @@ final class CssBuilder
         }
 
         if ($includeRoleUsage && !empty($settings['auto_apply_roles'])) {
-            $usageCss = $this->buildRoleUsageSnippet($roles);
+            $usageCss = $this->buildRoleUsageSnippet($roles, $includeMonospace);
 
             if ($usageCss !== '') {
                 $blocks[] = $usageCss;
@@ -58,33 +59,42 @@ final class CssBuilder
         return trim($css);
     }
 
-    public function buildRoleUsageSnippet(array $roles): string
+    public function buildRoleUsageSnippet(array $roles, bool $includeMonospace = false): string
     {
-        $variableLines = $this->buildRoleVariableLines($roles);
+        $variableLines = $this->buildRoleVariableLines($roles, $includeMonospace);
 
         if ($variableLines === []) {
             return '';
         }
 
-        return implode(
-            "\n",
-            [
-                ...$variableLines,
+        $lines = [
+            ...$variableLines,
+            '',
+            'body {',
+            '  font-family: var(--font-body);',
+            '}',
+            '',
+            'h1, h2, h3, h4, h5, h6 {',
+            '  font-family: var(--font-heading);',
+            '}',
+        ];
+
+        if ($includeMonospace) {
+            $lines = [
+                ...$lines,
                 '',
-                'body {',
-                '  font-family: var(--font-body);',
+                'code, pre {',
+                '  font-family: var(--font-monospace);',
                 '}',
-                '',
-                'h1, h2, h3, h4, h5, h6 {',
-                '  font-family: var(--font-heading);',
-                '}',
-            ]
-        );
+            ];
+        }
+
+        return implode("\n", $lines);
     }
 
-    public function buildRoleVariableSnippet(array $roles): string
+    public function buildRoleVariableSnippet(array $roles, bool $includeMonospace = false): string
     {
-        $variableLines = $this->buildRoleVariableLines($roles);
+        $variableLines = $this->buildRoleVariableLines($roles, $includeMonospace);
 
         if ($variableLines === []) {
             return '';
@@ -93,20 +103,32 @@ final class CssBuilder
         return implode("\n", $variableLines);
     }
 
-    public function buildRoleStackSnippet(array $roles): string
+    public function buildRoleStackSnippet(array $roles, bool $includeMonospace = false): string
     {
-        return implode(
-            "\n",
-            [
-                FontUtils::buildFontStack((string) ($roles['heading'] ?? ''), (string) ($roles['heading_fallback'] ?? 'sans-serif')),
-                FontUtils::buildFontStack((string) ($roles['body'] ?? ''), (string) ($roles['body_fallback'] ?? 'sans-serif')),
-            ]
-        );
+        $stacks = [
+            FontUtils::buildFontStack((string) ($roles['heading'] ?? ''), (string) ($roles['heading_fallback'] ?? 'sans-serif')),
+            FontUtils::buildFontStack((string) ($roles['body'] ?? ''), (string) ($roles['body_fallback'] ?? 'sans-serif')),
+        ];
+
+        if ($includeMonospace) {
+            $stacks[] = FontUtils::buildFontStack(
+                (string) ($roles['monospace'] ?? ''),
+                (string) ($roles['monospace_fallback'] ?? 'monospace')
+            );
+        }
+
+        return implode("\n", $stacks);
     }
 
-    public function buildRoleNameSnippet(array $roles): string
+    public function buildRoleNameSnippet(array $roles, bool $includeMonospace = false): string
     {
-        return implode("\n", [(string) ($roles['heading'] ?? ''), (string) ($roles['body'] ?? '')]);
+        $names = [(string) ($roles['heading'] ?? ''), (string) ($roles['body'] ?? '')];
+
+        if ($includeMonospace) {
+            $names[] = (string) ($roles['monospace'] ?? '');
+        }
+
+        return implode("\n", $names);
     }
 
     public function formatOutput(string $css, bool $minify = false): string
@@ -252,7 +274,7 @@ final class CssBuilder
         return in_array($value, $allowed, true) ? $value : $default;
     }
 
-    private function buildRoleVariableLines(array $roles): array
+    private function buildRoleVariableLines(array $roles, bool $includeMonospace = false): array
     {
         [$headingSlug, $bodySlug, $headingStack, $bodyStack] = $this->roleTokens($roles);
 
@@ -260,14 +282,31 @@ final class CssBuilder
             return [];
         }
 
-        return [
+        $lines = [
             ':root {',
             "  --font-{$headingSlug}: {$headingStack};",
             "  --font-{$bodySlug}: {$bodyStack};",
             "  --font-heading: var(--font-{$headingSlug});",
             "  --font-body: var(--font-{$bodySlug});",
-            '}',
         ];
+
+        if ($includeMonospace) {
+            $monospaceFamily = (string) ($roles['monospace'] ?? '');
+            $monospaceFallback = (string) ($roles['monospace_fallback'] ?? 'monospace');
+            $monospaceStack = FontUtils::buildFontStack($monospaceFamily, $monospaceFallback);
+
+            if (trim($monospaceFamily) !== '') {
+                $monospaceSlug = FontUtils::slugify($monospaceFamily);
+                $lines[] = "  --font-{$monospaceSlug}: {$monospaceStack};";
+                $lines[] = "  --font-monospace: var(--font-{$monospaceSlug});";
+            } else {
+                $lines[] = "  --font-monospace: {$monospaceStack};";
+            }
+        }
+
+        $lines[] = '}';
+
+        return $lines;
     }
 
     private function buildSourceEntry(string $format, string $url): string

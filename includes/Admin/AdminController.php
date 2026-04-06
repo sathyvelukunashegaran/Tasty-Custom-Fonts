@@ -29,7 +29,7 @@ final class AdminController
     private const ACTION_DOWNLOAD_GENERATED_CSS = 'tasty_fonts_download_generated_css';
     private const NOTICE_TTL = 300;
     private const NOTICE_TRANSIENT_PREFIX = 'tasty_fonts_admin_notices_';
-    private const ROLE_KEYS = ['heading', 'body'];
+    private const BASE_ROLE_KEYS = ['heading', 'body'];
     private const SEARCH_CACHE_TTL = 900;
     private const SEARCH_CACHE_TRANSIENT_PREFIX = 'tasty_fonts_search_cache_';
     private const SEARCH_COOLDOWN_TRANSIENT_PREFIX = 'tasty_fonts_search_cooldown_';
@@ -74,6 +74,7 @@ final class AdminController
             return;
         }
 
+        $settings = $this->settings->getSettings();
         $googleApiStatus = $this->googleClient->getApiKeyStatus();
         $googleSearchEnabled = $this->googleClient->canSearch();
 
@@ -115,6 +116,8 @@ final class AdminController
                 'restNonce' => wp_create_nonce('wp_rest'),
                 'routes' => RestController::routeMap(),
                 'googleApiEnabled' => $googleSearchEnabled,
+                'trainingWheelsOff' => !empty($settings['training_wheels_off']),
+                'monospaceRoleEnabled' => !empty($settings['monospace_role_enabled']),
                 'runtimeStrings' => [
                     'searchDisabled' => $this->buildSearchDisabledMessage($googleApiStatus),
                 ],
@@ -359,12 +362,7 @@ final class AdminController
         }
 
         $roles = $this->settings->saveRoles(
-            [
-                'heading' => sanitize_text_field((string) ($roleValues['heading'] ?? '')),
-                'body' => sanitize_text_field((string) ($roleValues['body'] ?? '')),
-                'heading_fallback' => FontUtils::sanitizeFallback((string) ($roleValues['heading_fallback'] ?? 'sans-serif')),
-                'body_fallback' => FontUtils::sanitizeFallback((string) ($roleValues['body_fallback'] ?? 'sans-serif')),
-            ],
+            $this->sanitizeRoleValues($roleValues),
             $availableFamilies
         );
 
@@ -381,7 +379,7 @@ final class AdminController
         return [
             'message' => $message,
             'roles' => $roles,
-            'role_deployment' => $this->buildRoleDeploymentContext($roles, $appliedRoles, $applyEverywhere),
+            'role_deployment' => $this->buildRoleDeploymentContext($roles, $appliedRoles, $applyEverywhere, $settings),
         ];
     }
 
@@ -472,14 +470,25 @@ final class AdminController
             }
         }
 
-        foreach (['minify_css_output', 'preload_primary_fonts', 'remote_connection_hints', 'delete_uploaded_files_on_uninstall'] as $field) {
+        foreach (['minify_css_output', 'preload_primary_fonts', 'remote_connection_hints', 'delete_uploaded_files_on_uninstall', 'training_wheels_off'] as $field) {
             if (array_key_exists($field, $_POST)) {
                 $settingsInput[$field] = $_POST[$field];
             }
         }
 
+        if (array_key_exists('monospace_role_enabled', $_POST)) {
+            $settingsInput['monospace_role_enabled'] = $_POST['monospace_role_enabled'];
+        }
+
         $savedSettings = $this->settings->saveSettings($settingsInput);
         $this->googleClient->clearCatalogCache();
+
+        if (($previousSettings['monospace_role_enabled'] ?? false) !== ($savedSettings['monospace_role_enabled'] ?? false)) {
+            $availableFamilies = $this->buildSelectableFamilyNames($this->catalog->getCatalog());
+            $sitewideEnabled = !empty($savedSettings['auto_apply_roles']);
+            $liveRoles = $sitewideEnabled ? $this->settings->getAppliedRoles($availableFamilies) : [];
+            $this->library->syncLiveRolePublishStates($liveRoles, $sitewideEnabled);
+        }
 
         if ($this->settingsChangeRequiresAssetRefresh($previousSettings, $savedSettings)) {
             $this->assets->refreshGeneratedAssets(false, false);
@@ -630,12 +639,23 @@ final class AdminController
         }
 
         $roles = $this->settings->saveRoles(
-            [
-                'heading' => $this->getPostedText('tasty_fonts_heading_font'),
-                'body' => $this->getPostedText('tasty_fonts_body_font'),
-                'heading_fallback' => $this->getPostedFallback('tasty_fonts_heading_fallback'),
-                'body_fallback' => $this->getPostedFallback('tasty_fonts_body_fallback'),
-            ],
+            $this->sanitizeRoleValues(
+                array_filter(
+                    [
+                        'heading' => $this->getPostedText('tasty_fonts_heading_font'),
+                        'body' => $this->getPostedText('tasty_fonts_body_font'),
+                        'heading_fallback' => $this->getPostedFallback('tasty_fonts_heading_fallback'),
+                        'body_fallback' => $this->getPostedFallback('tasty_fonts_body_fallback'),
+                        'monospace' => isset($_POST['tasty_fonts_monospace_font'])
+                            ? $this->getPostedText('tasty_fonts_monospace_font')
+                            : null,
+                        'monospace_fallback' => isset($_POST['tasty_fonts_monospace_fallback'])
+                            ? $this->getPostedFallback('tasty_fonts_monospace_fallback', 'monospace')
+                            : null,
+                    ],
+                    static fn (mixed $value): bool => $value !== null
+                )
+            ),
             $availableFamilies
         );
 
@@ -711,7 +731,7 @@ final class AdminController
         $roles = $this->settings->getRoles($availableFamilies);
         $appliedRoles = $this->settings->getAppliedRoles($availableFamilies);
         $googleAccessContext = $this->buildGoogleAccessContext();
-        $roleDeploymentContext = $this->buildRoleDeploymentContext($roles, $appliedRoles, $applyEverywhere);
+        $roleDeploymentContext = $this->buildRoleDeploymentContext($roles, $appliedRoles, $applyEverywhere, $settings);
 
         return [
             'storage' => $storage,
@@ -751,6 +771,8 @@ final class AdminController
             'minify_css_output' => !empty($settings['minify_css_output']),
             'preload_primary_fonts' => !empty($settings['preload_primary_fonts']),
             'remote_connection_hints' => !empty($settings['remote_connection_hints']),
+            'training_wheels_off' => !empty($settings['training_wheels_off']),
+            'monospace_role_enabled' => !empty($settings['monospace_role_enabled']),
             'delete_uploaded_files_on_uninstall' => !empty($settings['delete_uploaded_files_on_uninstall']),
             'diagnostic_items' => $this->buildDiagnosticItems($assetStatus, $storage, $settings, $counts),
             'overview_metrics' => $this->buildOverviewMetrics($counts),
@@ -859,34 +881,35 @@ final class AdminController
     private function buildOutputPanels(array $roles, array $settings): array
     {
         $minifyOutput = !empty($settings['minify_css_output']);
+        $includeMonospace = !empty($settings['monospace_role_enabled']);
 
         return [
             [
                 'key' => 'usage',
                 'label' => __('Site Snippet', 'tasty-fonts'),
                 'target' => 'tasty-fonts-output-usage',
-                'value' => $this->cssBuilder->formatOutput($this->cssBuilder->buildRoleUsageSnippet($roles), $minifyOutput),
+                'value' => $this->cssBuilder->formatOutput($this->cssBuilder->buildRoleUsageSnippet($roles, $includeMonospace), $minifyOutput),
                 'active' => true,
             ],
             [
                 'key' => 'variables',
                 'label' => __('CSS Variables', 'tasty-fonts'),
                 'target' => 'tasty-fonts-output-vars',
-                'value' => $this->cssBuilder->formatOutput($this->cssBuilder->buildRoleVariableSnippet($roles), $minifyOutput),
+                'value' => $this->cssBuilder->formatOutput($this->cssBuilder->buildRoleVariableSnippet($roles, $includeMonospace), $minifyOutput),
                 'active' => false,
             ],
             [
                 'key' => 'stacks',
                 'label' => __('Font Stacks', 'tasty-fonts'),
                 'target' => 'tasty-fonts-output-stacks',
-                'value' => $this->cssBuilder->buildRoleStackSnippet($roles),
+                'value' => $this->cssBuilder->buildRoleStackSnippet($roles, $includeMonospace),
                 'active' => false,
             ],
             [
                 'key' => 'names',
                 'label' => __('Font Names', 'tasty-fonts'),
                 'target' => 'tasty-fonts-output-names',
-                'value' => $this->cssBuilder->buildRoleNameSnippet($roles),
+                'value' => $this->cssBuilder->buildRoleNameSnippet($roles, $includeMonospace),
                 'active' => false,
             ],
         ];
@@ -1044,6 +1067,18 @@ final class AdminController
                 : __('remote connection hints disabled', 'tasty-fonts');
         }
 
+        if (!empty($before['training_wheels_off']) !== !empty($after['training_wheels_off'])) {
+            $changes[] = !empty($after['training_wheels_off'])
+                ? __('training wheels off enabled', 'tasty-fonts')
+                : __('training wheels restored', 'tasty-fonts');
+        }
+
+        if (!empty($before['monospace_role_enabled']) !== !empty($after['monospace_role_enabled'])) {
+            $changes[] = !empty($after['monospace_role_enabled'])
+                ? __('monospace role enabled', 'tasty-fonts')
+                : __('monospace role disabled', 'tasty-fonts');
+        }
+
         if (($before['preview_sentence'] ?? '') !== ($after['preview_sentence'] ?? '')) {
             $changes[] = __('preview text updated', 'tasty-fonts');
         }
@@ -1068,7 +1103,8 @@ final class AdminController
     {
         return ($before['css_delivery_mode'] ?? 'file') !== ($after['css_delivery_mode'] ?? 'file')
             || ($before['font_display'] ?? 'optional') !== ($after['font_display'] ?? 'optional')
-            || !empty($before['minify_css_output']) !== !empty($after['minify_css_output']);
+            || !empty($before['minify_css_output']) !== !empty($after['minify_css_output'])
+            || !empty($before['monospace_role_enabled']) !== !empty($after['monospace_role_enabled']);
     }
 
     private function buildFontDisplayOptions(): array
@@ -1126,8 +1162,10 @@ final class AdminController
         return TASTY_FONTS_VERSION;
     }
 
-    private function buildRoleDeploymentContext(array $draftRoles, array $appliedRoles, bool $applyEverywhere): array
+    private function buildRoleDeploymentContext(array $draftRoles, array $appliedRoles, bool $applyEverywhere, ?array $settings = null): array
     {
+        $settings = $settings ?? $this->settings->getSettings();
+
         if (!$applyEverywhere) {
             return [
                 'badge' => __('Saved Only', 'tasty-fonts'),
@@ -1135,35 +1173,35 @@ final class AdminController
                 'title' => __('Saved Roles Only', 'tasty-fonts'),
                 'copy' => sprintf(
                     __('Sitewide roles are off. %s', 'tasty-fonts'),
-                    $this->buildRolePairDeliverySummary($draftRoles)
+                    $this->buildRoleDeliverySummary($draftRoles, $settings)
                 ),
             ];
         }
 
-        if ($this->roleSetsMatch($draftRoles, $appliedRoles)) {
+        if ($this->roleSetsMatch($draftRoles, $appliedRoles, $settings)) {
             return [
                 'badge' => __('Live', 'tasty-fonts'),
                 'badge_class' => 'is-success',
-                'title' => __('Live Pair Active', 'tasty-fonts'),
-                'copy' => $this->buildRolePairDeliverySummary($draftRoles),
+                'title' => __('Live Roles Active', 'tasty-fonts'),
+                'copy' => $this->buildRoleDeliverySummary($draftRoles, $settings),
             ];
         }
 
         return [
             'badge' => __('Pending', 'tasty-fonts'),
             'badge_class' => 'is-warning',
-            'title' => __('Saved Pair Differs From Live', 'tasty-fonts'),
+            'title' => __('Saved Roles Differ From Live', 'tasty-fonts'),
             'copy' => sprintf(
                 __('Saved: %1$s. Live: %2$s. Apply Sitewide to publish these roles.', 'tasty-fonts'),
-                $this->buildRolePairDeliverySummary($draftRoles),
-                $this->buildRolePairDeliverySummary($appliedRoles)
+                $this->buildRoleDeliverySummary($draftRoles, $settings),
+                $this->buildRoleDeliverySummary($appliedRoles, $settings)
             ),
         ];
     }
 
-    private function roleSetsMatch(array $left, array $right): bool
+    private function roleSetsMatch(array $left, array $right, ?array $settings = null): bool
     {
-        foreach (['heading', 'body', 'heading_fallback', 'body_fallback'] as $key) {
+        foreach ($this->roleComparisonKeys($settings ?? $this->settings->getSettings()) as $key) {
             if ((string) ($left[$key] ?? '') !== (string) ($right[$key] ?? '')) {
                 return false;
             }
@@ -1174,27 +1212,27 @@ final class AdminController
 
     private function buildRolesSavedMessage(string $actionType, array $roles, array $appliedRoles, bool $wasAppliedSitewide): string
     {
+        $settings = $this->settings->getSettings();
+        $savedSummary = $this->buildRoleTextSummary($roles, $settings);
+        $liveSummary = $this->buildRoleTextSummary($appliedRoles, $settings);
+
         return match ($actionType) {
             'apply' => sprintf(
-                __('Role pair applied sitewide. Heading: %1$s; Body: %2$s.', 'tasty-fonts'),
-                (string) ($roles['heading'] ?? ''),
-                (string) ($roles['body'] ?? '')
+                __('Roles applied sitewide. %s.', 'tasty-fonts'),
+                $savedSummary
             ),
             'disable' => sprintf(
-                __('Sitewide role CSS turned off. Saved roles kept as Heading: %1$s; Body: %2$s.', 'tasty-fonts'),
-                (string) ($roles['heading'] ?? ''),
-                (string) ($roles['body'] ?? '')
+                __('Sitewide role CSS turned off. Saved roles kept as %s.', 'tasty-fonts'),
+                $savedSummary
             ),
             default => $wasAppliedSitewide
                 ? sprintf(
-                    __('Roles saved. Live site still uses Heading: %1$s; Body: %2$s until you apply them sitewide.', 'tasty-fonts'),
-                    (string) ($appliedRoles['heading'] ?? ''),
-                    (string) ($appliedRoles['body'] ?? '')
+                    __('Roles saved. Live site still uses %s until you apply them sitewide.', 'tasty-fonts'),
+                    $liveSummary
                 )
                 : sprintf(
-                    __('Roles saved. Sitewide roles stay off until you apply Heading: %1$s; Body: %2$s.', 'tasty-fonts'),
-                    (string) ($roles['heading'] ?? ''),
-                    (string) ($roles['body'] ?? '')
+                    __('Roles saved. Sitewide roles stay off until you apply %s.', 'tasty-fonts'),
+                    $savedSummary
                 ),
         };
     }
@@ -1386,7 +1424,7 @@ final class AdminController
 
         $storedRoles = $this->settings->getRoles([]);
 
-        foreach (self::ROLE_KEYS as $roleKey) {
+        foreach ($this->effectiveRoleKeys() as $roleKey) {
             $familyName = trim((string) ($storedRoles[$roleKey] ?? ''));
 
             if ($familyName !== '') {
@@ -1400,25 +1438,125 @@ final class AdminController
         return array_values($families);
     }
 
-    private function buildRolePairDeliverySummary(array $roles): string
+    private function buildRoleDeliverySummary(array $roles, ?array $settings = null): string
     {
         $parts = [];
+        $settings = $settings ?? $this->settings->getSettings();
 
-        foreach (self::ROLE_KEYS as $roleKey) {
+        foreach ($this->effectiveRoleKeys($settings) as $roleKey) {
             $familyName = trim((string) ($roles[$roleKey] ?? ''));
+            $fallback = FontUtils::sanitizeFallback((string) ($roles[$roleKey . '_fallback'] ?? $this->defaultRoleFallback($roleKey)));
+
+            if ($familyName === '' && $roleKey !== 'monospace') {
+                continue;
+            }
 
             if ($familyName === '') {
+                $parts[] = sprintf(
+                    __('%1$s: fallback only (%2$s)', 'tasty-fonts'),
+                    $this->roleLabel($roleKey),
+                    $fallback
+                );
                 continue;
             }
 
             $parts[] = sprintf(
                 __('%1$s: %2$s', 'tasty-fonts'),
-                ucfirst($roleKey),
+                $this->roleLabel($roleKey),
                 $this->describeFamilyDelivery($familyName)
             );
         }
 
-        return $parts === [] ? __('No role pair selected yet.', 'tasty-fonts') : implode('; ', $parts) . '.';
+        return $parts === [] ? __('No roles selected yet.', 'tasty-fonts') : implode('; ', $parts) . '.';
+    }
+
+    private function buildRoleTextSummary(array $roles, ?array $settings = null): string
+    {
+        $settings = $settings ?? $this->settings->getSettings();
+        $parts = [];
+
+        foreach ($this->effectiveRoleKeys($settings) as $roleKey) {
+            $familyName = trim((string) ($roles[$roleKey] ?? ''));
+            $fallback = FontUtils::sanitizeFallback((string) ($roles[$roleKey . '_fallback'] ?? $this->defaultRoleFallback($roleKey)));
+
+            $parts[] = sprintf(
+                __('%1$s: %2$s', 'tasty-fonts'),
+                $this->roleLabel($roleKey),
+                $familyName !== ''
+                    ? $familyName
+                    : sprintf(__('fallback only (%s)', 'tasty-fonts'), $fallback)
+            );
+        }
+
+        return implode('; ', $parts);
+    }
+
+    private function roleComparisonKeys(array $settings): array
+    {
+        $keys = [];
+
+        foreach ($this->effectiveRoleKeys($settings) as $roleKey) {
+            $keys[] = $roleKey;
+            $keys[] = $roleKey . '_fallback';
+        }
+
+        return $keys;
+    }
+
+    private function effectiveRoleKeys(?array $settings = null): array
+    {
+        $settings = $settings ?? $this->settings->getSettings();
+        $keys = self::BASE_ROLE_KEYS;
+
+        if (!empty($settings['monospace_role_enabled'])) {
+            $keys[] = 'monospace';
+        }
+
+        return $keys;
+    }
+
+    private function defaultRoleFallback(string $roleKey): string
+    {
+        return $roleKey === 'monospace' ? 'monospace' : 'sans-serif';
+    }
+
+    private function roleLabel(string $roleKey): string
+    {
+        return match ($roleKey) {
+            'heading' => __('Heading', 'tasty-fonts'),
+            'body' => __('Body', 'tasty-fonts'),
+            'monospace' => __('Monospace', 'tasty-fonts'),
+            default => ucfirst($roleKey),
+        };
+    }
+
+    private function sanitizeRoleValues(array $roleValues): array
+    {
+        $sanitized = [];
+
+        foreach (['heading', 'body', 'monospace'] as $roleKey) {
+            if (!array_key_exists($roleKey, $roleValues)) {
+                continue;
+            }
+
+            $sanitized[$roleKey] = sanitize_text_field((string) $roleValues[$roleKey]);
+        }
+
+        foreach (
+            [
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'sans-serif',
+                'monospace_fallback' => 'monospace',
+            ] as $roleKey => $defaultFallback
+        ) {
+            if (!array_key_exists($roleKey, $roleValues)) {
+                continue;
+            }
+
+            $sanitized[$roleKey] = FontUtils::sanitizeFallback((string) $roleValues[$roleKey] ?: $defaultFallback);
+        }
+
+        return $sanitized;
     }
 
     private function describeFamilyDelivery(string $familyName): string
@@ -1598,7 +1736,13 @@ final class AdminController
 
     private function getPostedFallback(string $key, string $default = 'sans-serif'): string
     {
-        return FontUtils::sanitizeFallback($this->getPostedText($key, $default));
+        $value = $this->getPostedText($key);
+
+        if (trim($value) === '') {
+            return $default;
+        }
+
+        return FontUtils::sanitizeFallback($value);
     }
 
     private function getPostedFamilyFontDisplay(string $key, string $default = 'inherit'): string
@@ -1839,7 +1983,7 @@ final class AdminController
         }
 
         return match ($key) {
-            'tf_studio' => in_array($value, ['preview', 'snippets', 'generated', 'system', 'output-settings'], true) ? $value : '',
+            'tf_studio' => in_array($value, ['preview', 'snippets', 'generated', 'system', 'output-settings', 'plugin-behavior'], true) ? $value : '',
             'tf_preview' => in_array($value, ['editorial', 'card', 'reading', 'interface'], true) ? $value : '',
             'tf_output' => in_array($value, ['usage', 'variables', 'stacks', 'names'], true) ? $value : '',
             'tf_source' => in_array($value, ['google', 'bunny', 'adobe', 'upload'], true) ? $value : '',

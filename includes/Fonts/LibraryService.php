@@ -66,11 +66,7 @@ final class LibraryService
         if ($roleLabels !== []) {
             return $this->error(
                 'tasty_fonts_family_in_use',
-                sprintf(
-                    __('%1$s is currently assigned as the %2$s font. Choose a different heading/body font before deleting it.', 'tasty-fonts'),
-                    $familyName,
-                    implode(__(' and ', 'tasty-fonts'), $this->translateRoleLabels($roleLabels))
-                )
+                $this->buildDeleteFamilyBlockedMessage($familyName, $roleLabels)
             );
         }
 
@@ -147,7 +143,7 @@ final class LibraryService
         if ($isActiveDelivery && $this->isLiveRoleFamily($familyName)) {
             return $this->error(
                 'tasty_fonts_delivery_in_use',
-                __('Switch the live delivery or remove the family from the active role pair before deleting this delivery profile.', 'tasty-fonts')
+                __('Switch the live delivery or remove the family from the active roles before deleting this delivery profile.', 'tasty-fonts')
             );
         }
 
@@ -319,7 +315,7 @@ final class LibraryService
         if ($publishState === 'library_only' && $this->isLiveRoleFamily($familyName)) {
             return $this->error(
                 'tasty_fonts_family_live',
-                __('This family is live through the current heading/body pair. Switch roles or turn off sitewide usage before pausing it.', 'tasty-fonts')
+                __('This family is live through the current active roles. Switch roles or turn off sitewide usage before pausing it.', 'tasty-fonts')
             );
         }
 
@@ -358,11 +354,11 @@ final class LibraryService
     }
 
     /**
-     * Sync stored family publish states to reflect the active heading/body role pair.
+     * Sync stored family publish states to reflect the active role assignments.
      *
      * @since 1.4.0
      *
-     * @param array{heading?: string, body?: string} $liveRoles Currently applied live role families.
+     * @param array{heading?: string, body?: string, monospace?: string} $liveRoles Currently applied live role families.
      * @param bool $sitewideEnabled Whether sitewide role application is enabled.
      * @return void
      */
@@ -371,7 +367,7 @@ final class LibraryService
         $liveFamilies = [];
 
         if ($sitewideEnabled) {
-            foreach (['heading', 'body'] as $key) {
+            foreach ($this->liveRoleKeys() as $key) {
                 $familyName = trim((string) ($liveRoles[$key] ?? ''));
 
                 if ($familyName !== '') {
@@ -470,13 +466,11 @@ final class LibraryService
         $face = $faces[$faceIndex];
         $familyName = (string) ($family['family'] ?? $familySlug);
         $roleLabels = $this->getProtectedRoleLabels($familyName);
-        $isHeading = in_array('heading', $roleLabels, true);
-        $isBody = in_array('body', $roleLabels, true);
 
-        if (count($faces) <= 1 && ($isHeading || $isBody)) {
+        if (count($faces) <= 1 && $roleLabels !== []) {
             return $this->error(
                 'tasty_fonts_variant_in_use',
-                $this->buildDeleteLastVariantBlockedMessage($familyName, $isHeading, $isBody)
+                $this->buildDeleteLastVariantBlockedMessage($familyName, $roleLabels)
             );
         }
 
@@ -698,7 +692,13 @@ final class LibraryService
         $catalog = $this->catalog->getCatalog();
         $liveRoles = $this->settings->getAppliedRoles($catalog);
 
-        return ($liveRoles['heading'] ?? '') === $familyName || ($liveRoles['body'] ?? '') === $familyName;
+        foreach ($this->liveRoleKeys() as $roleKey) {
+            if (($liveRoles[$roleKey] ?? '') === $familyName) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function persistProfile(array $family, array $profile, bool $activate): void
@@ -761,12 +761,10 @@ final class LibraryService
         $roleLabels = [];
 
         foreach ($roleSets as $roles) {
-            if (($roles['heading'] ?? '') === $familyName) {
-                $roleLabels[] = 'heading';
-            }
-
-            if (($roles['body'] ?? '') === $familyName) {
-                $roleLabels[] = 'body';
+            foreach ($this->liveRoleKeys() as $roleKey) {
+                if (($roles[$roleKey] ?? '') === $familyName) {
+                    $roleLabels[] = $roleKey;
+                }
             }
         }
 
@@ -779,32 +777,85 @@ final class LibraryService
             static fn (string $label): string => match ($label) {
                 'heading' => __('heading', 'tasty-fonts'),
                 'body' => __('body', 'tasty-fonts'),
+                'monospace' => __('monospace', 'tasty-fonts'),
                 default => $label,
             },
             $roleLabels
         );
     }
 
-    private function buildDeleteLastVariantBlockedMessage(string $familyName, bool $isHeading, bool $isBody): string
+    private function buildDeleteFamilyBlockedMessage(string $familyName, array $roleLabels): string
     {
-        if ($isHeading && $isBody) {
-            return sprintf(
-                __('%s is currently assigned to both heading and body, and this is the last saved variant. Choose different role fonts before deleting it.', 'tasty-fonts'),
-                $familyName
-            );
+        $translatedLabels = $this->translateRoleLabels($roleLabels);
+
+        if ($translatedLabels === []) {
+            return '';
         }
 
-        if ($isHeading) {
+        if (count($translatedLabels) === 1) {
             return sprintf(
-                __('%s is currently assigned to heading, and this is the last saved variant. Choose a different heading font before deleting it.', 'tasty-fonts'),
-                $familyName
+                __('%1$s is currently assigned as the %2$s font. Choose a different %2$s font before deleting it.', 'tasty-fonts'),
+                $familyName,
+                $translatedLabels[0]
             );
         }
 
         return sprintf(
-            __('%s is currently assigned to body, and this is the last saved variant. Choose a different body font before deleting it.', 'tasty-fonts'),
-            $familyName
+            __('%1$s is currently assigned to %2$s. Choose different role fonts before deleting it.', 'tasty-fonts'),
+            $familyName,
+            $this->formatRoleLabelList($translatedLabels)
         );
+    }
+
+    private function buildDeleteLastVariantBlockedMessage(string $familyName, array $roleLabels): string
+    {
+        $translatedLabels = $this->translateRoleLabels($roleLabels);
+
+        if ($translatedLabels === []) {
+            return '';
+        }
+
+        if (count($translatedLabels) === 1) {
+            return sprintf(
+                __('%1$s is currently assigned to %2$s, and this is the last saved variant. Choose a different %2$s font before deleting it.', 'tasty-fonts'),
+                $familyName,
+                $translatedLabels[0]
+            );
+        }
+
+        return sprintf(
+            __('%1$s is currently assigned to %2$s, and this is the last saved variant. Choose different role fonts before deleting it.', 'tasty-fonts'),
+            $familyName,
+            $this->formatRoleLabelList($translatedLabels)
+        );
+    }
+
+    private function formatRoleLabelList(array $labels): string
+    {
+        $labels = array_values(array_filter($labels, 'strlen'));
+
+        if ($labels === []) {
+            return '';
+        }
+
+        if (count($labels) === 1) {
+            return $labels[0];
+        }
+
+        $lastLabel = array_pop($labels);
+
+        return implode(', ', $labels) . __(' and ', 'tasty-fonts') . $lastLabel;
+    }
+
+    private function liveRoleKeys(): array
+    {
+        $keys = ['heading', 'body'];
+
+        if (!empty($this->settings->getSettings()['monospace_role_enabled'])) {
+            $keys[] = 'monospace';
+        }
+
+        return $keys;
     }
 
     private function storageErrorMessage(string $fallback): string

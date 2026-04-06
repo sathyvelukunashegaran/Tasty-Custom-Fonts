@@ -2,24 +2,24 @@
     /* Primitive palette */
     --tasty-white-rgb: 255, 255, 255;
     --tasty-gray-0: #ffffff;
-    --tasty-gray-50: #f6f7f7;
-    --tasty-gray-100: #f0f0f0;
-    --tasty-gray-150: #f0f0f1;
-    --tasty-gray-300: #dddddd;
-    --tasty-gray-600: #8c8f94;
-    --tasty-gray-600-rgb: 140, 143, 148;
-    --tasty-gray-700: #50575e;
+    --tasty-gray-50: #fafaf9;
+    --tasty-gray-100: #f5f5f3;
+    --tasty-gray-150: #f2f3f5;
+    --tasty-gray-300: #d8dee5;
+    --tasty-gray-600: #7d8794;
+    --tasty-gray-600-rgb: 125, 135, 148;
+    --tasty-gray-700: #495664;
     --tasty-gray-900: #1d2327;
     --tasty-gray-900-rgb: 29, 35, 39;
 
-    --tasty-ctrl-border: #c3ccd5;
-    --tasty-ctrl-border-strong: #8c8f94;
-    --tasty-ctrl-border-active: #98b5d4;
+    --tasty-ctrl-border: #cfd7e0;
+    --tasty-ctrl-border-strong: #8a96a3;
+    --tasty-ctrl-border-active: #8ea8c2;
     --tasty-ctrl-surface: #ffffff;
-    --tasty-ctrl-surface-muted: #f6f8fb;
-    --tasty-ctrl-text: #22384e;
-    --tasty-ctrl-text-muted: #5d6d7b;
-    --tasty-ctrl-text-muted-rgb: 93, 109, 123;
+    --tasty-ctrl-surface-muted: #fafbfd;
+    --tasty-ctrl-text: #213140;
+    --tasty-ctrl-text-muted: #667585;
+    --tasty-ctrl-text-muted-rgb: 102, 117, 133;
 
     --tasty-success-raw: #00a32a;
     --tasty-success-rgb: 0, 163, 42;
@@ -33,43 +33,44 @@
     --tasty-accent-hover: var(--wp-admin-theme-color-darker-10, #006ba1);
     --tasty-accent-active: var(--wp-admin-theme-color-darker-20, #005a87);
     --tasty-accent-rgb: var(--wp-admin-theme-color--rgb, 0, 124, 186);
-    --tasty-accent-soft: rgba(var(--tasty-accent-rgb), 0.08);
+    --tasty-accent-soft: rgba(var(--tasty-accent-rgb), 0.06);
 
     --tasty-surface: var(--tasty-gray-0);
     --tasty-surface-soft: var(--tasty-gray-50);
     --tasty-surface-muted: var(--tasty-gray-150);
-    --tasty-surface-accent-subtle: rgba(var(--tasty-accent-rgb), 0.04);
+    --tasty-surface-accent-subtle: rgba(var(--tasty-accent-rgb), 0.025);
     --tasty-surface-accent-soft: var(--tasty-accent-soft);
     --tasty-surface-success: var(--tasty-success-soft);
-    --tasty-surface-warning-subtle: rgba(var(--tasty-warning-rgb), 0.05);
+    --tasty-surface-warning-subtle: rgba(var(--tasty-warning-rgb), 0.045);
     --tasty-surface-warning: var(--tasty-warning-soft);
     --tasty-surface-danger: var(--tasty-danger-soft);
+    --tasty-surface-danger-strong: rgba(var(--tasty-danger-rgb), 0.1);
     --tasty-surface-progress-track: rgba(var(--tasty-gray-900-rgb), 0.08);
     --tasty-surface-overlay-soft: rgba(var(--tasty-white-rgb), 0.6);
 
     /* Semantic borders */
     --tasty-border: var(--tasty-gray-300);
     --tasty-border-strong: var(--tasty-gray-600);
-    --tasty-border-subtle: rgba(var(--tasty-gray-600-rgb), 0.18);
-    --tasty-border-subtle-strong: rgba(var(--tasty-gray-600-rgb), 0.24);
-    --tasty-border-subtle-faint: rgba(var(--tasty-gray-600-rgb), 0.14);
+    --tasty-border-subtle: rgba(var(--tasty-gray-600-rgb), 0.14);
+    --tasty-border-subtle-strong: rgba(var(--tasty-gray-600-rgb), 0.2);
+    --tasty-border-subtle-faint: rgba(var(--tasty-gray-600-rgb), 0.1);
     --tasty-border-contrast-soft: rgba(var(--tasty-gray-900-rgb), 0.07);
-    --tasty-border-accent-soft: rgba(var(--tasty-accent-rgb), 0.18);
-    --tasty-border-accent-strong: rgba(var(--tasty-accent-rgb), 0.24);
-    --tasty-border-success-soft: rgba(var(--tasty-success-rgb), 0.18);
-    --tasty-border-warning-soft: rgba(var(--tasty-warning-rgb), 0.18);
-    --tasty-border-danger-soft: rgba(var(--tasty-danger-rgb), 0.16);
+    --tasty-border-accent-soft: rgba(var(--tasty-accent-rgb), 0.14);
+    --tasty-border-accent-strong: rgba(var(--tasty-accent-rgb), 0.2);
+    --tasty-border-success-soft: rgba(var(--tasty-success-rgb), 0.16);
+    --tasty-border-warning-soft: rgba(var(--tasty-warning-rgb), 0.16);
+    --tasty-border-danger-soft: rgba(var(--tasty-danger-rgb), 0.14);
 
     /* Semantic text and status */
     --tasty-text: var(--tasty-gray-900);
     --tasty-text-muted: var(--tasty-gray-700);
     --tasty-text-on-accent: var(--tasty-gray-0);
     --tasty-success: var(--tasty-success-raw);
-    --tasty-success-soft: rgba(var(--tasty-success-rgb), 0.08);
+    --tasty-success-soft: rgba(var(--tasty-success-rgb), 0.05);
     --tasty-warning: var(--tasty-warning-raw);
-    --tasty-warning-soft: rgba(var(--tasty-warning-rgb), 0.08);
+    --tasty-warning-soft: rgba(var(--tasty-warning-rgb), 0.055);
     --tasty-danger: var(--tasty-danger-raw);
-    --tasty-danger-soft: rgba(var(--tasty-danger-rgb), 0.08);
+    --tasty-danger-soft: rgba(var(--tasty-danger-rgb), 0.05);
 
     /* Spacing */
     --tasty-space-1: 4px;
@@ -130,14 +131,55 @@
     --tasty-type-meta-weight: var(--tasty-font-weight-semibold);
     --tasty-type-meta-spacing: 0.08em;
     --tasty-type-body-size: var(--tasty-font-size-m);
+    --tasty-type-body-large-size: var(--tasty-font-size-l);
     --tasty-type-body-line-height: var(--tasty-line-height-body);
-    --tasty-type-title-size: var(--tasty-font-size-2xl);
-    --tasty-type-title-compact-size: var(--tasty-font-size-xl);
+    --tasty-type-caption-size: var(--tasty-font-size-s);
+    --tasty-type-caption-line-height: var(--tasty-line-height-relaxed);
+    --tasty-type-control-size: var(--tasty-font-size-m);
+    --tasty-type-control-line-height: 1.3;
+    --tasty-type-label-size: var(--tasty-font-size-xs);
+    --tasty-type-label-dense-size: 10px;
+    --tasty-type-metric-size: clamp(20px, 1.6vw, 22px);
+    --tasty-type-page-title-size: clamp(24px, 2.3vw, 30px);
+    --tasty-type-section-title-size: clamp(18px, 1.4vw, 22px);
+    --tasty-type-panel-title-size: clamp(17px, 1.2vw, 19px);
+    --tasty-type-card-title-size: clamp(16px, 1.05vw, 18px);
+    --tasty-type-detail-title-size: 15px;
+    --tasty-type-title-size: var(--tasty-type-panel-title-size);
+    --tasty-type-title-compact-size: var(--tasty-type-card-title-size);
     --tasty-type-title-weight: var(--tasty-font-weight-semibold);
+    --tasty-type-overline-size: var(--tasty-font-size-xs);
+    --tasty-type-overline-weight: var(--tasty-font-weight-semibold);
+    --tasty-type-overline-spacing: 0.14em;
+    --tasty-type-preview-scale-1-size: clamp(42px, calc(var(--tasty-preview-base, 32px) * 1.58), 58px);
+    --tasty-type-preview-scale-2-size: clamp(33px, calc(var(--tasty-preview-base, 32px) * 1.26), 42px);
+    --tasty-type-preview-scale-3-size: clamp(27px, calc(var(--tasty-preview-base, 32px) * 1.02), 34px);
+    --tasty-type-preview-scale-4-size: clamp(22px, calc(var(--tasty-preview-base, 32px) * 0.84), 28px);
+    --tasty-type-preview-scale-5-size: clamp(18px, calc(var(--tasty-preview-base, 32px) * 0.68), 22px);
+    --tasty-type-preview-scale-6-size: clamp(16px, calc(var(--tasty-preview-base, 32px) * 0.58), 18px);
+    --tasty-type-preview-glyph-size: clamp(72px, calc(var(--tasty-preview-base, 32px) * 2.5), 104px);
+    --tasty-type-preview-lead-size: clamp(20px, calc(var(--tasty-preview-base, 32px) * 0.7), 24px);
+    --tasty-type-preview-lede-size: clamp(19px, calc(var(--tasty-preview-base, 32px) * 0.72), 26px);
+    --tasty-type-preview-body-large-size: clamp(16px, calc(var(--tasty-preview-base, 32px) * 0.5), 18px);
+    --tasty-type-preview-body-size: clamp(14px, calc(var(--tasty-preview-base, 32px) * 0.44), 16px);
+    --tasty-type-preview-body-fixed-size: 17px;
+    --tasty-type-preview-paragraph-size: clamp(15px, calc(var(--tasty-preview-base, 32px) * 0.5), 19px);
+    --tasty-type-preview-title-size: clamp(20px, calc(var(--tasty-preview-base, 32px) * 0.92), 30px);
+    --tasty-type-preview-subtitle-size: clamp(18px, calc(var(--tasty-preview-base, 32px) * 0.62), 24px);
+    --tasty-type-preview-quote-size: clamp(20px, calc(var(--tasty-preview-base, 32px) * 0.72), 26px);
+    --tasty-type-preview-support-title-size: clamp(24px, calc(var(--tasty-preview-base, 32px) * 0.86), 32px);
+    --tasty-type-preview-stat-size: clamp(20px, calc(var(--tasty-preview-base, 32px) * 0.76), 28px);
+    --tasty-type-preview-ui-title-size: clamp(26px, calc(var(--tasty-preview-base, 32px) * 0.88), 32px);
+    --tasty-type-preview-scene-title-size: clamp(22px, calc(var(--tasty-preview-base, 32px) * 0.9), 30px);
+    --tasty-type-preview-subheading-size: clamp(18px, calc(var(--tasty-preview-base, 32px) * 0.66), 22px);
+    --tasty-type-preview-metric-size: clamp(22px, calc(var(--tasty-preview-base, 32px) * 0.95), 34px);
+    --tasty-type-preview-heading-size: clamp(32px, calc(var(--tasty-preview-base, 32px) * 1.35), 50px);
+    --tasty-icon-size-regular: 18px;
+    --tasty-icon-size-preview: 44px;
 
     /* Shadows */
-    --tasty-shadow-card: none;
-    --tasty-shadow-overlay: 0 8px 18px rgba(0, 0, 0, 0.08);
+    --tasty-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.035);
+    --tasty-shadow-overlay: 0 12px 28px rgba(15, 23, 42, 0.12);
     --tasty-shadow-focus: 0 0 0 2px var(--tasty-surface), 0 0 0 4px var(--tasty-accent);
 
     /* Layout constants */
@@ -151,4 +193,20 @@
     --tasty-toolbar-search-width: 32rem;
     --tasty-toolbar-field-width: clamp(208px, 20vw, 236px);
     --tasty-library-card-min-width: 18rem;
+    --tasty-library-card-padding: var(--tasty-card-padding-tight);
+    --tasty-library-card-gap: var(--tasty-space-4);
+    --tasty-library-card-section-gap: var(--tasty-space-3);
+    --tasty-library-card-inline-gap: var(--tasty-space-2);
+    --tasty-library-card-title-size: var(--tasty-type-card-title-size);
+    --tasty-library-search-preview-size: clamp(15px, 0.98vw, 16px);
+    --tasty-library-preview-padding: var(--tasty-space-4);
+    --tasty-library-preview-size: clamp(22px, 2.2vw, 30px);
+    --tasty-library-import-preview-size: clamp(24px, 2.2vw, 34px);
+    --tasty-library-import-preview-size-mobile: clamp(20px, 8vw, 28px);
+    --tasty-library-specimen-size: clamp(30px, 3.2vw, 46px);
+    --tasty-library-specimen-size-compact: clamp(26px, 5vw, 38px);
+    --tasty-library-specimen-size-mobile: clamp(22px, 8vw, 32px);
+    --tasty-library-action-gap: var(--tasty-space-2);
+    --tasty-library-action-icon-size: var(--tasty-control-height-regular);
+    --tasty-library-action-width: calc(var(--tasty-control-height-regular) * 3.6);
 }

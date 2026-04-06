@@ -334,6 +334,13 @@ if (!function_exists('esc_attr')) {
     }
 }
 
+if (!function_exists('esc_textarea')) {
+    function esc_textarea(string $text): string
+    {
+        return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+    }
+}
+
 if (!function_exists('esc_html_e')) {
     function esc_html_e(string $text, string $domain = ''): void
     {
@@ -989,6 +996,16 @@ if (!function_exists('get_current_user_id')) {
         global $currentUserId;
 
         return $currentUserId;
+    }
+}
+
+if (!function_exists('wp_get_current_user')) {
+    function wp_get_current_user(): object
+    {
+        return (object) [
+            'user_login' => 'admin',
+            'display_name' => 'Admin User',
+        ];
     }
 }
 
@@ -1996,6 +2013,93 @@ $tests['css_builder_generates_font_face_and_role_variables'] = static function (
     assertContainsValue('font-family: var(--font-body);', $css, 'CSS builder should emit the body usage rule.');
 };
 
+$tests['css_builder_emits_optional_monospace_role_css_when_enabled'] = static function (): void {
+    $builder = new CssBuilder();
+    $catalog = [
+        'Inter' => [
+            'family' => 'Inter',
+            'slug' => 'inter',
+            'sources' => ['local'],
+            'faces' => [
+                [
+                    'family' => 'Inter',
+                    'slug' => 'inter',
+                    'source' => 'local',
+                    'weight' => '400',
+                    'style' => 'normal',
+                    'unicode_range' => '',
+                    'files' => [
+                        'woff2' => 'https://example.com/fonts/inter.woff2',
+                    ],
+                ],
+            ],
+        ],
+    ];
+    $roles = [
+        'heading' => 'Inter',
+        'body' => 'Inter',
+        'monospace' => '',
+        'heading_fallback' => 'sans-serif',
+        'body_fallback' => 'serif',
+        'monospace_fallback' => 'monospace',
+    ];
+    $settings = [
+        'font_display' => 'swap',
+        'auto_apply_roles' => true,
+        'minify_css_output' => false,
+        'monospace_role_enabled' => true,
+    ];
+
+    $css = $builder->build($catalog, $roles, $settings);
+
+    assertContainsValue('--font-monospace: monospace;', $css, 'Enabled monospace support should emit a fallback-only monospace variable when no family is selected.');
+    assertContainsValue("code, pre {\n  font-family: var(--font-monospace);\n}", $css, 'Enabled monospace support should emit the code/pre usage rule.');
+    assertNotContainsValue('--font-monospace: var(--font-', $css, 'Fallback-only monospace output should not point the role variable at a synthetic family variable.');
+};
+
+$tests['css_builder_omits_monospace_role_css_when_feature_is_disabled'] = static function (): void {
+    $builder = new CssBuilder();
+    $catalog = [
+        'Inter' => [
+            'family' => 'Inter',
+            'slug' => 'inter',
+            'sources' => ['local'],
+            'faces' => [
+                [
+                    'family' => 'Inter',
+                    'slug' => 'inter',
+                    'source' => 'local',
+                    'weight' => '400',
+                    'style' => 'normal',
+                    'unicode_range' => '',
+                    'files' => [
+                        'woff2' => 'https://example.com/fonts/inter.woff2',
+                    ],
+                ],
+            ],
+        ],
+    ];
+    $roles = [
+        'heading' => 'Inter',
+        'body' => 'Inter',
+        'monospace' => 'JetBrains Mono',
+        'heading_fallback' => 'sans-serif',
+        'body_fallback' => 'sans-serif',
+        'monospace_fallback' => 'monospace',
+    ];
+    $settings = [
+        'font_display' => 'swap',
+        'auto_apply_roles' => true,
+        'minify_css_output' => false,
+        'monospace_role_enabled' => false,
+    ];
+
+    $css = $builder->build($catalog, $roles, $settings);
+
+    assertNotContainsValue('--font-monospace', $css, 'Disabled monospace support should not emit a monospace role variable.');
+    assertNotContainsValue('code, pre {', $css, 'Disabled monospace support should not emit the code/pre usage rule.');
+};
+
 $tests['css_builder_can_generate_font_faces_without_role_usage_rules'] = static function (): void {
     $builder = new CssBuilder();
     $catalog = [
@@ -2029,6 +2133,7 @@ $tests['css_builder_can_generate_font_faces_without_role_usage_rules'] = static 
     assertContainsValue('@font-face', $css, 'Font-face-only CSS should still emit @font-face rules.');
     assertNotContainsValue('--font-heading', $css, 'Font-face-only CSS should not emit role variables.');
     assertNotContainsValue('font-family: var(--font-body);', $css, 'Font-face-only CSS should not emit body usage rules.');
+    assertNotContainsValue('--font-monospace', $css, 'Font-face-only CSS should not emit monospace role variables either.');
 };
 
 $tests['css_builder_ignores_eot_and_svg_sources'] = static function (): void {
@@ -2663,6 +2768,21 @@ $tests['settings_repository_persists_preload_primary_fonts_preference'] = static
     assertSameValue(false, !empty($saved['preload_primary_fonts']), 'Settings should persist the primary font preload preference when disabled.');
 };
 
+$tests['settings_repository_persists_training_wheels_off_preference'] = static function (): void {
+    resetTestState();
+
+    $settings = new SettingsRepository();
+    $settings->saveSettings(['training_wheels_off' => '1']);
+    $saved = $settings->getSettings();
+
+    assertSameValue(true, !empty($saved['training_wheels_off']), 'Settings should persist the training-wheels-off preference when enabled.');
+
+    $settings->saveSettings(['training_wheels_off' => '0']);
+    $saved = $settings->getSettings();
+
+    assertSameValue(false, !empty($saved['training_wheels_off']), 'Settings should persist the training-wheels-off preference when disabled.');
+};
+
 $tests['settings_repository_defaults_font_display_to_optional_and_normalizes_invalid_values'] = static function (): void {
     resetTestState();
 
@@ -2703,6 +2823,7 @@ $tests['settings_repository_keeps_boolean_output_settings_when_fields_are_absent
         'minify_css_output' => '0',
         'preload_primary_fonts' => '0',
         'delete_uploaded_files_on_uninstall' => '1',
+        'training_wheels_off' => '1',
     ]);
     $settings->saveSettings([
         'preview_sentence' => 'Updated preview',
@@ -2712,6 +2833,37 @@ $tests['settings_repository_keeps_boolean_output_settings_when_fields_are_absent
     assertSameValue(false, $saved['minify_css_output'], 'Saving unrelated settings should not re-enable CSS minification.');
     assertSameValue(false, $saved['preload_primary_fonts'], 'Saving unrelated settings should not re-enable primary font preloads.');
     assertSameValue(true, $saved['delete_uploaded_files_on_uninstall'], 'Saving unrelated settings should not disable uninstall cleanup.');
+    assertSameValue(true, $saved['training_wheels_off'], 'Saving unrelated settings should not re-enable training wheels once they are turned off.');
+};
+
+$tests['settings_repository_defaults_and_persists_optional_monospace_role_settings'] = static function (): void {
+    resetTestState();
+
+    $settings = new SettingsRepository();
+    $catalog = ['Inter', 'JetBrains Mono'];
+    $defaults = $settings->getSettings();
+    $defaultRoles = $settings->getRoles($catalog);
+
+    assertSameValue(false, $defaults['monospace_role_enabled'], 'The optional monospace role should default to disabled.');
+    assertSameValue('', $defaultRoles['monospace'], 'Draft roles should default the monospace family to fallback-only mode.');
+    assertSameValue('monospace', $defaultRoles['monospace_fallback'], 'Draft roles should default the monospace fallback stack to the generic monospace keyword.');
+
+    $settings->saveSettings(['monospace_role_enabled' => '1']);
+    $savedRoles = $settings->saveRoles(
+        [
+            'heading' => 'Inter',
+            'body' => 'Inter',
+            'monospace' => '',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'serif',
+            'monospace_fallback' => '',
+        ],
+        $catalog
+    );
+
+    assertSameValue(true, $settings->getSettings()['monospace_role_enabled'], 'The monospace role toggle should persist in plugin settings.');
+    assertSameValue('', $savedRoles['monospace'], 'Saving monospace roles should not force a family selection when fallback-only mode is chosen.');
+    assertSameValue('monospace', $savedRoles['monospace_fallback'], 'Blank monospace fallback input should normalize back to the generic monospace fallback.');
 };
 
 $tests['settings_repository_bootstraps_applied_roles_before_draft_changes'] = static function (): void {
@@ -3239,6 +3391,165 @@ $tests['library_service_blocks_deleting_last_live_applied_variant_when_draft_cha
     assertContainsValue('currently assigned to heading', $result->get_error_message(), 'The delete-variant guard should explain that the family is still the live heading role.');
 };
 
+$tests['library_service_syncs_monospace_publish_state_only_when_feature_is_enabled'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $interProfile = [
+        'id' => 'inter-self-hosted',
+        'label' => 'Self-hosted',
+        'provider' => 'local',
+        'type' => 'self_hosted',
+        'variants' => ['regular'],
+        'faces' => [[
+            'family' => 'Inter',
+            'slug' => 'inter',
+            'source' => 'local',
+            'weight' => '400',
+            'style' => 'normal',
+            'unicode_range' => '',
+            'files' => ['woff2' => 'inter/Inter-400-normal.woff2'],
+            'paths' => ['woff2' => 'inter/Inter-400-normal.woff2'],
+        ]],
+    ];
+    $monoProfile = [
+        'id' => 'jetbrains-mono-self-hosted',
+        'label' => 'Self-hosted',
+        'provider' => 'local',
+        'type' => 'self_hosted',
+        'variants' => ['regular'],
+        'faces' => [[
+            'family' => 'JetBrains Mono',
+            'slug' => 'jetbrains-mono',
+            'source' => 'local',
+            'weight' => '400',
+            'style' => 'normal',
+            'unicode_range' => '',
+            'files' => ['woff2' => 'jetbrains-mono/JetBrainsMono-400-normal.woff2'],
+            'paths' => ['woff2' => 'jetbrains-mono/JetBrainsMono-400-normal.woff2'],
+        ]],
+    ];
+
+    $services['imports']->saveProfile('Inter', 'inter', $interProfile, 'published', true);
+    $services['imports']->saveProfile('JetBrains Mono', 'jetbrains-mono', $monoProfile, 'published', true);
+    $services['settings']->saveSettings(['monospace_role_enabled' => '1']);
+
+    $services['library']->syncLiveRolePublishStates(
+        [
+            'heading' => 'Inter',
+            'body' => 'Inter',
+            'monospace' => 'JetBrains Mono',
+        ],
+        true
+    );
+
+    assertSameValue(
+        'role_active',
+        (string) ($services['imports']->getFamily('jetbrains-mono')['publish_state'] ?? ''),
+        'Enabled monospace support should promote the applied monospace family to role_active.'
+    );
+
+    $services['settings']->saveSettings(['monospace_role_enabled' => '0']);
+    $services['library']->syncLiveRolePublishStates(
+        [
+            'heading' => 'Inter',
+            'body' => 'Inter',
+            'monospace' => 'JetBrains Mono',
+        ],
+        true
+    );
+
+    assertSameValue(
+        'published',
+        (string) ($services['imports']->getFamily('jetbrains-mono')['publish_state'] ?? ''),
+        'Disabled monospace support should ignore stored monospace selections when live publish states are synchronized.'
+    );
+};
+
+$tests['library_service_blocks_deleting_live_monospace_family_when_enabled'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'inter-self-hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [[
+                'family' => 'Inter',
+                'slug' => 'inter',
+                'source' => 'local',
+                'weight' => '400',
+                'style' => 'normal',
+                'unicode_range' => '',
+                'files' => ['woff2' => 'inter/Inter-400-normal.woff2'],
+                'paths' => ['woff2' => 'inter/Inter-400-normal.woff2'],
+            ]],
+        ],
+        'published',
+        true
+    );
+    $services['imports']->saveProfile(
+        'JetBrains Mono',
+        'jetbrains-mono',
+        [
+            'id' => 'jetbrains-mono-self-hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [[
+                'family' => 'JetBrains Mono',
+                'slug' => 'jetbrains-mono',
+                'source' => 'local',
+                'weight' => '400',
+                'style' => 'normal',
+                'unicode_range' => '',
+                'files' => ['woff2' => 'jetbrains-mono/JetBrainsMono-400-normal.woff2'],
+                'paths' => ['woff2' => 'jetbrains-mono/JetBrainsMono-400-normal.woff2'],
+            ]],
+        ],
+        'published',
+        true
+    );
+
+    $catalog = ['Inter', 'JetBrains Mono'];
+    $services['settings']->saveSettings(['monospace_role_enabled' => '1']);
+    $services['settings']->saveRoles(
+        [
+            'heading' => 'Inter',
+            'body' => 'Inter',
+            'monospace' => 'JetBrains Mono',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'sans-serif',
+            'monospace_fallback' => 'monospace',
+        ],
+        $catalog
+    );
+    $services['settings']->saveAppliedRoles(
+        [
+            'heading' => 'Inter',
+            'body' => 'Inter',
+            'monospace' => 'JetBrains Mono',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'sans-serif',
+            'monospace_fallback' => 'monospace',
+        ],
+        $catalog
+    );
+    $services['settings']->setAutoApplyRoles(true);
+
+    $result = $services['library']->deleteFamily('jetbrains-mono');
+
+    assertSameValue(true, is_wp_error($result), 'Deleting a live monospace family should be blocked while the feature is enabled.');
+    assertSameValue('tasty_fonts_family_in_use', $result->get_error_code(), 'Deleting a live monospace family should return the family-in-use error.');
+    assertContainsValue('currently assigned as the monospace font', $result->get_error_message(), 'The delete-family guard should explain that the family is still used for the monospace role.');
+};
+
 $tests['admin_controller_sanitizes_posted_fallback_values'] = static function (): void {
     resetTestState();
 
@@ -3267,6 +3578,7 @@ $tests['admin_controller_builds_specific_settings_saved_message'] = static funct
                 'font_display' => 'swap',
                 'minify_css_output' => true,
                 'preload_primary_fonts' => false,
+                'training_wheels_off' => false,
                 'preview_sentence' => 'Alpha',
             ],
             [
@@ -3274,6 +3586,7 @@ $tests['admin_controller_builds_specific_settings_saved_message'] = static funct
                 'font_display' => 'optional',
                 'minify_css_output' => false,
                 'preload_primary_fonts' => true,
+                'training_wheels_off' => true,
                 'preview_sentence' => 'Beta',
             ],
         ]
@@ -3283,6 +3596,7 @@ $tests['admin_controller_builds_specific_settings_saved_message'] = static funct
     assertContainsValue('font-display set to optional', $message, 'Settings save messages should explain font-display changes.');
     assertContainsValue('CSS minification disabled', $message, 'Settings save messages should explain CSS minification changes.');
     assertContainsValue('primary font preloads enabled', $message, 'Settings save messages should explain preload setting changes.');
+    assertContainsValue('training wheels off enabled', $message, 'Settings save messages should explain plugin behavior changes.');
     assertContainsValue('preview text updated', $message, 'Settings save messages should explain preview text changes.');
 };
 
@@ -3357,6 +3671,19 @@ $tests['admin_controller_detects_which_setting_changes_require_asset_refresh'] =
             ]
         ),
         'Preload-only changes should not force a generated CSS refresh.'
+    );
+
+    assertSameValue(
+        true,
+        invokePrivateMethod(
+            $controller,
+            'settingsChangeRequiresAssetRefresh',
+            [
+                ['minify_css_output' => true, 'font_display' => 'swap', 'css_delivery_mode' => 'file', 'monospace_role_enabled' => false],
+                ['minify_css_output' => true, 'font_display' => 'swap', 'css_delivery_mode' => 'file', 'monospace_role_enabled' => true],
+            ]
+        ),
+        'Toggling monospace support should trigger a generated asset refresh because it changes snippets and live CSS output.'
     );
 };
 
@@ -3609,6 +3936,161 @@ $tests['admin_page_renderer_translates_stored_delivery_profile_labels_at_output'
     assertNotContainsValue('Adobe-hosted', $output, 'The family card should not render the raw stored English Adobe label once translated.');
 };
 
+$tests['admin_page_renderer_exposes_plugin_behavior_tab_and_can_hide_help_ui'] = static function (): void {
+    resetTestState();
+
+    $renderer = new AdminPageRenderer(new Storage());
+
+    ob_start();
+    $renderer->renderPage([
+        'storage' => ['root' => '/tmp/uploads/fonts'],
+        'catalog' => [],
+        'available_families' => [],
+        'roles' => [],
+        'logs' => [],
+        'activity_actor_options' => [],
+        'family_fallbacks' => [],
+        'family_font_displays' => [],
+        'family_font_display_options' => [],
+        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+        'preview_size' => 32,
+        'font_display' => 'optional',
+        'font_display_options' => [],
+        'minify_css_output' => true,
+        'preload_primary_fonts' => true,
+        'remote_connection_hints' => true,
+        'training_wheels_off' => true,
+        'delete_uploaded_files_on_uninstall' => false,
+        'diagnostic_items' => [],
+        'overview_metrics' => [],
+        'output_panels' => [],
+        'generated_css_panel' => [],
+        'preview_panels' => [],
+        'toasts' => [],
+        'apply_everywhere' => false,
+        'role_deployment' => [],
+    ]);
+    $output = (string) ob_get_clean();
+
+    assertContainsValue('Plugin Behavior', $output, 'The advanced tools switcher should expose a dedicated Plugin Behavior tab.');
+    assertSameValue(1, substr_count($output, 'Enable Monospace Role'), 'The Plugin Behavior panel should render the monospace toggle exactly once.');
+    assertContainsValue('Training Wheels Off', $output, 'The Plugin Behavior tab should expose the training-wheels toggle.');
+    assertContainsValue('Uninstall Settings', $output, 'The Plugin Behavior tab should group uninstall cleanup controls under an uninstall settings heading.');
+    assertSameValue(1, substr_count($output, 'Delete uploaded fonts on uninstall'), 'The uninstall cleanup toggle should appear once in the Plugin Behavior panel instead of being duplicated elsewhere.');
+    assertNotContainsValue('tasty-fonts-help-button', $output, 'Training Wheels Off should remove inline help buttons from the rendered admin UI.');
+    assertNotContainsValue('data-help-tooltip=', $output, 'Training Wheels Off should omit passive hover help attributes from the rendered admin UI.');
+};
+
+$tests['admin_page_renderer_renders_monospace_role_ui_when_enabled'] = static function (): void {
+    resetTestState();
+
+    $renderer = new AdminPageRenderer(new Storage());
+
+    ob_start();
+    $renderer->renderPage([
+        'storage' => ['root' => '/tmp/uploads/fonts'],
+        'catalog' => [],
+        'available_families' => ['Inter', 'JetBrains Mono'],
+        'roles' => [
+            'heading' => 'Inter',
+            'body' => 'Inter',
+            'monospace' => '',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'sans-serif',
+            'monospace_fallback' => 'monospace',
+        ],
+        'logs' => [],
+        'activity_actor_options' => [],
+        'family_fallbacks' => [],
+        'family_font_displays' => [],
+        'family_font_display_options' => [],
+        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+        'preview_size' => 32,
+        'font_display' => 'optional',
+        'font_display_options' => [],
+        'minify_css_output' => true,
+        'preload_primary_fonts' => true,
+        'remote_connection_hints' => true,
+        'training_wheels_off' => false,
+        'monospace_role_enabled' => true,
+        'delete_uploaded_files_on_uninstall' => false,
+        'diagnostic_items' => [],
+        'overview_metrics' => [],
+        'output_panels' => [],
+        'generated_css_panel' => [],
+        'preview_panels' => [['key' => 'editorial', 'label' => 'Specimen', 'active' => true]],
+        'toasts' => [],
+        'apply_everywhere' => false,
+        'role_deployment' => [],
+    ]);
+    $output = (string) ob_get_clean();
+
+    assertContainsValue('Monospace Font', $output, 'Enabled monospace support should render the third role box in the main Font Roles form.');
+    assertContainsValue('Use fallback only', $output, 'Enabled monospace support should render the fallback-only monospace family option.');
+    assertContainsValue('var(--font-monospace)', $output, 'Enabled monospace support should expose the monospace role variable in the role UI.');
+};
+
+$tests['admin_page_renderer_family_cards_expose_monospace_assignments_and_variant_guards'] = static function (): void {
+    resetTestState();
+
+    $renderer = new AdminPageRenderer(new Storage());
+    $family = [
+        'family' => 'JetBrains Mono',
+        'slug' => 'jetbrains-mono',
+        'delivery_filter_tokens' => ['local'],
+        'publish_state' => 'published',
+        'active_delivery_id' => 'local-self-hosted',
+        'active_delivery' => [
+            'id' => 'local-self-hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+        ],
+        'available_deliveries' => [
+            [
+                'id' => 'local-self-hosted',
+                'label' => 'Self-hosted',
+                'provider' => 'local',
+                'type' => 'self_hosted',
+                'variants' => ['regular'],
+            ],
+        ],
+        'faces' => [
+            [
+                'weight' => '400',
+                'style' => 'normal',
+                'source' => 'local',
+                'files' => ['woff2' => 'jetbrains-mono/JetBrainsMono-400-normal.woff2'],
+                'paths' => ['woff2' => 'jetbrains-mono/JetBrainsMono-400-normal.woff2'],
+            ],
+        ],
+    ];
+
+    ob_start();
+    invokePrivateMethod(
+        $renderer,
+        'renderFamilyRow',
+        [
+            $family,
+            ['heading' => 'Inter', 'body' => 'Inter', 'monospace' => 'JetBrains Mono'],
+            [],
+            [],
+            [
+                ['value' => 'inherit', 'label' => 'Use plugin default'],
+                ['value' => 'swap', 'label' => 'swap'],
+            ],
+            'The quick brown fox jumps over the lazy dog.',
+            true,
+        ]
+    );
+    $output = (string) ob_get_clean();
+
+    assertContainsValue('data-role-assign="monospace"', $output, 'Enabled family cards should expose the monospace quick-assign control.');
+    assertContainsValue('>Monospace<', $output, 'Enabled family cards should render a Monospace badge for the selected monospace family.');
+    assertContainsValue('currently assigned to monospace, and this is the last saved variant', $output, 'Last-variant delete guards should mention the monospace role when it protects the family.');
+};
+
 $tests['admin_controller_excludes_generated_css_from_snippet_output_panels'] = static function (): void {
     resetTestState();
 
@@ -3635,6 +4117,35 @@ $tests['admin_controller_excludes_generated_css_from_snippet_output_panels'] = s
         array_values(array_map(static fn (array $panel): string => (string) ($panel['key'] ?? ''), $panels)),
         'The Snippets panel should only expose the role snippet tabs after Generated CSS is moved to the top tab bar.'
     );
+};
+
+$tests['admin_controller_builds_monospace_role_output_panels_when_enabled'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $roles = [
+        'heading' => 'Inter',
+        'body' => 'Inter',
+        'monospace' => '',
+        'heading_fallback' => 'sans-serif',
+        'body_fallback' => 'sans-serif',
+        'monospace_fallback' => 'monospace',
+    ];
+    $settings = $services['settings']->saveSettings(['monospace_role_enabled' => '1', 'minify_css_output' => '0']);
+    $panels = invokePrivateMethod(
+        $services['controller'],
+        'buildOutputPanels',
+        [$roles, $settings]
+    );
+    $panelValues = [];
+
+    foreach ($panels as $panel) {
+        $panelValues[(string) ($panel['key'] ?? '')] = (string) ($panel['value'] ?? '');
+    }
+
+    assertContainsValue('--font-monospace: monospace;', $panelValues['variables'] ?? '', 'Enabled monospace support should add the monospace variable to the CSS Variables panel.');
+    assertContainsValue('code, pre {', $panelValues['usage'] ?? '', 'Enabled monospace support should add the code/pre usage rule to the Site Snippet panel.');
+    assertContainsValue("monospace\n", ($panelValues['stacks'] ?? '') . "\n", 'Enabled monospace support should include the fallback-only monospace stack in the Font Stacks panel.');
 };
 
 $tests['admin_controller_exposes_generated_css_as_a_top_level_panel'] = static function (): void {
@@ -3856,6 +4367,7 @@ $tests['admin_controller_localizes_runtime_admin_strings_only'] = static functio
     global $localizedScripts;
 
     $services = makeServiceGraph();
+    $services['settings']->saveSettings(['training_wheels_off' => '1', 'monospace_role_enabled' => '1']);
     $services['controller']->enqueueAssets('toplevel_page_' . AdminController::MENU_SLUG);
 
     $runtimeStrings = is_array($localizedScripts['tasty-fonts-admin']['data']['runtimeStrings'] ?? null)
@@ -3871,6 +4383,16 @@ $tests['admin_controller_localizes_runtime_admin_strings_only'] = static functio
         false,
         isset($localizedScripts['tasty-fonts-admin']['data']['strings']),
         'Admin scripts should not receive the legacy static string table once script translations are registered.'
+    );
+    assertSameValue(
+        true,
+        !empty($localizedScripts['tasty-fonts-admin']['data']['trainingWheelsOff']),
+        'Admin scripts should receive the saved training-wheels preference so hover help can be disabled client-side.'
+    );
+    assertSameValue(
+        true,
+        !empty($localizedScripts['tasty-fonts-admin']['data']['monospaceRoleEnabled']),
+        'Admin scripts should receive the saved monospace-role flag so the admin client can include the optional third role when it is enabled.'
     );
 };
 
@@ -3938,6 +4460,30 @@ $tests['rest_controller_returns_native_payloads_for_write_routes'] = static func
     assertSameValue(true, $response instanceof WP_REST_Response, 'REST write routes should return a native REST response object.');
     assertSameValue('Inter', (string) ($response->get_data()['family'] ?? ''), 'REST write routes should return the saved family in the response body.');
     assertSameValue('serif', (string) ($response->get_data()['fallback'] ?? ''), 'REST write routes should return the saved fallback in the response body.');
+};
+
+$tests['rest_controller_roles_draft_accepts_and_returns_monospace_fields'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings(['monospace_role_enabled' => '1']);
+    $request = new WP_REST_Request('PATCH', '/' . RestController::API_NAMESPACE . '/roles/draft');
+    $request->set_body_params([
+        'heading' => 'Inter',
+        'body' => 'Inter',
+        'monospace' => '',
+        'heading_fallback' => 'sans-serif',
+        'body_fallback' => 'serif',
+        'monospace_fallback' => '',
+    ]);
+
+    $response = $services['rest']->saveRoleDraft($request);
+    $data = $response instanceof WP_REST_Response ? $response->get_data() : [];
+
+    assertSameValue(true, $response instanceof WP_REST_Response, 'The roles/draft route should return a native REST response.');
+    assertSameValue('', (string) ($data['roles']['monospace'] ?? ''), 'The roles/draft route should preserve fallback-only monospace selections.');
+    assertSameValue('monospace', (string) ($data['roles']['monospace_fallback'] ?? ''), 'The roles/draft route should normalize blank monospace fallbacks back to the generic monospace stack.');
+    assertContainsValue('Monospace: fallback only (monospace).', (string) ($data['role_deployment']['copy'] ?? ''), 'Role deployment payloads should include monospace copy when the feature is enabled.');
 };
 
 $tests['rest_controller_wraps_missing_family_errors_with_http_status'] = static function (): void {
@@ -4512,6 +5058,25 @@ $tests['admin_controller_preserves_only_allowed_tracked_ui_query_args_in_redirec
         $query,
         'Redirect URLs should preserve only the canonical tracked UI query args for the current admin view.'
     );
+};
+
+$tests['admin_controller_preserves_plugin_behavior_studio_tab_in_redirect_urls'] = static function (): void {
+    resetTestState();
+
+    $_GET = [
+        'page' => AdminController::MENU_SLUG,
+        'tf_advanced' => '1',
+        'tf_studio' => 'plugin-behavior',
+    ];
+
+    $controller = makeAdminControllerTestInstance();
+    $url = invokePrivateMethod($controller, 'buildAdminPageUrl');
+    $parts = parse_url($url);
+    $query = [];
+
+    parse_str((string) ($parts['query'] ?? ''), $query);
+
+    assertSameValue('plugin-behavior', (string) ($query['tf_studio'] ?? ''), 'Redirect URLs should preserve the Plugin Behavior tab selection when it is active.');
 };
 
 $tests['uninstall_cleans_library_and_runtime_transients'] = static function (): void {

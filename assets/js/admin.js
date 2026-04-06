@@ -5,23 +5,29 @@
         ...(config.strings || {}),
         ...(config.runtimeStrings || {}),
     };
+    const trainingWheelsOff = !!config.trainingWheelsOff;
     const wpI18n = window.wp && window.wp.i18n ? window.wp.i18n : {};
     const __ = typeof wpI18n.__ === 'function' ? wpI18n.__ : (text) => text;
     const wpSprintf = typeof wpI18n.sprintf === 'function' ? wpI18n.sprintf : null;
     const roleHeading = document.getElementById('tasty_fonts_heading_font');
     const roleBody = document.getElementById('tasty_fonts_body_font');
+    const roleMonospace = document.getElementById('tasty_fonts_monospace_font');
     const roleHeadingFallback = document.getElementById('tasty_fonts_heading_fallback');
     const roleBodyFallback = document.getElementById('tasty_fonts_body_fallback');
+    const roleMonospaceFallback = document.getElementById('tasty_fonts_monospace_fallback');
     const roleForm = document.querySelector('[data-role-form]');
     const roleStudio = document.getElementById('tasty-fonts-roles-studio');
     const roleDeployment = document.querySelector('[data-role-deployment]');
     const roleDeploymentBadge = document.querySelector('[data-role-deployment-badge]');
     const roleDeploymentPill = document.querySelector('[data-role-deployment-pill]');
     const roleDeploymentAnnouncement = document.querySelector('[data-role-deployment-announcement]');
+    const monospaceRoleEnabled = !!config.monospaceRoleEnabled && !!roleMonospace && !!roleMonospaceFallback;
     const headingRoleVariableCopies = Array.from(document.querySelectorAll('[data-role-variable-copy="heading"]'));
     const bodyRoleVariableCopies = Array.from(document.querySelectorAll('[data-role-variable-copy="body"]'));
+    const monospaceRoleVariableCopies = Array.from(document.querySelectorAll('[data-role-variable-copy="monospace"]'));
     const headingFamilyVariableCopies = Array.from(document.querySelectorAll('[data-role-family-variable-copy="heading"]'));
     const bodyFamilyVariableCopies = Array.from(document.querySelectorAll('[data-role-family-variable-copy="body"]'));
+    const monospaceFamilyVariableCopies = Array.from(document.querySelectorAll('[data-role-family-variable-copy="monospace"]'));
     const previewCanvas = document.getElementById('tasty-fonts-preview-canvas');
     const previewTextInput = document.getElementById('tasty-fonts-preview-text');
     const previewSizeInput = document.getElementById('tasty-fonts-preview-size');
@@ -29,6 +35,10 @@
     const deleteFamilyButtons = Array.from(document.querySelectorAll('[data-delete-family]'));
     const roleHeadingPreviews = Array.from(document.querySelectorAll('[data-role-preview="heading"]'));
     const roleBodyPreviews = Array.from(document.querySelectorAll('[data-role-preview="body"]'));
+    const roleMonospacePreviews = Array.from(document.querySelectorAll('[data-role-preview="monospace"]'));
+    const roleHeadingPreviewNames = Array.from(document.querySelectorAll('[data-role-preview-name="heading"]'));
+    const roleBodyPreviewNames = Array.from(document.querySelectorAll('[data-role-preview-name="body"]'));
+    const roleMonospacePreviewNames = Array.from(document.querySelectorAll('[data-role-preview-name="monospace"]'));
     const previewDynamicText = Array.from(document.querySelectorAll('[data-preview-dynamic-text], .tasty-fonts-preview-dynamic-text'));
     const tabButtons = Array.from(document.querySelectorAll('[data-tab-group][data-tab-target]'));
     const tabPanels = Array.from(document.querySelectorAll('[data-tab-group][data-tab-panel]'));
@@ -175,6 +185,7 @@
         uploadRequiresRows: __('Add at least one upload row before submitting.', 'tasty-fonts'),
         rolesDraftSaved: __('Roles saved.', 'tasty-fonts'),
         rolesDraftSaveError: __('The roles could not be saved.', 'tasty-fonts'),
+        roleFallbackOnly: __('Fallback only (%1$s)', 'tasty-fonts'),
         fallbackSaving: __('Saving fallback…', 'tasty-fonts'),
         fallbackSaved: __('Saved fallback for %1$s.', 'tasty-fonts'),
         fallbackSaveError: __('The fallback could not be saved.', 'tasty-fonts'),
@@ -202,8 +213,71 @@
         return value.toLowerCase().replace(/[^a-z0-9\-_]+/g, '-').replace(/^-+|-+$/g, '') || 'font';
     }
 
-    function buildStack(family, fallback) {
-        return `"${family}", ${fallback}`;
+    function sanitizeFallback(fallback, defaultValue = 'sans-serif') {
+        const sanitized = String(fallback || '')
+            .trim()
+            .replace(/[^a-zA-Z0-9,\- "'`]+/g, '')
+            .replace(/\s*,\s*/g, ', ')
+            .replace(/\s+/g, ' ')
+            .replace(/^[,\s]+|[,\s]+$/g, '');
+
+        return sanitized || defaultValue;
+    }
+
+    function escapeFontFamily(family) {
+        return String(family || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    }
+
+    function buildStack(family, fallback, defaultFallback = 'sans-serif') {
+        const sanitizedFallback = sanitizeFallback(fallback, defaultFallback);
+        const trimmedFamily = String(family || '').trim();
+
+        return trimmedFamily ? `"${escapeFontFamily(trimmedFamily)}", ${sanitizedFallback}` : sanitizedFallback;
+    }
+
+    function buildFontVariable(family) {
+        const trimmedFamily = String(family || '').trim();
+
+        return trimmedFamily ? `var(--font-${slugify(trimmedFamily)})` : '';
+    }
+
+    function previewRoleName(family, fallback, defaultFallback = 'sans-serif', fallbackOnly = false) {
+        const trimmedFamily = String(family || '').trim();
+
+        if (trimmedFamily) {
+            return trimmedFamily;
+        }
+
+        if (!fallbackOnly) {
+            return '';
+        }
+
+        return formatMessage(
+            getString('roleFallbackOnly', 'Fallback only (%1$s)'),
+            [sanitizeFallback(fallback, defaultFallback)]
+        );
+    }
+
+    function buildRoleSelectionKey(roleKeys) {
+        return ['heading', 'body', 'monospace'].filter((roleKey) => roleKeys.includes(roleKey)).join('-');
+    }
+
+    function selectedRoleKeysForFamily(family, data) {
+        const roleKeys = [];
+
+        if (family && family === data.heading) {
+            roleKeys.push('heading');
+        }
+
+        if (family && family === data.body) {
+            roleKeys.push('body');
+        }
+
+        if (data.includeMonospace && family && family === data.monospace) {
+            roleKeys.push('monospace');
+        }
+
+        return roleKeys;
     }
 
     function getString(key, fallback) {
@@ -948,12 +1022,19 @@
     }
 
     function roleFieldSnapshot() {
-        return {
+        const snapshot = {
             heading: getElementValue(roleHeading, ''),
             body: getElementValue(roleBody, ''),
             headingFallback: getElementValue(roleHeadingFallback, 'sans-serif'),
             bodyFallback: getElementValue(roleBodyFallback, 'sans-serif')
         };
+
+        if (monospaceRoleEnabled) {
+            snapshot.monospace = getElementValue(roleMonospace, '');
+            snapshot.monospaceFallback = getElementValue(roleMonospaceFallback, 'monospace');
+        }
+
+        return snapshot;
     }
 
     function restoreRoleFieldSnapshot(snapshot) {
@@ -975,6 +1056,14 @@
 
         if (roleBodyFallback) {
             roleBodyFallback.value = snapshot.bodyFallback || 'sans-serif';
+        }
+
+        if (monospaceRoleEnabled && roleMonospace) {
+            roleMonospace.value = snapshot.monospace || '';
+        }
+
+        if (monospaceRoleEnabled && roleMonospaceFallback) {
+            roleMonospaceFallback.value = snapshot.monospaceFallback || 'monospace';
         }
     }
 
@@ -1023,8 +1112,7 @@
 
         if (roleDeploymentPill) {
             roleDeploymentPill.className = `tasty-fonts-role-status-pill${badgeClass ? ` ${badgeClass}` : ''}`;
-            roleDeploymentPill.setAttribute('data-help-tooltip', tooltip);
-            roleDeploymentPill.setAttribute('title', tooltip);
+            setPassiveHelpTooltip(roleDeploymentPill, tooltip);
         }
 
         if (roleDeploymentBadge) {
@@ -1136,7 +1224,11 @@
     }
 
     function highlightRoleSelector(role) {
-        const field = role === 'heading' ? roleHeading : roleBody;
+        const field = role === 'heading'
+            ? roleHeading
+            : role === 'body'
+                ? roleBody
+                : roleMonospace;
         const fieldWrap = field ? field.closest('.tasty-fonts-stack-field') : null;
 
         if (roleStudio) {
@@ -2015,6 +2107,37 @@
         activeHelpButton = null;
     }
 
+    function clearPassiveHelpTooltip(button) {
+        if (!button) {
+            return;
+        }
+
+        if (activeHelpButton === button) {
+            hideHelpTooltip();
+        }
+
+        button.removeAttribute('data-help-tooltip');
+        button.removeAttribute('data-help-passive');
+        button.removeAttribute('title');
+    }
+
+    function setPassiveHelpTooltip(button, copy) {
+        if (!button) {
+            return;
+        }
+
+        const nextCopy = typeof copy === 'string' ? copy.trim() : '';
+
+        if (trainingWheelsOff || !nextCopy) {
+            clearPassiveHelpTooltip(button);
+            return;
+        }
+
+        button.setAttribute('data-help-tooltip', nextCopy);
+        button.setAttribute('data-help-passive', '1');
+        button.setAttribute('title', nextCopy);
+    }
+
     function showHelpTooltip(button) {
         if (!button || !helpTooltipLayer) {
             return;
@@ -2042,6 +2165,12 @@
 
     function initHelpTooltips() {
         if (!helpTooltipLayer || !helpButtons.length) {
+            return;
+        }
+
+        if (trainingWheelsOff) {
+            helpButtons.forEach((button) => clearPassiveHelpTooltip(button));
+            hideHelpTooltip();
             return;
         }
 
@@ -2196,20 +2325,31 @@
         const body = getElementValue(roleBody, '');
         const headingFallbackValue = getElementValue(roleHeadingFallback, 'sans-serif');
         const bodyFallbackValue = getElementValue(roleBodyFallback, 'sans-serif');
+        const monospace = monospaceRoleEnabled ? getElementValue(roleMonospace, '') : '';
+        const monospaceFallbackValue = monospaceRoleEnabled ? getElementValue(roleMonospaceFallback, 'monospace') : 'monospace';
 
         return {
+            includeMonospace: monospaceRoleEnabled,
             heading,
             body,
+            monospace,
             headingFallback: headingFallbackValue,
             bodyFallback: bodyFallbackValue,
-            headingSlug: slugify(heading),
-            bodySlug: slugify(body),
+            monospaceFallback: monospaceFallbackValue,
+            headingSlug: heading ? slugify(heading) : '',
+            bodySlug: body ? slugify(body) : '',
+            monospaceSlug: monospace ? slugify(monospace) : '',
             headingVariable: 'var(--font-heading)',
             bodyVariable: 'var(--font-body)',
-            headingFamilyVariable: heading ? `var(--font-${slugify(heading)})` : '',
-            bodyFamilyVariable: body ? `var(--font-${slugify(body)})` : '',
+            monospaceVariable: 'var(--font-monospace)',
+            headingFamilyVariable: buildFontVariable(heading),
+            bodyFamilyVariable: buildFontVariable(body),
+            monospaceFamilyVariable: monospace
+                ? buildFontVariable(monospace)
+                : buildStack('', monospaceFallbackValue, 'monospace'),
             headingStack: buildStack(heading, headingFallbackValue),
-            bodyStack: buildStack(body, bodyFallbackValue)
+            bodyStack: buildStack(body, bodyFallbackValue),
+            monospaceStack: buildStack(monospace, monospaceFallbackValue, 'monospace')
         };
     }
 
@@ -2228,6 +2368,12 @@
             button.setAttribute('title', `Body font variable: ${data.bodyVariable}. Resolved stack: ${data.bodyStack}`);
         });
 
+        monospaceRoleVariableCopies.forEach((button) => {
+            button.textContent = data.monospaceVariable;
+            button.setAttribute('data-copy-text', data.monospaceVariable);
+            button.setAttribute('title', `Monospace font variable: ${data.monospaceVariable}. Resolved stack: ${data.monospaceStack}`);
+        });
+
         headingFamilyVariableCopies.forEach((button) => {
             button.textContent = data.headingFamilyVariable;
             button.setAttribute('data-copy-text', data.headingFamilyVariable);
@@ -2240,6 +2386,17 @@
             button.setAttribute('title', `Body family variable: ${data.bodyFamilyVariable}. Role alias: ${data.bodyVariable}. Resolved stack: ${data.bodyStack}`);
         });
 
+        monospaceFamilyVariableCopies.forEach((button) => {
+            button.textContent = data.monospaceFamilyVariable;
+            button.setAttribute('data-copy-text', data.monospaceFamilyVariable);
+            button.setAttribute(
+                'title',
+                data.monospace
+                    ? `Monospace family variable: ${data.monospaceFamilyVariable}. Role alias: ${data.monospaceVariable}. Resolved stack: ${data.monospaceStack}`
+                    : `Monospace uses the fallback stack directly: ${data.monospaceStack}. Role alias: ${data.monospaceVariable}`
+            );
+        });
+
         roleHeadingPreviews.forEach((element) => {
             element.style.fontFamily = data.headingStack;
         });
@@ -2248,69 +2405,130 @@
             element.style.fontFamily = data.bodyStack;
         });
 
+        roleMonospacePreviews.forEach((element) => {
+            element.style.fontFamily = data.monospaceStack;
+        });
+
+        roleHeadingPreviewNames.forEach((element) => {
+            element.textContent = previewRoleName(data.heading, data.headingFallback);
+        });
+
+        roleBodyPreviewNames.forEach((element) => {
+            element.textContent = previewRoleName(data.body, data.bodyFallback);
+        });
+
+        roleMonospacePreviewNames.forEach((element) => {
+            element.textContent = previewRoleName(data.monospace, data.monospaceFallback, 'monospace', true);
+        });
+
         roleAssignButtons.forEach((button) => {
             const family = button.getAttribute('data-font-family') || '';
             const role = button.getAttribute('data-role-assign');
-            const isCurrent = (role === 'heading' && family === data.heading) || (role === 'body' && family === data.body);
+            const isCurrent = (role === 'heading' && family === data.heading)
+                || (role === 'body' && family === data.body)
+                || (role === 'monospace' && family === data.monospace);
             const label = button.querySelector('.tasty-fonts-role-assign-label');
+            const nextLabel = isCurrent ? (button.dataset.activeLabel || '') : (button.dataset.idleLabel || '');
+            const nextHelp = isCurrent ? (button.dataset.activeHelp || nextLabel) : (button.dataset.idleHelp || nextLabel);
 
             button.classList.toggle('is-current', isCurrent);
             button.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
+            button.setAttribute('aria-label', nextLabel);
+            setPassiveHelpTooltip(button, nextHelp);
 
             if (label) {
-                label.textContent = isCurrent ? (button.dataset.activeLabel || '') : (button.dataset.idleLabel || '');
+                label.textContent = nextLabel;
+            }
+
+            if (activeHelpButton === button && helpTooltipLayer && !helpTooltipLayer.hidden) {
+                helpTooltipLayer.textContent = nextHelp;
+                positionHelpTooltip(button);
             }
         });
 
         deleteFamilyButtons.forEach((button) => {
             const family = button.getAttribute('data-delete-family') || '';
-            const isHeading = family !== '' && family === data.heading;
-            const isBody = family !== '' && family === data.body;
-            let blockedMessage = '';
-
-            if (isHeading && isBody) {
-                blockedMessage = button.dataset.deleteBlockedBoth || '';
-            } else if (isHeading) {
-                blockedMessage = button.dataset.deleteBlockedHeading || '';
-            } else if (isBody) {
-                blockedMessage = button.dataset.deleteBlockedBody || '';
-            }
+            const blockedRoleKeys = selectedRoleKeysForFamily(family, data);
+            const blockedMessage = blockedRoleKeys.length > 0
+                ? (button.getAttribute(`data-delete-blocked-${buildRoleSelectionKey(blockedRoleKeys)}`) || '')
+                : '';
 
             button.classList.toggle('is-disabled', blockedMessage !== '');
             button.setAttribute('aria-disabled', blockedMessage !== '' ? 'true' : 'false');
-            button.setAttribute('title', blockedMessage || button.dataset.deleteReadyTitle || '');
+            setPassiveHelpTooltip(button, blockedMessage || button.dataset.deleteReadyTitle || '');
 
             if (blockedMessage !== '') {
                 button.setAttribute('data-delete-blocked', blockedMessage);
+                if (activeHelpButton === button && helpTooltipLayer && !helpTooltipLayer.hidden) {
+                    helpTooltipLayer.textContent = blockedMessage;
+                    positionHelpTooltip(button);
+                }
                 return;
             }
 
             button.removeAttribute('data-delete-blocked');
+
+            if (activeHelpButton === button && helpTooltipLayer && !helpTooltipLayer.hidden) {
+                helpTooltipLayer.textContent = button.dataset.deleteReadyTitle || '';
+                positionHelpTooltip(button);
+            }
         });
 
         if (outputNames) {
-            outputNames.value = `${data.heading}\n${data.body}`;
+            const names = [data.heading, data.body];
+
+            if (data.includeMonospace) {
+                names.push(data.monospace);
+            }
+
+            outputNames.value = names.join('\n');
         }
 
         if (outputStacks) {
-            outputStacks.value = `${data.headingStack}\n${data.bodyStack}`;
+            const stacks = [data.headingStack, data.bodyStack];
+
+            if (data.includeMonospace) {
+                stacks.push(data.monospaceStack);
+            }
+
+            outputStacks.value = stacks.join('\n');
         }
 
-        const variableSnippet = [
-            ':root {',
-            `  --font-${data.headingSlug}: ${data.headingStack};`,
-            `  --font-${data.bodySlug}: ${data.bodyStack};`,
-            `  --font-heading: var(--font-${data.headingSlug});`,
-            `  --font-body: var(--font-${data.bodySlug});`,
-            '}'
-        ].join('\n');
+        let variableSnippet = '';
+
+        if (data.headingSlug && data.bodySlug) {
+            const variableLines = [
+                ':root {',
+                `  --font-${data.headingSlug}: ${data.headingStack};`,
+                `  --font-${data.bodySlug}: ${data.bodyStack};`,
+                `  --font-heading: var(--font-${data.headingSlug});`,
+                `  --font-body: var(--font-${data.bodySlug});`,
+            ];
+
+            if (data.includeMonospace) {
+                if (data.monospaceSlug) {
+                    variableLines.push(`  --font-${data.monospaceSlug}: ${data.monospaceStack};`);
+                    variableLines.push(`  --font-monospace: var(--font-${data.monospaceSlug});`);
+                } else {
+                    variableLines.push(`  --font-monospace: ${data.monospaceStack};`);
+                }
+            }
+
+            variableLines.push('}');
+            variableSnippet = variableLines.join('\n');
+        }
 
         if (outputVars) {
             outputVars.value = variableSnippet;
         }
 
         if (outputUsage) {
-            outputUsage.value = [
+            if (!variableSnippet) {
+                outputUsage.value = '';
+                return;
+            }
+
+            const usageLines = [
                 variableSnippet,
                 '',
                 'body {',
@@ -2320,7 +2538,18 @@
                 'h1, h2, h3, h4, h5, h6 {',
                 '  font-family: var(--font-heading);',
                 '}'
-            ].join('\n');
+            ];
+
+            if (data.includeMonospace) {
+                usageLines.push(
+                    '',
+                    'code, pre {',
+                    '  font-family: var(--font-monospace);',
+                    '}'
+                );
+            }
+
+            outputUsage.value = usageLines.join('\n');
         }
     }
 
@@ -2843,14 +3072,21 @@
         setRoleDraftSavingState(true);
 
         try {
+            const requestBody = {
+                heading: getElementValue(roleHeading, ''),
+                body: getElementValue(roleBody, ''),
+                heading_fallback: getElementValue(roleHeadingFallback, 'sans-serif'),
+                body_fallback: getElementValue(roleBodyFallback, 'sans-serif')
+            };
+
+            if (monospaceRoleEnabled) {
+                requestBody.monospace = getElementValue(roleMonospace, '');
+                requestBody.monospace_fallback = getElementValue(roleMonospaceFallback, 'monospace');
+            }
+
             const payload = await requestJson(getRoutePath('saveRoleDraft', 'roles/draft'), {
                 method: 'PATCH',
-                body: {
-                    heading: getElementValue(roleHeading, ''),
-                    body: getElementValue(roleBody, ''),
-                    heading_fallback: getElementValue(roleHeadingFallback, 'sans-serif'),
-                    body_fallback: getElementValue(roleBodyFallback, 'sans-serif')
-                },
+                body: requestBody,
                 fallbackMessage: getString('rolesDraftSaveError', 'The roles could not be saved.')
             });
             const roles = payload.roles || {};
@@ -2869,6 +3105,14 @@
 
             if (roleBodyFallback && typeof roles.body_fallback === 'string') {
                 roleBodyFallback.value = roles.body_fallback;
+            }
+
+            if (monospaceRoleEnabled && roleMonospace && typeof roles.monospace === 'string') {
+                roleMonospace.value = roles.monospace;
+            }
+
+            if (monospaceRoleEnabled && roleMonospaceFallback && typeof roles.monospace_fallback === 'string') {
+                roleMonospaceFallback.value = roles.monospace_fallback;
             }
 
             updateRoleOutputs();
@@ -4410,7 +4654,11 @@
         const role = roleTarget.getAttribute('data-role-assign');
         const snapshotBeforeChange = roleFieldSnapshot();
 
-        if ((role === 'heading' && snapshotBeforeChange.heading === family) || (role === 'body' && snapshotBeforeChange.body === family)) {
+        if (
+            (role === 'heading' && snapshotBeforeChange.heading === family)
+            || (role === 'body' && snapshotBeforeChange.body === family)
+            || (role === 'monospace' && snapshotBeforeChange.monospace === family)
+        ) {
             return true;
         }
 
@@ -4420,6 +4668,10 @@
 
         if (role === 'body' && roleBody) {
             roleBody.value = family;
+        }
+
+        if (role === 'monospace' && roleMonospace) {
+            roleMonospace.value = family;
         }
 
         updateRoleOutputs();
@@ -4808,7 +5060,7 @@
     }
 
     function bindRolePreviewControls() {
-        [roleHeading, roleBody, roleHeadingFallback, roleBodyFallback].forEach((element) => {
+        [roleHeading, roleBody, roleMonospace, roleHeadingFallback, roleBodyFallback, roleMonospaceFallback].forEach((element) => {
             if (element) {
                 element.addEventListener('change', updateRoleOutputs);
             }

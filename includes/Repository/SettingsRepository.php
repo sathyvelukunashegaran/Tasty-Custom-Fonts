@@ -13,6 +13,8 @@ final class SettingsRepository
     public const OPTION_SETTINGS = 'tasty_fonts_settings';
     public const OPTION_ROLES = 'tasty_fonts_roles';
     public const OPTION_GOOGLE_API_KEY_DATA = 'tasty_fonts_google_api_key_data';
+    private const ROLE_FAMILY_KEYS = ['heading', 'body', 'monospace'];
+    private const REQUIRED_ROLE_FAMILY_KEYS = ['heading', 'body'];
     private const LEGACY_OPTION_SETTINGS = 'etch_fonts_settings';
     private const LEGACY_OPTION_ROLES = 'etch_fonts_roles';
     private const DEFAULT_SETTINGS = [
@@ -24,6 +26,8 @@ final class SettingsRepository
         'minify_css_output' => true,
         'preload_primary_fonts' => true,
         'remote_connection_hints' => true,
+        'training_wheels_off' => false,
+        'monospace_role_enabled' => false,
         'preview_sentence' => 'The quick brown fox jumps over the lazy dog. 1234567890',
         'adobe_enabled' => false,
         'adobe_project_id' => '',
@@ -48,6 +52,7 @@ final class SettingsRepository
     private const DEFAULT_ROLE_FALLBACKS = [
         'heading_fallback' => 'sans-serif',
         'body_fallback' => 'sans-serif',
+        'monospace_fallback' => 'monospace',
     ];
 
     public function getSettings(): array
@@ -62,6 +67,8 @@ final class SettingsRepository
         $settings['minify_css_output'] = !empty($settings['minify_css_output']);
         $settings['preload_primary_fonts'] = !empty($settings['preload_primary_fonts']);
         $settings['remote_connection_hints'] = !empty($settings['remote_connection_hints']);
+        $settings['training_wheels_off'] = !empty($settings['training_wheels_off']);
+        $settings['monospace_role_enabled'] = !empty($settings['monospace_role_enabled']);
         $settings['adobe_enabled'] = !empty($settings['adobe_enabled']);
         $settings['adobe_project_id'] = $this->sanitizeAdobeProjectId((string) ($settings['adobe_project_id'] ?? ''));
         $settings['adobe_project_status'] = $this->normalizeAdobeProjectStatus(
@@ -139,6 +146,16 @@ final class SettingsRepository
             $settingsChanged = true;
         }
 
+        if (array_key_exists('training_wheels_off', $input)) {
+            $settings['training_wheels_off'] = !empty($input['training_wheels_off']);
+            $settingsChanged = true;
+        }
+
+        if (array_key_exists('monospace_role_enabled', $input)) {
+            $settings['monospace_role_enabled'] = !empty($input['monospace_role_enabled']);
+            $settingsChanged = true;
+        }
+
         if (isset($input['preview_sentence'])) {
             $settings['preview_sentence'] = sanitize_text_field((string) $input['preview_sentence']);
             $settingsChanged = true;
@@ -165,14 +182,30 @@ final class SettingsRepository
 
     public function saveRoles(array $input, array $catalog): array
     {
-        $defaults = $this->getDefaultRoles($catalog);
+        $storedRoles = $this->normalizeRoleSet(
+            $this->getOptionArray(self::OPTION_ROLES, self::LEGACY_OPTION_ROLES),
+            $catalog
+        );
+        $roles = $storedRoles;
+
+        foreach (self::ROLE_FAMILY_KEYS as $roleKey) {
+            if (!array_key_exists($roleKey, $input)) {
+                continue;
+            }
+
+            $roles[$roleKey] = $this->sanitizeTextValue($input[$roleKey]);
+        }
+
+        foreach (self::DEFAULT_ROLE_FALLBACKS as $roleKey => $defaultFallback) {
+            if (!array_key_exists($roleKey, $input)) {
+                continue;
+            }
+
+            $roles[$roleKey] = $this->normalizeRoleFallback($input[$roleKey], $defaultFallback);
+        }
+
         $roles = $this->normalizeRoleSet(
-            [
-                'heading' => $this->sanitizeTextValue($input['heading'] ?? $defaults['heading']),
-                'body' => $this->sanitizeTextValue($input['body'] ?? $defaults['body']),
-                'heading_fallback' => FontUtils::sanitizeFallback((string) ($input['heading_fallback'] ?? 'sans-serif')),
-                'body_fallback' => FontUtils::sanitizeFallback((string) ($input['body_fallback'] ?? 'sans-serif')),
-            ],
+            $roles,
             $catalog
         );
 
@@ -216,7 +249,10 @@ final class SettingsRepository
     public function saveAppliedRoles(array $roles, array $catalog): array
     {
         $settings = $this->getSettings();
-        $normalizedRoles = $this->normalizeRoleSet($roles, $catalog);
+        $existingRoles = is_array($settings['applied_roles'] ?? null)
+            ? $this->normalizeRoleSet($settings['applied_roles'], $catalog)
+            : $this->getRoles($catalog);
+        $normalizedRoles = $this->normalizeRoleSet(array_replace($existingRoles, $roles), $catalog);
         $settings['applied_roles'] = $normalizedRoles;
         $this->persistSettings($settings);
 
@@ -411,6 +447,7 @@ final class SettingsRepository
         return self::DEFAULT_ROLE_FALLBACKS + [
             'heading' => $heading,
             'body' => $body,
+            'monospace' => '',
         ];
     }
 
@@ -439,7 +476,7 @@ final class SettingsRepository
             return $roles;
         }
 
-        foreach (['heading', 'body'] as $roleKey) {
+        foreach (self::REQUIRED_ROLE_FAMILY_KEYS as $roleKey) {
             if (trim((string) ($roles[$roleKey] ?? '')) === '') {
                 $roles[$roleKey] = $defaults[$roleKey];
             }
@@ -454,10 +491,25 @@ final class SettingsRepository
         $families = $this->extractFamilyNames($catalog);
         $normalizedRoles = wp_parse_args($roles, $defaults);
         $normalizedRoles = $this->normalizeRoleFamilies($normalizedRoles, $families, $defaults);
-        $normalizedRoles['heading_fallback'] = FontUtils::sanitizeFallback((string) ($normalizedRoles['heading_fallback'] ?? 'sans-serif'));
-        $normalizedRoles['body_fallback'] = FontUtils::sanitizeFallback((string) ($normalizedRoles['body_fallback'] ?? 'sans-serif'));
+        $normalizedRoles['heading'] = $this->sanitizeTextValue($normalizedRoles['heading'] ?? '');
+        $normalizedRoles['body'] = $this->sanitizeTextValue($normalizedRoles['body'] ?? '');
+        $normalizedRoles['monospace'] = $this->sanitizeTextValue($normalizedRoles['monospace'] ?? '');
+        $normalizedRoles['heading_fallback'] = $this->normalizeRoleFallback($normalizedRoles['heading_fallback'] ?? '', 'sans-serif');
+        $normalizedRoles['body_fallback'] = $this->normalizeRoleFallback($normalizedRoles['body_fallback'] ?? '', 'sans-serif');
+        $normalizedRoles['monospace_fallback'] = $this->normalizeRoleFallback($normalizedRoles['monospace_fallback'] ?? '', 'monospace');
 
         return $normalizedRoles;
+    }
+
+    private function normalizeRoleFallback(mixed $value, string $default): string
+    {
+        $rawValue = trim(wp_unslash((string) $value));
+
+        if ($rawValue === '') {
+            return $default;
+        }
+
+        return FontUtils::sanitizeFallback($rawValue);
     }
 
     private function sanitizeTextValue(mixed $value): string

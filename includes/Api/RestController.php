@@ -148,14 +148,7 @@ final class RestController
     public function saveRoleDraft(WP_REST_Request $request): mixed
     {
         return $this->restResult(
-            $this->admin->saveRoleDraftValues(
-                [
-                    'heading' => $this->getTextParam($request, 'heading'),
-                    'body' => $this->getTextParam($request, 'body'),
-                    'heading_fallback' => $this->getTextParam($request, 'heading_fallback', 'sans-serif'),
-                    'body_fallback' => $this->getTextParam($request, 'body_fallback', 'sans-serif'),
-                ]
-            )
+            $this->admin->saveRoleDraftValues($this->getRoleDraftInput($request))
         );
     }
 
@@ -241,5 +234,30 @@ final class RestController
         }
 
         return array_map('trim', explode(',', $variantTokens));
+    }
+
+    private function getRoleDraftInput(WP_REST_Request $request): array
+    {
+        $params = $request->get_params();
+        $input = [];
+
+        foreach (
+            [
+                'heading' => '',
+                'body' => '',
+                'monospace' => '',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'sans-serif',
+                'monospace_fallback' => 'monospace',
+            ] as $key => $default
+        ) {
+            if (!array_key_exists($key, $params)) {
+                continue;
+            }
+
+            $input[$key] = $this->getTextParam($request, $key, $default);
+        }
+
+        return $input;
     }
 }
