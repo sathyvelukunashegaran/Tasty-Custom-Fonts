@@ -127,6 +127,7 @@ php -r '
 
 find . -name '*.php' -not -path './output/*' -print0 | xargs -0 -n1 php -l >/dev/null
 php tests/run.php >/dev/null
+node --test tests/js/*.test.cjs >/dev/null
 
 git add plugin.php CHANGELOG.md
 git commit -m "Release version ${version}"

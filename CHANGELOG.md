@@ -12,8 +12,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Updated the release workflow and local release helper to run automated quality gates before packaging or publishing a version.
+- Updated the release workflow and local release helper to run automated PHP and JavaScript quality gates before packaging or publishing a version.
 - Extracted shared admin and canvas runtime helper contracts into standalone browser/Node-compatible scripts so the shipped assets and local smoke tests exercise the same logic.
+- Split the legacy monolithic PHP test file into domain case files so the suite can keep growing without concentrating all coverage in `tests/run.php`.
 - Refined the admin dashboard hero messaging and kept it visible when training wheels are disabled.
 
 ## [1.5.1] - 2026-04-07
