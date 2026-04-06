@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Updated GitHub Actions workflows to use `actions/checkout@v6` in line with the current upstream recommendation.
 - Updated the release workflow and local release helper to run automated PHP and JavaScript quality gates before packaging or publishing a version.
 - Extracted shared admin and canvas runtime helper contracts into standalone browser/Node-compatible scripts so the shipped assets and local smoke tests exercise the same logic.
 - Split the legacy monolithic PHP test file into domain case files so the suite can keep growing without concentrating all coverage in `tests/run.php`.
