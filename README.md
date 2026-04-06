@@ -1,6 +1,6 @@
 # Tasty Custom Fonts
 
-Typography for Etch, Gutenberg, and the frontend. Import Google Fonts to your own server, upload local font files, scan fonts from `wp-content/uploads/fonts/`, or connect an Adobe Fonts web project while the plugin generates the CSS and runtime hooks you need.
+Typography management for Etch, Gutenberg, and the frontend. Import Google or Bunny Fonts, upload local font files, rescan `wp-content/uploads/fonts/`, or connect an Adobe Fonts web project while the plugin handles generated CSS, runtime loading, editor presets, and preview tooling.
 
 ![PHP 8.1+](https://img.shields.io/badge/PHP-8.1%2B-777BB4?logo=php&logoColor=white)
 ![WordPress 6.1+](https://img.shields.io/badge/WordPress-6.1%2B-21759B?logo=wordpress&logoColor=white)
@@ -9,43 +9,66 @@ Typography for Etch, Gutenberg, and the frontend. Import Google Fonts to your ow
 
 **Works especially well with [EtchWP](https://etch.com) and [Automatic CSS](https://automaticcss.com).**
 
-## Features
+## What It Does
 
-**Multiple ways to build your font stack**
+- Upload `WOFF2`, `WOFF`, `TTF`, and `OTF` files directly from the dashboard.
+- Rescan fonts placed anywhere under `wp-content/uploads/fonts/`.
+- Import Google Fonts as self-hosted files or keep them on the Google CDN.
+- Import Bunny Fonts as self-hosted files or keep them on the Bunny CDN.
+- Connect an Adobe Fonts web project and use Adobe-hosted families in the same role and preview workflow.
+- Save multiple delivery profiles per family, then switch which delivery is live.
+- Keep families `Published`, park them as `Paused`, or let active role selections mark them `In Use`.
+- Generate runtime CSS, typography variables, role snippets, editor presets, preloads, and connection hints without a build step.
 
-- Upload `WOFF2`, `WOFF`, `TTF`, or `OTF` files from the `Tasty Fonts` dashboard.
-- Import Google Fonts to your own server, with live catalog search when a validated API key is saved.
-- Add local files over FTP or SFTP under `wp-content/uploads/fonts/`, then pick them up with `Rescan fonts`.
-- Connect an existing Adobe Fonts web project ID to load Adobe-hosted families on the frontend, in Gutenberg, and inside the Etch canvas.
+## Current Feature Set
 
-**Generated CSS for quick setup or manual control**
+### Multiple font sources, one library
 
-- Builds `@font-face` rules for detected local faces and imported Google faces.
-- Saves heading and body roles with fallback stacks you can reuse anywhere.
-- Generates snippet outputs for `Site snippet`, `CSS variables`, `Font stacks`, and `Font names`.
-- Exposes role aliases like `--font-heading` and `--font-body`, plus variables for the currently selected heading/body families.
-- Writes a generated stylesheet to `wp-content/uploads/fonts/tasty-fonts.css` and falls back to inline CSS automatically when file delivery is unavailable.
+- Local uploads and rescans feed the same library used by Google, Bunny, and Adobe imports.
+- Google and Bunny imports support both `Self-hosted` and `CDN` delivery modes.
+- Adobe stays Adobe-hosted by design, but its detected families still appear in selectors, previews, Gutenberg presets, and Etch.
+- Families can carry multiple delivery profiles, so a single family can keep a local profile and a remote CDN profile side by side.
 
-**WordPress and Etch-aware runtime behavior**
+### Draft, publish, and preview workflow
 
-- Registers catalog families as Block Editor typography presets without requiring manual `theme.json` edits.
-- Enqueues the generated stylesheet for the frontend, editor, and Etch, while loading font-face rules only in the plugin admin so previews work without restyling the dashboard chrome.
-- Includes an Etch canvas bridge so the generated stylesheet can be injected into the builder canvas when needed.
+- Role selection is built around explicit draft vs live sitewide delivery.
+- `Apply Sitewide` serves the current role CSS on the frontend, in Gutenberg, and in Etch.
+- `Save Draft` stores role changes without changing live output.
+- The preview workspace includes editorial, card, reading, interface, and code scenes.
+- An optional monospace role can expose `--font-monospace` for `code` and `pre`.
 
-**Library tooling in the admin UI**
+### Output and delivery controls
 
-- Assign heading/body roles with `Apply Sitewide` or `Save Draft`, and save draft role picks directly from the library cards.
-- Preview pairings in `Specimen`, `Card`, `Reading`, and `Interface` modes.
-- Search and filter the local library, inspect file details, save per-family fallback stacks, delete individual variants, and remove unused families.
-- Keeps an activity log of the latest 100 scans, imports, deletes, and asset refreshes.
+- Generates `@font-face` rules for self-hosted deliveries and enqueues remote stylesheets for Google CDN, Bunny CDN, and Adobe.
+- Writes `wp-content/uploads/fonts/tasty-fonts.css` when file delivery is available and falls back to inline CSS when it is not.
+- Supports global `font-display`, CSS minification, same-origin WOFF2 preloads for the active heading/body pair, and remote preconnect hints.
+- Supports per-family font-display overrides and per-family live-delivery switching from the library UI.
 
-## Why self-hosted?
+### WordPress-aware integration
 
-Loading fonts from a third-party CDN creates an extra external request from the visitor's browser. Self-hosting keeps the font files on your own domain, gives you more control over caching, and reduces dependence on remote providers after import time.
+- Registers runtime families as Block Editor typography presets.
+- Can sync managed families into the core Block Editor Font Library when the site environment supports loopback requests.
+- Loads the right styles in the frontend, block editor, admin previews, and Etch canvas.
+- Keeps admin previews safe by loading font faces and remote preview styles with `font-display: swap`.
 
-Tasty Custom Fonts handles the download step for Google imports once, stores the assets locally, and then serves the resulting styles from your WordPress uploads directory.
+### Admin tooling
 
-Adobe Fonts is the exception: Adobe's web-font terms require Adobe-hosted embed delivery, so this plugin connects to an existing Adobe web project instead of downloading and self-hosting Adobe font files.
+- Filter the library by source, delivery state, category, and search text.
+- Save per-family fallback stacks.
+- Delete individual variants, delete individual delivery profiles, or remove whole families.
+- Review activity history for scans, imports, delivery changes, asset refreshes, and settings changes.
+- Control plugin behavior for Block Editor sync, training wheels, monospace role support, and uninstall cleanup.
+
+## Source And Delivery Model
+
+| Source | Delivery choices | Notes |
+| --- | --- | --- |
+| Local files | Self-hosted | Upload from the dashboard or rescan `uploads/fonts/`. |
+| Google Fonts | Self-hosted or Google CDN | Live catalog search is available when a valid Google API key is saved. |
+| Bunny Fonts | Self-hosted or Bunny CDN | Search from the plugin or paste a family name manually. |
+| Adobe Fonts | Adobe-hosted | Uses an existing Adobe web project; no file downloads. |
+
+Each family in the library stores one or more delivery profiles. The active delivery profile controls what is served at runtime.
 
 ## Requirements
 
@@ -55,7 +78,7 @@ Adobe Fonts is the exception: Adobe's web-font terms require Adobe-hosted embed 
 | PHP | 8.1+ |
 | Etch | Optional |
 
-The plugin works without Etch, but its canvas bridge is most useful when you are building with Etch.
+The plugin works without Etch, but the Etch canvas bridge is most useful when you build with Etch.
 
 ## Installation
 
@@ -66,7 +89,7 @@ The plugin works without Etch, but its canvas bridge is most useful when you are
 3. Upload the ZIP, install it, and activate `Tasty Custom Fonts`.
 4. Open `Tasty Fonts` in the WordPress admin menu.
 
-The packaged plugin directory remains `etch-fonts/` for now so existing installs can update without a deactivate/reactivate cycle.
+The packaged plugin directory remains `etch-fonts/` so existing installs can update cleanly.
 
 ### Manual install
 
@@ -77,84 +100,66 @@ The packaged plugin directory remains `etch-fonts/` for now so existing installs
 
 ## Getting Started
 
-### Upload font files from the dashboard
+### 1. Add fonts to the library
 
-1. Open `Tasty Fonts`.
-2. Click `Add Font`.
-3. Switch to the `Upload files` tab.
-4. Add one family group per typeface, then add one row per face you want to upload.
-5. Choose a font file for each row. Filenames such as `Abel-400.woff2` or `Inter-700-italic.woff2` let the plugin suggest the family, weight, and style automatically.
-6. Review the detected values, adjust the fallback stack if needed, and click `Upload to library`.
+Choose the source that fits the job:
 
-### Add local fonts over FTP or SFTP
+- `Upload files`: add local font files from the dashboard.
+- `Rescan fonts`: pick up files already placed under `wp-content/uploads/fonts/`.
+- `Google Fonts`: import selected variants as self-hosted files or a Google CDN delivery.
+- `Bunny Fonts`: search or enter a family name, then import selected variants as self-hosted files or a Bunny CDN delivery.
+- `Adobe Fonts`: save a web project ID and sync its detected families.
 
-1. Upload supported files anywhere under `wp-content/uploads/fonts/`.
-2. Keep the filenames descriptive so the scanner can detect the family, weight, and style from the basename. Examples:
+Google self-hosted files are saved under `wp-content/uploads/fonts/google/<family-slug>/`. Bunny self-hosted files are saved under `wp-content/uploads/fonts/bunny/<family-slug>/`.
 
-   ```text
-   wp-content/uploads/fonts/Inter-400.woff2
-   wp-content/uploads/fonts/Inter-700-italic.woff2
-   wp-content/uploads/fonts/editorial/Playfair Display-BoldItalic.ttf
-   ```
+### 2. Choose live delivery per family
 
-3. Open `Tasty Fonts` and click `Rescan fonts`.
+In the library, each family can expose one or more delivery profiles. Use the family controls to:
 
-The local scanner reads the filename, not the folder name, when it determines the family and face details.
+- switch the active runtime delivery for that family
+- mark a family `Published` or `Paused`
+- keep extra delivery profiles for later without deleting the family
 
-### Import from Google Fonts
+`Paused` keeps the family in the library without serving it at runtime. Families selected in active roles are treated as `In Use`.
 
-#### With a Google Fonts API key
+### 3. Set roles and publish when ready
 
-1. Open `Tasty Fonts`.
-2. Click `Add Font` and stay on the `Google Fonts` tab.
-3. In `Google search access`, open `Key Settings`, paste your API key, and click `Save Key`.
-4. Use `Search the catalog` to find a family, select the variants you want, and click `Import and self-host`.
+1. Choose `Heading` and `Body` families.
+2. Optionally enable the `Monospace` role in `Plugin Behavior`.
+3. Set fallback stacks for each role.
+4. Use `Save Draft` while experimenting.
+5. Use `Apply Sitewide` when you want the generated role CSS served everywhere.
 
-#### Without a Google Fonts API key
+The plugin exposes role aliases such as `--font-heading`, `--font-body`, and, when enabled, `--font-monospace`.
 
-1. Open `Tasty Fonts -> Add Font -> Google Fonts`.
-2. Enter the exact `Family name`.
-3. Enter `Manual variants` as a comma-separated list such as `regular,700,700italic`.
-4. Click `Import and self-host`.
+### 4. Tune output settings
 
-Google imports are saved into `wp-content/uploads/fonts/google/<family-slug>/` as local `WOFF2` files.
+Use `Output Settings` to control:
 
-### Connect an Adobe Fonts web project
+- file vs inline CSS delivery
+- default `font-display`
+- CSS minification
+- same-origin WOFF2 preloads for the active heading/body pair
+- remote preconnect hints for Google, Bunny, and Adobe deliveries
 
-1. Open `Tasty Fonts`.
-2. Click `Add Font` and switch to the `Adobe Fonts` tab.
-3. Paste an existing Adobe Fonts `Web Project` ID.
-4. Turn on `Load this Adobe-hosted stylesheet` if you want the project active on the site and in editors.
-5. Click `Save project`.
-6. Use `Resync project` any time you change families or domains in Adobe Fonts.
+## Why Self-Host
 
-Adobe families stay hosted by Adobe at `use.typekit.net`; this plugin only validates the stylesheet, caches the detected family names, and makes them available in role selectors, previews, Gutenberg, and the Etch canvas.
+Self-hosting keeps font requests on your own domain, reduces third-party runtime dependencies, and lets you control caching and generated output directly from WordPress.
 
-### Assign roles and use the generated output
+Tasty Custom Fonts can still keep a remote CDN delivery when that is the better operational choice. The library is built to let you switch between delivery profiles instead of forcing one model for every family.
 
-1. In `Tasty Fonts`, choose the `Heading font` and `Body font`.
-2. Set fallback stacks for each role.
-3. Click `Apply Sitewide` if you want the generated CSS to include role-based selectors for `body` and `h1` through `h6`.
-4. Click `Save Draft` if you only want to keep the pairing and copy the generated snippets yourself.
-5. Click `Advanced Tools` to access:
-   - `Preview` for the built-in pairing demos.
-   - `Snippets` for `Site snippet`, `CSS variables`, `Font stacks`, and `Font names`.
-   - `System details` for the generated file path, request URL, delivery mode, and library diagnostics.
+Adobe Fonts is the exception: Adobe web-font delivery stays on Adobe-hosted stylesheets.
 
-## How the stylesheet is delivered
+## Development
 
-The plugin builds a generated stylesheet at `wp-content/uploads/fonts/tasty-fonts.css`. When that file is current and writable, it is enqueued as a regular stylesheet and versioned with a `crc32b` hash of the generated CSS content.
+There is no build step, no Composer install, and no npm install.
 
-If the file is missing, stale, or cannot be written, the plugin falls back to outputting the same CSS inline so the selected fonts still load. The generated CSS always includes the catalog's `@font-face` rules and can also include the heading/body usage rules when you apply roles with `Apply Sitewide`.
+Useful commands:
 
-## No external dependencies
-
-Tasty Custom Fonts is a small hand-coded plugin with no Composer packages, npm packages, or bundled frontend libraries.
-
-- No install step beyond activating the plugin.
-- No dependency management pipeline to keep in sync.
-- No third-party runtime request after a Google family has been imported and stored locally.
-- Adobe Fonts support is optional and remains Adobe-hosted by design.
+```bash
+php tests/run.php
+find . -name '*.php' -not -path './output/*' -print0 | xargs -0 -n1 php -l
+```
 
 ## Translation
 
@@ -170,7 +175,7 @@ Screenshots coming soon.
 
 Pull requests are welcome. For larger changes, open an issue first so the direction is clear before implementation starts.
 
-- Follow WordPress coding conventions used by the rest of the plugin.
+- Match the WordPress coding conventions already used in the plugin.
 - Run `php tests/run.php` before submitting changes.
 - Update this README when user-facing behavior or requirements change.
 
