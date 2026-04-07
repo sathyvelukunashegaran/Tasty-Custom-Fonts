@@ -2,22 +2,22 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Tasty Custom Fonts 1.2.0\n"
+"Project-Id-Version: Tasty Custom Fonts 1.5.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/tasty-fonts\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-03T18:54:48+00:00\n"
+"POT-Creation-Date: 2026-04-07T07:36:28+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: tasty-fonts\n"
 
 #. Plugin Name of the plugin
 #: plugin.php
-#: includes/Admin/AdminController.php:45
-#: includes/Admin/AdminPageRenderer.php:59
+#: includes/Admin/AdminController.php:65
+#: includes/Admin/AdminPageRenderer.php:172
 msgid "Tasty Custom Fonts"
 msgstr ""
 
@@ -28,7 +28,7 @@ msgstr ""
 
 #. Description of the plugin
 #: plugin.php
-msgid "Self-host local and Google Fonts, with optional Adobe Fonts web project support for Etch, Gutenberg, and the frontend."
+msgid "Self-host local, Google, and Bunny Fonts, with optional Adobe Fonts web project support for Etch, Gutenberg, and the frontend."
 msgstr ""
 
 #. Author of the plugin
@@ -41,1519 +41,3467 @@ msgstr ""
 msgid "https://github.com/sathyvelukunashegaran"
 msgstr ""
 
-#: includes/Admin/AdminController.php:46
+#: includes/Admin/AdminController.php:66
 msgid "Tasty Fonts"
 msgstr ""
 
-#: includes/Admin/AdminController.php:129
-msgid "You are not allowed to search Google Fonts."
+#: includes/Admin/AdminController.php:144
+#: includes/Admin/AdminController.php:824
+#: includes/Admin/AdminPageRenderer.php:94
+#: assets/js/admin.js:232
+msgid "Live sitewide"
 msgstr ""
 
-#: includes/Admin/AdminController.php:133
+#: includes/Admin/AdminController.php:145
+#: includes/Admin/AdminController.php:825
+#: includes/Admin/AdminPageRenderer.php:94
+#: assets/js/admin.js:231
+msgid "Current draft"
+msgstr ""
+
+#: includes/Admin/AdminController.php:226
+#: includes/Admin/AdminController.php:252
 msgid "Search is unavailable until a Google Fonts API key is saved."
 msgstr ""
 
-#: includes/Admin/AdminController.php:141
-msgid "You are not allowed to import Google Fonts."
+#: includes/Admin/AdminController.php:245
+msgid "A Google Fonts family name is required."
 msgstr ""
 
-#: includes/Admin/AdminController.php:158
-msgid "You are not allowed to upload local fonts."
+#: includes/Admin/AdminController.php:261
+msgid "No Google Fonts family matched that name."
 msgstr ""
 
-#: includes/Admin/AdminController.php:164
-#: includes/Admin/AdminController.php:657
+#: includes/Admin/AdminController.php:275
+msgid "A Bunny Fonts family name is required."
+msgstr ""
+
+#: includes/Admin/AdminController.php:284
+msgid "No Bunny Fonts family matched that name."
+msgstr ""
+
+#: includes/Admin/AdminController.php:332
+#: assets/js/admin.js:212
 msgid "Add at least one upload row before submitting."
 msgstr ""
 
-#: includes/Admin/AdminController.php:178
-msgid "You are not allowed to update font fallback settings."
-msgstr ""
-
-#: includes/Admin/AdminController.php:185
+#: includes/Admin/AdminController.php:347
 msgid "A font family is required before saving its fallback."
 msgstr ""
 
-#: includes/Admin/AdminController.php:196
+#: includes/Admin/AdminController.php:358
 #, php-format
 msgid "Saved fallback for %s."
 msgstr ""
 
-#: includes/Admin/AdminController.php:231
-#: includes/Admin/AdminController.php:587
+#: includes/Admin/AdminController.php:371
+#: includes/Admin/AdminController.php:632
+msgid "A font family is required before saving font-display."
+msgstr ""
+
+#: includes/Admin/AdminController.php:459
+msgid "Activity log cleared. Older entries removed."
+msgstr ""
+
+#: includes/Admin/AdminController.php:471
+#: includes/Admin/AdminController.php:2222
 msgid "Fonts rescanned."
 msgstr ""
 
-#: includes/Admin/AdminController.php:260
-#: includes/Admin/AdminController.php:584
+#: includes/Admin/AdminController.php:563
+#: includes/Admin/AdminController.php:2219
 msgid "Google Fonts API key removed."
 msgstr ""
 
-#: includes/Admin/AdminController.php:273
+#: includes/Admin/AdminController.php:576
 msgid "Google Fonts API key validated."
 msgstr ""
 
-#: includes/Admin/AdminController.php:277
+#: includes/Admin/AdminController.php:580
 msgid "Google Fonts API key validation failed."
 msgstr ""
 
-#: includes/Admin/AdminController.php:282
+#: includes/Admin/AdminController.php:584
 msgid "Google Fonts API key could not be validated."
 msgstr ""
 
-#: includes/Admin/AdminController.php:288
-msgid "Plugin settings updated."
-msgstr ""
-
-#: includes/Admin/AdminController.php:307
+#: includes/Admin/AdminController.php:610
 #, php-format
 msgid "Saved fallback for %1$s: %2$s."
 msgstr ""
 
-#: includes/Admin/AdminController.php:362
+#: includes/Admin/AdminController.php:637
+msgid "Font display saved."
+msgstr ""
+
+#: includes/Admin/AdminController.php:678
 #, php-format
-msgid "Roles saved. Heading: %1$s; Body: %2$s. %3$s"
+msgid "Variant deleted: %1$s %2$s %3$s."
 msgstr ""
 
-#: includes/Admin/AdminController.php:366
-msgid "Applied everywhere."
+#: includes/Admin/AdminController.php:679
+msgid "Font"
 msgstr ""
 
-#: includes/Admin/AdminController.php:367
-msgid "Saved without global auto-apply."
+#: includes/Admin/AdminController.php:789
+msgid "Generated CSS is unavailable until Apply Sitewide is active."
 msgstr ""
 
-#: includes/Admin/AdminController.php:434
-msgid "Generated CSS file"
+#: includes/Admin/AdminController.php:897
+msgid "Generated CSS File"
 msgstr ""
 
-#: includes/Admin/AdminController.php:435
-#: includes/Admin/AdminController.php:440
-#: includes/Admin/AdminController.php:452
-#: includes/Admin/AdminController.php:457
-#: includes/Admin/AdminController.php:463
-#: includes/Admin/AdminController.php:464
-#: includes/Admin/AdminController.php:469
+#: includes/Admin/AdminController.php:898
+#: includes/Admin/AdminController.php:903
+#: includes/Admin/AdminController.php:915
+#: includes/Admin/AdminController.php:920
+#: includes/Admin/AdminController.php:926
+#: includes/Admin/AdminController.php:927
+#: includes/Admin/AdminController.php:932
+#: includes/Admin/AdminController.php:937
 msgid "Not available"
 msgstr ""
 
-#: includes/Admin/AdminController.php:439
-msgid "CSS request URL"
+#: includes/Admin/AdminController.php:902
+msgid "CSS Request URL"
 msgstr ""
 
-#: includes/Admin/AdminController.php:444
-msgid "Stylesheet size"
+#: includes/Admin/AdminController.php:907
+msgid "Stylesheet Size"
 msgstr ""
 
-#: includes/Admin/AdminController.php:445
+#: includes/Admin/AdminController.php:908
 msgid "Not generated"
 msgstr ""
 
-#: includes/Admin/AdminController.php:449
-msgid "Last generated"
+#: includes/Admin/AdminController.php:912
+msgid "Last Generated"
 msgstr ""
 
-#: includes/Admin/AdminController.php:456
-msgid "Fonts directory"
+#: includes/Admin/AdminController.php:919
+msgid "Fonts Directory"
 msgstr ""
 
-#: includes/Admin/AdminController.php:461
-msgid "Fonts public URL"
+#: includes/Admin/AdminController.php:924
+msgid "Fonts Public URL"
 msgstr ""
 
-#: includes/Admin/AdminController.php:468
-msgid "Google import folder"
+#: includes/Admin/AdminController.php:931
+msgid "Google Import Folder"
 msgstr ""
 
-#: includes/Admin/AdminController.php:473
-msgid "Library inventory"
+#: includes/Admin/AdminController.php:936
+msgid "Bunny Import Folder"
 msgstr ""
 
-#: includes/Admin/AdminController.php:475
+#: includes/Admin/AdminController.php:941
+msgid "Library Inventory"
+msgstr ""
+
+#: includes/Admin/AdminController.php:943
 #, php-format
 msgid "%1$d families / %2$d files"
 msgstr ""
 
-#: includes/Admin/AdminController.php:482
-msgid "Delivery mode"
+#: includes/Admin/AdminController.php:950
+msgid "Generated CSS Delivery"
 msgstr ""
 
-#: includes/Admin/AdminController.php:487
-msgid "Font display"
+#: includes/Admin/AdminController.php:955
+#: includes/Admin/AdminPageRenderer.php:879
+msgid "Default Font Display"
 msgstr ""
 
-#: includes/Admin/AdminController.php:498
-msgid "Font families"
+#: includes/Admin/AdminController.php:966
+msgid "Families"
 msgstr ""
 
-#: includes/Admin/AdminController.php:502
-msgid "Font files"
+#: includes/Admin/AdminController.php:970
+#: includes/Admin/AdminPageRenderer.php:1197
+#: includes/Admin/AdminPageRenderer.php:2095
+#: includes/Fonts/CatalogService.php:615
+msgid "Published"
 msgstr ""
 
-#: includes/Admin/AdminController.php:506
-msgid "Google families"
+#: includes/Admin/AdminController.php:974
+#: includes/Admin/AdminPageRenderer.php:1198
+#: includes/Admin/AdminPageRenderer.php:2096
+#: includes/Fonts/CatalogService.php:605
+msgid "Paused"
 msgstr ""
 
-#: includes/Admin/AdminController.php:510
-msgid "Apply everywhere"
+#: includes/Admin/AdminController.php:978
+#: includes/Admin/AdminPageRenderer.php:2775
+#: includes/Fonts/CatalogService.php:468
+msgid "Self-hosted"
 msgstr ""
 
-#: includes/Admin/AdminController.php:511
-msgid "On"
+#: includes/Admin/AdminController.php:1004
+msgid "Site Snippet"
 msgstr ""
 
-#: includes/Admin/AdminController.php:511
-msgid "Off"
+#: includes/Admin/AdminController.php:1014
+#: includes/Admin/AdminPageRenderer.php:2336
+msgid "CSS Variables"
 msgstr ""
 
-#: includes/Admin/AdminController.php:521
-msgid "Site snippet"
+#: includes/Admin/AdminController.php:1024
+msgid "Font Classes"
 msgstr ""
 
-#: includes/Admin/AdminController.php:528
-msgid "CSS variables"
+#: includes/Admin/AdminController.php:1031
+msgid "Font Stacks"
 msgstr ""
 
-#: includes/Admin/AdminController.php:535
-msgid "Font stacks"
+#: includes/Admin/AdminController.php:1038
+msgid "Font Names"
 msgstr ""
 
-#: includes/Admin/AdminController.php:542
-msgid "Font names"
+#: includes/Admin/AdminController.php:1052
+#: includes/Admin/AdminPageRenderer.php:726
+msgid "Generated CSS"
 msgstr ""
 
-#: includes/Admin/AdminController.php:555
+#: includes/Admin/AdminController.php:1056
+msgid "Not generated while Apply Sitewide is off."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1100
 msgid "Specimen"
 msgstr ""
 
-#: includes/Admin/AdminController.php:560
+#: includes/Admin/AdminController.php:1105
 msgid "Card"
 msgstr ""
 
-#: includes/Admin/AdminController.php:565
+#: includes/Admin/AdminController.php:1110
 msgid "Reading"
 msgstr ""
 
-#: includes/Admin/AdminController.php:570
+#: includes/Admin/AdminController.php:1115
 msgid "Interface"
 msgstr ""
 
-#: includes/Admin/AdminController.php:579
+#: includes/Admin/AdminController.php:1120
+msgid "Code"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1173
+#, php-format
+msgid "delivery mode set to %s"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1180
+#, php-format
+msgid "font-display set to %s"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1187
+#, php-format
+msgid "class output set to %s"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1194
+msgid "CSS minification enabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1195
+msgid "CSS minification disabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1200
+msgid "extended font output variables enabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1201
+msgid "extended font output variables disabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1205
+msgid "extended variable subsettings updated"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1210
+msgid "primary font preloads enabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1211
+msgid "primary font preloads disabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1216
+msgid "remote connection hints enabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1217
+msgid "remote connection hints disabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1222
+msgid "Block Editor Font Library sync enabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1223
+msgid "Block Editor Font Library sync disabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1228
+msgid "training wheels off enabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1229
+msgid "training wheels restored"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1234
+msgid "monospace role enabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1235
+msgid "monospace role disabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1239
+msgid "preview text updated"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1244
+msgid "uninstall file cleanup enabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1245
+msgid "uninstall file cleanup disabled"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1249
+#: includes/Admin/AdminController.php:2214
 msgid "Plugin settings saved."
 msgstr ""
 
-#: includes/Admin/AdminController.php:580
-#: includes/Admin/AdminController.php:915
-msgid "Adobe Fonts project saved."
-msgstr ""
-
-#: includes/Admin/AdminController.php:581
-#: includes/Admin/AdminController.php:869
-msgid "Adobe Fonts project removed."
-msgstr ""
-
-#: includes/Admin/AdminController.php:582
-#: includes/Admin/AdminController.php:914
-msgid "Adobe Fonts project resynced."
-msgstr ""
-
-#: includes/Admin/AdminController.php:583
-msgid "Google Fonts API key saved and validated."
-msgstr ""
-
-#: includes/Admin/AdminController.php:585
-msgid "Font fallback saved."
-msgstr ""
-
-#: includes/Admin/AdminController.php:586
-msgid "Font roles saved."
-msgstr ""
-
-#: includes/Admin/AdminController.php:588
-msgid "Activity log cleared."
-msgstr ""
-
-#: includes/Admin/AdminController.php:589
-msgid "Font family deleted."
-msgstr ""
-
-#: includes/Admin/AdminController.php:626
-msgid "Searching Google Fonts…"
-msgstr ""
-
-#: includes/Admin/AdminController.php:627
-msgid "No Google Fonts families matched that search."
-msgstr ""
-
-#: includes/Admin/AdminController.php:629
-msgid "Select a family from search results or type one manually."
-msgstr ""
-
-#: includes/Admin/AdminController.php:630
-msgid "Importing and self-hosting selected files…"
-msgstr ""
-
-#: includes/Admin/AdminController.php:631
-msgid "Font imported successfully. Reloading…"
-msgstr ""
-
-#: includes/Admin/AdminController.php:632
-msgid "The Google Fonts import failed."
-msgstr ""
-
-#: includes/Admin/AdminController.php:633
+#: includes/Admin/AdminController.php:1253
 #, php-format
-msgid "Importing %1$s: %2$d of %3$d (%4$s)…"
+msgid "Plugin settings saved: %s."
 msgstr ""
 
-#: includes/Admin/AdminController.php:634
+#: includes/Admin/AdminController.php:1302
+#: includes/Admin/AdminPageRenderer.php:62
+msgid "Off"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1303
+#: includes/Admin/AdminPageRenderer.php:63
+msgid "Role classes"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1304
+#: includes/Admin/AdminPageRenderer.php:64
+msgid "Family classes"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1305
+#: includes/Admin/AdminPageRenderer.php:65
+msgid "Role and family classes"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1318
+msgid "Class-first output is off. Choose a class output mode in Output Settings."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1330
+msgid "No font classes are available for the current output mode."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1351
+msgid "role classes"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1352
+msgid "family classes"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1353
+msgid "role and family classes"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1354
+msgid "off"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1364
 #, php-format
-msgid "Imported %1$d variant%2$s. %3$d skipped. Reloading…"
+msgid "Inherit Global (%s)"
 msgstr ""
 
-#: includes/Admin/AdminController.php:635
-#: includes/Google/GoogleImportService.php:57
-#, php-format
-msgid "%s already exists in the library for the selected variants."
+#: includes/Admin/AdminController.php:1379
+#: includes/Admin/AdminPageRenderer.php:2084
+msgid "Auto"
 msgstr ""
 
-#: includes/Admin/AdminController.php:636
-#: includes/Admin/AdminPageRenderer.php:515
-msgid "Import and self-host"
+#: includes/Admin/AdminController.php:1380
+msgid "Block"
 msgstr ""
 
-#: includes/Admin/AdminController.php:637
-msgid "Importing…"
+#: includes/Admin/AdminController.php:1381
+msgid "Swap"
 msgstr ""
 
-#: includes/Admin/AdminController.php:638
-msgid "Upload WOFF2, WOFF, TTF, or OTF files. Each row imports one face."
-msgstr ""
-
-#: includes/Admin/AdminController.php:639
-msgid "Uploading font files…"
-msgstr ""
-
-#: includes/Admin/AdminController.php:640
-#, php-format
-msgid "Uploading files… %1$d%%"
-msgstr ""
-
-#: includes/Admin/AdminController.php:641
-msgid "Upload complete. Refreshing the library…"
-msgstr ""
-
-#: includes/Admin/AdminController.php:642
-msgid "The font upload failed."
-msgstr ""
-
-#: includes/Admin/AdminController.php:643
-#: includes/Admin/AdminPageRenderer.php:1131
-msgid "No file chosen"
-msgstr ""
-
-#: includes/Admin/AdminController.php:644
-#: includes/Admin/AdminPageRenderer.php:623
-msgid "Upload to library"
-msgstr ""
-
-#: includes/Admin/AdminController.php:645
-#: includes/Admin/AdminController.php:647
-msgid "Uploading…"
-msgstr ""
-
-#: includes/Admin/AdminController.php:646
-msgid "Queued"
-msgstr ""
-
-#: includes/Admin/AdminController.php:648
-msgid "Imported"
-msgstr ""
-
-#: includes/Admin/AdminController.php:649
-msgid "Skipped"
-msgstr ""
-
-#: includes/Admin/AdminController.php:650
-msgid "Error"
-msgstr ""
-
-#: includes/Admin/AdminController.php:651
-#: includes/Admin/AdminPageRenderer.php:1110
-msgid "Add face"
-msgstr ""
-
-#: includes/Admin/AdminController.php:652
-#: includes/Admin/AdminPageRenderer.php:621
-msgid "Add another family"
-msgstr ""
-
-#: includes/Admin/AdminController.php:653
-msgid "Use detected values"
-msgstr ""
-
-#: includes/Admin/AdminController.php:654
-#, php-format
-msgid "Detected: %1$s / %2$s / %3$s"
-msgstr ""
-
-#: includes/Admin/AdminController.php:655
-#, php-format
-msgid "Detected: %1$s / %2$s"
-msgstr ""
-
-#: includes/Admin/AdminController.php:656
-#: includes/Admin/AdminPageRenderer.php:1157
-msgid "Remove row"
-msgstr ""
-
-#: includes/Admin/AdminController.php:658
-#, php-format
-msgid "Delete \"%s\" and remove its files from uploads/fonts?"
-msgstr ""
-
-#: includes/Admin/AdminController.php:659
-#, php-format
-msgid "Saved fallback for %1$s."
-msgstr ""
-
-#: includes/Admin/AdminController.php:660
-msgid "The fallback could not be saved."
-msgstr ""
-
-#: includes/Admin/AdminController.php:661
-msgid "Copied"
-msgstr ""
-
-#: includes/Admin/AdminController.php:662
-#: includes/Admin/AdminPageRenderer.php:301
-msgid "Copy"
-msgstr ""
-
-#: includes/Admin/AdminController.php:669
-msgid "Search is disabled because the saved Google Fonts API key is invalid."
-msgstr ""
-
-#: includes/Admin/AdminController.php:670
-msgid "Search is unavailable until the saved Google Fonts API key is validated."
-msgstr ""
-
-#: includes/Admin/AdminController.php:671
-msgid "Add a Google Fonts API key to enable search, or use manual import below."
-msgstr ""
-
-#: includes/Admin/AdminController.php:734
-msgid "Valid key"
-msgstr ""
-
-#: includes/Admin/AdminController.php:735
-msgid "Invalid key"
-msgstr ""
-
-#: includes/Admin/AdminController.php:736
-#: includes/Admin/AdminController.php:783
-msgid "Needs check"
-msgstr ""
-
-#: includes/Admin/AdminController.php:737
-msgid "API key needed"
-msgstr ""
-
-#: includes/Admin/AdminController.php:758
-msgid "Google search is ready. Open key settings only when you want to replace or remove the saved key."
-msgstr ""
-
-#: includes/Admin/AdminController.php:759
-msgid "The saved Google Fonts API key was rejected. Update it to re-enable live search."
-msgstr ""
-
-#: includes/Admin/AdminController.php:760
-msgid "This saved key has not been verified yet. Save it again to validate before using live search."
-msgstr ""
-
-#: includes/Admin/AdminController.php:761
-msgid "Enable live family search with a Google Fonts Developer API key. Imported files are still downloaded and stored locally after import."
-msgstr ""
-
-#: includes/Admin/AdminController.php:768
-msgid "Search is disabled because the saved API key is invalid. Update or remove it to continue."
-msgstr ""
-
-#: includes/Admin/AdminController.php:769
-msgid "Search is disabled until the saved API key has been validated."
-msgstr ""
-
-#: includes/Admin/AdminController.php:770
-msgid "Search is disabled until you save a Google Fonts API key."
-msgstr ""
-
-#: includes/Admin/AdminController.php:777
-msgid "Saved project"
-msgstr ""
-
-#: includes/Admin/AdminController.php:781
-msgid "Project ready"
-msgstr ""
-
-#: includes/Admin/AdminController.php:782
-msgid "Invalid project"
-msgstr ""
-
-#: includes/Admin/AdminController.php:784
-msgid "Project ID needed"
-msgstr ""
-
-#: includes/Admin/AdminController.php:806
-msgid "The Adobe project is saved and validated but currently disabled. Enable it to load Adobe-hosted fonts on the site and in editors."
-msgstr ""
-
-#: includes/Admin/AdminController.php:814
-msgid "This Adobe Fonts project will load remotely from use.typekit.net. Manage families and domains in Adobe Fonts, then resync here when needed."
-msgstr ""
-
-#: includes/Admin/AdminController.php:815
-msgid "The Adobe project is saved, but remote loading is disabled until you enable it below."
-msgstr ""
-
-#: includes/Admin/AdminController.php:816
-msgid "Adobe rejected the saved web project ID. Check the project ID and allowed domains in Adobe Fonts before saving again."
-msgstr ""
-
-#: includes/Admin/AdminController.php:817
-msgid "This Adobe project has not been validated yet. Save or resync it to fetch the project stylesheet and detected families."
-msgstr ""
-
-#: includes/Admin/AdminController.php:818
-msgid "Connect an existing Adobe Fonts web project to make its hosted families available for previews, roles, Gutenberg, and the Etch canvas."
-msgstr ""
-
-#: includes/Admin/AdminController.php:888
-msgid "Adobe Fonts project cleared."
-msgstr ""
-
-#: includes/Admin/AdminController.php:901
-msgid "Adobe Fonts project validation failed."
-msgstr ""
-
-#: includes/Admin/AdminController.php:906
-msgid "Adobe Fonts project could not be validated."
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:53
-msgid "The uploads/fonts directory could not be initialized."
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:156
-msgid "Professional Typography Management For WordPress"
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:79
-msgid "Font Roles"
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:81
-msgid "Choose the heading and body pairing used for saved output and optional sitewide typography."
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:92
-msgid "Heading font"
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:96
-#: includes/Admin/AdminPageRenderer.php:125
-msgid "Family"
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:104
-#: includes/Admin/AdminPageRenderer.php:133
-#: includes/Admin/AdminPageRenderer.php:806
-#: includes/Admin/AdminPageRenderer.php:1075
+#: includes/Admin/AdminController.php:1382
+#: includes/Admin/AdminPageRenderer.php:468
+#: includes/Admin/AdminPageRenderer.php:514
+#: includes/Admin/AdminPageRenderer.php:561
+#: includes/Admin/AdminPageRenderer.php:2152
+#: includes/Admin/AdminPageRenderer.php:3205
+#: includes/Admin/AdminPageRenderer.php:3662
 msgid "Fallback"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:111
-#: includes/Admin/AdminPageRenderer.php:140
-#: includes/Admin/AdminPageRenderer.php:815
-#: includes/Admin/AdminPageRenderer.php:1082
-msgid "Example: system-ui, sans-serif"
+#: includes/Admin/AdminController.php:1384
+msgid "Optional (Recommended)"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:121
-msgid "Body font"
+#: includes/Admin/AdminController.php:1385
+msgid "Optional"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:151
-msgid "Save and apply everywhere"
+#: includes/Admin/AdminController.php:1392
+msgid "inline CSS"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:152
-msgid "Save roles only"
+#: includes/Admin/AdminController.php:1393
+msgid "generated file"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:157
-msgid "Hide advanced tools"
+#: includes/Admin/AdminController.php:1408
+msgid "Saved Only"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:158
-#: includes/Admin/AdminPageRenderer.php:162
-msgid "Open advanced tools"
+#: includes/Admin/AdminController.php:1410
+msgid "Saved Roles Only"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:167
-#: includes/Admin/AdminPageRenderer.php:774
+#: includes/Admin/AdminController.php:1412
+#, php-format
+msgid "Sitewide roles are off. %s"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1420
+#: includes/Admin/AdminPageRenderer.php:2852
+#: includes/Admin/AdminPageRenderer.php:3518
+msgid "Live"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1422
+msgid "Live Roles Active"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1428
+msgid "Pending"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1430
+msgid "Saved Roles Differ From Live"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1432
+#, php-format
+msgid "Saved: %1$s. Live: %2$s. Apply Sitewide to publish these roles."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1458
+#, php-format
+msgid "Roles applied sitewide. %s."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1462
+#, php-format
+msgid "Sitewide role CSS turned off. Saved roles kept as %s."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1467
+#, php-format
+msgid "Roles saved. Live site still uses %s until you apply them sitewide."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1471
+#, php-format
+msgid "Roles saved. Sitewide roles stay off until you apply %s."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1499
+msgid "Search is disabled because the saved Google Fonts API key is invalid. Replace it above to re-enable catalog search."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1500
+msgid "Search is unavailable until the saved Google Fonts API key is validated. Re-save or replace the key above to continue."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1501
+#: assets/js/admin.js:175
+msgid "Add a Google Fonts API key above to enable search, or use manual import below."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1515
+msgid "Local environment detected"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1517
+msgid "Block Editor Font Library sync is enabled on this local site. Keep it on only when this site can complete authenticated loopback REST requests without SSL or certificate errors. If Activity shows cURL 60 or certificate verification failures, open Plugin Behavior and turn the sync back off for local development."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1518
+msgid "Block Editor Font Library sync is off by default on local environments because editor sync uses authenticated loopback REST requests, and local HTTPS certificates often fail PHP/cURL verification. Turn it on when you want imported fonts mirrored into the core WordPress Font Library and your local PHP/cURL setup trusts this site certificate."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1519
+#: includes/Fonts/BlockEditorFontLibraryService.php:557
+msgid "Open Plugin Behavior"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1542
+msgid "Local environment reminder hidden until tomorrow."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1543
+msgid "Local environment reminder hidden for 1 week."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1566
+msgid "Local environment reminder hidden permanently for this account."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1621
+#: assets/js/admin.js:169
+msgid "The quick brown fox jumps over the lazy dog. 1234567890"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1678
+msgid "Valid Key"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1679
+msgid "Invalid Key"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1680
+#: includes/Admin/AdminController.php:1727
+msgid "Needs Check"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1681
+msgid "API Key Needed"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1702
+msgid "Google search is ready. Open key settings only when you want to replace or remove the saved key."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1703
+msgid "The saved Google Fonts API key was rejected. Update it to re-enable live search."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1704
+msgid "This saved key has not been verified yet. Save it again to validate before using live search."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1705
+msgid "Enable live family search with a Google Fonts Developer API key. The key is only needed for search, not for Google CDN delivery itself."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1712
+msgid "Search is disabled because the saved API key is invalid. Update or remove it to continue."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1713
+msgid "Search is disabled until the saved API key has been validated."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1714
+msgid "Search is disabled until you save a Google Fonts API key."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1721
+msgid "Saved Project"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1725
+msgid "Project Ready"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1726
+msgid "Invalid Project"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1728
+msgid "Project ID Needed"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1750
+msgid "The Adobe project is saved and validated but currently disabled. Enable it to load Adobe-hosted fonts on the site and in editors."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1758
+msgid "This Adobe Fonts project will load remotely from use.typekit.net. Manage families and domains in Adobe Fonts, then resync here when needed."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1759
+msgid "The Adobe project is saved, but remote loading is disabled until you enable it below."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1760
+msgid "Adobe rejected the saved web project ID. Check the project ID and allowed domains in Adobe Fonts before saving again."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1761
+msgid "This Adobe project has not been validated yet. Save or resync it to fetch the project stylesheet and detected families."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1762
+msgid "Connect an existing Adobe Fonts web project to make its hosted families available for previews, roles, Gutenberg, and the Etch canvas."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1801
+#, php-format
+msgid "%1$s: fallback only (%2$s)"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1809
+#: includes/Admin/AdminController.php:1828
+#, php-format
+msgid "%1$s: %2$s"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1815
+msgid "No roles selected yet."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1832
+#, php-format
+msgid "fallback only (%s)"
+msgstr ""
+
+#: includes/Admin/AdminController.php:1871
+#: includes/Admin/AdminPageRenderer.php:384
+#: includes/Admin/AdminPageRenderer.php:440
+#: includes/Admin/AdminPageRenderer.php:2006
 msgid "Heading"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:171
-#: includes/Admin/AdminPageRenderer.php:777
+#: includes/Admin/AdminController.php:1872
+#: includes/Admin/AdminPageRenderer.php:400
+#: includes/Admin/AdminPageRenderer.php:486
+#: includes/Admin/AdminPageRenderer.php:2009
 msgid "Body"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:178
-msgid "Advanced tools"
+#: includes/Admin/AdminController.php:1873
+#: includes/Admin/AdminPageRenderer.php:417
+#: includes/Admin/AdminPageRenderer.php:533
+#: includes/Admin/AdminPageRenderer.php:2012
+#: includes/Admin/AdminPageRenderer.php:3322
+#: includes/Admin/AdminPageRenderer.php:3885
+#: includes/Admin/AdminPageRenderer.php:3898
+msgid "Monospace"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:188
-#: includes/Admin/AdminPageRenderer.php:880
-msgid "Preview"
+#: includes/Admin/AdminController.php:1923
+#, php-format
+msgid "%1$s via %2$s"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:199
-msgid "Snippets"
+#: includes/Admin/AdminController.php:1943
+#: includes/Admin/AdminController.php:2216
+msgid "Adobe Fonts project removed."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1961
+msgid "Adobe Fonts project cleared."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1974
+msgid "Adobe Fonts project validation failed."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1978
+msgid "Adobe Fonts project could not be validated."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1984
+#: includes/Admin/AdminController.php:2217
+msgid "Adobe Fonts project resynced."
+msgstr ""
+
+#: includes/Admin/AdminController.php:1985
+#: includes/Admin/AdminController.php:2215
+msgid "Adobe Fonts project saved."
+msgstr ""
+
+#: includes/Admin/AdminController.php:2127
+#, php-format
+msgid "Font display for %1$s now inherits the global default (%2$s)."
+msgstr ""
+
+#: includes/Admin/AdminController.php:2134
+#, php-format
+msgid "Saved font-display for %1$s: %2$s."
+msgstr ""
+
+#: includes/Admin/AdminController.php:2218
+msgid "Google Fonts API key saved and validated."
+msgstr ""
+
+#: includes/Admin/AdminController.php:2220
+msgid "Font fallback saved."
+msgstr ""
+
+#: includes/Admin/AdminController.php:2221
+msgid "Font roles saved."
+msgstr ""
+
+#: includes/Admin/AdminController.php:2223
+msgid "Activity log cleared."
+msgstr ""
+
+#: includes/Admin/AdminController.php:2224
+msgid "Font family deleted."
+msgstr ""
+
+#: includes/Admin/AdminController.php:2225
+msgid "Font variant deleted."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:54
+msgid "Edit Key"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:54
+msgid "Key Settings"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:55
+msgid "Project Settings"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:55
+msgid "Add Project"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:113
+#: assets/js/admin.js:215
+msgid "No draft changes to save."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:115
+#: assets/js/admin.js:217
+msgid "Apply Sitewide is off. Turn it on before publishing role changes."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:116
+#: assets/js/admin.js:216
+msgid "No live role changes to publish."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:145
+msgid "These role selections are currently being served on the frontend, editor, and Etch."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:146
+msgid "These role selections are saved as a draft and are not yet being served sitewide."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:164
+msgid "The uploads/fonts directory could not be initialized."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:179
+#, php-format
+msgid "View GitHub changelog for version %s"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:180
+#, php-format
+msgid "View changelog for version %s on GitHub"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:182
+#, php-format
+msgid "v%s"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:186
+msgid "Professional Typography Management For WordPress"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:209
+msgid "Deployment Controls"
 msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:210
-msgid "System details"
+msgid "Set delivery first, then choose the role pairing."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:211
+msgid "Use these actions to control sitewide delivery, save draft assignments, and open the preview or deeper output tools."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:218
+msgid "Sitewide delivery status"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:221
+msgid "Sitewide on"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:221
+msgid "Draft only"
 msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:226
-msgid "Preview scenarios"
+msgid "Status"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:270
-msgid "Font snippet outputs"
+#: includes/Admin/AdminPageRenderer.php:232
+msgid "Role deployment status"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:339
-msgid "Local Library"
+#: includes/Admin/AdminPageRenderer.php:249
+msgid "Sitewide"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:340
-msgid "Browse every self-hosted family, assign roles, inspect files, or add fonts from Google and direct uploads."
+#: includes/Admin/AdminPageRenderer.php:250
+msgid "Control live font delivery"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:345
-msgid "Library filter"
+#: includes/Admin/AdminPageRenderer.php:252
+msgid "Turn live frontend, editor, and Etch role CSS on or off. Switching it on applies the current role selections immediately."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:350
-#: includes/Admin/AdminPageRenderer.php:351
-msgid "Filter self-hosted fonts by name"
+#: includes/Admin/AdminPageRenderer.php:252
+#: includes/Admin/AdminPageRenderer.php:271
+msgid "Apply Sitewide"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:357
-msgid "Rescan fonts"
+#: includes/Admin/AdminPageRenderer.php:258
+msgid "These roles are currently being served on the frontend, editor, and Etch."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:363
-msgid "Hide add font"
+#: includes/Admin/AdminPageRenderer.php:259
+msgid "Keep the current pairing local until you are ready to serve it across every surface."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:364
-#: includes/Admin/AdminPageRenderer.php:368
-msgid "Add Font"
+#: includes/Admin/AdminPageRenderer.php:280
+msgid "Switch off Sitewide"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:377
-msgid "Add fonts"
+#: includes/Admin/AdminPageRenderer.php:288
+#: includes/Admin/AdminPageRenderer.php:291
+msgid "Role Actions"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:378
-msgid "Search Google Fonts, connect an Adobe Fonts web project, or upload your own files directly into uploads/fonts."
+#: includes/Admin/AdminPageRenderer.php:289
+msgid "Save or publish role changes"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:381
-msgid "Add font source"
+#: includes/Admin/AdminPageRenderer.php:291
+msgid "Save the current roles as a draft, or publish them live when Apply Sitewide is on."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:382
-msgid "Google Fonts"
+#: includes/Admin/AdminPageRenderer.php:293
+msgid "Update live roles when the current selection is ready. Save Roles keeps the pairing as your working draft."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:383
-msgid "Adobe Fonts"
+#: includes/Admin/AdminPageRenderer.php:307
+msgid "Update Live Roles"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:384
-msgid "Upload files"
+#: includes/Admin/AdminPageRenderer.php:322
+#: includes/Admin/AdminPageRenderer.php:3551
+msgid "Save Roles"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:331
+#: includes/Admin/AdminPageRenderer.php:334
+msgid "Utilities"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:332
+msgid "Open preview or deeper tools"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:334
+msgid "Open the role preview workspace, or inspect snippets, generated CSS, system details, output settings, and plugin behavior."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:336
+msgid "Use Preview for visual checks. Open Advanced Tools when you need output inspection or plugin settings."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:342
+#: includes/Admin/AdminPageRenderer.php:343
+#: includes/Admin/AdminPageRenderer.php:347
+#: includes/Admin/AdminPageRenderer.php:1944
+msgid "Preview"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:353
+#: includes/Admin/AdminPageRenderer.php:354
+#: includes/Admin/AdminPageRenderer.php:358
+#: includes/Admin/AdminPageRenderer.php:701
+msgid "Advanced Tools"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:369
+msgid "Role Selection"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:370
+msgid "Choose the family and fallback for each saved role."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:375
+msgid "These cards define the saved heading, body, and optional monospace pairings used by the deployment controls above."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:376
+msgid "These cards define the saved heading and body pairings used by the deployment controls above."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:391
+msgid "Heading variable copied."
 msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:393
-msgid "Google search access"
+msgid "Copy heading font variable"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:402
+#: includes/Admin/AdminPageRenderer.php:394
+#, php-format
+msgid "Heading font variable: %1$s. Resolved stack: %2$s"
+msgstr ""
+
 #: includes/Admin/AdminPageRenderer.php:407
-msgid "Hide key settings"
+msgid "Body variable copied."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:403
-#: includes/Admin/AdminPageRenderer.php:407
-msgid "Manage key"
+#: includes/Admin/AdminPageRenderer.php:409
+msgid "Copy body font variable"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:429
-msgid "Google Fonts API key"
+#: includes/Admin/AdminPageRenderer.php:410
+#, php-format
+msgid "Body font variable: %1$s. Resolved stack: %2$s"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:435
-msgid "Saved API key. Enter a new key to replace it."
+#: includes/Admin/AdminPageRenderer.php:424
+msgid "Monospace variable copied."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:435
-msgid "Paste your Google Fonts API key"
+#: includes/Admin/AdminPageRenderer.php:426
+msgid "Copy monospace font variable"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:443
-msgid "Save key"
+#: includes/Admin/AdminPageRenderer.php:427
+#, php-format
+msgid "Monospace font variable: %1$s. Resolved stack: %2$s"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:445
-msgid "Remove key"
+#: includes/Admin/AdminPageRenderer.php:441
+msgid "Heading Font"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:448
+msgid "Heading family variable copied."
 msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:450
-msgid "Get a Google Fonts API key from the Google Fonts Developer API docs."
+msgid "Copy heading family variable"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:462
-msgid "Search the catalog"
+#: includes/Admin/AdminPageRenderer.php:451
+#, php-format
+msgid "Heading family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:466
-msgid "Search Google Fonts"
+#: includes/Admin/AdminPageRenderer.php:451
+#, php-format
+msgid "Heading uses the fallback stack directly: %1$s. Role alias: %2$s"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:471
-msgid "Search Google Fonts families"
+#: includes/Admin/AdminPageRenderer.php:456
+msgid "Choose the saved family and fallback stack used for headings."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:480
-msgid "Google search is currently disabled."
+#: includes/Admin/AdminPageRenderer.php:459
+#: includes/Admin/AdminPageRenderer.php:505
+#: includes/Admin/AdminPageRenderer.php:552
+#: includes/Admin/AdminPageRenderer.php:2993
+msgid "Family"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:461
+#: includes/Admin/AdminPageRenderer.php:507
+#: includes/Admin/AdminPageRenderer.php:554
+#: includes/Admin/AdminPageRenderer.php:3604
+msgid "Use fallback only"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:475
+#: includes/Admin/AdminPageRenderer.php:521
+#: includes/Admin/AdminPageRenderer.php:2161
+#: includes/Admin/AdminPageRenderer.php:3212
+msgid "Example: system-ui, sans-serif"
 msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:487
-msgid "Choose what to import"
+msgid "Body Font"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:492
-#: includes/Admin/AdminPageRenderer.php:1065
-msgid "Family name"
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:493
-msgid "Example: Inter"
+#: includes/Admin/AdminPageRenderer.php:494
+msgid "Body family variable copied."
 msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:496
-msgid "Manual variants"
+msgid "Copy body family variable"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:503
-msgid "Selected family"
+#: includes/Admin/AdminPageRenderer.php:497
+#, php-format
+msgid "Body family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:504
-msgid "None selected yet"
+#: includes/Admin/AdminPageRenderer.php:497
+#, php-format
+msgid "Body uses the fallback stack directly: %1$s. Role alias: %2$s"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:507
-msgid "Variants to import"
+#: includes/Admin/AdminPageRenderer.php:502
+msgid "Choose the saved family and fallback stack used for body copy."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:527
-msgid "Adobe web project"
+#: includes/Admin/AdminPageRenderer.php:534
+msgid "Monospace Font"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:540
-msgid "Adobe Fonts project ID"
+#: includes/Admin/AdminPageRenderer.php:541
+msgid "Monospace value copied."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:547
-msgid "Example: abc1def"
+#: includes/Admin/AdminPageRenderer.php:543
+msgid "Copy monospace value"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:555
-msgid "Load this Adobe-hosted stylesheet on the frontend, editor, and Etch canvas."
+#: includes/Admin/AdminPageRenderer.php:544
+#, php-format
+msgid "Monospace family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:560
-msgid "Save project"
+#: includes/Admin/AdminPageRenderer.php:544
+#, php-format
+msgid "Monospace uses the fallback stack directly: %1$s. Role alias: %2$s"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:562
-msgid "Resync project"
+#: includes/Admin/AdminPageRenderer.php:549
+msgid "Choose the saved family or fallback stack used for code and monospace UI."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:563
-msgid "Remove project"
+#: includes/Admin/AdminPageRenderer.php:568
+msgid "Example: ui-monospace, monospace"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:567
-msgid "Adobe Fonts stays remotely hosted. Manage domains and enabled families in Adobe Fonts, not in this plugin."
+#: includes/Admin/AdminPageRenderer.php:588
+msgid "Preview Workspace"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:569
-msgid "Open Adobe Fonts Web Projects."
+#: includes/Admin/AdminPageRenderer.php:590
+#, php-format
+msgid "Previewing: %s"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:579
-msgid "Detected families"
+#: includes/Admin/AdminPageRenderer.php:596
+msgid "Preview scenarios"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:581
-msgid "These family names come from the Adobe project stylesheet and are added to the role selectors when the project is available."
+#: includes/Admin/AdminPageRenderer.php:622
+msgid "Use current draft selections"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:584
-msgid "No Adobe families detected yet. Save or resync a valid Adobe Fonts project to load its stylesheet metadata."
+#: includes/Admin/AdminPageRenderer.php:622
+msgid "Sync preview to role draft"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:599
-msgid "Use one box per family. Add multiple faces inside the same family, or add another family when you want to upload a separate typeface."
+#: includes/Admin/AdminPageRenderer.php:629
+msgid "Reset preview"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:601
-msgid "Quick detect:"
+#: includes/Admin/AdminPageRenderer.php:658
+msgid "Preview Selection"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:602
-msgid "If a filename follows a pattern like Abel-400.woff2 or Inter-700-italic.woff2, the plugin can suggest the family name, weight, and style automatically."
+#: includes/Admin/AdminPageRenderer.php:666
+msgid "Preview CSS copied."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:634
-msgid "No supported font files were found yet in uploads/fonts."
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:649
-msgid "Activity"
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:650
-msgid "Recent scans, imports, deletes, and asset refreshes. Newest entries appear first."
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:655
-msgid "Clear log"
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:660
-msgid "No log entries yet."
+#: includes/Admin/AdminPageRenderer.php:668
+msgid "Copy custom CSS for the current preview selection."
 msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:669
-msgid "Hide older activity"
+msgid "Copy custom CSS for the current preview selection"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:670
-#: includes/Admin/AdminPageRenderer.php:674
+#: includes/Admin/AdminPageRenderer.php:671
+msgid "Copy CSS"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:678
+msgid "Update Draft"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:685
+msgid "Make Live Roles"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:690
+msgid "Heading preview font"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:691
+msgid "Body preview font"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:693
+msgid "Monospace preview font"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:713
+msgid "Snippets"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:739
+msgid "System Details"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:752
+#: includes/Admin/AdminPageRenderer.php:871
+msgid "Output Settings"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:765
+#: includes/Admin/AdminPageRenderer.php:1078
+msgid "Plugin Behavior"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:778
+msgid "Font output panels"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:872
+msgid "Choose how generated CSS is delivered. Role assignments stay unchanged."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:889
+msgid "Default font-display value for generated @font-face rules."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:892
+msgid "Class Output Mode"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:902
+msgid "Emit ready-to-use font-family utility classes without relying on CSS variables."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:915
+msgid "Minify generated CSS"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:916
+msgid "Keep on unless you need readable CSS while debugging."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:930
+msgid "Emit extended font output variables"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:931
+msgid "Adds semantic family aliases like sans and serif plus reusable global weight tokens in generated CSS and snippets."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:936
+msgid "Extended Variable Controls"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:937
+msgid "Keep the main toggle on, then disable only the variable groups you do not want emitted."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:951
+msgid "Global weight tokens"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:952
+msgid "Controls variables like --weight-400 and --weight-bold plus matching weight-based snippets."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:966
+msgid "Role alias variables"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:969
+msgid "Controls aliases like --font-interface, --font-ui, and --font-code."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:970
+msgid "Controls aliases like --font-interface and --font-ui."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:975
+msgid "Category aliases"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:988
+msgid "Sans alias"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:989
+msgid "Controls --font-sans."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1003
+msgid "Serif alias"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1004
+msgid "Controls --font-serif."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1019
+msgid "Mono alias"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1020
+msgid "Controls --font-mono."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1039
+msgid "Preload primary heading and body fonts"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1040
+msgid "Adds same-origin WOFF2 preloads for the active self-hosted heading and body pair."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1054
+msgid "Remote connection hints"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1055
+msgid "Adds preconnect hints for live Google, Bunny, and Adobe deliveries."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1059
+#: includes/Admin/AdminPageRenderer.php:1155
+msgid "After saving:"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1059
+msgid "Applies on the next CSS refresh."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1061
+msgid "Save Output Settings"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1079
+msgid "Control editor sync, optional roles, guidance, and uninstall cleanup."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1086
+msgid "Editor Integrations"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1099
+msgid "Enable Block Editor Font Library Sync"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1100
+msgid "Mirrors imported families into WordPress typography controls. Keep off locally until loopback HTTPS works."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1104
+msgid "Role Options"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1117
+msgid "Enable Monospace Role"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1118
+msgid "Adds a saved role for code and pre, exposed as --font-monospace."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1132
+msgid "Training Wheels Off"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1133
+msgid "Hides helper tips and extra info buttons."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1137
+msgid "Uninstall Settings"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1150
+msgid "Delete uploaded fonts on uninstall"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1151
+msgid "Removes plugin-managed files from uploads/fonts when the plugin is deleted."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1155
+msgid "Behavior changes apply on the next page load."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1157
+msgid "Save Plugin Behavior"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1171
+msgid "Font Library"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1172
+msgid "Browse every family in the studio, switch live delivery, publish or park families, assign roles, and add fonts from Google, Bunny, Adobe, and direct uploads."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1178
+#: includes/Admin/AdminPageRenderer.php:1183
+#: includes/Admin/AdminPageRenderer.php:1184
+msgid "Filter fonts"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1187
+#: includes/Admin/AdminPageRenderer.php:1192
+msgid "Filter fonts by source"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1193
+msgid "Choose which font source to show in the library."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1195
+#: includes/Admin/AdminPageRenderer.php:1409
+#: includes/Admin/AdminPageRenderer.php:1537
+msgid "All"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1196
+#: includes/Fonts/CatalogService.php:610
+msgid "In Use"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1199
+#: includes/Fonts/CatalogService.php:638
+msgid "Same-origin"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1200
+#: includes/Admin/AdminPageRenderer.php:2777
+#: includes/Google/GoogleImportService.php:300
+msgid "Google CDN"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1201
+#: includes/Admin/AdminPageRenderer.php:2779
+#: includes/Bunny/BunnyImportService.php:299
+msgid "Bunny CDN"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1202
+#: includes/Admin/AdminPageRenderer.php:2780
+#: includes/Fonts/CatalogService.php:563
+#: includes/Fonts/CatalogService.php:633
+msgid "Adobe-hosted"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1205
+#: includes/Admin/AdminPageRenderer.php:1210
+msgid "Filter fonts by type"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1211
+msgid "Choose which font type to show in the library."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1222
+msgid "Rescan Fonts"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1229
+#: includes/Admin/AdminPageRenderer.php:1230
+#: includes/Admin/AdminPageRenderer.php:1234
+#: includes/Admin/AdminPageRenderer.php:1718
+msgid "Add Fonts"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1241
+msgid "Add font source"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1242
+#: includes/Admin/AdminPageRenderer.php:1256
+msgid "Google Fonts"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1243
+#: includes/Admin/AdminPageRenderer.php:1445
+#: assets/js/admin.js:3905
+msgid "Bunny Fonts"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1244
+#: includes/Admin/AdminPageRenderer.php:1573
+msgid "Adobe Fonts"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1245
+#: includes/Admin/AdminPageRenderer.php:1666
+msgid "Upload Files"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1254
+#: includes/Admin/AdminPageRenderer.php:1443
+#: includes/Admin/AdminPageRenderer.php:1571
+#: includes/Admin/AdminPageRenderer.php:1664
+msgid "Source Setup"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1293
+msgid "Google Fonts API Key"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1299
+msgid "Saved API key. Enter a new key to replace it."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1299
+msgid "Paste your Google Fonts API key"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1307
+msgid "Save Key"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1309
+msgid "Remove Key"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1314
+msgid "Need an API key?"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1315
+msgid "Open the Google Fonts Developer API docs."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1327
+#: includes/Admin/AdminPageRenderer.php:1464
+msgid "Step 1"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1328
+#: includes/Admin/AdminPageRenderer.php:1465
+msgid "Find a Family"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1332
+msgid "Search Google Fonts"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1337
+msgid "Search Google Fonts families"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1337
+msgid "Add or verify a Google Fonts API key to search"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1346
+msgid "Search disabled."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1355
+#: includes/Admin/AdminPageRenderer.php:1483
+msgid "Step 2"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1356
+#: includes/Admin/AdminPageRenderer.php:1484
+msgid "Choose Variants and Delivery"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1361
+#: includes/Admin/AdminPageRenderer.php:1489
+#: includes/Admin/AdminPageRenderer.php:3195
+msgid "Family Name"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1362
+#: includes/Admin/AdminPageRenderer.php:1490
+msgid "e.g. Inter"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1365
+#: includes/Admin/AdminPageRenderer.php:1493
+msgid "Manual Variants"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1366
+msgid "e.g. regular,700"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1371
+#: includes/Admin/AdminPageRenderer.php:1499
+msgid "Delivery"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1374
+#: includes/Admin/AdminPageRenderer.php:1502
+msgid "Self-host on this site"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1378
+msgid "Use Google CDN"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1380
+msgid "Self-hosting keeps visitor font requests on your own uploads domain. Google CDN keeps delivery remote and uses Google’s stylesheet endpoint."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1387
+#: includes/Admin/AdminPageRenderer.php:1515
+msgid "Selected Family"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1388
+#: assets/js/admin.js:181
+msgid "Choose a Google family or type one manually."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1392
+#: includes/Admin/AdminPageRenderer.php:1520
+msgid "Live Preview"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1393
+#: assets/js/admin.js:182
+msgid "Preview appears here after you choose a family."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1400
+#: includes/Admin/AdminPageRenderer.php:1528
+msgid "Variants to Import"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1401
+#: includes/Admin/AdminPageRenderer.php:1529
+msgid "Click chips or type a comma-separated list above. Both stay in sync."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1404
+#: includes/Admin/AdminPageRenderer.php:1532
+#: assets/js/admin.js:197
+msgid "0 Variants Selected"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1410
+#: includes/Admin/AdminPageRenderer.php:1538
+#: includes/Admin/AdminPageRenderer.php:3279
+msgid "Normal"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1411
+#: includes/Admin/AdminPageRenderer.php:1539
+#: includes/Admin/AdminPageRenderer.php:3280
+msgid "Italic"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1412
+#: includes/Admin/AdminPageRenderer.php:1540
+msgid "Clear"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1427
+#: includes/Admin/AdminPageRenderer.php:1555
+msgid "The estimated transfer size only varies by family and subset."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1428
+#: includes/Admin/AdminPageRenderer.php:1556
+msgid "Estimated transfer size information"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1429
+#: includes/Admin/AdminPageRenderer.php:1557
+msgid "Approx. +0 KB WOFF2"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1430
+#: includes/Admin/AdminPageRenderer.php:1558
+#: assets/js/admin.js:191
+msgid "Add to Library"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1447
+msgid "Use Bunny Fonts as a privacy-friendly source, then store the downloaded WOFF2 files locally in uploads/fonts so runtime CSS stays self-hosted."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1450
+msgid "No Key Needed"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1455
+msgid "Browse on Bunny"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1456
+msgid "Search Bunny’s public catalog in a new tab, then paste the family name here to import and self-host it locally."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1457
+msgid "Open Bunny Fonts Catalog"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1469
+msgid "Search Bunny Fonts"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1474
+msgid "Search Bunny Fonts families"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1494
+msgid "Leave blank, or enter regular,700italic"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1506
+msgid "Use Bunny CDN"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1508
+msgid "Self-hosting downloads the selected WOFF2 files into uploads/fonts. Bunny CDN keeps runtime delivery remote through Bunny’s stylesheet endpoint."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1516
+#: assets/js/admin.js:180
+msgid "Choose a Bunny family or type one manually."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1521
+#: assets/js/admin.js:188
+msgid "Preview appears here after you choose a Bunny family."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1601
+msgid "Adobe Fonts Project ID"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1608
+msgid "Example: abc1def"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1616
+msgid "Load this Adobe-hosted stylesheet on the frontend, editor, and Etch canvas."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1621
+msgid "Save Project"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1623
+msgid "Resync Project"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1624
+msgid "Remove Project"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1629
+msgid "Managed in Adobe Fonts"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1630
+msgid "Domains and enabled families still live in Adobe Fonts. Resync here after changing the web project."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1631
+msgid "Open Adobe Fonts Web Projects"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1642
+msgid "From the Project"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1643
+msgid "Detected Families"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1647
+msgid "No Adobe families detected yet."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1668
+msgid "Build one family at a time, keep every face for that typeface together, and add another family only when you are uploading a separate typeface."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1671
+msgid "Auto-detect"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1672
+msgid "Filenames like Abel-400.woff2 or Inter-700-italic.woff2 can suggest the family name, weight, and style automatically."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1679
+msgid "Family Builder"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1680
+msgid "Assemble Local Files"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1698
+msgid "Add Another Family"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1700
+#: assets/js/admin.js:204
+msgid "Upload to Library"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1714
+msgid "Your library is empty"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1715
+msgid "Import a Google or Bunny family, connect an Adobe Fonts project, or upload local files to start building your library and assigning heading and body roles."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1722
+msgid "No fonts match the current filters."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1736
+msgid "Activity"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1737
+msgid "Recent scans, imports, deletes, and asset refreshes. Newest entries appear first."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1743
+msgid "Activity filters"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1750
 #, php-format
-msgid "Show older activity (%d)"
+msgid "%d entry"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:726
+#: includes/Admin/AdminPageRenderer.php:1750
+#, php-format
+msgid "%d entries"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1752
+msgid "Filter activity by account"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1755
+msgid "All Accounts"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1761
+#: includes/Admin/AdminPageRenderer.php:1766
+msgid "Search activity"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1773
+msgid "Clear Log"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1783
+msgid "No activity yet"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1784
+msgid "Scans, imports, deletes, and generated stylesheet refreshes will appear here after you start managing fonts."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1789
+msgid "No activity matches the current filters."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1858
+#: includes/Admin/AdminPageRenderer.php:2761
 msgid "Adobe"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:790
+#: includes/Admin/AdminPageRenderer.php:1930
+msgid "Unavailable"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1944
+#: includes/Admin/AdminPageRenderer.php:3621
+msgid "Code Preview"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1986
+msgid "Font stack copied."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:1988
+#, php-format
+msgid "Copy font stack for %s"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2019
+msgid "Available delivery profiles"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2020
+msgid "None saved yet."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2023
+msgid "Live delivery"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2036
 #, php-format
 msgid "+%d more"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:825
-msgid "Save"
+#: includes/Admin/AdminPageRenderer.php:2053
+#: includes/Admin/AdminPageRenderer.php:2061
+#, php-format
+msgid "Preview for %s"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:830
-msgid "Stack"
+#: includes/Admin/AdminPageRenderer.php:2075
+msgid "Published serves this family at runtime. Paused keeps it in the library without loading it on the site."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:837
-msgid "Set heading"
+#: includes/Admin/AdminPageRenderer.php:2076
+msgid "This family is live through the current active roles, so its runtime state is managed automatically."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:838
-msgid "Set body"
+#: includes/Admin/AdminPageRenderer.php:2082
+#: includes/Admin/AdminPageRenderer.php:2086
+msgid "Runtime State"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:845
-#: includes/Admin/AdminPageRenderer.php:850
-msgid "Hide details"
+#: includes/Admin/AdminPageRenderer.php:2084
+msgid "Auto-managed"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:846
-#: includes/Admin/AdminPageRenderer.php:850
-msgid "View details"
+#: includes/Admin/AdminPageRenderer.php:2104
+msgid "Save runtime state changes."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:864
-msgid "Delete"
+#: includes/Admin/AdminPageRenderer.php:2105
+msgid "Save runtime state"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:878
-#: includes/Admin/AdminPageRenderer.php:1100
-#: includes/Admin/AdminPageRenderer.php:1136
-msgid "Weight"
+#: includes/Admin/AdminPageRenderer.php:2108
+msgid "Save State"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:879
-#: includes/Admin/AdminPageRenderer.php:1101
-#: includes/Admin/AdminPageRenderer.php:1145
+#: includes/Admin/AdminPageRenderer.php:2118
+msgid "Live Delivery"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2139
+msgid "Switch Delivery"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2170
+msgid "Save fallback stack changes."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2171
+msgid "Save fallback"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2173
+msgid "Save Fallback"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2186
+msgid "Font Display"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2206
+msgid "Save font display changes."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2207
+msgid "Save font display"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2209
+msgid "Save Display"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2216
+msgid "Font Display unavailable"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2217
+msgid "Adobe-hosted web fonts follow Adobe’s hosted stylesheet behavior and cannot be overridden from this plugin."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2229
+#: includes/Admin/AdminPageRenderer.php:2234
+#: includes/Admin/AdminPageRenderer.php:2237
+msgid "Heading selected"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2230
+#: includes/Admin/AdminPageRenderer.php:2234
+#: includes/Admin/AdminPageRenderer.php:2237
+msgid "Select heading"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2231
+#: includes/Admin/AdminPageRenderer.php:2233
+msgid "This family is currently selected for the heading role."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2232
+#: includes/Admin/AdminPageRenderer.php:2233
+msgid "Assign this family to the heading role and save the updated roles immediately. Apply sitewide when you want the live CSS updated."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2244
+#: includes/Admin/AdminPageRenderer.php:2249
+#: includes/Admin/AdminPageRenderer.php:2252
+msgid "Body selected"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2245
+#: includes/Admin/AdminPageRenderer.php:2249
+#: includes/Admin/AdminPageRenderer.php:2252
+msgid "Select body"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2246
+#: includes/Admin/AdminPageRenderer.php:2248
+msgid "This family is currently selected for the body role."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2247
+#: includes/Admin/AdminPageRenderer.php:2248
+msgid "Assign this family to the body role and save the updated roles immediately. Apply sitewide when you want the live CSS updated."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2260
+#: includes/Admin/AdminPageRenderer.php:2265
+#: includes/Admin/AdminPageRenderer.php:2268
+msgid "Monospace selected"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2261
+#: includes/Admin/AdminPageRenderer.php:2265
+#: includes/Admin/AdminPageRenderer.php:2268
+msgid "Select monospace"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2262
+#: includes/Admin/AdminPageRenderer.php:2264
+msgid "This family is currently selected for the monospace role."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2263
+#: includes/Admin/AdminPageRenderer.php:2264
+msgid "Assign this family to the monospace role and save the updated roles immediately. Apply sitewide when you want the live CSS updated."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2275
+#: includes/Admin/AdminPageRenderer.php:2276
+#: includes/Admin/AdminPageRenderer.php:2279
+#: includes/Admin/AdminPageRenderer.php:2281
+msgid "Details"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2291
+#: includes/Admin/AdminPageRenderer.php:2295
+msgid "Delete this family and remove its files from uploads/fonts."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2296
+#: includes/Admin/AdminPageRenderer.php:2302
+msgid "Delete family"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2316
+#: includes/Admin/AdminPageRenderer.php:2335
+#: includes/Admin/AdminPageRenderer.php:2355
+#: includes/Admin/AdminPageRenderer.php:2854
+msgid "Saved"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2317
+msgid "Delivery Profiles"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2320
+#, php-format
+msgid "%d profile"
+msgid_plural "%d profiles"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Admin/AdminPageRenderer.php:2339
+#, php-format
+msgid "%d variable"
+msgid_plural "%d variables"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Admin/AdminPageRenderer.php:2345
+msgid "CSS variable copied."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2356
+msgid "Font Faces"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2359
+#, php-format
+msgid "%d face"
+msgid_plural "%d faces"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Admin/AdminPageRenderer.php:2384
+#: includes/Fonts/LibraryService.php:792
+#, php-format
+msgid "%1$s is currently assigned as the %2$s font. Choose a different %2$s font before deleting it."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2391
+#: includes/Fonts/LibraryService.php:799
+#, php-format
+msgid "%1$s is currently assigned to %2$s. Choose different role fonts before deleting it."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2407
+#: includes/Fonts/LibraryService.php:815
+#, php-format
+msgid "%1$s is currently assigned to %2$s, and this is the last saved variant. Choose a different %2$s font before deleting it."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2414
+#: includes/Fonts/LibraryService.php:822
+#, php-format
+msgid "%1$s is currently assigned to %2$s, and this is the last saved variant. Choose different role fonts before deleting it."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2424
+#: includes/Fonts/LibraryService.php:773
+msgid "heading"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2425
+#: includes/Fonts/LibraryService.php:774
+msgid "body"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2426
+#: includes/Fonts/LibraryService.php:775
+msgid "monospace"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2447
+#: includes/Fonts/LibraryService.php:842
+msgid " and "
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2721
+#, php-format
+msgid "Copy %s"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2758
+msgid "Local"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2759
+msgid "Google"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2760
+msgid "Bunny"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2776
+#: includes/Google/GoogleImportService.php:201
+msgid "Self-hosted (Google import)"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2778
+#: includes/Bunny/BunnyImportService.php:202
+msgid "Self-hosted (Bunny import)"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2791
+msgid "External request via Google Fonts"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2792
+msgid "External request via Bunny Fonts"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2793
+msgid "Adobe-hosted project stylesheet"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2794
+msgid "Same-origin self-hosted files"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2824
+msgid "Open the import panel with this CDN delivery pre-filled for self-hosting."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2826
+msgid "Migrate to Self-hosted"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2843
+msgid "Switch the live delivery or remove this family from the active roles before deleting this delivery profile."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2872
+msgid "Delete only this delivery profile and keep the family."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2877
+msgid "Delete Delivery"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2884
+msgid "Provider"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2888
+msgid "Request Path"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2892
+msgid "Variants"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2954
+msgid "Delete this variant from the active delivery and keep the rest of the family."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2954
+#: includes/Admin/AdminPageRenderer.php:2956
+msgid "Adobe-hosted variants are managed by Adobe Fonts and cannot be deleted individually here."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2959
+msgid "Delete Variant"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2973
+#: includes/Admin/AdminPageRenderer.php:2995
+#: includes/Admin/AdminPageRenderer.php:3232
+#: includes/Admin/AdminPageRenderer.php:3277
 msgid "Style"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:881
-msgid "Source"
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:882
+#: includes/Admin/AdminPageRenderer.php:2977
 msgid "Storage"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:883
+#: includes/Admin/AdminPageRenderer.php:2981
 msgid "Formats"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:884
+#: includes/Admin/AdminPageRenderer.php:2991
+msgid "CSS"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2993
+msgid "Family CSS copied."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2994
+#: includes/Admin/AdminPageRenderer.php:3231
+#: includes/Admin/AdminPageRenderer.php:3268
+msgid "Weight"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2994
+msgid "Weight CSS copied."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2995
+msgid "Style CSS copied."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2996
+msgid "Snippet"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:2996
+msgid "CSS snippet copied."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3002
 msgid "Files"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:933
-#, php-format
-msgid "%s is currently used for both heading and body. Choose different role fonts before deleting it."
+#: includes/Admin/AdminPageRenderer.php:3094
+msgid "Thin"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:940
-#, php-format
-msgid "%s is currently used as the heading font. Choose a different heading font before deleting it."
+#: includes/Admin/AdminPageRenderer.php:3095
+msgid "Extra Light"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:947
-#, php-format
-msgid "%s is currently used as the body font. Choose a different body font before deleting it."
+#: includes/Admin/AdminPageRenderer.php:3096
+msgid "Light"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1006
+#: includes/Admin/AdminPageRenderer.php:3097
+msgid "Regular"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3098
+msgid "Medium"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3099
+msgid "Semi Bold"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3100
+msgid "Bold"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3101
+msgid "Extra Bold"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3102
+msgid "Black"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3103
+msgid "Extra Black"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3104
+msgid "Ultra Black"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3105
+msgid "Bolder"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3106
+msgid "Lighter"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3108
+msgid "Variable Range"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3128
 msgid "The quick brown fox…"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1046
+#: includes/Admin/AdminPageRenderer.php:3176
 #, php-format
 msgid "%d file"
 msgid_plural "%d files"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Admin/AdminPageRenderer.php:1052
+#: includes/Admin/AdminPageRenderer.php:3182
 #, php-format
 msgid "%1$d file · %2$s"
 msgid_plural "%1$d files · %2$s"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Admin/AdminPageRenderer.php:1070
+#: includes/Admin/AdminPageRenderer.php:3200
 msgid "Example: Satoshi"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1094
-msgid "Remove family"
+#: includes/Admin/AdminPageRenderer.php:3224
+msgid "Remove Family"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1099
-#: includes/Admin/AdminPageRenderer.php:1122
-msgid "Font file"
+#: includes/Admin/AdminPageRenderer.php:3230
+#: includes/Admin/AdminPageRenderer.php:3254
+msgid "Font File"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1102
-#: includes/Admin/AdminPageRenderer.php:1302
-#: includes/Admin/AdminPageRenderer.php:1303
+#: includes/Admin/AdminPageRenderer.php:3233
+#: includes/Admin/AdminPageRenderer.php:3440
+#: includes/Admin/AdminPageRenderer.php:3441
 msgid "Action"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1130
-msgid "Select font"
+#: includes/Admin/AdminPageRenderer.php:3242
+msgid "Add Face"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1147
-msgid "Normal"
+#: includes/Admin/AdminPageRenderer.php:3262
+msgid "Select Font"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1148
-msgid "Italic"
+#: includes/Admin/AdminPageRenderer.php:3263
+#: assets/js/admin.js:203
+msgid "No file chosen"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1149
+#: includes/Admin/AdminPageRenderer.php:3281
 msgid "Oblique"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1159
+#: includes/Admin/AdminPageRenderer.php:3289
+msgid "Remove row"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3291
 msgid "Remove"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1181
-msgid "Heading family"
+#: includes/Admin/AdminPageRenderer.php:3313
+msgid "Heading Family"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1185
-msgid "Body family"
+#: includes/Admin/AdminPageRenderer.php:3317
+msgid "Body Family"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1191
+#: includes/Admin/AdminPageRenderer.php:3329
 msgid "Heading 1"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1192
+#: includes/Admin/AdminPageRenderer.php:3330
 msgid "Heading 2"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1193
+#: includes/Admin/AdminPageRenderer.php:3331
 msgid "Heading 3"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1194
+#: includes/Admin/AdminPageRenderer.php:3332
 msgid "Heading 4"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1195
+#: includes/Admin/AdminPageRenderer.php:3333
 msgid "Heading 5"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1196
+#: includes/Admin/AdminPageRenderer.php:3334
 msgid "Heading 6"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1201
+#: includes/Admin/AdminPageRenderer.php:3339
 msgid "Lead"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1207
+#: includes/Admin/AdminPageRenderer.php:3345
 msgid "Body / 16"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1209
-#: includes/Admin/AdminPageRenderer.php:1215
-#: includes/Admin/AdminPageRenderer.php:1354
+#: includes/Admin/AdminPageRenderer.php:3347
+#: includes/Admin/AdminPageRenderer.php:3353
+#: includes/Admin/AdminPageRenderer.php:3492
 msgid "Apparently we had reached a great height in the atmosphere, for the sky was a dead black, and the stars had ceased to twinkle."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1213
+#: includes/Admin/AdminPageRenderer.php:3351
 msgid "Body / 14"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1219
+#: includes/Admin/AdminPageRenderer.php:3357
 msgid "Quote"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1221
+#: includes/Admin/AdminPageRenderer.php:3359
 msgid "“The sky was cloudless and of a deep dark blue.”"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1225
+#: includes/Admin/AdminPageRenderer.php:3363
 msgid "Capitalized"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1227
+#: includes/Admin/AdminPageRenderer.php:3365
 msgid "Brainstorm alternative ideas"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1231
+#: includes/Admin/AdminPageRenderer.php:3369
 msgid "Small"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1233
+#: includes/Admin/AdminPageRenderer.php:3371
 msgid "Value your time"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1237
+#: includes/Admin/AdminPageRenderer.php:3375
 msgid "Tiny"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1239
+#: includes/Admin/AdminPageRenderer.php:3377
 msgid "Nothing is impossible"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1247
-msgid "Hero lockup"
+#: includes/Admin/AdminPageRenderer.php:3385
+msgid "Hero Lockup"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1248
+#: includes/Admin/AdminPageRenderer.php:3386
 msgid "A type pairing that feels intentional at every scale"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1251
-msgid "Landing page"
+#: includes/Admin/AdminPageRenderer.php:3389
+msgid "Landing Page"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1252
+#: includes/Admin/AdminPageRenderer.php:3390
 msgid "Ready"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1257
-msgid "Feature module"
+#: includes/Admin/AdminPageRenderer.php:3395
+msgid "Feature Module"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1258
+#: includes/Admin/AdminPageRenderer.php:3396
 msgid "Clean cards with enough contrast for product copy"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1259
+#: includes/Admin/AdminPageRenderer.php:3397
 msgid "Use this sample to judge title tone, supporting copy rhythm, and whether the body face stays calm inside UI surfaces."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1261
-msgid "Surface check"
+#: includes/Admin/AdminPageRenderer.php:3399
+msgid "Surface Check"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1262
+#: includes/Admin/AdminPageRenderer.php:3400
 msgid "Balanced"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1267
-msgid "Metrics panel"
+#: includes/Admin/AdminPageRenderer.php:3405
+msgid "Metrics Panel"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1270
-#: includes/Admin/AdminPageRenderer.php:1388
+#: includes/Admin/AdminPageRenderer.php:3408
+#: includes/Admin/AdminPageRenderer.php:3530
 msgid "Visitors"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1274
+#: includes/Admin/AdminPageRenderer.php:3412
 msgid "Conversion"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1278
-#: includes/Admin/AdminPageRenderer.php:1335
+#: includes/Admin/AdminPageRenderer.php:3416
+#: includes/Admin/AdminPageRenderer.php:3473
 msgid "Launch"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1279
+#: includes/Admin/AdminPageRenderer.php:3417
 msgid "Soon"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1297
-msgid "Feature card"
+#: includes/Admin/AdminPageRenderer.php:3435
+msgid "Feature Card"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1298
+#: includes/Admin/AdminPageRenderer.php:3436
 msgid "Title"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1299
+#: includes/Admin/AdminPageRenderer.php:3437
 msgid "Subtitle"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1313
+#: includes/Admin/AdminPageRenderer.php:3451
 msgid "Collection"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1314
-msgid "Modern layouts"
+#: includes/Admin/AdminPageRenderer.php:3452
+msgid "Modern Layouts"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1315
+#: includes/Admin/AdminPageRenderer.php:3453
 msgid "Structured and calm"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1316
+#: includes/Admin/AdminPageRenderer.php:3454
 msgid "Compare how the chosen heading face holds attention while the body face keeps supporting detail easy to scan."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1318
+#: includes/Admin/AdminPageRenderer.php:3456
 msgid "Review"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1319
+#: includes/Admin/AdminPageRenderer.php:3457
 msgid "Select"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1329
-msgid "Product card"
+#: includes/Admin/AdminPageRenderer.php:3467
+msgid "Product Card"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1330
+#: includes/Admin/AdminPageRenderer.php:3468
 msgid "System-ready"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1331
+#: includes/Admin/AdminPageRenderer.php:3469
 msgid "Useful in real UI"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1332
+#: includes/Admin/AdminPageRenderer.php:3470
 msgid "This view is intentionally compact so you can judge hierarchy, spacing, and button copy without oversized demo content."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1334
+#: includes/Admin/AdminPageRenderer.php:3472
 msgid "Later"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1348
-msgid "Long-form reading"
+#: includes/Admin/AdminPageRenderer.php:3486
+msgid "Long-Form Reading"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1349
+#: includes/Admin/AdminPageRenderer.php:3487
 msgid "Readable paragraphs with steady rhythm"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1355
+#: includes/Admin/AdminPageRenderer.php:3493
 msgid "A strong reading font should stay calm across longer passages and still leave enough contrast for section headings and pull quotes."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1358
+#: includes/Admin/AdminPageRenderer.php:3496
 msgid "Checklist"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1360
+#: includes/Admin/AdminPageRenderer.php:3498
 msgid "Paragraph spacing"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1361
+#: includes/Admin/AdminPageRenderer.php:3499
 msgid "Line length at body sizes"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1362
+#: includes/Admin/AdminPageRenderer.php:3500
 msgid "Subheading emphasis"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1375
+#: includes/Admin/AdminPageRenderer.php:3517
 msgid "Workspace"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1376
-msgid "Live"
+#: includes/Admin/AdminPageRenderer.php:3522
+msgid "Project Name"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1380
-msgid "Project name"
+#: includes/Admin/AdminPageRenderer.php:3523
+msgid "Launch Planning"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1381
-msgid "Launch planning"
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:1385
+#: includes/Admin/AdminPageRenderer.php:3527
 msgid "Metrics"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1392
+#: includes/Admin/AdminPageRenderer.php:3534
 msgid "Signups"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1400
-msgid "Headline lockup"
+#: includes/Admin/AdminPageRenderer.php:3542
+msgid "Headline Lockup"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1401
+#: includes/Admin/AdminPageRenderer.php:3543
 msgid "Approved"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1404
-msgid "Landing page copy"
+#: includes/Admin/AdminPageRenderer.php:3546
+msgid "Landing Page Copy"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1405
-msgid "In review"
+#: includes/Admin/AdminPageRenderer.php:3547
+msgid "In Review"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1409
-msgid "Save draft"
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:1410
+#: includes/Admin/AdminPageRenderer.php:3552
 msgid "Publish"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1434
+#: includes/Admin/AdminPageRenderer.php:3569
+#, php-format
+msgid "Fallback only (%s)"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3622
+msgid "Inspect how your code reads in an editor and published block"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3626
+msgid "Code Face"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3630
+msgid "Headings"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3634
+msgid "Annotations"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3639
+msgid "Inline token"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3643
+msgid "Monospace role enabled"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3643
+msgid "Fallback stack preview"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3644
+msgid "Syntax highlighting"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3662
+msgid "Role Live"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3667
+msgid "Editor preview"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3708
+msgid "Editor Surface"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3709
+msgid "var(--font-monospace) applied"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3709
+msgid "Generic monospace fallback applied"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3716
+msgid "Published Code Block"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3717
+msgid "Front-end snippet with readable line height and punctuation"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3723
+msgid "Published code block preview"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3751
+msgid "Check braces, punctuation, zeroes, and how the selected code face holds together in both an editor and a front-end code block."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3774
 msgid "Dismiss notification"
 msgstr ""
 
-#. translators: %s: UI label
-#: includes/Admin/AdminPageRenderer.php:1449
+#: includes/Admin/AdminPageRenderer.php:3823
+msgid "Remind Tomorrow"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3830
+msgid "Remind in 1 Week"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3837
+msgid "Never Show Again"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3855
 #, php-format
 msgid "More information about %s"
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1452
+#: includes/Admin/AdminPageRenderer.php:3856
 msgid "More information"
 msgstr ""
 
-#: includes/Adobe/AdobeProjectClient.php:75
+#: includes/Admin/AdminPageRenderer.php:3882
+msgid "All Types"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3883
+#: includes/Admin/AdminPageRenderer.php:3896
+msgid "Sans-serif"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3884
+#: includes/Admin/AdminPageRenderer.php:3897
+msgid "Serif"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3886
+#: includes/Admin/AdminPageRenderer.php:3899
+msgid "Display"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3887
+#: includes/Admin/AdminPageRenderer.php:3900
+msgid "Cursive / Script"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3888
+#: includes/Admin/AdminPageRenderer.php:3901
+msgid "Slab Serif"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3889
+#: includes/Admin/AdminPageRenderer.php:3902
+msgid "Uncategorized"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3971
+#: includes/Admin/AdminPageRenderer.php:3976
+msgid "Readable preview"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3972
+msgid "Show actual output"
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3984
+msgid "Snippet copied."
+msgstr ""
+
+#: includes/Admin/AdminPageRenderer.php:3985
+#, php-format
+msgid "Copy %s snippet"
+msgstr ""
+
+#: includes/Adobe/AdobeProjectClient.php:77
 #, php-format
 msgid "Adobe Fonts project connected. %1$d %2$s detected."
 msgstr ""
 
-#: includes/Adobe/AdobeProjectClient.php:77
+#: includes/Adobe/AdobeProjectClient.php:79
 msgid "family"
 msgstr ""
 
-#: includes/Adobe/AdobeProjectClient.php:77
+#: includes/Adobe/AdobeProjectClient.php:79
 msgid "families"
 msgstr ""
 
-#: includes/Adobe/AdobeProjectClient.php:146
+#: includes/Adobe/AdobeProjectClient.php:148
 msgid "Save an Adobe Fonts web project ID before using Adobe support."
 msgstr ""
 
-#: includes/Adobe/AdobeProjectClient.php:171
+#: includes/Adobe/AdobeProjectClient.php:173
 msgid "The Adobe Fonts project could not be validated right now. Try again in a moment."
 msgstr ""
 
-#: includes/Adobe/AdobeProjectClient.php:180
+#: includes/Adobe/AdobeProjectClient.php:182
 msgid "Adobe rejected that web project ID. Check the project ID and domain settings in Adobe Fonts."
 msgstr ""
 
-#: includes/Adobe/AdobeProjectClient.php:187
+#: includes/Adobe/AdobeProjectClient.php:189
 #, php-format
 msgid "Adobe Fonts returned an unexpected status (%d). Try again later."
 msgstr ""
 
-#: includes/Adobe/AdobeProjectClient.php:196
+#: includes/Adobe/AdobeProjectClient.php:198
 msgid "Adobe Fonts returned an empty stylesheet for that project."
 msgstr ""
 
-#: includes/Adobe/AdobeProjectClient.php:205
+#: includes/Adobe/AdobeProjectClient.php:207
 msgid "No usable font families were detected in that Adobe Fonts project."
 msgstr ""
 
-#: includes/Fonts/AssetService.php:102
-msgid "Generated CSS file written successfully."
-msgstr ""
-
-#: includes/Fonts/AssetService.php:103
-msgid "Could not write generated CSS file. Inline fallback will be used."
-msgstr ""
-
-#: includes/Fonts/CatalogService.php:78
-msgid "Font attachment changed. Catalog cache cleared."
-msgstr ""
-
-#: includes/Fonts/LibraryService.php:34
-msgid "That font family could not be found in the library."
-msgstr ""
-
-#: includes/Fonts/LibraryService.php:43
-msgid "heading"
-msgstr ""
-
-#: includes/Fonts/LibraryService.php:47
-msgid "body"
-msgstr ""
-
-#: includes/Fonts/LibraryService.php:54
+#: includes/Bunny/BunnyFontsClient.php:104
 #, php-format
-msgid "%1$s is currently assigned as the %2$s font. Choose a different heading/body font before deleting it."
+msgid "Bunny Fonts CSS request failed with status %d."
 msgstr ""
 
-#: includes/Fonts/LibraryService.php:56
-msgid " and "
+#: includes/Bunny/BunnyFontsClient.php:113
+msgid "Bunny Fonts returned an empty CSS response."
 msgstr ""
 
-#: includes/Fonts/LibraryService.php:66
-msgid "The font files could not be deleted from uploads/fonts."
+#: includes/Bunny/BunnyImportService.php:73
+msgid "Choose a Bunny Fonts family before importing."
 msgstr ""
 
-#: includes/Fonts/LibraryService.php:76
-msgid "The Google Fonts folder could not be removed cleanly."
-msgstr ""
-
-#: includes/Fonts/LibraryService.php:86
+#: includes/Bunny/BunnyImportService.php:86
 #, php-format
-msgid "Font family deleted: %1$s (%2$d file%3$s removed)."
+msgid "Bunny CDN delivery for %s already includes the selected variants."
 msgstr ""
 
-#: includes/Fonts/LocalUploadService.php:33
-#: includes/Fonts/LocalUploadService.php:328
-#: includes/Google/GoogleImportService.php:196
-#: includes/Google/GoogleImportService.php:205
-msgid "The uploads/fonts storage directory could not be created."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:73
-msgid "Use one fallback per family in a single upload batch."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:95
+#: includes/Bunny/BunnyImportService.php:87
+#: includes/Google/GoogleImportService.php:86
 #, php-format
-msgid "%1$s %2$s %3$s already exists as a %4$s file."
+msgid "%s already exists in the library for the selected variants."
 msgstr ""
 
-#: includes/Fonts/LocalUploadService.php:120
-#, php-format
-msgid "Saved %1$s %2$s %3$s as %4$s."
+#: includes/Bunny/BunnyImportService.php:119
+msgid "No usable Bunny Fonts faces were returned for that family."
 msgstr ""
 
-#: includes/Fonts/LocalUploadService.php:168
-msgid "Enter a font family name for each uploaded row."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:170
-msgid "Choose a valid font weight before uploading."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:172
-msgid "Choose a valid font style before uploading."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:225
-msgid "Choose a font file to upload."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:229
-msgid "The uploaded file could not be processed by WordPress."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:233
-msgid "The uploaded file was empty."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:239
-msgid "The uploaded file exceeded the current WordPress upload size limit."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:243
-msgid "The uploaded file was not readable on the server."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:251
-#: includes/Fonts/LocalUploadService.php:267
-msgid "Upload a WOFF2, WOFF, TTF, or OTF file directly. ZIP archives are not supported."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:258
-msgid "Upload a WOFF2, WOFF, TTF, or OTF font file. Other formats are not accepted here."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:274
-msgid "That file does not look like a supported font. Upload WOFF2, WOFF, TTF, or OTF only."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:337
-msgid "The font family directory could not be created inside uploads/fonts."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:347
-msgid "That font file already exists in the library."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:356
-msgid "The uploaded font file could not be read from the temporary upload location."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:363
-msgid "The uploaded font file could not be written into uploads/fonts."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:429
-#, php-format
-msgid "Families: %s."
-msgstr ""
-
-#: includes/Fonts/LocalUploadService.php:435
-#, php-format
-msgid "Local font upload finished: %1$d imported, %2$d skipped, %3$d error%4$s.%5$s"
-msgstr ""
-
-#: includes/Google/GoogleFontsClient.php:59
-msgid "The Google Fonts API key could not be validated right now. Save it again to retry."
-msgstr ""
-
-#: includes/Google/GoogleFontsClient.php:69
-msgid "Google Fonts API key validated. Live search is ready."
-msgstr ""
-
-#: includes/Google/GoogleFontsClient.php:84
-#, php-format
-msgid "Google Fonts API key is invalid: %s"
-msgstr ""
-
-#: includes/Google/GoogleFontsClient.php:87
-msgid "Google Fonts API key is invalid or rejected by Google."
-msgstr ""
-
-#: includes/Google/GoogleFontsClient.php:93
-msgid "Google Fonts API key could not be verified because Google returned an unexpected response."
-msgstr ""
-
-#: includes/Google/GoogleFontsClient.php:173
-#, php-format
-msgid "Google Fonts CSS request failed with status %d."
-msgstr ""
-
-#: includes/Google/GoogleFontsClient.php:182
-msgid "Google Fonts returned an empty CSS response."
-msgstr ""
-
-#: includes/Google/GoogleImportService.php:35
-msgid "Choose a Google Fonts family before importing."
-msgstr ""
-
-#: includes/Google/GoogleImportService.php:47
-#, php-format
-msgid "%s already exists in the library as a local family. Remove or rename the existing files before importing it from Google Fonts."
-msgstr ""
-
-#: includes/Google/GoogleImportService.php:90
-msgid "No downloadable WOFF2 faces were returned for that family."
-msgstr ""
-
-#: includes/Google/GoogleImportService.php:127
+#: includes/Bunny/BunnyImportService.php:178
+#: includes/Google/GoogleImportService.php:177
 msgid "No local font files were saved from that import."
 msgstr ""
 
-#: includes/Google/GoogleImportService.php:161
+#: includes/Bunny/BunnyImportService.php:217
 #, php-format
-msgid "Imported %1$s (%2$d variant%3$s, %4$d file%5$s)."
+msgid "Added %1$s as a self-hosted Bunny delivery (%2$d variant%3$s, %4$d file%5$s)."
 msgstr ""
 
-#: includes/Google/GoogleImportService.php:171
+#: includes/Bunny/BunnyImportService.php:227
+#: includes/Bunny/BunnyImportService.php:322
+#: includes/Google/GoogleImportService.php:228
+#: includes/Google/GoogleImportService.php:325
 #, php-format
-msgid "%d variant%s already existed."
+msgid "%d variant%s already existed in this delivery profile."
 msgstr ""
 
-#: includes/Google/GoogleImportService.php:215
-msgid "The Google Fonts import directory could not be created."
+#: includes/Bunny/BunnyImportService.php:314
+#, php-format
+msgid "Added %1$s as a Bunny CDN delivery (%2$d variant%3$s)."
 msgstr ""
 
-#: includes/Google/GoogleImportService.php:318
+#: includes/Bunny/BunnyImportService.php:358
+msgid "The Bunny Fonts import directory could not be created."
+msgstr ""
+
+#: includes/Bunny/BunnyImportService.php:370
+#: includes/Bunny/BunnyImportService.php:379
+#: includes/Fonts/LocalUploadService.php:61
+#: includes/Fonts/LocalUploadService.php:368
+#: includes/Google/GoogleImportService.php:373
+#: includes/Google/GoogleImportService.php:382
+msgid "The uploads/fonts storage directory could not be created."
+msgstr ""
+
+#: includes/Bunny/BunnyImportService.php:464
+#: includes/Google/GoogleImportService.php:467
 #, php-format
 msgid "Font download failed with status %d."
 msgstr ""
 
-#: includes/Google/GoogleImportService.php:327
-msgid "Google Fonts returned an empty font file."
+#: includes/Bunny/BunnyImportService.php:473
+msgid "Bunny Fonts returned an empty font file."
 msgstr ""
 
-#: includes/Google/GoogleImportService.php:334
+#: includes/Bunny/BunnyImportService.php:480
+#: includes/Google/GoogleImportService.php:483
 msgid "The downloaded font file exceeded the safety size limit."
 msgstr ""
 
-#: includes/Google/GoogleImportService.php:348
+#: includes/Bunny/BunnyImportService.php:494
+#: includes/Google/GoogleImportService.php:497
 msgid "The downloaded file was not returned as a WOFF2 font."
 msgstr ""
 
-#: includes/Google/GoogleImportService.php:355
+#: includes/Bunny/BunnyImportService.php:501
+#: includes/Google/GoogleImportService.php:504
 msgid "The imported font file could not be written to uploads/fonts."
 msgstr ""
 
-#: includes/Google/GoogleImportService.php:371
+#: includes/Bunny/BunnyImportService.php:517
+msgid "Bunny font downloads must come from fonts.bunny.net."
+msgstr ""
+
+#: includes/Bunny/BunnyImportService.php:524
+msgid "Only WOFF2 files can be imported from Bunny Fonts."
+msgstr ""
+
+#: includes/Fonts/AssetService.php:365
+msgid "Generated CSS file written successfully."
+msgstr ""
+
+#: includes/Fonts/AssetService.php:366
+msgid "Could not write generated CSS file. Inline fallback will be used."
+msgstr ""
+
+#: includes/Fonts/BlockEditorFontLibraryService.php:461
+#, php-format
+msgid "Block Editor Font Library request failed with status %d."
+msgstr ""
+
+#: includes/Fonts/BlockEditorFontLibraryService.php:527
+#, php-format
+msgid "Block Editor Font Library sync failed for %1$s because PHP could not verify this site's HTTPS certificate during the editor sync request. Open Plugin Behavior to turn this feature off for local development, or turn it back on after PHP/cURL trusts the site certificate."
+msgstr ""
+
+#: includes/Fonts/BlockEditorFontLibraryService.php:542
+#, php-format
+msgid "Block Editor Font Library sync failed for %1$s: %2$s"
+msgstr ""
+
+#: includes/Fonts/CatalogService.php:132
+msgid "Font attachment changed. Catalog cache cleared."
+msgstr ""
+
+#: includes/Fonts/CatalogService.php:607
+msgid "This family is saved for previews and configuration, but it is not enqueued on the frontend, editor, or Etch canvas."
+msgstr ""
+
+#: includes/Fonts/CatalogService.php:612
+msgid "This family is active through the current live roles."
+msgstr ""
+
+#: includes/Fonts/CatalogService.php:617
+msgid "This family is available on the frontend, editor, and Etch canvas for manual use."
+msgstr ""
+
+#: includes/Fonts/CatalogService.php:623
+#: includes/Fonts/CatalogService.php:628
+msgid "External Request"
+msgstr ""
+
+#: includes/Fonts/CatalogService.php:625
+msgid "Visitors request this family from Google’s web font API instead of your own uploads directory."
+msgstr ""
+
+#: includes/Fonts/CatalogService.php:630
+msgid "Visitors request this family from Bunny Fonts instead of your own uploads directory."
+msgstr ""
+
+#: includes/Fonts/CatalogService.php:635
+msgid "Adobe web fonts stay hosted by Adobe and load from the project stylesheet defined in Adobe Fonts."
+msgstr ""
+
+#: includes/Fonts/CatalogService.php:640
+msgid "The active delivery for this family stays on your own WordPress uploads domain."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:59
+#: includes/Fonts/LibraryService.php:131
+#: includes/Fonts/LibraryService.php:240
+#: includes/Fonts/LibraryService.php:306
+#: includes/Fonts/LibraryService.php:443
+msgid "That font family could not be found in the library."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:78
+msgid "The font files could not be deleted from uploads/fonts."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:93
+#, php-format
+msgid "Font family deleted: %1$s (%2$d file removed)."
+msgid_plural "Font family deleted: %1$s (%2$d files removed)."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Fonts/LibraryService.php:140
+#: includes/Fonts/LibraryService.php:249
+msgid "That delivery profile could not be found for the selected family."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:150
+msgid "Switch the live delivery or remove the family from the active roles before deleting this delivery profile."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:174
+msgid "The files for that delivery profile could not be removed from uploads/fonts."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:201
+#, php-format
+msgid "Removed %1$s from %2$s."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:260
+msgid "The active delivery could not be updated."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:268
+#, php-format
+msgid "Live delivery for %1$s switched to %2$s."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:270
+msgid "the selected profile"
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:313
+msgid "Choose either Published or Paused."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:322
+msgid "This family is live through the current active roles. Switch roles or turn off sitewide usage before pausing it."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:341
+msgid "The family publish state could not be updated."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:348
+#, php-format
+msgid "%s is now Paused."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:349
+#, php-format
+msgid "%s is now Published."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:459
+msgid "That font variant could not be found in the library."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:484
+msgid "That font variant cannot be deleted individually from this delivery."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:491
+msgid "The font files for that variant could not be deleted from uploads/fonts."
+msgstr ""
+
+#: includes/Fonts/LibraryService.php:515
+#, php-format
+msgid "Font variant deleted: %1$s %2$s %3$s (%4$d file removed)."
+msgid_plural "Font variant deleted: %1$s %2$s %3$s (%4$d files removed)."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Fonts/LocalUploadService.php:101
+msgid "Use one fallback per family in a single upload batch."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:123
+#, php-format
+msgid "%1$s %2$s %3$s already exists as a %4$s file."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:148
+#, php-format
+msgid "Saved %1$s %2$s %3$s as %4$s."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:196
+msgid "Enter a font family name for each uploaded row."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:198
+msgid "Choose a valid font weight before uploading."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:200
+msgid "Choose a valid font style before uploading."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:253
+msgid "Choose a font file to upload."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:257
+msgid "The uploaded file could not be processed by WordPress."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:261
+msgid "The uploaded file was empty."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:267
+msgid "The uploaded file exceeded the current WordPress upload size limit."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:273
+msgid "The uploaded font file could not be verified as a valid HTTP upload."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:278
+msgid "The uploaded file was not readable on the server."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:286
+#: includes/Fonts/LocalUploadService.php:302
+msgid "Upload a WOFF2, WOFF, TTF, or OTF file directly. ZIP archives are not supported."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:293
+msgid "Upload a WOFF2, WOFF, TTF, or OTF font file. Other formats are not accepted here."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:309
+msgid "That file does not look like a supported font. Upload WOFF2, WOFF, TTF, or OTF only."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:377
+msgid "The font family directory could not be created inside uploads/fonts."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:389
+msgid "That font file already exists in the library."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:396
+msgid "The uploaded font file could not be copied into uploads/fonts."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:469
+#, php-format
+msgid "Families: %s."
+msgstr ""
+
+#: includes/Fonts/LocalUploadService.php:475
+#, php-format
+msgid "Local font upload finished: %1$d imported, %2$d skipped, %3$d error%4$s.%5$s"
+msgstr ""
+
+#: includes/Google/GoogleFontsClient.php:66
+msgid "The Google Fonts API key could not be validated right now. Save it again to retry."
+msgstr ""
+
+#: includes/Google/GoogleFontsClient.php:76
+msgid "Google Fonts API key validated. Live search is ready."
+msgstr ""
+
+#: includes/Google/GoogleFontsClient.php:91
+#, php-format
+msgid "Google Fonts API key is invalid: %s"
+msgstr ""
+
+#: includes/Google/GoogleFontsClient.php:94
+msgid "Google Fonts API key is invalid or rejected by Google."
+msgstr ""
+
+#: includes/Google/GoogleFontsClient.php:100
+msgid "Google Fonts API key could not be verified because Google returned an unexpected response."
+msgstr ""
+
+#: includes/Google/GoogleFontsClient.php:180
+#, php-format
+msgid "Google Fonts CSS request failed with status %d."
+msgstr ""
+
+#: includes/Google/GoogleFontsClient.php:189
+msgid "Google Fonts returned an empty CSS response."
+msgstr ""
+
+#: includes/Google/GoogleImportService.php:73
+msgid "Choose a Google Fonts family before importing."
+msgstr ""
+
+#: includes/Google/GoogleImportService.php:85
+#, php-format
+msgid "Google CDN delivery for %s already includes the selected variants."
+msgstr ""
+
+#: includes/Google/GoogleImportService.php:118
+msgid "No usable Google Fonts faces were returned for that family."
+msgstr ""
+
+#: includes/Google/GoogleImportService.php:218
+#, php-format
+msgid "Added %1$s as a self-hosted Google delivery (%2$d variant%3$s, %4$d file%5$s)."
+msgstr ""
+
+#: includes/Google/GoogleImportService.php:317
+#, php-format
+msgid "Added %1$s as a Google CDN delivery (%2$d variant%3$s)."
+msgstr ""
+
+#: includes/Google/GoogleImportService.php:361
+msgid "The Google Fonts import directory could not be created."
+msgstr ""
+
+#: includes/Google/GoogleImportService.php:476
+msgid "Google Fonts returned an empty font file."
+msgstr ""
+
+#: includes/Google/GoogleImportService.php:520
 msgid "Google font downloads must come from fonts.gstatic.com."
 msgstr ""
 
-#: includes/Google/GoogleImportService.php:378
+#: includes/Google/GoogleImportService.php:527
 msgid "Only WOFF2 files can be imported from Google Fonts."
 msgstr ""
 
-#: includes/Repository/LogRepository.php:61
-#: includes/Repository/LogRepository.php:67
-#: includes/Repository/LogRepository.php:82
+#: includes/Plugin.php:256
+msgid "Settings"
+msgstr ""
+
+#: includes/Plugin.php:272
+msgid "GitHub Releases"
+msgstr ""
+
+#: includes/Plugin.php:277
+msgid "Support"
+msgstr ""
+
+#: includes/Repository/LogRepository.php:71
+#: includes/Repository/LogRepository.php:77
+#: includes/Repository/LogRepository.php:92
 msgid "System"
+msgstr ""
+
+#: includes/Support/Storage.php:351
+msgid "Direct filesystem access could not be initialized. Tasty Fonts cannot manage font files until WordPress can use the direct filesystem method."
+msgstr ""
+
+#: includes/Support/Storage.php:368
+msgid "Direct filesystem access could not be verified. Tasty Fonts cannot manage font files until WordPress can use the direct filesystem method."
+msgstr ""
+
+#: includes/Support/Storage.php:379
+msgid "Direct filesystem access is unavailable on this host. Tasty Fonts cannot write imported font files or generated stylesheets until WordPress can use the direct filesystem method."
+msgstr ""
+
+#: assets/js/admin.js:170
+msgid ""
+"Aa Bb Cc Dd Ee Ff Gg Hh\n"
+"0123456789"
+msgstr ""
+
+#: assets/js/admin.js:171
+msgid "Searching Google Fonts…"
+msgstr ""
+
+#: assets/js/admin.js:172
+msgid "No Google Fonts families matched that search."
+msgstr ""
+
+#: assets/js/admin.js:173
+#, js-format
+msgid "Select %s"
+msgstr ""
+
+#: assets/js/admin.js:174
+msgid "In Library"
+msgstr ""
+
+#: assets/js/admin.js:176
+msgid "Searching Bunny Fonts…"
+msgstr ""
+
+#: assets/js/admin.js:177
+msgid "No Bunny Fonts families matched that search."
+msgstr ""
+
+#: assets/js/admin.js:178
+msgid "Select a family from search results or type one manually."
+msgstr ""
+
+#: assets/js/admin.js:179
+msgid "Type a Bunny Fonts family name before importing."
+msgstr ""
+
+#: assets/js/admin.js:183
+msgid "Saving the selected Google delivery…"
+msgstr ""
+
+#: assets/js/admin.js:184
+msgid "The Google Fonts import failed."
+msgstr ""
+
+#: assets/js/admin.js:185
+msgid "The Bunny Fonts import failed."
+msgstr ""
+
+#: assets/js/admin.js:186
+msgid "Select at least one variant to import."
+msgstr ""
+
+#: assets/js/admin.js:187
+msgid "Saving the selected Bunny delivery…"
+msgstr ""
+
+#: assets/js/admin.js:189
+msgid "Importing Bunny Fonts…"
+msgstr ""
+
+#: assets/js/admin.js:190
+msgid "Bunny Fonts imported successfully. Reloading…"
+msgstr ""
+
+#: assets/js/admin.js:192
+msgid "Importing…"
+msgstr ""
+
+#: assets/js/admin.js:193
+msgid "Add Self-Hosted"
+msgstr ""
+
+#: assets/js/admin.js:194
+msgid "Add Google CDN"
+msgstr ""
+
+#: assets/js/admin.js:195
+msgid "Add Bunny CDN"
+msgstr ""
+
+#: assets/js/admin.js:196
+#, js-format
+msgid "Approx. +%1$s WOFF2"
+msgstr ""
+
+#: assets/js/admin.js:198
+#, js-format
+msgid "%1$d of %2$d Variants Selected"
+msgstr ""
+
+#: assets/js/admin.js:199
+msgid "Uploading font files…"
+msgstr ""
+
+#: assets/js/admin.js:200
+#, js-format
+msgid "Uploading files… %1$d%%"
+msgstr ""
+
+#: assets/js/admin.js:201
+msgid "Upload complete. Refreshing the library…"
+msgstr ""
+
+#: assets/js/admin.js:202
+msgid "The font upload failed."
+msgstr ""
+
+#: assets/js/admin.js:205
+#: assets/js/admin.js:207
+msgid "Uploading…"
+msgstr ""
+
+#: assets/js/admin.js:206
+msgid "Queued"
+msgstr ""
+
+#: assets/js/admin.js:208
+msgid "Error"
+msgstr ""
+
+#: assets/js/admin.js:209
+msgid "Use Detected Values"
+msgstr ""
+
+#: assets/js/admin.js:210
+#, js-format
+msgid "Detected: %1$s / %2$s / %3$s"
+msgstr ""
+
+#: assets/js/admin.js:211
+#, js-format
+msgid "Detected: %1$s / %2$s"
+msgstr ""
+
+#: assets/js/admin.js:213
+msgid "Roles saved."
+msgstr ""
+
+#: assets/js/admin.js:214
+msgid "The roles could not be saved."
+msgstr ""
+
+#: assets/js/admin.js:218
+#, js-format
+msgid "Fallback only (%1$s)"
+msgstr ""
+
+#: assets/js/admin.js:219
+msgid "Saving fallback…"
+msgstr ""
+
+#: assets/js/admin.js:220
+#, js-format
+msgid "Saved fallback for %1$s."
+msgstr ""
+
+#: assets/js/admin.js:221
+msgid "The fallback could not be saved."
+msgstr ""
+
+#: assets/js/admin.js:222
+msgid "Saving font display…"
+msgstr ""
+
+#: assets/js/admin.js:223
+#, js-format
+msgid "Saved font display for %1$s."
+msgstr ""
+
+#: assets/js/admin.js:224
+msgid "The font-display override could not be saved."
+msgstr ""
+
+#: assets/js/admin.js:225
+msgid "Switching live delivery…"
+msgstr ""
+
+#: assets/js/admin.js:226
+msgid "Live delivery updated."
+msgstr ""
+
+#: assets/js/admin.js:227
+msgid "The live delivery could not be updated."
+msgstr ""
+
+#: assets/js/admin.js:228
+msgid "Updating publish state…"
+msgstr ""
+
+#: assets/js/admin.js:229
+msgid "Publish state updated."
+msgstr ""
+
+#: assets/js/admin.js:230
+msgid "The publish state could not be updated."
+msgstr ""
+
+#: assets/js/admin.js:233
+#, js-format
+msgid "Delete the \"%1$s\" delivery from %2$s?"
+msgstr ""
+
+#: assets/js/admin.js:234
+msgid "The delivery profile could not be deleted."
+msgstr ""
+
+#: assets/js/admin.js:235
+#, js-format
+msgid "Delete \"%s\" and remove its files from uploads/fonts?"
+msgstr ""
+
+#: assets/js/admin.js:236
+msgid "Copied"
+msgstr ""
+
+#: assets/js/admin.js:237
+#, js-format
+msgid "%1$d entry"
+msgstr ""
+
+#: assets/js/admin.js:238
+#, js-format
+msgid "%1$d entries"
+msgstr ""
+
+#: assets/js/admin.js:239
+#, js-format
+msgid "%1$d of %2$d entry"
+msgstr ""
+
+#: assets/js/admin.js:240
+#, js-format
+msgid "%1$d of %2$d entries"
 msgstr ""

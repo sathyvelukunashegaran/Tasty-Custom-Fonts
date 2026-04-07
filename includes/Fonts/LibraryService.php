@@ -90,10 +90,14 @@ final class LibraryService
         $fileCount = count($relativePaths);
         $this->log->add(
             sprintf(
-                __('Font family deleted: %1$s (%2$d file%3$s removed).', 'tasty-fonts'),
+                _n(
+                    'Font family deleted: %1$s (%2$d file removed).',
+                    'Font family deleted: %1$s (%2$d files removed).',
+                    $fileCount,
+                    'tasty-fonts'
+                ),
                 $familyName,
-                $fileCount,
-                $fileCount === 1 ? '' : 's'
+                $fileCount
             )
         );
 
@@ -508,12 +512,16 @@ final class LibraryService
         $fileCount = count($relativePaths);
         $this->log->add(
             sprintf(
-                __('Font variant deleted: %1$s %2$s %3$s (%4$d file%5$s removed).', 'tasty-fonts'),
+                _n(
+                    'Font variant deleted: %1$s %2$s %3$s (%4$d file removed).',
+                    'Font variant deleted: %1$s %2$s %3$s (%4$d files removed).',
+                    $fileCount,
+                    'tasty-fonts'
+                ),
                 $familyName,
                 $normalizedWeight,
                 $normalizedStyle,
-                $fileCount,
-                $fileCount === 1 ? '' : 's'
+                $fileCount
             )
         );
 

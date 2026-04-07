@@ -10,7 +10,7 @@ use stdClass;
 
 final class GitHubUpdater
 {
-    private const PLUGIN_SLUG = 'etch-fonts';
+    private const PLUGIN_SLUG = 'tasty-fonts';
     private const REPOSITORY = 'sathyvelukunashegaran/Tasty-Custom-Fonts';
     private const REPOSITORY_URL = 'https://github.com/' . self::REPOSITORY;
     private const API_RELEASES_URL = 'https://api.github.com/repos/' . self::REPOSITORY . '/releases';

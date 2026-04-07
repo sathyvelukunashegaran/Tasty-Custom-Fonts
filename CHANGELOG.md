@@ -20,6 +20,15 @@ All notable changes to this project will be documented in this file.
 - Refined the admin dashboard hero messaging and kept it visible when training wheels are disabled.
 - Updated generated CSS, output snippets, and editor font stacks to emit family-level variables with category-aware fallback defaults, semantic aliases, and shared weight tokens when extended output is enabled.
 - Expanded the PHP coverage for extended output-variable settings, renderer controls, category-aware fallback stacks, and runtime CSS generation.
+- Refreshed plugin metadata and the generated translation template so WordPress headers, extracted strings, and the current plugin description stay aligned for version 1.5.1.
+- Updated admin import summaries and search-result metadata to use translation-safe plural strings instead of English-only suffix assembly.
+- Added request-scope settings caching and reused generated stylesheet state during stale-file fallback delivery to reduce repeated normalization and file-state work during admin requests.
+
+### Fixed
+
+- Restored the shared admin help-tip affordance so contextual help buttons render again across the dashboard instead of silently no-oping.
+- Corrected the GitHub updater slug to `tasty-fonts` while keeping the packaged plugin directory unchanged for install/update continuity.
+- Improved admin accessibility by associating visible labels with preview/snippet code blocks and announcing local-environment notices as live regions.
 
 ## [1.5.1] - 2026-04-07
 

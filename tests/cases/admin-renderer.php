@@ -165,7 +165,7 @@ $tests['admin_page_renderer_renders_library_type_filter_and_category_tokens'] = 
         'overview_metrics' => [],
         'output_panels' => [],
         'generated_css_panel' => [],
-        'preview_panels' => [],
+        'preview_panels' => [['key' => 'code', 'label' => 'Code', 'active' => true]],
         'local_environment_notice' => [],
         'toasts' => [],
         'apply_everywhere' => false,
@@ -989,6 +989,49 @@ $tests['admin_page_renderer_exposes_plugin_behavior_tab_and_can_hide_help_ui'] =
     );
 };
 
+$tests['admin_page_renderer_renders_inline_help_buttons_when_training_wheels_are_enabled'] = static function (): void {
+    resetTestState();
+
+    $renderer = new AdminPageRenderer(new Storage());
+
+    ob_start();
+    $renderer->renderPage([
+        'storage' => ['root' => '/tmp/uploads/fonts'],
+        'catalog' => [],
+        'available_families' => [],
+        'roles' => [],
+        'logs' => [],
+        'activity_actor_options' => [],
+        'family_fallbacks' => [],
+        'family_font_displays' => [],
+        'family_font_display_options' => [],
+        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+        'preview_size' => 32,
+        'font_display' => 'optional',
+        'font_display_options' => [],
+        'minify_css_output' => true,
+        'preload_primary_fonts' => true,
+        'remote_connection_hints' => true,
+        'block_editor_font_library_sync_enabled' => false,
+        'training_wheels_off' => false,
+        'delete_uploaded_files_on_uninstall' => false,
+        'diagnostic_items' => [],
+        'overview_metrics' => [],
+        'output_panels' => [],
+        'generated_css_panel' => [],
+        'preview_panels' => [],
+        'local_environment_notice' => [],
+        'toasts' => [],
+        'apply_everywhere' => false,
+        'role_deployment' => [],
+    ]);
+    $output = (string) ob_get_clean();
+
+    assertContainsValue('tasty-fonts-help-button', $output, 'Training Wheels On should render inline help buttons.');
+    assertContainsValue('aria-controls="tasty-fonts-help-tooltip-layer"', $output, 'Help buttons should target the shared tooltip layer.');
+    assertContainsValue('More information about Apply Sitewide', $output, 'Help buttons should expose an accessible label for the related control.');
+};
+
 $tests['admin_page_renderer_restructures_role_toolbar_with_explicit_actions'] = static function (): void {
     resetTestState();
 
@@ -1217,8 +1260,9 @@ $tests['admin_page_renderer_renders_highlighted_snippet_panels_with_icon_copy_bu
 
     assertContainsValue('class="button tasty-fonts-output-copy-button"', $output, 'Snippet panels should render the shared icon-only copy button.');
     assertContainsValue('data-copy-success="Snippet copied."', $output, 'Snippet panels should keep the shared copy feedback message.');
-    assertContainsValue('<div class="tasty-fonts-code-panel-body" data-snippet-display>', $output, 'Snippet panels should wrap highlighted output in the shared code panel body.');
-    assertContainsValue('<pre class="tasty-fonts-output" data-snippet-view="raw"><code id="tasty-fonts-output-usage" class="tasty-fonts-output-code">', $output, 'Snippet panels should render highlighted code blocks instead of textareas.');
+    assertContainsValue('<div class="tasty-fonts-code-panel-body" data-snippet-display aria-labelledby=', $output, 'Snippet panels should wrap highlighted output in the shared code panel body.');
+    assertContainsValue('<pre class="tasty-fonts-output" data-snippet-view="raw" aria-labelledby=', $output, 'Snippet panels should render highlighted code blocks instead of textareas.');
+    assertContainsValue('<code id="tasty-fonts-output-usage" class="tasty-fonts-output-code">', $output, 'Snippet panels should keep stable code block IDs for copy and accessibility hooks.');
     assertContainsValue('tasty-fonts-syntax-property', $output, 'Snippet panels should wrap CSS properties in syntax token markup.');
     assertContainsValue('tasty-fonts-syntax-string', $output, 'Snippet panels should wrap strings in syntax token markup.');
     assertNotContainsValue('<textarea id="tasty-fonts-output-usage"', $output, 'Snippet panels should no longer render plain textareas.');
@@ -1329,8 +1373,10 @@ $tests['admin_page_renderer_generated_css_defaults_to_actual_minified_output_wit
     assertContainsValue('data-snippet-display-toggle', $output, 'Generated CSS should expose a display-only toggle when minified output is enabled.');
     assertContainsValue('data-label-default="Readable preview"', $output, 'Generated CSS should offer a readable preview action from the actual output view.');
     assertContainsValue('data-label-active="Show actual output"', $output, 'Generated CSS should provide a way back to the actual saved output view.');
-    assertContainsValue('<pre class="tasty-fonts-output" data-snippet-view="raw"><code id="tasty-fonts-output-generated" class="tasty-fonts-output-code">', $output, 'Generated CSS should render the actual output view as the default visible block.');
-    assertContainsValue('data-snippet-view="readable" hidden', $output, 'Generated CSS should render a hidden readable view for toggling.');
+    assertContainsValue('<pre class="tasty-fonts-output" data-snippet-view="raw" aria-labelledby=', $output, 'Generated CSS should render the actual output view as the default visible block.');
+    assertContainsValue('<code id="tasty-fonts-output-generated" class="tasty-fonts-output-code">', $output, 'Generated CSS should keep the stable code block ID for the raw output view.');
+    assertContainsValue('data-snippet-view="readable" aria-labelledby=', $output, 'Generated CSS should render a labelled readable view for toggling.');
+    assertContainsValue('hidden><code id="tasty-fonts-output-generated-readable"', $output, 'Generated CSS should keep the readable view hidden until toggled on.');
     assertContainsValue('data-copy-text=":root{--font-heading:&quot;Inter&quot;,serif}body{font-family:var(--font-heading)}"', $output, 'Generated CSS copy payloads should stay on the true minified output.');
 };
 
@@ -1436,7 +1482,49 @@ $tests['admin_page_renderer_renders_local_environment_notice_below_activity_with
     assertContainsValue('Remind in 1 Week', $output, 'The local-environment notice should allow users to snooze the reminder for one week.');
     assertContainsValue('Never Show Again', $output, 'The local-environment notice should allow users to hide the reminder permanently for their account.');
     assertContainsValue('tf_studio=plugin-behavior', $output, 'The local-environment notice action should deep-link to the Plugin Behavior tab.');
+    assertContainsValue('role="alert"', $output, 'Warning notices should render as announced alert regions.');
+    assertContainsValue('aria-live="assertive"', $output, 'Warning notices should use assertive live-region semantics.');
     assertSameValue(true, $activityPosition !== false && $noticePosition !== false && $activityPosition < $noticePosition, 'The local-environment notice should render after the Activity section.');
+};
+
+$tests['admin_page_renderer_associates_code_previews_and_snippet_panels_with_visible_labels'] = static function (): void {
+    resetTestState();
+
+    $renderer = new AdminPageRenderer(new Storage());
+
+    ob_start();
+    invokePrivateMethod(
+        $renderer,
+        'renderCodePreviewScene',
+        [
+            'The quick brown fox jumps over the lazy dog. 1234567890',
+            [
+                'heading' => 'Inter',
+                'body' => 'Inter',
+                'monospace' => 'JetBrains Mono',
+            ],
+            true,
+        ]
+    );
+    invokePrivateMethod(
+        $renderer,
+        'renderCodeEditor',
+        [
+            [
+                'label' => 'CSS Variables',
+                'target' => 'tasty-fonts-output-vars',
+                'value' => '--font-body: "Inter", sans-serif;',
+            ],
+        ]
+    );
+    $output = (string) ob_get_clean();
+
+    assertContainsValue('id="tasty-fonts-preview-code-editor-heading"', $output, 'The editor preview should expose a stable visible heading ID.');
+    assertContainsValue('aria-labelledby="tasty-fonts-preview-code-editor-heading"', $output, 'The editor preview code surface should reference its visible heading.');
+    assertContainsValue('id="tasty-fonts-preview-code-block-heading"', $output, 'The published code block should expose a stable visible heading ID.');
+    assertContainsValue('aria-labelledby="tasty-fonts-preview-code-block-heading"', $output, 'The published code block surface should reference its visible heading.');
+    assertContainsValue('id="tasty-fonts-output-vars-label"', $output, 'Snippet panels should render a stable heading ID derived from the panel target.');
+    assertContainsValue('data-snippet-display aria-labelledby="tasty-fonts-output-vars-label"', $output, 'Snippet panel bodies should reference the visible panel label.');
 };
 
 $tests['admin_page_renderer_renders_activity_log_action_links'] = static function (): void {

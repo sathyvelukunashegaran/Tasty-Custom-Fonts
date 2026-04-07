@@ -9,6 +9,9 @@
     const trainingWheelsOff = !!config.trainingWheelsOff;
     const wpI18n = window.wp && window.wp.i18n ? window.wp.i18n : {};
     const __ = typeof wpI18n.__ === 'function' ? wpI18n.__ : (text) => text;
+    const _n = typeof wpI18n._n === 'function'
+        ? wpI18n._n
+        : (single, plural, count) => (count === 1 ? single : plural);
     const wpSprintf = typeof wpI18n.sprintf === 'function' ? wpI18n.sprintf : null;
     const roleHeading = document.getElementById('tasty_fonts_heading_font');
     const roleBody = document.getElementById('tasty_fonts_body_font');
@@ -180,7 +183,6 @@
         importing: __('Saving the selected Google delivery…', 'tasty-fonts'),
         importError: __('The Google Fonts import failed.', 'tasty-fonts'),
         bunnyImportError: __('The Bunny Fonts import failed.', 'tasty-fonts'),
-        importSummary: __('Saved %1$d variant%2$s. %3$d skipped. Reloading…', 'tasty-fonts'),
         importNoVariants: __('Select at least one variant to import.', 'tasty-fonts'),
         bunnyImportSubmitting: __('Saving the selected Bunny delivery…', 'tasty-fonts'),
         bunnyImportPreviewEmpty: __('Preview appears here after you choose a Bunny family.', 'tasty-fonts'),
@@ -191,11 +193,9 @@
         saveDeliverySelfHosted: __('Add Self-Hosted', 'tasty-fonts'),
         saveDeliveryGoogleCdn: __('Add Google CDN', 'tasty-fonts'),
         saveDeliveryBunnyCdn: __('Add Bunny CDN', 'tasty-fonts'),
-        importEstimateFiles: __('%1$d File%2$s Selected', 'tasty-fonts'),
         importEstimateSize: __('Approx. +%1$s WOFF2', 'tasty-fonts'),
         importSelectionSummaryEmpty: __('0 Variants Selected', 'tasty-fonts'),
         importSelectionSummaryAvailable: __('%1$d of %2$d Variants Selected', 'tasty-fonts'),
-        importSelectionSummaryManual: __('%1$d Variant%2$s Selected', 'tasty-fonts'),
         uploadSubmitting: __('Uploading font files…', 'tasty-fonts'),
         uploadProgress: __('Uploading files… %1$d%%', 'tasty-fonts'),
         uploadSuccess: __('Upload complete. Refreshing the library…', 'tasty-fonts'),
@@ -399,6 +399,10 @@
 
             return replacement === undefined ? match : String(replacement);
         });
+    }
+
+    function formatPluralMessage(single, plural, count, replacements = []) {
+        return formatMessage(_n(single, plural, count, 'tasty-fonts'), replacements);
     }
 
     function getApiMessage(payload, fallback) {
@@ -1806,9 +1810,11 @@
         }
 
         if (importFilesEstimate) {
-            importFilesEstimate.textContent = formatMessage(
-                getString('importEstimateFiles', '%1$d file%2$s selected'),
-                [hasFamily ? variantCount : 0, variantCount === 1 ? '' : 's']
+            importFilesEstimate.textContent = formatPluralMessage(
+                '%1$d File Selected',
+                '%1$d Files Selected',
+                hasFamily ? variantCount : 0,
+                [hasFamily ? variantCount : 0]
             );
         }
 
@@ -1831,9 +1837,11 @@
                     [variantCount, availableCount]
                 );
             } else if (variantCount > 0) {
-                importSelectionSummary.textContent = formatMessage(
-                    getString('importSelectionSummaryManual', '%1$d Variant%2$s Selected'),
-                    [variantCount, variantCount === 1 ? '' : 's']
+                importSelectionSummary.textContent = formatPluralMessage(
+                    '%1$d Variant Selected',
+                    '%1$d Variants Selected',
+                    variantCount,
+                    [variantCount]
                 );
             } else {
                 importSelectionSummary.textContent = getString(
@@ -1899,9 +1907,11 @@
                     [variantCount, availableCount]
                 );
             } else if (variantCount > 0) {
-                bunnyImportSelectionSummary.textContent = formatMessage(
-                    getString('importSelectionSummaryManual', '%1$d Variant%2$s Selected'),
-                    [variantCount, variantCount === 1 ? '' : 's']
+                bunnyImportSelectionSummary.textContent = formatPluralMessage(
+                    '%1$d Variant Selected',
+                    '%1$d Variants Selected',
+                    variantCount,
+                    [variantCount]
                 );
             } else {
                 bunnyImportSelectionSummary.textContent = getString(
@@ -3703,7 +3713,7 @@
 
             meta.className = 'tasty-fonts-search-card-meta tasty-fonts-muted';
             category.textContent = item.category || fallback;
-            variants.textContent = `${variantCount} variant(s)`;
+            variants.textContent = formatPluralMessage('%d variant', '%d variants', variantCount, [variantCount]);
 
             meta.append(category, variants);
             card.append(head, preview, meta);
@@ -3890,7 +3900,9 @@
 
             meta.className = 'tasty-fonts-search-card-meta tasty-fonts-muted';
             category.textContent = item.category_label || 'Bunny Fonts';
-            variants.textContent = styleCount > 0 ? `${styleCount} variant(s)` : 'Bunny Fonts';
+            variants.textContent = styleCount > 0
+                ? formatPluralMessage('%d variant', '%d variants', styleCount, [styleCount])
+                : __('Bunny Fonts', 'tasty-fonts');
 
             meta.append(category, variants);
             card.append(head, preview, meta);
@@ -4687,9 +4699,11 @@
             });
             const importedCount = Array.isArray(result.imported_variants) ? result.imported_variants.length : 0;
             const skippedCount = Array.isArray(result.skipped_variants) ? result.skipped_variants.length : 0;
-            const summary = formatMessage(
-                getString('importSummary', 'Saved %1$d variant%2$s. %3$d skipped. Reloading…'),
-                [importedCount, importedCount === 1 ? '' : 's', skippedCount]
+            const summary = formatPluralMessage(
+                'Saved %1$d variant. %2$d skipped. Reloading…',
+                'Saved %1$d variants. %2$d skipped. Reloading…',
+                importedCount,
+                [importedCount, skippedCount]
             );
             const message = getApiMessage(result, summary);
             const tone = result.status === 'skipped' ? 'error' : 'success';

@@ -378,9 +378,10 @@ $tests['github_updater_returns_plugin_information_for_the_details_modal'] = stat
     $updater = new GitHubUpdater();
     $updater->registerHooks();
 
-    $result = apply_filters('plugins_api', false, 'plugin_information', (object) ['slug' => 'etch-fonts']);
+    $result = apply_filters('plugins_api', false, 'plugin_information', (object) ['slug' => 'tasty-fonts']);
 
     assertSameValue('Tasty Custom Fonts', $result->name ?? '', 'Plugin details should expose the plugin name.');
+    assertSameValue('tasty-fonts', $result->slug ?? '', 'Plugin details should use the current plugin slug.');
     assertSameValue('1.6.0', $result->version ?? '', 'Plugin details should report the latest stable release version.');
     assertSameValue('1.5.1', $result->current_version ?? '', 'Plugin details should include the installed plugin version.');
     assertSameValue('https://example.test/release.zip', $result->download_link ?? '', 'Plugin details should expose the release ZIP download link.');

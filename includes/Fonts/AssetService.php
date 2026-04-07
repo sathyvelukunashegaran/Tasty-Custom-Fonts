@@ -163,17 +163,7 @@ final class AssetService
             return true;
         }
 
-        $written = $this->storage->writeAbsoluteFile($path, $this->getVersionedCss());
-
-        if ($logWriteResult) {
-            $this->log->add(
-                $written
-                    ? __('Generated CSS file written successfully.', 'tasty-fonts')
-                    : __('Could not write generated CSS file. Inline fallback will be used.', 'tasty-fonts')
-            );
-        }
-
-        return $written;
+        return $this->writeGeneratedCssFile($state, $logWriteResult);
     }
 
     /**
@@ -222,7 +212,7 @@ final class AssetService
             wp_add_inline_style($handle, $css);
         }
 
-        $this->ensureGeneratedCssFile();
+        $this->writeGeneratedCssFile($state);
     }
 
     /**
@@ -357,5 +347,26 @@ final class AssetService
             'current_hash' => $currentHash,
             'is_current' => $exists && $currentHash === $expectedHash,
         ];
+    }
+
+    private function writeGeneratedCssFile(array $state, bool $logWriteResult = true): bool
+    {
+        $path = (string) ($state['path'] ?? '');
+
+        if ($path === '' || !empty($state['is_current'])) {
+            return $path !== '' && !empty($state['is_current']);
+        }
+
+        $written = $this->storage->writeAbsoluteFile($path, $this->getVersionedCss());
+
+        if ($logWriteResult) {
+            $this->log->add(
+                $written
+                    ? __('Generated CSS file written successfully.', 'tasty-fonts')
+                    : __('Could not write generated CSS file. Inline fallback will be used.', 'tasty-fonts')
+            );
+        }
+
+        return $written;
     }
 }

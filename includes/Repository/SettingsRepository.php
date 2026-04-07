@@ -62,9 +62,14 @@ final class SettingsRepository
         'body_fallback' => 'sans-serif',
         'monospace_fallback' => 'monospace',
     ];
+    private ?array $settingsCache = null;
 
     public function getSettings(): array
     {
+        if ($this->settingsCache !== null) {
+            return $this->settingsCache;
+        }
+
         $settings = wp_parse_args(
             $this->getOptionArray(self::OPTION_SETTINGS, self::LEGACY_OPTION_SETTINGS),
             self::DEFAULT_SETTINGS
@@ -105,7 +110,7 @@ final class SettingsRepository
         $settings['family_font_displays'] = $this->normalizeFamilyFontDisplays($settings['family_font_displays'] ?? []);
         $settings['delete_uploaded_files_on_uninstall'] = !empty($settings['delete_uploaded_files_on_uninstall']);
 
-        return $settings;
+        return $this->cacheSettings($settings);
     }
 
     public function saveSettings(array $input): array
@@ -221,7 +226,9 @@ final class SettingsRepository
             $googleApiKeyData = $this->persistGoogleApiKeyData($googleApiKeyData);
         }
 
-        return $this->mergeGoogleApiKeyDataIntoSettings($this->withoutGoogleApiKeyData($settings), $googleApiKeyData);
+        return $this->cacheSettings(
+            $this->mergeGoogleApiKeyDataIntoSettings($this->withoutGoogleApiKeyData($settings), $googleApiKeyData)
+        );
     }
 
     public function getRoles(array $catalog): array
@@ -620,7 +627,7 @@ final class SettingsRepository
         update_option(self::OPTION_SETTINGS, $settings, false);
         $googleApiKeyData = $this->persistGoogleApiKeyData($googleApiKeyData);
 
-        return $this->mergeGoogleApiKeyDataIntoSettings($settings, $googleApiKeyData);
+        return $this->cacheSettings($this->mergeGoogleApiKeyDataIntoSettings($settings, $googleApiKeyData));
     }
 
     private function getGoogleApiKeyDataFromOptions(array $settings = []): array
@@ -643,8 +650,16 @@ final class SettingsRepository
         $googleApiKeyData = $this->normalizeGoogleApiKeyData($googleApiKeyData);
 
         update_option(self::OPTION_GOOGLE_API_KEY_DATA, $googleApiKeyData, false);
+        $this->settingsCache = null;
 
         return $googleApiKeyData;
+    }
+
+    private function cacheSettings(array $settings): array
+    {
+        $this->settingsCache = $settings;
+
+        return $this->settingsCache;
     }
 
     private function mergeGoogleApiKeyDataIntoSettings(array $settings, array $googleApiKeyData): array

@@ -10,7 +10,9 @@ Author URI: https://github.com/sathyvelukunashegaran
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: tasty-fonts
+Domain Path: /languages
 Requires at least: 6.1
+Tested up to: 6.9.4
 Requires PHP: 8.1
 */
 

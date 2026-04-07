@@ -139,6 +139,31 @@ $tests['settings_repository_updates_google_key_status_without_rewriting_main_set
     );
 };
 
+$tests['settings_repository_reuses_request_scoped_settings_until_a_write_invalidates_the_cache'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $optionStore[SettingsRepository::OPTION_SETTINGS] = [
+        'preview_sentence' => 'Original preview',
+        'font_display' => 'swap',
+    ];
+
+    $settings = new SettingsRepository();
+    $first = $settings->getSettings();
+
+    $optionStore[SettingsRepository::OPTION_SETTINGS]['preview_sentence'] = 'Changed underneath cache';
+    $second = $settings->getSettings();
+
+    assertSameValue('Original preview', $first['preview_sentence'], 'Initial settings reads should normalize the stored option value.');
+    assertSameValue('Original preview', $second['preview_sentence'], 'Subsequent settings reads in the same request should reuse the normalized cache.');
+
+    $settings->saveSettings(['preview_sentence' => 'Saved preview']);
+    $afterSave = $settings->getSettings();
+
+    assertSameValue('Saved preview', $afterSave['preview_sentence'], 'Settings writes should refresh the request-scoped cache.');
+};
+
 $tests['settings_repository_persists_delete_files_on_uninstall_preference'] = static function (): void {
     resetTestState();
 
@@ -531,6 +556,49 @@ $tests['asset_service_refresh_generated_assets_invalidates_caches_and_queues_css
         $transientStore['tasty_fonts_regenerate_css_queued'] ?? null,
         'Refreshing generated assets should set a short-lived cron guard transient.'
     );
+};
+
+$tests['asset_service_enqueue_inlines_css_and_rewrites_the_generated_file_when_the_stored_hash_is_stale'] = static function (): void {
+    resetTestState();
+
+    global $enqueuedStyles;
+    global $inlineStyles;
+    global $optionStore;
+
+    $optionStore[SettingsRepository::OPTION_SETTINGS] = [
+        'auto_apply_roles' => false,
+        'css_delivery_mode' => 'file',
+        'font_display' => 'swap',
+        'minify_css_output' => false,
+        'preview_sentence' => '',
+        'family_fallbacks' => [],
+        'family_font_displays' => [],
+    ];
+    $optionStore[SettingsRepository::OPTION_ROLES] = [];
+
+    $services = makeServiceGraph();
+    $generatedPath = $services['storage']->getGeneratedCssPath();
+
+    add_filter(
+        'tasty_fonts_generated_css',
+        static fn (string $css): string => $css . "\nbody{color:red;}"
+    );
+
+    assertSameValue(true, is_string($generatedPath) && $generatedPath !== '', 'The generated CSS path should be available for file delivery.');
+
+    if (is_string($generatedPath)) {
+        file_put_contents($generatedPath, '/* stale */');
+    }
+
+    $services['assets']->enqueue('tasty-fonts-runtime');
+
+    assertSameValue(
+        '',
+        (string) ($enqueuedStyles['tasty-fonts-runtime']['src'] ?? ''),
+        'Stale generated CSS should fall back to inline delivery for the current request.'
+    );
+    assertContainsValue('body{color:red;}', (string) ($inlineStyles['tasty-fonts-runtime'] ?? ''), 'Inline fallback should include the generated runtime CSS payload.');
+    assertContainsValue('/* Version: ', (string) file_get_contents((string) $generatedPath), 'Stale generated CSS should be rewritten with the versioned file payload.');
 };
 
 $tests['asset_service_applies_generated_css_filter_before_caching'] = static function (): void {

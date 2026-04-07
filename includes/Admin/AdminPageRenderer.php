@@ -3613,6 +3613,8 @@ final class AdminPageRenderer
 
     private function renderCodePreviewScene(string $previewText, array $roles, bool $monospaceRoleEnabled): void
     {
+        $editorPreviewHeadingId = 'tasty-fonts-preview-code-editor-heading';
+        $blockPreviewHeadingId = 'tasty-fonts-preview-code-block-heading';
         ?>
         <div class="tasty-fonts-preview-code-workspace">
             <aside class="tasty-fonts-preview-code-overview">
@@ -3653,7 +3655,7 @@ final class AdminPageRenderer
                         </div>
                         <div class="tasty-fonts-preview-code-window-tab">
                             <span class="dashicons dashicons-media-code" aria-hidden="true"></span>
-                            <span data-role-preview="body">typography-preview.tsx</span>
+                            <span id="<?php echo esc_attr($editorPreviewHeadingId); ?>" data-role-preview="body">typography-preview.tsx</span>
                         </div>
                         <div class="tasty-fonts-preview-code-window-tools">
                             <span class="tasty-fonts-preview-code-badge">TSX</span>
@@ -3662,7 +3664,7 @@ final class AdminPageRenderer
                     </div>
 
                     <div class="tasty-fonts-preview-code-panel tasty-fonts-preview-code-panel--editor" data-role-preview="monospace">
-                        <div class="tasty-fonts-preview-code-lines" aria-label="<?php esc_attr_e('Editor preview', 'tasty-fonts'); ?>">
+                        <div class="tasty-fonts-preview-code-lines" aria-label="<?php esc_attr_e('Editor preview', 'tasty-fonts'); ?>" aria-labelledby="<?php echo esc_attr($editorPreviewHeadingId); ?>">
                             <div class="tasty-fonts-preview-code-line">
                                 <span class="tasty-fonts-preview-code-line-number">01</span>
                                 <span class="tasty-fonts-preview-code-line-content"><span class="tasty-fonts-preview-token-comment">// Typography tokens wired into the UI preview</span></span>
@@ -3712,13 +3714,13 @@ final class AdminPageRenderer
                     <div class="tasty-fonts-preview-code-block-head">
                         <div class="tasty-fonts-preview-code-block-head-copy">
                             <span class="tasty-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Published Code Block', 'tasty-fonts'); ?></span>
-                            <h4 class="tasty-fonts-preview-code-block-title" data-role-preview="heading"><?php esc_html_e('Front-end snippet with readable line height and punctuation', 'tasty-fonts'); ?></h4>
+                            <h4 id="<?php echo esc_attr($blockPreviewHeadingId); ?>" class="tasty-fonts-preview-code-block-title" data-role-preview="heading"><?php esc_html_e('Front-end snippet with readable line height and punctuation', 'tasty-fonts'); ?></h4>
                         </div>
                         <span class="tasty-fonts-preview-code-badge tasty-fonts-preview-code-badge--light">CSS</span>
                     </div>
 
                     <div class="tasty-fonts-preview-code-panel tasty-fonts-preview-code-panel--block" data-role-preview="monospace">
-                        <div class="tasty-fonts-preview-code-lines" aria-label="<?php esc_attr_e('Published code block preview', 'tasty-fonts'); ?>">
+                        <div class="tasty-fonts-preview-code-lines" aria-label="<?php esc_attr_e('Published code block preview', 'tasty-fonts'); ?>" aria-labelledby="<?php echo esc_attr($blockPreviewHeadingId); ?>">
                             <div class="tasty-fonts-preview-code-line">
                                 <span class="tasty-fonts-preview-code-line-number">01</span>
                                 <span class="tasty-fonts-preview-code-line-content"><span class="tasty-fonts-preview-token-selector">.wp-block-code code</span> <span class="tasty-fonts-preview-token-punctuation">{</span></span>
@@ -3796,7 +3798,12 @@ final class AdminPageRenderer
             return;
         }
         ?>
-        <div class="tasty-fonts-page-notice tasty-fonts-inline-note<?php echo esc_attr($toneClass); ?>">
+        <div
+            class="tasty-fonts-page-notice tasty-fonts-inline-note<?php echo esc_attr($toneClass); ?>"
+            role="<?php echo esc_attr((string) ($notice['tone'] ?? '') === 'warning' ? 'alert' : 'status'); ?>"
+            aria-live="<?php echo esc_attr((string) ($notice['tone'] ?? '') === 'warning' ? 'assertive' : 'polite'); ?>"
+            aria-atomic="true"
+        >
             <?php if ($title !== ''): ?>
                 <strong><?php echo esc_html($title); ?></strong>
             <?php endif; ?>
@@ -3837,7 +3844,36 @@ final class AdminPageRenderer
 
     private function renderHelpTip(string $copy, string $label = ''): void
     {
-        unset($copy, $label);
+        $copy = trim($copy);
+        $label = trim($label);
+
+        if ($this->trainingWheelsOff || $copy === '') {
+            return;
+        }
+
+        $ariaLabel = $label !== ''
+            ? sprintf(__('More information about %s', 'tasty-fonts'), $label)
+            : __('More information', 'tasty-fonts');
+        ?>
+        <span class="tasty-fonts-help-wrap">
+            <button
+                type="button"
+                class="tasty-fonts-help-button"
+                data-help-tooltip="<?php echo esc_attr($copy); ?>"
+                aria-label="<?php echo esc_attr($ariaLabel); ?>"
+                aria-controls="tasty-fonts-help-tooltip-layer"
+                aria-expanded="false"
+            >
+                <span class="tasty-fonts-help-glyph" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" focusable="false" aria-hidden="true">
+                        <circle cx="8" cy="8" r="6.25"></circle>
+                        <path d="M6.6 6.2a1.8 1.8 0 0 1 3.1 1.3c0 1.3-1.3 1.7-1.7 2.5"></path>
+                        <circle class="tasty-fonts-help-glyph-dot" cx="8" cy="11.45" r="0.8"></circle>
+                    </svg>
+                </span>
+            </button>
+        </span>
+        <?php
     }
 
     private function buildLibraryCategoryOptions(): array
@@ -3914,6 +3950,7 @@ final class AdminPageRenderer
     {
         $label = (string) ($panel['label'] ?? '');
         $target = (string) ($panel['target'] ?? '');
+        $headingId = $target !== '' ? $this->buildElementId($target . '-label', 'tasty-fonts-code-panel-label') : 'tasty-fonts-code-panel-label';
         $value = (string) ($panel['value'] ?? '');
         $preserveDisplayFormat = !empty($options['preserve_display_format']);
         $displayValue = $preserveDisplayFormat ? $value : $this->formatSnippetForDisplay($value);
@@ -3924,7 +3961,7 @@ final class AdminPageRenderer
         $readableTarget = $target !== '' ? $target . '-readable' : '';
         ?>
         <div class="tasty-fonts-code-panel-head">
-            <span><?php echo esc_html($label); ?></span>
+            <span id="<?php echo esc_attr($headingId); ?>"><?php echo esc_html($label); ?></span>
             <div class="tasty-fonts-code-panel-actions">
                 <?php if ($canToggleReadableView): ?>
                     <button
@@ -3949,13 +3986,20 @@ final class AdminPageRenderer
                 ></button>
             </div>
         </div>
-        <div class="tasty-fonts-code-panel-body" data-snippet-display>
-            <pre class="tasty-fonts-output" data-snippet-view="raw"><code id="<?php echo esc_attr($target); ?>" class="tasty-fonts-output-code"><?php $this->renderHighlightedSnippet($displayValue); ?></code></pre>
+        <div class="tasty-fonts-code-panel-body" data-snippet-display aria-labelledby="<?php echo esc_attr($headingId); ?>">
+            <pre class="tasty-fonts-output" data-snippet-view="raw" aria-labelledby="<?php echo esc_attr($headingId); ?>"><code id="<?php echo esc_attr($target); ?>" class="tasty-fonts-output-code"><?php $this->renderHighlightedSnippet($displayValue); ?></code></pre>
             <?php if ($canToggleReadableView): ?>
-                <pre class="tasty-fonts-output" data-snippet-view="readable" hidden><code id="<?php echo esc_attr($readableTarget); ?>" class="tasty-fonts-output-code"><?php $this->renderHighlightedSnippet($readableDisplayValue); ?></code></pre>
+                <pre class="tasty-fonts-output" data-snippet-view="readable" aria-labelledby="<?php echo esc_attr($headingId); ?>" hidden><code id="<?php echo esc_attr($readableTarget); ?>" class="tasty-fonts-output-code"><?php $this->renderHighlightedSnippet($readableDisplayValue); ?></code></pre>
             <?php endif; ?>
         </div>
         <?php
+    }
+
+    private function buildElementId(string $value, string $fallback): string
+    {
+        $sanitized = strtolower(trim(preg_replace('/[^a-zA-Z0-9_-]+/', '-', $value) ?? '', '-'));
+
+        return $sanitized !== '' ? $sanitized : $fallback;
     }
 
     private function formatSnippetForDisplay(string $value): string
