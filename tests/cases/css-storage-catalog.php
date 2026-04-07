@@ -79,7 +79,7 @@ $tests['css_builder_builds_role_class_snippets_when_class_output_is_enabled'] = 
     assertContainsValue(".font-monospace {\n  font-family: monospace;\n}", $css, 'Role class output should emit the optional monospace class when the feature is enabled.');
 };
 
-$tests['css_builder_omits_role_class_snippets_when_apply_sitewide_is_off'] = static function (): void {
+$tests['css_builder_emits_role_class_snippets_from_draft_roles_when_apply_sitewide_is_off'] = static function (): void {
     $builder = new CssBuilder();
     $roles = [
         'heading' => 'Inter',
@@ -90,7 +90,8 @@ $tests['css_builder_omits_role_class_snippets_when_apply_sitewide_is_off'] = sta
 
     $css = $builder->buildRoleClassSnippet($roles, false, ['auto_apply_roles' => false, 'class_output_mode' => 'roles']);
 
-    assertSameValue('', $css, 'Role classes should be unavailable while Apply Sitewide is off.');
+    assertContainsValue('.font-heading', $css, 'Role classes should still be emitted from the saved role draft while Apply Sitewide is off.');
+    assertContainsValue('.font-body', $css, 'Role classes should still include the body role while Apply Sitewide is off.');
 };
 
 $tests['css_builder_builds_family_class_snippets_for_runtime_visible_families'] = static function (): void {
@@ -181,6 +182,39 @@ $tests['css_builder_includes_class_output_in_generated_css_when_enabled'] = stat
 
     assertContainsValue('@font-face', $css, 'Generated CSS should continue to include font faces when class output is enabled.');
     assertContainsValue(".font-inter {\n  font-family: \"Inter\", sans-serif;\n}", $css, 'Generated CSS should append family classes when class output mode enables them.');
+};
+
+$tests['css_builder_includes_role_class_output_in_generated_css_when_enabled'] = static function (): void {
+    $builder = new CssBuilder();
+    $catalog = [
+        'Inter' => [
+            'family' => 'Inter',
+            'faces' => [[
+                'family' => 'Inter',
+                'weight' => '400',
+                'style' => 'normal',
+                'files' => ['woff2' => 'https://example.com/fonts/inter.woff2'],
+            ]],
+        ],
+    ];
+    $roles = [
+        'heading' => 'Inter',
+        'body' => '',
+        'heading_fallback' => 'serif',
+        'body_fallback' => 'sans-serif',
+    ];
+    $settings = [
+        'font_display' => 'swap',
+        'auto_apply_roles' => true,
+        'minify_css_output' => false,
+        'class_output_mode' => 'roles',
+    ];
+
+    $css = $builder->build($catalog, $roles, $settings, $catalog);
+
+    assertContainsValue('@font-face', $css, 'Generated CSS should continue to include font faces when role class output is enabled.');
+    assertContainsValue(".font-heading {\n  font-family: \"Inter\", serif;\n}", $css, 'Generated CSS should append the heading role class when role class output mode is enabled.');
+    assertContainsValue(".font-body {\n  font-family: sans-serif;\n}", $css, 'Generated CSS should append the body role class when role class output mode is enabled.');
 };
 
 $tests['css_builder_omits_class_output_in_generated_css_when_disabled'] = static function (): void {

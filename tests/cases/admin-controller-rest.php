@@ -434,6 +434,75 @@ $tests['admin_controller_builds_font_class_output_panel_content'] = static funct
     assertNotContainsValue('.font-draft-only', $panelValues['classes'] ?? '', 'The Font Classes panel should skip library-only families so it matches frontend output.');
 };
 
+$tests['admin_controller_builds_role_class_output_panel_content_when_apply_sitewide_is_off'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $roles = [
+        'heading' => 'Inter',
+        'body' => '',
+        'heading_fallback' => 'serif',
+        'body_fallback' => 'sans-serif',
+    ];
+    $settings = $services['settings']->saveSettings([
+        'class_output_mode' => 'roles',
+        'minify_css_output' => '0',
+    ]);
+
+    $panels = invokePrivateMethod(
+        $services['controller'],
+        'buildOutputPanels',
+        [$roles, $settings, $services['catalog']->getCatalog()]
+    );
+    $panelValues = [];
+
+    foreach ($panels as $panel) {
+        $panelValues[(string) ($panel['key'] ?? '')] = (string) ($panel['value'] ?? '');
+    }
+
+    assertContainsValue('.font-heading', $panelValues['classes'] ?? '', 'The Font Classes panel should expose role classes from the saved draft even when Apply Sitewide is off.');
+    assertNotContainsValue('Role classes are unavailable while Apply Sitewide is off.', $panelValues['classes'] ?? '', 'The Font Classes panel should no longer claim role classes are unavailable when Apply Sitewide is off.');
+};
+
+$tests['admin_controller_builds_output_panels_from_applied_roles_when_sitewide_is_on'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $draftRoles = [
+        'heading' => 'Draft Heading',
+        'body' => 'Draft Body',
+        'heading_fallback' => 'serif',
+        'body_fallback' => 'sans-serif',
+    ];
+    $appliedRoles = [
+        'heading' => 'Live Heading',
+        'body' => 'Live Body',
+        'heading_fallback' => 'serif',
+        'body_fallback' => 'sans-serif',
+    ];
+    $settings = $services['settings']->saveSettings([
+        'class_output_mode' => 'roles',
+        'minify_css_output' => '0',
+    ]);
+    $settings['auto_apply_roles'] = true;
+
+    $panels = invokePrivateMethod(
+        $services['controller'],
+        'buildOutputPanels',
+        [$draftRoles, $settings, $services['catalog']->getCatalog(), $appliedRoles]
+    );
+    $panelValues = [];
+
+    foreach ($panels as $panel) {
+        $panelValues[(string) ($panel['key'] ?? '')] = (string) ($panel['value'] ?? '');
+    }
+
+    assertContainsValue('"Live Heading"', $panelValues['usage'] ?? '', 'Sitewide-on snippet output should use applied roles for the site snippet.');
+    assertContainsValue('"Live Heading"', $panelValues['classes'] ?? '', 'Sitewide-on snippet output should use applied roles for the font classes panel.');
+    assertContainsValue("Live Heading\nLive Body", ($panelValues['names'] ?? ''), 'Sitewide-on snippet output should use applied roles for the font names panel.');
+    assertNotContainsValue('"Draft Heading"', $panelValues['classes'] ?? '', 'Sitewide-on font classes should not reflect unsaved draft-only role changes.');
+};
+
 $tests['admin_controller_exposes_class_output_mode_in_page_context'] = static function (): void {
     resetTestState();
 

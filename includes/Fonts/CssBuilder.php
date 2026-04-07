@@ -148,10 +148,10 @@ final class CssBuilder
 
     public function buildRoleClassSnippet(array $roles, bool $includeMonospace = false, array $settings = []): string
     {
-        if (empty($settings['auto_apply_roles'])) {
-            return '';
-        }
-
+        // Class utilities are intentionally self-contained: emit direct stacks instead of
+        // var(--font-*) references so themes can use them without also opting into role variables.
+        // Unlike role variables, fallback-only classes are still useful utilities, so keep
+        // emitting them even when no family is selected for a given role.
         $lines = [
             '.font-heading {',
             '  font-family: ' . FontUtils::buildFontStack(

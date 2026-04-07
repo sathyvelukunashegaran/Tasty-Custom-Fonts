@@ -878,7 +878,7 @@ final class AdminController
             'delete_uploaded_files_on_uninstall' => !empty($settings['delete_uploaded_files_on_uninstall']),
             'diagnostic_items' => $this->buildDiagnosticItems($assetStatus, $storage, $settings, $counts),
             'overview_metrics' => $this->buildOverviewMetrics($counts),
-            'output_panels' => $this->buildOutputPanels($roles, $settings, $catalog),
+            'output_panels' => $this->buildOutputPanels($roles, $settings, $catalog, $appliedRoles),
             'generated_css_panel' => $this->buildGeneratedCssPanel($settings),
             'preview_panels' => $this->buildPreviewPanels(),
             'local_environment_notice' => $localEnvironmentNotice,
@@ -981,11 +981,22 @@ final class AdminController
         ];
     }
 
-    private function buildOutputPanels(array $roles, array $settings, array $catalog = []): array
+    private function buildOutputPanels(
+        array $roles,
+        array $settings,
+        array $catalog = [],
+        array $appliedRoles = []
+    ): array
     {
         $minifyOutput = !empty($settings['minify_css_output']);
         $includeMonospace = !empty($settings['monospace_role_enabled']);
+        // Family class snippets should mirror frontend-servable families, so they exclude
+        // library-only entries. The existing role and variable snippets still use the full
+        // catalog to preserve their current preview behavior and variable output shape.
         $runtimeFamilies = $this->filterRuntimeVisibleFamilies($catalog);
+        $snippetRoles = !empty($settings['auto_apply_roles']) && $appliedRoles !== []
+            ? $appliedRoles
+            : $roles;
 
         return [
             [
@@ -993,7 +1004,7 @@ final class AdminController
                 'label' => __('Site Snippet', 'tasty-fonts'),
                 'target' => 'tasty-fonts-output-usage',
                 'value' => $this->cssBuilder->formatOutput(
-                    $this->cssBuilder->buildRoleUsageSnippet($roles, $includeMonospace, $catalog, $settings),
+                    $this->cssBuilder->buildRoleUsageSnippet($snippetRoles, $includeMonospace, $catalog, $settings),
                     $minifyOutput
                 ),
                 'active' => true,
@@ -1003,7 +1014,7 @@ final class AdminController
                 'label' => __('CSS Variables', 'tasty-fonts'),
                 'target' => 'tasty-fonts-output-vars',
                 'value' => $this->cssBuilder->formatOutput(
-                    $this->cssBuilder->buildRoleVariableSnippet($roles, $includeMonospace, $catalog, $settings),
+                    $this->cssBuilder->buildRoleVariableSnippet($snippetRoles, $includeMonospace, $catalog, $settings),
                     $minifyOutput
                 ),
                 'active' => false,
@@ -1012,21 +1023,21 @@ final class AdminController
                 'key' => 'classes',
                 'label' => __('Font Classes', 'tasty-fonts'),
                 'target' => 'tasty-fonts-output-classes',
-                'value' => $this->buildClassOutputPanelContent($roles, $settings, $runtimeFamilies, $includeMonospace),
+                'value' => $this->buildClassOutputPanelContent($snippetRoles, $settings, $runtimeFamilies, $includeMonospace),
                 'active' => false,
             ],
             [
                 'key' => 'stacks',
                 'label' => __('Font Stacks', 'tasty-fonts'),
                 'target' => 'tasty-fonts-output-stacks',
-                'value' => $this->cssBuilder->buildRoleStackSnippet($roles, $includeMonospace),
+                'value' => $this->cssBuilder->buildRoleStackSnippet($snippetRoles, $includeMonospace),
                 'active' => false,
             ],
             [
                 'key' => 'names',
                 'label' => __('Font Names', 'tasty-fonts'),
                 'target' => 'tasty-fonts-output-names',
-                'value' => $this->cssBuilder->buildRoleNameSnippet($roles, $includeMonospace),
+                'value' => $this->cssBuilder->buildRoleNameSnippet($snippetRoles, $includeMonospace),
                 'active' => false,
             ],
         ];
@@ -1314,10 +1325,6 @@ final class AdminController
 
         if ($content !== '') {
             return $content;
-        }
-
-        if (in_array($mode, ['roles', 'all'], true) && empty($settings['auto_apply_roles'])) {
-            return __('Role classes are unavailable while Apply Sitewide is off.', 'tasty-fonts');
         }
 
         return __('No font classes are available for the current output mode.', 'tasty-fonts');
