@@ -11,7 +11,10 @@ All notable changes to this project will be documented in this file.
 - Added a pull request and branch CI workflow that runs PHP lint, the PHP test suite, and the JavaScript contract tests before changes reach release tagging.
 - Added configurable extended font-output variable controls in Output Settings, including optional global weight tokens, role aliases, and category aliases for sans, serif, and mono stacks.
 - Added a unified output-settings workflow with quick presets, separate class and variable master toggles, and granular class controls for roles, aliases, categories, and family utilities.
-- Added dedicated admin context/view builders plus section renderers for the studio, preview, tools, library, and activity areas so the dashboard no longer depends on one monolithic page-render method.
+- Added dedicated admin context/view builders plus section renderers for the studio, preview, tools, settings, diagnostics, library, and activity areas so the dashboard no longer depends on one monolithic page-render method.
+- Added first-class top-level admin tabs for Deploy Fonts, Font Library, Settings, and Advanced Tools, with canonical deep links and keyboard-friendly tab navigation across the dashboard.
+- Added REST-backed autosave for the Output and Behavior settings panels so delivery, output, and plugin behavior changes save without full page submits.
+- Added copy-to-clipboard actions for copyable diagnostics fields so generated stylesheet paths and other system details can be reused directly from the dashboard.
 - Added a reusable uninstall handler and expanded storage/runtime coverage for generated CSS delivery, provider directories, and uninstall cleanup flows.
 
 ### Changed
@@ -28,10 +31,13 @@ All notable changes to this project will be documented in this file.
 - Updated admin import summaries and search-result metadata to use translation-safe plural strings instead of English-only suffix assembly.
 - Added request-scope settings caching and reused generated stylesheet state during stale-file fallback delivery to reduce repeated normalization and file-state work during admin requests.
 - Refactored the admin page pipeline so `AdminController` delegates page-context construction, `AdminPageRenderer` acts as a thin shell, and renderer sections/templates own the dashboard composition in smaller files.
-- Split the remaining oversized admin rendering helpers into focused library, preview, and tools renderers with dedicated family-card templates so renderer files stay within the accepted size limits without changing dashboard output.
+- Split the remaining oversized admin rendering helpers into focused library, preview, tools, settings, and diagnostics renderers with dedicated family-card templates so renderer files stay within the accepted size limits without changing dashboard output.
 - Reworked font storage and generated stylesheet handling to use provider-specific upload directories, a hidden generated CSS directory, optional inline CSS delivery, and matching preload behavior.
 - Standardized dashboard terminology and polished the admin CSS against the shared token system so deployment controls, library cards, activity filters, and notice surfaces stay visually aligned.
 - Grouped the per-family utility class toggle with the other class-output controls and added direct view-builder coverage for output quick-mode selection across all preset states.
+- Updated admin asset versioning in local environments to append file modification times so CSS and JavaScript changes refresh immediately without waiting on plugin version bumps.
+- Updated generated stylesheet diagnostics and runtime enqueueing to recognize legacy `uploads/fonts/tasty-fonts.css` files, report their metadata, and migrate current files into the canonical `.generated` location when possible.
+- Updated local-environment notices and related activity actions to deep-link into the new Settings > Behavior surface instead of the older advanced-tools query flow.
 
 ### Fixed
 
@@ -43,6 +49,7 @@ All notable changes to this project will be documented in this file.
 - Removed unreachable admin-controller fallback branches and softened local-environment notice copy so Plugin Behavior guidance uses plain-language site-request and certificate wording.
 - Fixed uninstall cleanup so generated CSS, synced block-editor font families, and plugin-managed runtime transients are removed consistently.
 - Aligned role alias utility classes with the variable-output guards so empty body or monospace assignments no longer emit fallback-only alias selectors.
+- Fixed plugin boot sequencing so the `tasty-fonts` textdomain loads before runtime, admin, and REST hooks register, keeping translated strings available earlier in the request lifecycle.
 
 ## [1.5.1] - 2026-04-07
 

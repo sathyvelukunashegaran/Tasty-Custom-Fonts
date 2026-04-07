@@ -23,6 +23,9 @@ final class AdminPageViewBuilder
     public function build(array $context): array
     {
         $storage = is_array($context['storage'] ?? null) ? $context['storage'] : null;
+        $currentPage = (string) ($context['current_page'] ?? AdminController::PAGE_ROLES);
+        $currentPageSlug = (string) ($context['current_page_slug'] ?? '');
+        $pageUrls = is_array($context['page_urls'] ?? null) ? $context['page_urls'] : [];
         $catalog = is_array($context['catalog'] ?? null) ? $context['catalog'] : [];
         $libraryCategoryOptions = $this->buildLibraryCategoryOptions();
         $availableFamilies = is_array($context['available_families'] ?? null) ? $context['available_families'] : array_keys($catalog);
@@ -115,6 +118,8 @@ final class AdminPageViewBuilder
             ? $appliedRoles
             : $roles;
         $hasPendingLiveRoleChanges = $applyEverywhere && !$this->roleSetsMatch($roles, $appliedRoles, $monospaceRoleEnabled);
+        $previewHasDraftRoleChanges = !$this->roleSetsMatch($previewRoles, $roles, $monospaceRoleEnabled);
+        $previewHasPendingLiveRoleChanges = $applyEverywhere && !$this->roleSetsMatch($previewRoles, $appliedRoles, $monospaceRoleEnabled);
         $previewHeadingStack = FontUtils::buildFontStack(
             (string) ($previewRoles['heading'] ?? ''),
             (string) ($previewRoles['heading_fallback'] ?? 'sans-serif')
@@ -190,6 +195,7 @@ final class AdminPageViewBuilder
             $classOutputOptions['category_mono'] = $classOutputCategoryMonoEnabled;
         }
         $outputQuickMode = $this->deriveOutputQuickMode($classOutputOptions, $extendedVariableOptions);
+        $advancedOutputControlsExpanded = $outputQuickMode === 'custom';
 
         $view = get_defined_vars();
         unset($view['context']);
@@ -201,26 +207,6 @@ final class AdminPageViewBuilder
     {
         $classEnabled = !empty($classOutputOptions['enabled']);
         $variableEnabled = !empty($extendedVariableOptions['enabled']);
-
-        if ($classEnabled && $variableEnabled) {
-            $classAllEnabled = !empty($classOutputOptions['role_heading'])
-                && !empty($classOutputOptions['role_body'])
-                && !empty($classOutputOptions['role_alias_interface'])
-                && !empty($classOutputOptions['role_alias_ui'])
-                && !empty($classOutputOptions['category_sans'])
-                && !empty($classOutputOptions['category_serif'])
-                && !empty($classOutputOptions['families'])
-                && (!array_key_exists('role_monospace', $classOutputOptions) || !empty($classOutputOptions['role_monospace']))
-                && (!array_key_exists('role_alias_code', $classOutputOptions) || !empty($classOutputOptions['role_alias_code']))
-                && (!array_key_exists('category_mono', $classOutputOptions) || !empty($classOutputOptions['category_mono']));
-            $variableAllEnabled = !empty($extendedVariableOptions['weight_tokens'])
-                && !empty($extendedVariableOptions['role_aliases'])
-                && !empty($extendedVariableOptions['category_sans'])
-                && !empty($extendedVariableOptions['category_serif'])
-                && (!array_key_exists('category_mono', $extendedVariableOptions) || !empty($extendedVariableOptions['category_mono']));
-
-            return ($classAllEnabled && $variableAllEnabled) ? 'all' : 'custom';
-        }
 
         if ($variableEnabled && !$classEnabled) {
             return 'variables';

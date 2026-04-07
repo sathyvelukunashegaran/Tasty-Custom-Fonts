@@ -25,7 +25,7 @@
                                                     data-tab-group="preview"
                                                     data-tab-target="<?php echo esc_attr((string) $panel['key']); ?>"
                                                     aria-selected="<?php echo !empty($panel['active']) ? 'true' : 'false'; ?>"
-                                                    tabindex="<?php echo !empty($panel['active']) ? '0' : '-1'; ?>"
+                                                    tabindex="0"
                                                     aria-controls="<?php echo esc_attr($panelId); ?>"
                                                     role="tab"
                                                 >
@@ -95,13 +95,17 @@
                                                     type="button"
                                                     class="button"
                                                     data-preview-save-draft
+                                                    aria-disabled="<?php echo $previewHasDraftRoleChanges ? 'false' : 'true'; ?>"
+                                                    <?php disabled(!$previewHasDraftRoleChanges); ?>
                                                 >
                                                     <?php esc_html_e('Save Draft', 'tasty-fonts'); ?>
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    class="button button-primary"
+                                                    class="button<?php echo $previewHasPendingLiveRoleChanges ? ' button-primary is-pending-live-change' : ''; ?>"
                                                     data-preview-apply-live
+                                                    aria-disabled="<?php echo $previewHasPendingLiveRoleChanges ? 'false' : 'true'; ?>"
+                                                    <?php disabled(!$previewHasPendingLiveRoleChanges); ?>
                                                 >
                                                     <?php esc_html_e('Publish Roles', 'tasty-fonts'); ?>
                                                 </button>

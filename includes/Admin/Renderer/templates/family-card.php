@@ -9,11 +9,11 @@
         >
             <div class="tasty-fonts-row-head">
                 <div class="tasty-fonts-font-card-main">
-                            <div class="tasty-fonts-font-card-top">
-                                <div class="tasty-fonts-font-primary">
-                                    <div class="tasty-fonts-font-identity">
-                                        <div class="tasty-fonts-font-identity-top">
-                                            <div class="tasty-fonts-font-title-row">
+                    <div class="tasty-fonts-font-card-top tasty-fonts-font-card-overview-main">
+                        <div class="tasty-fonts-font-primary">
+                            <div class="tasty-fonts-font-identity">
+                                <div class="tasty-fonts-font-identity-top">
+                                    <div class="tasty-fonts-font-title-row">
                                         <h3><?php echo esc_html($familyName); ?></h3>
                                         <button
                                             type="button"
@@ -21,7 +21,7 @@
                                             data-copy-text="<?php echo esc_attr($defaultStack); ?>"
                                             data-copy-success="<?php esc_attr_e('Font stack copied.', 'tasty-fonts'); ?>"
                                             data-copy-static-label="1"
-                                            aria-label="<?php echo esc_attr(sprintf(__('Copy font stack for %s', 'tasty-fonts'), $familyName)); ?>"
+                                            aria-label="<?php echo esc_attr(sprintf(__('Copy font stack for %1$s: %2$s', 'tasty-fonts'), $familyName, $defaultStack)); ?>"
                                             title="<?php echo esc_attr($defaultStack); ?>"
                                         >
                                             <?php echo esc_html($defaultStack); ?>
@@ -63,16 +63,16 @@
                             <?php if ($visibleFaceSummaryLabels !== [] || $deliveryCount === 1): ?>
                                 <div class="tasty-fonts-font-loaded <?php echo $deliveryCount === 1 ? 'tasty-fonts-font-loaded--inline' : ''; ?>">
                                     <?php if ($visibleFaceSummaryLabels !== []): ?>
-                                    <div class="tasty-fonts-face-pills">
-                                        <?php foreach ($visibleFaceSummaryLabels as $label): ?>
-                                            <span class="tasty-fonts-face-pill"><?php echo esc_html($label); ?></span>
-                                        <?php endforeach; ?>
-                                        <?php if ($hiddenFaceSummaryCount > 0): ?>
-                                            <span class="tasty-fonts-face-pill is-muted">
-                                                <?php echo esc_html(sprintf(__('+%d more', 'tasty-fonts'), $hiddenFaceSummaryCount)); ?>
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
+                                        <div class="tasty-fonts-face-pills">
+                                            <?php foreach ($visibleFaceSummaryLabels as $label): ?>
+                                                <span class="tasty-fonts-face-pill"><?php echo esc_html($label); ?></span>
+                                            <?php endforeach; ?>
+                                            <?php if ($hiddenFaceSummaryCount > 0): ?>
+                                                <span class="tasty-fonts-face-pill is-muted">
+                                                    <?php echo esc_html(sprintf(__('+%d more', 'tasty-fonts'), $hiddenFaceSummaryCount)); ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if ($deliveryCount === 1): ?>
                                         <div class="tasty-fonts-badges tasty-fonts-badges--library-inline">
@@ -103,85 +103,81 @@
                                 ><?php echo esc_html($facePreviewText); ?></div>
                             </div>
                         </div>
+                    </div>
 
-                            <div class="tasty-fonts-font-sidebar">
-                                <div class="tasty-fonts-family-meta">
-                                    <?php
-                                    $runtimeStateHelp = $canChangePublishState
-                                        ? __('Published serves this family at runtime. In Library Only keeps it in the library without loading it on the site.', 'tasty-fonts')
-                                        : __('This family is live through the current active roles, so its runtime state is managed automatically.', 'tasty-fonts');
-                                    ?>
-                                    <form method="post" class="tasty-fonts-family-publish-state-form" data-family-publish-state-form>
+                    <div class="tasty-fonts-font-card-sidecolumn">
+                        <div class="tasty-fonts-font-sidebar">
+                            <div class="tasty-fonts-family-meta">
+                                <form method="post" class="tasty-fonts-family-publish-state-form" data-family-publish-state-form>
+                                    <div class="tasty-fonts-inline-field-row">
+                                        <label class="tasty-fonts-inline-field tasty-fonts-inline-field--select">
+                                            <span class="tasty-fonts-field-label-row">
+                                                <span class="tasty-fonts-field-label-text"><?php esc_html_e('Runtime State', 'tasty-fonts'); ?></span>
+                                                <?php if (!$canChangePublishState): ?>
+                                                    <span class="tasty-fonts-field-status tasty-fonts-field-status--auto" title="<?php esc_attr_e('Auto-managed', 'tasty-fonts'); ?>"><?php esc_html_e('Auto', 'tasty-fonts'); ?></span>
+                                                <?php endif; ?>
+                                            </span>
+                                            <span class="tasty-fonts-select-field">
+                                                <select
+                                                    class="tasty-fonts-family-publish-state-selector"
+                                                    data-family-slug="<?php echo esc_attr($familySlug); ?>"
+                                                    data-saved-value="<?php echo esc_attr($publishState === 'library_only' ? 'library_only' : 'published'); ?>"
+                                                    <?php disabled(!$canChangePublishState); ?>
+                                                >
+                                                    <option value="published" <?php selected($publishState !== 'library_only'); ?>><?php esc_html_e('Published', 'tasty-fonts'); ?></option>
+                                                    <option value="library_only" <?php selected($publishState === 'library_only'); ?>><?php esc_html_e('In Library Only', 'tasty-fonts'); ?></option>
+                                                </select>
+                                            </span>
+                                        </label>
+                                        <button
+                                            type="submit"
+                                            class="button tasty-fonts-family-save-button tasty-fonts-family-publish-state-save"
+                                            data-family-publish-state-save
+                                            <?php $this->renderPassiveHelpAttributes(__('Save runtime state changes.', 'tasty-fonts')); ?>
+                                            aria-label="<?php echo esc_attr__('Save runtime state', 'tasty-fonts'); ?>"
+                                            <?php disabled(!$canChangePublishState); ?>
+                                        >
+                                            <span class="screen-reader-text"><?php esc_html_e('Save State', 'tasty-fonts'); ?></span>
+                                        </button>
+                                    </div>
+                                    <p class="tasty-fonts-family-publish-state-feedback" data-family-publish-state-feedback aria-live="polite" hidden></p>
+                                </form>
+
+                                <?php if (count($availableDeliveries) > 1): ?>
+                                    <form method="post" class="tasty-fonts-family-delivery-form" data-family-delivery-form>
                                         <div class="tasty-fonts-inline-field-row">
                                             <label class="tasty-fonts-inline-field tasty-fonts-inline-field--select">
-                                                <span class="tasty-fonts-field-label-row">
-                                                    <span class="tasty-fonts-field-label-text"><?php esc_html_e('Runtime State', 'tasty-fonts'); ?></span>
-                                                    <?php if (!$canChangePublishState): ?>
-                                                        <span class="tasty-fonts-field-status tasty-fonts-field-status--auto" title="<?php esc_attr_e('Auto-managed', 'tasty-fonts'); ?>"><?php esc_html_e('Auto', 'tasty-fonts'); ?></span>
-                                                    <?php endif; ?>
-                                                    <?php $this->renderHelpTip($runtimeStateHelp, __('Runtime State', 'tasty-fonts')); ?>
-                                                </span>
+                                                <span class="tasty-fonts-field-label"><?php esc_html_e('Live Delivery', 'tasty-fonts'); ?></span>
                                                 <span class="tasty-fonts-select-field">
                                                     <select
-                                                        class="tasty-fonts-family-publish-state-selector"
+                                                        class="tasty-fonts-family-delivery-selector"
                                                         data-family-slug="<?php echo esc_attr($familySlug); ?>"
-                                                        data-saved-value="<?php echo esc_attr($publishState === 'library_only' ? 'library_only' : 'published'); ?>"
-                                                        <?php disabled(!$canChangePublishState); ?>
+                                                        data-saved-value="<?php echo esc_attr($activeDeliveryId); ?>"
                                                     >
-                                                        <option value="published" <?php selected($publishState !== 'library_only'); ?>><?php esc_html_e('Published', 'tasty-fonts'); ?></option>
-                                                        <option value="library_only" <?php selected($publishState === 'library_only'); ?>><?php esc_html_e('In Library Only', 'tasty-fonts'); ?></option>
+                                                        <?php foreach ($availableDeliveries as $profile): ?>
+                                                            <?php if (!is_array($profile)) { continue; } ?>
+                                                            <option value="<?php echo esc_attr((string) ($profile['id'] ?? '')); ?>" <?php selected($activeDeliveryId, (string) ($profile['id'] ?? '')); ?>>
+                                                                <?php echo esc_html($this->translateProfileLabel((string) ($profile['label'] ?? ''))); ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
                                                     </select>
                                                 </span>
                                             </label>
                                             <button
                                                 type="submit"
-                                                class="button tasty-fonts-family-save-button tasty-fonts-family-publish-state-save"
-                                                data-family-publish-state-save
-                                                <?php $this->renderPassiveHelpAttributes(__('Save runtime state changes.', 'tasty-fonts')); ?>
-                                                aria-label="<?php echo esc_attr__('Save runtime state', 'tasty-fonts'); ?>"
-                                                <?php disabled(!$canChangePublishState); ?>
+                                                class="button tasty-fonts-family-delivery-save"
+                                                data-family-delivery-save
                                             >
-                                                <span class="screen-reader-text"><?php esc_html_e('Save State', 'tasty-fonts'); ?></span>
+                                                <?php esc_html_e('Switch Delivery', 'tasty-fonts'); ?>
                                             </button>
                                         </div>
-                                        <p class="tasty-fonts-family-publish-state-feedback" data-family-publish-state-feedback aria-live="polite" hidden></p>
+                                        <p class="tasty-fonts-family-delivery-feedback" data-family-delivery-feedback aria-live="polite" hidden></p>
                                     </form>
+                                <?php endif; ?>
 
-                                    <?php if (count($availableDeliveries) > 1): ?>
-                                        <form method="post" class="tasty-fonts-family-delivery-form" data-family-delivery-form>
-                                            <div class="tasty-fonts-inline-field-row">
-                                                <label class="tasty-fonts-inline-field tasty-fonts-inline-field--select">
-                                                    <span class="tasty-fonts-field-label"><?php esc_html_e('Live Delivery', 'tasty-fonts'); ?></span>
-                                                    <span class="tasty-fonts-select-field">
-                                                        <select
-                                                            class="tasty-fonts-family-delivery-selector"
-                                                            data-family-slug="<?php echo esc_attr($familySlug); ?>"
-                                                            data-saved-value="<?php echo esc_attr($activeDeliveryId); ?>"
-                                                        >
-                                                            <?php foreach ($availableDeliveries as $profile): ?>
-                                                                <?php if (!is_array($profile)) { continue; } ?>
-                                                                <option value="<?php echo esc_attr((string) ($profile['id'] ?? '')); ?>" <?php selected($activeDeliveryId, (string) ($profile['id'] ?? '')); ?>>
-                                                                    <?php echo esc_html($this->translateProfileLabel((string) ($profile['label'] ?? ''))); ?>
-                                                                </option>
-                                                            <?php endforeach; ?>
-                                                        </select>
-                                                    </span>
-                                                </label>
-                                                <button
-                                                    type="submit"
-                                                    class="button tasty-fonts-family-delivery-save"
-                                                    data-family-delivery-save
-                                                >
-                                                    <?php esc_html_e('Switch Delivery', 'tasty-fonts'); ?>
-                                                </button>
-                                            </div>
-                                            <p class="tasty-fonts-family-delivery-feedback" data-family-delivery-feedback aria-live="polite" hidden></p>
-                                        </form>
-                                    <?php endif; ?>
-
-                                    <form method="post" class="tasty-fonts-family-fallback-form" data-family-fallback-form>
-                                        <?php wp_nonce_field('tasty_fonts_save_family_fallback'); ?>
-                                        <input type="hidden" name="tasty_fonts_save_family_fallback" value="1">
+                                <form method="post" class="tasty-fonts-family-fallback-form" data-family-fallback-form>
+                                    <?php wp_nonce_field('tasty_fonts_save_family_fallback'); ?>
+                                    <input type="hidden" name="tasty_fonts_save_family_fallback" value="1">
                                     <input type="hidden" name="tasty_fonts_family_name" value="<?php echo esc_attr($familyName); ?>">
                                     <div class="tasty-fonts-inline-field-row">
                                         <label class="tasty-fonts-inline-field tasty-fonts-inline-field--select">
@@ -220,7 +216,7 @@
                                         <div class="tasty-fonts-inline-field-row">
                                             <label class="tasty-fonts-inline-field tasty-fonts-inline-field--select">
                                                 <span class="tasty-fonts-field-label"><?php esc_html_e('Font Display', 'tasty-fonts'); ?></span>
-                                                <span class="tasty-fonts-select-field">
+                                                <span class="tasty-fonts-select-field tasty-fonts-select-field--clearable">
                                                     <select
                                                         name="tasty_fonts_family_font_display"
                                                         class="tasty-fonts-font-display-selector"
@@ -233,6 +229,16 @@
                                                             </option>
                                                         <?php endforeach; ?>
                                                     </select>
+                                                    <button
+                                                        type="button"
+                                                        class="tasty-fonts-select-clear"
+                                                        data-clear-select-button
+                                                        data-clear-value="inherit"
+                                                        aria-label="<?php esc_attr_e('Clear font display override', 'tasty-fonts'); ?>"
+                                                        hidden
+                                                    >
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
                                                 </span>
                                             </label>
                                             <button
@@ -254,153 +260,178 @@
                                     </div>
                                 <?php endif; ?>
                             </div>
+                        </div>
 
-                            <div class="tasty-fonts-font-actions">
-                                <div class="tasty-fonts-font-actions-primary <?php echo $monospaceRoleEnabled ? 'has-monospace-role' : ''; ?>">
+                        <div class="tasty-fonts-font-actions">
+                            <div class="tasty-fonts-font-actions-primary <?php echo $monospaceRoleEnabled ? 'has-monospace-role' : ''; ?>">
+                                <button
+                                    type="button"
+                                    class="button tasty-fonts-role-assign-button tasty-fonts-role-assign-button--icon-only tasty-fonts-font-action-button--icon <?php echo $isHeading ? 'is-current' : ''; ?>"
+                                    data-role-assign="heading"
+                                    data-font-family="<?php echo esc_attr($familyName); ?>"
+                                    data-active-label="<?php echo esc_attr__('Heading selected', 'tasty-fonts'); ?>"
+                                    data-idle-label="<?php echo esc_attr__('Select heading', 'tasty-fonts'); ?>"
+                                    data-active-help="<?php echo esc_attr__('This family is currently selected for the heading role.', 'tasty-fonts'); ?>"
+                                    data-idle-help="<?php echo esc_attr__('Assign this family to the heading role and save the updated roles immediately. Apply sitewide when you want the live CSS updated.', 'tasty-fonts'); ?>"
+                                    <?php $this->renderPassiveHelpAttributes($isHeading ? __('This family is currently selected for the heading role.', 'tasty-fonts') : __('Assign this family to the heading role and save the updated roles immediately. Apply sitewide when you want the live CSS updated.', 'tasty-fonts')); ?>
+                                    aria-label="<?php echo esc_attr($isHeading ? __('Heading selected', 'tasty-fonts') : __('Select heading', 'tasty-fonts')); ?>"
+                                    aria-pressed="<?php echo esc_attr($isHeading ? 'true' : 'false'); ?>"
+                                >
+                                    <span class="screen-reader-text tasty-fonts-role-assign-label"><?php echo $isHeading ? esc_html__('Heading selected', 'tasty-fonts') : esc_html__('Select heading', 'tasty-fonts'); ?></span>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="button tasty-fonts-role-assign-button tasty-fonts-role-assign-button--icon-only tasty-fonts-font-action-button--icon <?php echo $isBody ? 'is-current' : ''; ?>"
+                                    data-role-assign="body"
+                                    data-font-family="<?php echo esc_attr($familyName); ?>"
+                                    data-active-label="<?php echo esc_attr__('Body selected', 'tasty-fonts'); ?>"
+                                    data-idle-label="<?php echo esc_attr__('Select body', 'tasty-fonts'); ?>"
+                                    data-active-help="<?php echo esc_attr__('This family is currently selected for the body role.', 'tasty-fonts'); ?>"
+                                    data-idle-help="<?php echo esc_attr__('Assign this family to the body role and save the updated roles immediately. Apply sitewide when you want the live CSS updated.', 'tasty-fonts'); ?>"
+                                    <?php $this->renderPassiveHelpAttributes($isBody ? __('This family is currently selected for the body role.', 'tasty-fonts') : __('Assign this family to the body role and save the updated roles immediately. Apply sitewide when you want the live CSS updated.', 'tasty-fonts')); ?>
+                                    aria-label="<?php echo esc_attr($isBody ? __('Body selected', 'tasty-fonts') : __('Select body', 'tasty-fonts')); ?>"
+                                    aria-pressed="<?php echo esc_attr($isBody ? 'true' : 'false'); ?>"
+                                >
+                                    <span class="screen-reader-text tasty-fonts-role-assign-label"><?php echo $isBody ? esc_html__('Body selected', 'tasty-fonts') : esc_html__('Select body', 'tasty-fonts'); ?></span>
+                                </button>
+                                <?php if ($monospaceRoleEnabled): ?>
                                     <button
                                         type="button"
-                                        class="button tasty-fonts-role-assign-button tasty-fonts-role-assign-button--icon-only tasty-fonts-font-action-button--icon <?php echo $isHeading ? 'is-current' : ''; ?>"
-                                        data-role-assign="heading"
+                                        class="button tasty-fonts-role-assign-button tasty-fonts-role-assign-button--icon-only tasty-fonts-font-action-button--icon <?php echo $isMonospace ? 'is-current' : ''; ?>"
+                                        data-role-assign="monospace"
                                         data-font-family="<?php echo esc_attr($familyName); ?>"
-                                        data-active-label="<?php echo esc_attr__('Heading selected', 'tasty-fonts'); ?>"
-                                        data-idle-label="<?php echo esc_attr__('Select heading', 'tasty-fonts'); ?>"
-                                        data-active-help="<?php echo esc_attr__('This family is currently selected for the heading role.', 'tasty-fonts'); ?>"
-                                        data-idle-help="<?php echo esc_attr__('Assign this family to the heading role and save the updated roles immediately. Apply sitewide when you want the live CSS updated.', 'tasty-fonts'); ?>"
-                                        <?php $this->renderPassiveHelpAttributes($isHeading ? __('This family is currently selected for the heading role.', 'tasty-fonts') : __('Assign this family to the heading role and save the updated roles immediately. Apply sitewide when you want the live CSS updated.', 'tasty-fonts')); ?>
-                                        aria-label="<?php echo esc_attr($isHeading ? __('Heading selected', 'tasty-fonts') : __('Select heading', 'tasty-fonts')); ?>"
-                                        aria-pressed="<?php echo esc_attr($isHeading ? 'true' : 'false'); ?>"
+                                        data-active-label="<?php echo esc_attr__('Monospace selected', 'tasty-fonts'); ?>"
+                                        data-idle-label="<?php echo esc_attr__('Select monospace', 'tasty-fonts'); ?>"
+                                        data-active-help="<?php echo esc_attr__('This family is currently selected for the monospace role.', 'tasty-fonts'); ?>"
+                                        data-idle-help="<?php echo esc_attr__('Assign this family to the monospace role and save the updated roles immediately. Apply sitewide when you want the live CSS updated.', 'tasty-fonts'); ?>"
+                                        <?php $this->renderPassiveHelpAttributes($isMonospace ? __('This family is currently selected for the monospace role.', 'tasty-fonts') : __('Assign this family to the monospace role and save the updated roles immediately. Apply sitewide when you want the live CSS updated.', 'tasty-fonts')); ?>
+                                        aria-label="<?php echo esc_attr($isMonospace ? __('Monospace selected', 'tasty-fonts') : __('Select monospace', 'tasty-fonts')); ?>"
+                                        aria-pressed="<?php echo esc_attr($isMonospace ? 'true' : 'false'); ?>"
                                     >
-                                        <span class="screen-reader-text tasty-fonts-role-assign-label"><?php echo $isHeading ? esc_html__('Heading selected', 'tasty-fonts') : esc_html__('Select heading', 'tasty-fonts'); ?></span>
+                                        <span class="screen-reader-text tasty-fonts-role-assign-label"><?php echo $isMonospace ? esc_html__('Monospace selected', 'tasty-fonts') : esc_html__('Select monospace', 'tasty-fonts'); ?></span>
                                     </button>
+                                <?php endif; ?>
+                                <button
+                                    type="button"
+                                    class="button tasty-fonts-disclosure-button tasty-fonts-disclosure-button--card tasty-fonts-font-action-button--details"
+                                    data-disclosure-toggle="<?php echo esc_attr($detailsId); ?>"
+                                    data-expanded-label="<?php echo esc_attr__('Details', 'tasty-fonts'); ?>"
+                                    data-collapsed-label="<?php echo esc_attr__('Details', 'tasty-fonts'); ?>"
+                                    aria-expanded="<?php echo esc_attr($isExpanded ? 'true' : 'false'); ?>"
+                                    aria-controls="<?php echo esc_attr($detailsId); ?>"
+                                    aria-label="<?php echo esc_attr__('Details', 'tasty-fonts'); ?>"
+                                >
+                                    <?php esc_html_e('Details', 'tasty-fonts'); ?>
+                                </button>
+                                <form method="post" class="tasty-fonts-delete-form">
+                                    <?php wp_nonce_field('tasty_fonts_delete_family'); ?>
+                                    <input type="hidden" name="tasty_fonts_delete_family" value="1">
+                                    <input type="hidden" name="tasty_fonts_family_slug" value="<?php echo esc_attr($familySlug); ?>">
                                     <button
-                                        type="button"
-                                        class="button tasty-fonts-role-assign-button tasty-fonts-role-assign-button--icon-only tasty-fonts-font-action-button--icon <?php echo $isBody ? 'is-current' : ''; ?>"
-                                        data-role-assign="body"
-                                        data-font-family="<?php echo esc_attr($familyName); ?>"
-                                        data-active-label="<?php echo esc_attr__('Body selected', 'tasty-fonts'); ?>"
-                                        data-idle-label="<?php echo esc_attr__('Select body', 'tasty-fonts'); ?>"
-                                        data-active-help="<?php echo esc_attr__('This family is currently selected for the body role.', 'tasty-fonts'); ?>"
-                                        data-idle-help="<?php echo esc_attr__('Assign this family to the body role and save the updated roles immediately. Apply sitewide when you want the live CSS updated.', 'tasty-fonts'); ?>"
-                                        <?php $this->renderPassiveHelpAttributes($isBody ? __('This family is currently selected for the body role.', 'tasty-fonts') : __('Assign this family to the body role and save the updated roles immediately. Apply sitewide when you want the live CSS updated.', 'tasty-fonts')); ?>
-                                        aria-label="<?php echo esc_attr($isBody ? __('Body selected', 'tasty-fonts') : __('Select body', 'tasty-fonts')); ?>"
-                                        aria-pressed="<?php echo esc_attr($isBody ? 'true' : 'false'); ?>"
+                                        type="submit"
+                                        class="button tasty-fonts-button-danger tasty-fonts-font-action-button--icon <?php echo $isRoleFamily ? 'is-disabled' : ''; ?>"
+                                        data-delete-family="<?php echo esc_attr($familyName); ?>"
+                                        data-delete-ready-title="<?php echo esc_attr(__('Delete this family and remove its managed files from the site library.', 'tasty-fonts')); ?>"
+                                        <?php foreach ($deleteBlockedMessages as $key => $message): ?>
+                                            data-delete-blocked-<?php echo esc_attr($key); ?>="<?php echo esc_attr($message); ?>"
+                                        <?php endforeach; ?>
+                                        <?php $this->renderPassiveHelpAttributes($deleteBlockedMessage !== '' ? $deleteBlockedMessage : __('Delete this family and remove its managed files from the site library.', 'tasty-fonts')); ?>
+                                        aria-label="<?php echo esc_attr__('Delete family', 'tasty-fonts'); ?>"
+                                        aria-disabled="<?php echo esc_attr($isRoleFamily ? 'true' : 'false'); ?>"
+                                        <?php if ($deleteBlockedMessage !== '') : ?>
+                                            data-delete-blocked="<?php echo esc_attr($deleteBlockedMessage); ?>"
+                                        <?php endif; ?>
                                     >
-                                        <span class="screen-reader-text tasty-fonts-role-assign-label"><?php echo $isBody ? esc_html__('Body selected', 'tasty-fonts') : esc_html__('Select body', 'tasty-fonts'); ?></span>
+                                        <span class="screen-reader-text"><?php esc_html_e('Delete family', 'tasty-fonts'); ?></span>
                                     </button>
-                                    <?php if ($monospaceRoleEnabled): ?>
-                                        <button
-                                            type="button"
-                                            class="button tasty-fonts-role-assign-button tasty-fonts-role-assign-button--icon-only tasty-fonts-font-action-button--icon <?php echo $isMonospace ? 'is-current' : ''; ?>"
-                                            data-role-assign="monospace"
-                                            data-font-family="<?php echo esc_attr($familyName); ?>"
-                                            data-active-label="<?php echo esc_attr__('Monospace selected', 'tasty-fonts'); ?>"
-                                            data-idle-label="<?php echo esc_attr__('Select monospace', 'tasty-fonts'); ?>"
-                                            data-active-help="<?php echo esc_attr__('This family is currently selected for the monospace role.', 'tasty-fonts'); ?>"
-                                            data-idle-help="<?php echo esc_attr__('Assign this family to the monospace role and save the updated roles immediately. Apply sitewide when you want the live CSS updated.', 'tasty-fonts'); ?>"
-                                            <?php $this->renderPassiveHelpAttributes($isMonospace ? __('This family is currently selected for the monospace role.', 'tasty-fonts') : __('Assign this family to the monospace role and save the updated roles immediately. Apply sitewide when you want the live CSS updated.', 'tasty-fonts')); ?>
-                                            aria-label="<?php echo esc_attr($isMonospace ? __('Monospace selected', 'tasty-fonts') : __('Select monospace', 'tasty-fonts')); ?>"
-                                            aria-pressed="<?php echo esc_attr($isMonospace ? 'true' : 'false'); ?>"
-                                        >
-                                            <span class="screen-reader-text tasty-fonts-role-assign-label"><?php echo $isMonospace ? esc_html__('Monospace selected', 'tasty-fonts') : esc_html__('Select monospace', 'tasty-fonts'); ?></span>
-                                        </button>
-                                    <?php endif; ?>
-                                    <button
-                                        type="button"
-                                        class="button tasty-fonts-disclosure-button tasty-fonts-disclosure-button--card tasty-fonts-font-action-button--details"
-                                        data-disclosure-toggle="<?php echo esc_attr($detailsId); ?>"
-                                        data-expanded-label="<?php echo esc_attr__('Details', 'tasty-fonts'); ?>"
-                                        data-collapsed-label="<?php echo esc_attr__('Details', 'tasty-fonts'); ?>"
-                                        aria-expanded="<?php echo esc_attr($isExpanded ? 'true' : 'false'); ?>"
-                                        aria-controls="<?php echo esc_attr($detailsId); ?>"
-                                        aria-label="<?php echo esc_attr__('Details', 'tasty-fonts'); ?>"
-                                    >
-                                        <?php esc_html_e('Details', 'tasty-fonts'); ?>
-                                    </button>
-                                    <form method="post" class="tasty-fonts-delete-form">
-                                        <?php wp_nonce_field('tasty_fonts_delete_family'); ?>
-                                        <input type="hidden" name="tasty_fonts_delete_family" value="1">
-                                        <input type="hidden" name="tasty_fonts_family_slug" value="<?php echo esc_attr($familySlug); ?>">
-                                        <button
-                                            type="submit"
-                                            class="button tasty-fonts-button-danger tasty-fonts-font-action-button--icon <?php echo $isRoleFamily ? 'is-disabled' : ''; ?>"
-                                            data-delete-family="<?php echo esc_attr($familyName); ?>"
-                                            data-delete-ready-title="<?php echo esc_attr(__('Delete this family and remove its managed files from the site library.', 'tasty-fonts')); ?>"
-                                            <?php foreach ($deleteBlockedMessages as $key => $message): ?>
-                                                data-delete-blocked-<?php echo esc_attr($key); ?>="<?php echo esc_attr($message); ?>"
-                                            <?php endforeach; ?>
-                                            <?php $this->renderPassiveHelpAttributes($deleteBlockedMessage !== '' ? $deleteBlockedMessage : __('Delete this family and remove its managed files from the site library.', 'tasty-fonts')); ?>
-                                            aria-label="<?php echo esc_attr__('Delete family', 'tasty-fonts'); ?>"
-                                            aria-disabled="<?php echo esc_attr($isRoleFamily ? 'true' : 'false'); ?>"
-                                            <?php if ($deleteBlockedMessage !== '') : ?>
-                                                data-delete-blocked="<?php echo esc_attr($deleteBlockedMessage); ?>"
-                                            <?php endif; ?>
-                                        >
-                                            <span class="screen-reader-text"><?php esc_html_e('Delete family', 'tasty-fonts'); ?></span>
-                                        </button>
-                                    </form>
-                                </div>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="<?php echo esc_attr($detailsId); ?>" class="tasty-fonts-family-details<?php echo $familyCssVariableSnippets !== [] ? ' has-family-css-variables' : ''; ?>" <?php echo $isExpanded ? '' : 'hidden'; ?>>
-                <section class="tasty-fonts-detail-group tasty-fonts-detail-group--profiles">
-                    <div class="tasty-fonts-detail-group-head">
-                        <div class="tasty-fonts-detail-group-copy">
-                            <span class="tasty-fonts-panel-kicker"><?php esc_html_e('Saved', 'tasty-fonts'); ?></span>
-                            <h4><?php esc_html_e('Delivery Profiles', 'tasty-fonts'); ?></h4>
-                        </div>
-                        <span class="tasty-fonts-badge">
-                            <?php echo esc_html(sprintf(_n('%d profile', '%d profiles', count($availableDeliveries), 'tasty-fonts'), count($availableDeliveries))); ?>
-                        </span>
-                    </div>
-                    <div class="tasty-fonts-detail-card-list tasty-fonts-detail-card-list--deliveries">
-                        <?php foreach ($availableDeliveries as $profile): ?>
-                            <?php if (!is_array($profile)) { continue; } ?>
-                            <?php $this->renderDeliveryProfileCard($familyName, $familySlug, $activeDeliveryId, $publishState, $profile); ?>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
-
-                <?php if ($familyCssVariableSnippets !== []): ?>
-                    <section class="tasty-fonts-detail-group tasty-fonts-detail-group--variables">
-                        <div class="tasty-fonts-detail-group-head">
-                            <div class="tasty-fonts-detail-group-copy">
-                                <span class="tasty-fonts-panel-kicker"><?php esc_html_e('Saved', 'tasty-fonts'); ?></span>
-                                <h4><?php esc_html_e('CSS Variables', 'tasty-fonts'); ?></h4>
+            <div id="<?php echo esc_attr($detailsId); ?>" class="tasty-fonts-family-details" <?php echo $isExpanded ? '' : 'hidden'; ?>>
+                <div class="tasty-fonts-family-details-grid">
+                    <div class="tasty-fonts-family-details-primary">
+                        <section class="tasty-fonts-detail-group tasty-fonts-detail-group--profiles">
+                            <div class="tasty-fonts-detail-group-head">
+                                <div class="tasty-fonts-detail-group-copy">
+                                    <h4><?php esc_html_e('Delivery Profiles', 'tasty-fonts'); ?></h4>
+                                </div>
+                                <span class="tasty-fonts-badge">
+                                    <?php echo esc_html(sprintf(_n('%d profile', '%d profiles', count($availableDeliveries), 'tasty-fonts'), count($availableDeliveries))); ?>
+                                </span>
                             </div>
-                            <span class="tasty-fonts-badge">
-                                <?php echo esc_html(sprintf(_n('%d variable', '%d variables', count($familyCssVariableSnippets), 'tasty-fonts'), count($familyCssVariableSnippets))); ?>
-                            </span>
-                        </div>
-                        <div class="tasty-fonts-detail-files">
-                            <div class="tasty-fonts-role-stacks tasty-fonts-role-stacks--selection">
-                                <?php foreach ($familyCssVariableSnippets as $label => $snippet) : ?>
-                                    <?php $this->renderFaceVariableCopyPill(__($label, 'tasty-fonts'), (string) $snippet, __('CSS variable copied.', 'tasty-fonts')); ?>
+                            <div class="tasty-fonts-detail-card-list tasty-fonts-detail-card-list--deliveries">
+                                <?php foreach ($availableDeliveries as $profile): ?>
+                                    <?php if (!is_array($profile)) { continue; } ?>
+                                    <?php $this->renderDeliveryProfileCard($familyName, $familySlug, $activeDeliveryId, $publishState, $profile); ?>
                                 <?php endforeach; ?>
                             </div>
+                        </section>
+                    </div>
+
+                    <?php if ($familyCssVariableSnippets !== [] || $familyCssClassSnippets !== []): ?>
+                        <div class="tasty-fonts-family-details-utilities">
+                            <?php if ($familyCssVariableSnippets !== []): ?>
+                                <section class="tasty-fonts-detail-group tasty-fonts-detail-group--variables tasty-fonts-detail-group--utility">
+                                    <div class="tasty-fonts-detail-group-head">
+                                        <div class="tasty-fonts-detail-group-copy">
+                                            <h4><?php esc_html_e('CSS Variables', 'tasty-fonts'); ?></h4>
+                                        </div>
+                                        <span class="tasty-fonts-badge">
+                                            <?php echo esc_html(sprintf(_n('%d variable', '%d variables', count($familyCssVariableSnippets), 'tasty-fonts'), count($familyCssVariableSnippets))); ?>
+                                        </span>
+                                    </div>
+                                    <div class="tasty-fonts-detail-files tasty-fonts-detail-files--utility">
+                                        <div class="tasty-fonts-role-stacks tasty-fonts-role-stacks--selection">
+                                            <?php foreach ($familyCssVariableSnippets as $label => $snippet) : ?>
+                                                <?php $this->renderFaceVariableCopyPill(__($label, 'tasty-fonts'), (string) $snippet, __('CSS variable copied.', 'tasty-fonts')); ?>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                </section>
+                            <?php endif; ?>
+
+                            <?php if ($familyCssClassSnippets !== []): ?>
+                                <section class="tasty-fonts-detail-group tasty-fonts-detail-group--classes tasty-fonts-detail-group--utility">
+                                    <div class="tasty-fonts-detail-group-head">
+                                        <div class="tasty-fonts-detail-group-copy">
+                                            <h4><?php esc_html_e('Font Classes', 'tasty-fonts'); ?></h4>
+                                        </div>
+                                        <span class="tasty-fonts-badge">
+                                            <?php echo esc_html(sprintf(_n('%d class', '%d classes', count($familyCssClassSnippets), 'tasty-fonts'), count($familyCssClassSnippets))); ?>
+                                        </span>
+                                    </div>
+                                    <div class="tasty-fonts-detail-files tasty-fonts-detail-files--utility">
+                                        <div class="tasty-fonts-role-stacks tasty-fonts-role-stacks--selection">
+                                            <?php foreach ($familyCssClassSnippets as $label => $snippet) : ?>
+                                                <?php $this->renderFaceVariableCopyPill(__($label, 'tasty-fonts'), (string) $snippet, __('Font class copied.', 'tasty-fonts')); ?>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                </section>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <section class="tasty-fonts-detail-group tasty-fonts-detail-group--faces">
+                        <div class="tasty-fonts-detail-group-head">
+                            <div class="tasty-fonts-detail-group-copy">
+                                <h4><?php esc_html_e('Font Faces', 'tasty-fonts'); ?></h4>
+                            </div>
+                            <span class="tasty-fonts-badge">
+                                <?php echo esc_html(sprintf(_n('%d face', '%d faces', $faceCount, 'tasty-fonts'), $faceCount)); ?>
+                            </span>
+                        </div>
+                        <div class="tasty-fonts-detail-card-list tasty-fonts-detail-card-list--faces">
+                            <?php foreach ($activeFaces as $face): ?>
+                                <?php if (!is_array($face)) { continue; } ?>
+                                <?php $this->renderFaceDetailCard($familyName, $familySlug, $defaultStack, $facePreviewText, $faceCount, $assignedRoleKeys, (string) ($family['font_category'] ?? ''), $categoryAliasOwners, $extendedVariableOptions, $activeDelivery, $face, $isMonospace); ?>
+                            <?php endforeach; ?>
                         </div>
                     </section>
-                <?php endif; ?>
-
-                <section class="tasty-fonts-detail-group tasty-fonts-detail-group--faces">
-                    <div class="tasty-fonts-detail-group-head">
-                        <div class="tasty-fonts-detail-group-copy">
-                            <span class="tasty-fonts-panel-kicker"><?php esc_html_e('Saved', 'tasty-fonts'); ?></span>
-                            <h4><?php esc_html_e('Font Faces', 'tasty-fonts'); ?></h4>
-                        </div>
-                        <span class="tasty-fonts-badge">
-                            <?php echo esc_html(sprintf(_n('%d face', '%d faces', $faceCount, 'tasty-fonts'), $faceCount)); ?>
-                        </span>
-                    </div>
-                    <div class="tasty-fonts-detail-card-list tasty-fonts-detail-card-list--faces">
-                        <?php foreach ($activeFaces as $face): ?>
-                            <?php if (!is_array($face)) { continue; } ?>
-                            <?php $this->renderFaceDetailCard($familyName, $familySlug, $defaultStack, $facePreviewText, $faceCount, $assignedRoleKeys, (string) ($family['font_category'] ?? ''), $categoryAliasOwners, $extendedVariableOptions, $activeDelivery, $face, $isMonospace); ?>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
+                </div>
             </div>
         </article>

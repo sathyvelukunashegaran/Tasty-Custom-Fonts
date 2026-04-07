@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 
 const {
     escapeFontFamily,
+    getTabNavigationTargetIndex,
     sanitizeFallback,
     slugify,
 } = require('../../assets/js/admin-contracts.js');
@@ -25,4 +26,15 @@ test('admin contracts escape font family values for CSS usage', () => {
         escapeFontFamily('He said "Hello"\\World'),
         'He said \\"Hello\\"\\\\World'
     );
+});
+
+test('admin contracts resolve keyboard tab navigation targets for tablists', () => {
+    assert.equal(getTabNavigationTargetIndex('ArrowRight', 0, 5), 1);
+    assert.equal(getTabNavigationTargetIndex('ArrowLeft', 0, 5), 4);
+    assert.equal(getTabNavigationTargetIndex('ArrowDown', 3, 5), 4);
+    assert.equal(getTabNavigationTargetIndex('ArrowUp', 3, 5), 2);
+    assert.equal(getTabNavigationTargetIndex('Home', 3, 5), 0);
+    assert.equal(getTabNavigationTargetIndex('End', 1, 5), 4);
+    assert.equal(getTabNavigationTargetIndex('Enter', 1, 5), null);
+    assert.equal(getTabNavigationTargetIndex('ArrowRight', 0, 1), null);
 });

@@ -6,6 +6,13 @@
         ...(config.strings || {}),
         ...(config.runtimeStrings || {}),
     };
+    let currentPage = (() => {
+        const allowedPages = new Set(['roles', 'library', 'settings', 'diagnostics']);
+        const rootPage = document.querySelector('[data-current-page]');
+        const requestedPage = String(config.currentPage || (rootPage ? rootPage.getAttribute('data-current-page') : '') || 'roles').trim();
+
+        return allowedPages.has(requestedPage) ? requestedPage : 'roles';
+    })();
     const trainingWheelsOff = !!config.trainingWheelsOff;
     const wpI18n = window.wp && window.wp.i18n ? window.wp.i18n : {};
     const __ = typeof wpI18n.__ === 'function' ? wpI18n.__ : (text) => text;
@@ -34,7 +41,7 @@
     const roleDeploymentBadge = document.querySelector('[data-role-deployment-badge]');
     const roleDeploymentPill = document.querySelector('[data-role-deployment-pill]');
     const roleDeploymentAnnouncement = document.querySelector('[data-role-deployment-announcement]');
-    const monospaceRoleEnabled = !!config.monospaceRoleEnabled && !!roleMonospace && !!roleMonospaceFallback;
+    let monospaceRoleEnabled = !!config.monospaceRoleEnabled && !!roleMonospace && !!roleMonospaceFallback;
     const headingRoleVariableCopies = Array.from(document.querySelectorAll('[data-role-variable-copy="heading"]'));
     const bodyRoleVariableCopies = Array.from(document.querySelectorAll('[data-role-variable-copy="body"]'));
     const monospaceRoleVariableCopies = Array.from(document.querySelectorAll('[data-role-variable-copy="monospace"]'));
@@ -115,14 +122,17 @@
     const addFontsPanelToggle = document.getElementById('tasty-fonts-add-font-panel-toggle');
     const toastItems = Array.from(document.querySelectorAll('[data-toast]'));
     let helpButtons = [];
-    const helpTooltipLayer = document.getElementById('tasty-fonts-help-tooltip-layer');
+    let helpTooltipLayer = null;
+    let helpTooltipEventsBound = false;
     const activityActorFilter = document.querySelector('[data-activity-actor-filter]');
     const activitySearch = document.querySelector('[data-activity-search]');
     const activityCount = document.querySelector('[data-activity-count]');
     const activityList = document.querySelector('[data-activity-list]');
     const activityFilteredEmpty = document.getElementById('tasty-fonts-activity-empty-filtered');
+    const pillOptionInputs = Array.from(document.querySelectorAll('[data-pill-option-input]'));
+    const pillOptions = Array.from(document.querySelectorAll('[data-pill-option]'));
     const outputQuickModeInputs = Array.from(document.querySelectorAll('[data-output-quick-mode]'));
-    const outputQuickModeOptions = Array.from(document.querySelectorAll('.tasty-fonts-output-quick-option'));
+    const outputAdvancedPanel = document.getElementById('tasty-fonts-advanced-output-controls');
     const outputMasterInputs = {
         classes: document.querySelector('[data-output-master="classes"]'),
         variables: document.querySelector('[data-output-master="variables"]'),
@@ -132,6 +142,7 @@
         variables: document.querySelector('[data-output-panel="variables"]'),
     };
     const outputMonoDependentInputs = Array.from(document.querySelectorAll('[data-output-mono-dependent]'));
+    const settingsAutosaveForms = Array.from(document.querySelectorAll('[data-settings-autosave]'));
 
     let selectedSearchFamily = null;
     let searchResults = [];
@@ -160,8 +171,10 @@
     let previewDirty = false;
     let previewFollowsDraft = false;
     let defaultTrackedUiState = null;
+    const settingsAutosaveDelay = 450;
     const pendingUiStateKey = 'tastyFontsPendingUiState';
     const trackedUiQueryKeys = [
+        'tf_page',
         'tf_advanced',
         'tf_studio',
         'tf_preview',
@@ -171,10 +184,10 @@
         'tf_google_access',
         'tf_adobe_project'
     ];
-    const trackedUiTabGroups = new Set(['studio', 'preview', 'output', 'add-font']);
+    const trackedUiTabGroups = new Set(['page', 'settings', 'diagnostics', 'preview', 'output', 'add-font']);
     const trackedUiDisclosureTargets = new Set([
         'tasty-fonts-role-preview-panel',
-        'tasty-fonts-role-advanced-panel',
+        'tasty-fonts-role-snippets-panel',
         'tasty-fonts-add-font-panel',
         'tasty-fonts-google-access-panel',
         'tasty-fonts-adobe-project-panel'
@@ -252,7 +265,29 @@
         activityCountMultiple: __('%1$d entries', 'tasty-fonts'),
         activityCountFilteredSingle: __('%1$d of %2$d entry', 'tasty-fonts'),
         activityCountFilteredMultiple: __('%1$d of %2$d entries', 'tasty-fonts'),
+        variantCountSingle: __('%d variant', 'tasty-fonts'),
+        variantCountMultiple: __('%d variants', 'tasty-fonts'),
+        requestFailed: __('Request failed.', 'tasty-fonts'),
+        dismissNotification: __('Dismiss notification', 'tasty-fonts'),
+        bunnySourceLabel: __('Bunny Fonts', 'tasty-fonts'),
+        headingVariableTitle: __('Heading font variable: %1$s. Resolved stack: %2$s', 'tasty-fonts'),
+        bodyVariableTitle: __('Body font variable: %1$s. Resolved stack: %2$s', 'tasty-fonts'),
+        monospaceVariableTitle: __('Monospace font variable: %1$s. Resolved stack: %2$s', 'tasty-fonts'),
+        headingFamilyVariableTitle: __('Heading family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s', 'tasty-fonts'),
+        headingFamilyFallbackTitle: __('Heading uses the fallback stack directly: %1$s. Role alias: %2$s', 'tasty-fonts'),
+        bodyFamilyVariableTitle: __('Body family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s', 'tasty-fonts'),
+        bodyFamilyFallbackTitle: __('Body uses the fallback stack directly: %1$s. Role alias: %2$s', 'tasty-fonts'),
+        monospaceFamilyVariableTitle: __('Monospace family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s', 'tasty-fonts'),
+        monospaceFamilyFallbackTitle: __('Monospace uses the fallback stack directly: %1$s. Role alias: %2$s', 'tasty-fonts'),
     };
+
+    function getHelpTooltipLayer() {
+        if (!helpTooltipLayer || !document.body.contains(helpTooltipLayer)) {
+            helpTooltipLayer = document.getElementById('tasty-fonts-help-tooltip-layer');
+        }
+
+        return helpTooltipLayer;
+    }
 
     // Shared helpers
     const slugify = typeof adminContracts.slugify === 'function'
@@ -275,6 +310,28 @@
     const escapeFontFamily = typeof adminContracts.escapeFontFamily === 'function'
         ? adminContracts.escapeFontFamily
         : (family) => String(family || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const getTabNavigationTargetIndex = typeof adminContracts.getTabNavigationTargetIndex === 'function'
+        ? adminContracts.getTabNavigationTargetIndex
+        : (key, currentIndex, count) => {
+            if (typeof currentIndex !== 'number' || typeof count !== 'number' || count < 2 || currentIndex < 0 || currentIndex >= count) {
+                return null;
+            }
+
+            switch (key) {
+                case 'ArrowRight':
+                case 'ArrowDown':
+                    return (currentIndex + 1) % count;
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                    return (currentIndex - 1 + count) % count;
+                case 'Home':
+                    return 0;
+                case 'End':
+                    return count - 1;
+                default:
+                    return null;
+            }
+        };
 
     function buildStack(family, fallback, defaultFallback = 'sans-serif') {
         const sanitizedFallback = sanitizeFallback(fallback, defaultFallback);
@@ -427,6 +484,10 @@
         return error instanceof Error && error.message ? error.message : fallback;
     }
 
+    function defaultRequestFailedMessage() {
+        return getString('requestFailed', 'Request failed.');
+    }
+
     function hasRestConfig() {
         return Boolean(config.restUrl && config.restNonce);
     }
@@ -478,7 +539,7 @@
         const url = buildRestUrl(path, query);
 
         if (!url) {
-            throw new Error(fallbackMessage || 'Request failed.');
+            throw new Error(fallbackMessage || defaultRequestFailedMessage());
         }
 
         const headers = {
@@ -499,10 +560,213 @@
         const payload = await readApiPayload(response);
 
         if (!response.ok) {
-            throw new Error(getApiMessage(payload, fallbackMessage || 'Request failed.'));
+            throw new Error(getApiMessage(payload, fallbackMessage || defaultRequestFailedMessage()));
         }
 
         return payload && typeof payload === 'object' ? payload : {};
+    }
+
+    function getSettingsAutosaveState(form) {
+        if (!form) {
+            return null;
+        }
+
+        if (!form._tastyFontsAutosaveState) {
+            form._tastyFontsAutosaveState = {
+                inFlight: false,
+                queued: false,
+                timer: 0,
+                lastSerialized: ''
+            };
+        }
+
+        return form._tastyFontsAutosaveState;
+    }
+
+    function serializeSettingsForm(form) {
+        const body = {};
+
+        if (!form || !window.FormData) {
+            return body;
+        }
+
+        const formData = new FormData(form);
+
+        formData.forEach((value, key) => {
+            if (
+                key === '_wpnonce'
+                || key === '_wp_http_referer'
+                || key === 'tasty_fonts_save_settings'
+                || key === 'tasty_fonts_output_quick_mode'
+            ) {
+                return;
+            }
+
+            if (typeof value !== 'string') {
+                return;
+            }
+
+            body[key] = value;
+        });
+
+        return body;
+    }
+
+    function syncCheckboxFields(name, checked) {
+        document.querySelectorAll(`input[type="checkbox"][name="${name}"]`).forEach((input) => {
+            input.checked = !!checked;
+        });
+    }
+
+    function syncRadioFields(name, value) {
+        document.querySelectorAll(`input[type="radio"][name="${name}"]`).forEach((input) => {
+            input.checked = input.value === String(value);
+        });
+    }
+
+    function syncMonoDependentControls(enabled) {
+        outputMonoDependentInputs.forEach((input) => {
+            input.disabled = !enabled;
+
+            const label = input.closest('.tasty-fonts-toggle-field');
+
+            if (label) {
+                label.classList.toggle('is-disabled', !enabled);
+            }
+        });
+    }
+
+    function applySavedSettingsState(settings) {
+        if (!settings || typeof settings !== 'object') {
+            return;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(settings, 'css_delivery_mode')) {
+            syncRadioFields('css_delivery_mode', settings.css_delivery_mode || 'file');
+        }
+
+        if (Object.prototype.hasOwnProperty.call(settings, 'font_display')) {
+            syncRadioFields('font_display', settings.font_display || 'optional');
+        }
+
+        [
+            'minify_css_output',
+            'class_output_enabled',
+            'class_output_role_heading_enabled',
+            'class_output_role_body_enabled',
+            'class_output_role_monospace_enabled',
+            'class_output_role_alias_interface_enabled',
+            'class_output_role_alias_ui_enabled',
+            'class_output_role_alias_code_enabled',
+            'class_output_category_sans_enabled',
+            'class_output_category_serif_enabled',
+            'class_output_category_mono_enabled',
+            'class_output_families_enabled',
+            'per_variant_font_variables_enabled',
+            'extended_variable_weight_tokens_enabled',
+            'extended_variable_role_aliases_enabled',
+            'extended_variable_category_sans_enabled',
+            'extended_variable_category_serif_enabled',
+            'extended_variable_category_mono_enabled',
+            'preload_primary_fonts',
+            'remote_connection_hints',
+            'block_editor_font_library_sync_enabled',
+            'delete_uploaded_files_on_uninstall',
+            'training_wheels_off',
+            'monospace_role_enabled'
+        ].forEach((field) => {
+            if (!Object.prototype.hasOwnProperty.call(settings, field)) {
+                return;
+            }
+
+            syncCheckboxFields(field, !!settings[field]);
+        });
+
+        if (Object.prototype.hasOwnProperty.call(settings, 'monospace_role_enabled')) {
+            monospaceRoleEnabled = !!settings.monospace_role_enabled && !!roleMonospace && !!roleMonospaceFallback;
+            syncMonoDependentControls(monospaceRoleEnabled);
+        }
+
+        syncOutputSettingsUi();
+
+        settingsAutosaveForms.forEach((form) => {
+            const state = getSettingsAutosaveState(form);
+
+            if (state) {
+                state.lastSerialized = JSON.stringify(serializeSettingsForm(form));
+            }
+        });
+    }
+
+    async function saveSettingsForm(form) {
+        const state = getSettingsAutosaveState(form);
+
+        if (!form || !state || !hasRestConfig() || !window.fetch) {
+            return false;
+        }
+
+        if (state.timer) {
+            window.clearTimeout(state.timer);
+            state.timer = 0;
+        }
+
+        if (state.inFlight) {
+            state.queued = true;
+            return false;
+        }
+
+        const body = serializeSettingsForm(form);
+        const serialized = JSON.stringify(body);
+
+        if (serialized === state.lastSerialized) {
+            return true;
+        }
+
+        state.inFlight = true;
+        form.setAttribute('aria-busy', 'true');
+
+        try {
+            const payload = await requestJson(getRoutePath('saveSettings', 'settings'), {
+                method: 'PATCH',
+                body,
+                fallbackMessage: getString('settingsSaveError', 'The settings could not be saved.')
+            });
+
+            applySavedSettingsState(payload.settings || {});
+            showToast(payload.message || getString('settingsSaved', 'Plugin settings saved.'), 'success');
+            return true;
+        } catch (error) {
+            showToast(getErrorMessage(error, getString('settingsSaveError', 'The settings could not be saved.')), 'error');
+            return false;
+        } finally {
+            state.inFlight = false;
+            form.removeAttribute('aria-busy');
+
+            if (state.queued) {
+                state.queued = false;
+                state.timer = window.setTimeout(() => {
+                    state.timer = 0;
+                    void saveSettingsForm(form);
+                }, 0);
+            }
+        }
+    }
+
+    function scheduleSettingsAutosave(form) {
+        const state = getSettingsAutosaveState(form);
+
+        if (!form || !state) {
+            return;
+        }
+
+        if (state.timer) {
+            window.clearTimeout(state.timer);
+        }
+
+        state.timer = window.setTimeout(() => {
+            state.timer = 0;
+            void saveSettingsForm(form);
+        }, settingsAutosaveDelay);
     }
 
     function getSessionStorage() {
@@ -595,6 +859,10 @@
         }
 
         switch (group) {
+            case 'page':
+                return String(defaultTrackedUiState.page || '');
+            case 'settings':
+            case 'diagnostics':
             case 'studio':
                 return String(defaultTrackedUiState.studio || '');
             case 'preview':
@@ -636,40 +904,89 @@
             : new URL(locationValue && typeof locationValue.href === 'string' ? locationValue.href : window.location.href);
         const params = url.searchParams;
         const state = {};
-
+        const page = String(params.get('tf_page') || '');
         const studio = String(params.get('tf_studio') || '');
+        const preview = String(params.get('tf_preview') || '');
+        const output = String(params.get('tf_output') || '');
+        const source = String(params.get('tf_source') || '');
         const previewToggle = disclosureToggleByTargetId('tasty-fonts-role-preview-panel');
-        const advancedToggle = disclosureToggleByTargetId('tasty-fonts-role-advanced-panel');
+        const snippetsToggle = disclosureToggleByTargetId('tasty-fonts-role-snippets-panel');
+
+        if (isAllowedTabKey('page', page)) {
+            state.page = page;
+        }
+
+        const resolvedPage = state.page || currentPage;
+
+        if (resolvedPage === 'settings') {
+            if (isAllowedTabKey('settings', studio)) {
+                state.studio = studio;
+            }
+
+            return state;
+        }
+
+        if (resolvedPage === 'diagnostics') {
+            if (isAllowedTabKey('diagnostics', studio)) {
+                state.studio = studio;
+            }
+
+            if (state.studio === 'snippets' && isAllowedTabKey('output', output)) {
+                state.output = output;
+            }
+
+            return state;
+        }
+
+        if (resolvedPage === 'library') {
+            if (params.get('tf_add_fonts') === '1' && addFontsPanelToggle) {
+                state.addFontsOpen = true;
+            }
+
+            if (state.addFontsOpen && isAllowedTabKey('add-font', source)) {
+                state.source = source;
+            }
+
+            if (
+                state.addFontsOpen
+                && state.source === 'google'
+                && params.get('tf_google_access') === '1'
+                && disclosureToggleByTargetId('tasty-fonts-google-access-panel')
+            ) {
+                state.googleAccessOpen = true;
+            }
+
+            if (
+                state.addFontsOpen
+                && state.source === 'adobe'
+                && params.get('tf_adobe_project') === '1'
+                && disclosureToggleByTargetId('tasty-fonts-adobe-project-panel')
+            ) {
+                state.adobeProjectOpen = true;
+            }
+
+            return state;
+        }
 
         if (params.get('tf_advanced') === '1') {
             if (studio === 'preview' && previewToggle) {
                 state.previewOpen = true;
-            } else if (advancedToggle) {
-                state.advancedOpen = true;
+            } else if (studio === 'snippets' && snippetsToggle) {
+                state.snippetsOpen = true;
             }
         }
-
-        if (state.advancedOpen && isAllowedTabKey('studio', studio)) {
-            state.studio = studio;
-        }
-
-        const preview = String(params.get('tf_preview') || '');
 
         if (state.previewOpen && isAllowedTabKey('preview', preview)) {
             state.preview = preview;
         }
 
-        const output = String(params.get('tf_output') || '');
-
-        if (state.studio === 'snippets' && isAllowedTabKey('output', output)) {
+        if (state.snippetsOpen && isAllowedTabKey('output', output)) {
             state.output = output;
         }
 
         if (params.get('tf_add_fonts') === '1' && addFontsPanelToggle) {
             state.addFontsOpen = true;
         }
-
-        const source = String(params.get('tf_source') || '');
 
         if (state.addFontsOpen && isAllowedTabKey('add-font', source)) {
             state.source = source;
@@ -699,7 +1016,123 @@
     function applyTrackedUiState(state) {
         const nextState = state && typeof state === 'object' ? state : {};
         const previewToggle = disclosureToggleByTargetId('tasty-fonts-role-preview-panel');
-        const advancedToggle = disclosureToggleByTargetId('tasty-fonts-role-advanced-panel');
+        const snippetsToggle = disclosureToggleByTargetId('tasty-fonts-role-snippets-panel');
+        const resolvedPage = resolveTrackedTabKey(
+            'page',
+            trackedUiStateHas(nextState, 'page') ? String(nextState.page || '') : currentPage
+        ) || 'roles';
+
+        activateTabGroup('page', resolvedPage);
+
+        if (resolvedPage === 'settings') {
+            const studio = resolveTrackedTabKey(
+                'settings',
+                trackedUiStateHas(nextState, 'studio') ? String(nextState.studio || '') : defaultTrackedUiTabKey('settings')
+            );
+
+            if (studio) {
+                activateTabGroup('settings', studio);
+            }
+
+            return;
+        }
+
+        if (resolvedPage === 'diagnostics') {
+            const studio = resolveTrackedTabKey(
+                'diagnostics',
+                trackedUiStateHas(nextState, 'studio') ? String(nextState.studio || '') : defaultTrackedUiTabKey('diagnostics')
+            );
+            const output = resolveTrackedTabKey(
+                'output',
+                trackedUiStateHas(nextState, 'output') ? String(nextState.output || '') : defaultTrackedUiTabKey('output')
+            );
+
+            if (studio) {
+                activateTabGroup('diagnostics', studio);
+            }
+
+            if (output) {
+                activateTabGroup('output', output);
+            }
+
+            return;
+        }
+
+        if (resolvedPage === 'library') {
+            const addFontsOpen = trackedUiStateHas(nextState, 'addFontsOpen')
+                ? Boolean(nextState.addFontsOpen)
+                : defaultTrackedUiFlag('addFontsOpen');
+            const source = resolveTrackedTabKey(
+                'add-font',
+                trackedUiStateHas(nextState, 'source') ? String(nextState.source || '') : defaultTrackedUiTabKey('add-font')
+            );
+            const googleAccessOpen = addFontsOpen && source === 'google'
+                ? (trackedUiStateHas(nextState, 'googleAccessOpen')
+                    ? Boolean(nextState.googleAccessOpen)
+                    : defaultTrackedUiFlag('googleAccessOpen'))
+                : false;
+            const adobeProjectOpen = addFontsOpen && source === 'adobe'
+                ? (trackedUiStateHas(nextState, 'adobeProjectOpen')
+                    ? Boolean(nextState.adobeProjectOpen)
+                    : defaultTrackedUiFlag('adobeProjectOpen'))
+                : false;
+
+            if (addFontsPanelToggle) {
+                setDisclosureState(addFontsPanelToggle, addFontsOpen);
+            }
+
+            if (addFontsOpen && source) {
+                activateTabGroup('add-font', source);
+            }
+
+            const googleAccessToggle = disclosureToggleByTargetId('tasty-fonts-google-access-panel');
+            if (googleAccessToggle) {
+                setDisclosureState(googleAccessToggle, googleAccessOpen);
+            }
+
+            const adobeProjectToggle = disclosureToggleByTargetId('tasty-fonts-adobe-project-panel');
+            if (adobeProjectToggle) {
+                setDisclosureState(adobeProjectToggle, adobeProjectOpen);
+            }
+
+            return;
+        }
+
+        if (resolvedPage === 'roles') {
+            const previewOpen = trackedUiStateHas(nextState, 'previewOpen')
+                ? Boolean(nextState.previewOpen)
+                : defaultTrackedUiFlag('previewOpen');
+            const snippetsOpen = !previewOpen && (trackedUiStateHas(nextState, 'snippetsOpen')
+                ? Boolean(nextState.snippetsOpen)
+                : defaultTrackedUiFlag('snippetsOpen'));
+            const preview = resolveTrackedTabKey(
+                'preview',
+                trackedUiStateHas(nextState, 'preview') ? String(nextState.preview || '') : defaultTrackedUiTabKey('preview')
+            );
+            const output = resolveTrackedTabKey(
+                'output',
+                trackedUiStateHas(nextState, 'output') ? String(nextState.output || '') : defaultTrackedUiTabKey('output')
+            );
+
+            if (previewToggle) {
+                setDisclosureState(previewToggle, previewOpen);
+            }
+
+            if (snippetsToggle) {
+                setDisclosureState(snippetsToggle, snippetsOpen);
+            }
+
+            if (previewOpen && preview) {
+                activateTabGroup('preview', preview);
+            }
+
+            if (snippetsOpen && output) {
+                activateTabGroup('output', output);
+            }
+
+            return;
+        }
+
         const addFontsOpen = trackedUiStateHas(nextState, 'addFontsOpen')
             ? Boolean(nextState.addFontsOpen)
             : defaultTrackedUiFlag('addFontsOpen');
@@ -740,8 +1173,8 @@
             setDisclosureState(previewToggle, previewOpen);
         }
 
-        if (advancedToggle) {
-            setDisclosureState(advancedToggle, advancedOpen);
+        if (snippetsToggle) {
+            setDisclosureState(snippetsToggle, advancedOpen);
         }
 
         if (advancedOpen && studio) {
@@ -829,9 +1262,86 @@
     function captureTrackedUiState() {
         const state = {};
         const previewToggle = disclosureToggleByTargetId('tasty-fonts-role-preview-panel');
-        const advancedToggle = disclosureToggleByTargetId('tasty-fonts-role-advanced-panel');
+        const snippetsToggle = disclosureToggleByTargetId('tasty-fonts-role-snippets-panel');
         const googleAccessToggle = disclosureToggleByTargetId('tasty-fonts-google-access-panel');
         const adobeProjectToggle = disclosureToggleByTargetId('tasty-fonts-adobe-project-panel');
+        const page = activeTabKeyForGroup('page') || currentPage;
+
+        if (page && isAllowedTabKey('page', page) && page !== 'roles') {
+            state.page = page;
+        }
+
+        if (page === 'settings') {
+            const studio = activeTabKeyForGroup('settings');
+
+            if (isAllowedTabKey('settings', studio)) {
+                state.studio = studio;
+            }
+
+            return state;
+        }
+
+        if (page === 'diagnostics') {
+            const studio = activeTabKeyForGroup('diagnostics');
+
+            if (isAllowedTabKey('diagnostics', studio)) {
+                state.studio = studio;
+            }
+
+            if (studio === 'snippets') {
+                const output = activeTabKeyForGroup('output');
+
+                if (isAllowedTabKey('output', output)) {
+                    state.output = output;
+                }
+            }
+
+            return state;
+        }
+
+        if (page === 'library') {
+            if (isDisclosureExpanded(addFontsPanelToggle)) {
+                state.addFontsOpen = true;
+
+                const source = activeTabKeyForGroup('add-font');
+
+                if (isAllowedTabKey('add-font', source)) {
+                    state.source = source;
+
+                    if (source === 'google' && isDisclosureExpanded(googleAccessToggle)) {
+                        state.googleAccessOpen = true;
+                    }
+
+                    if (source === 'adobe' && isDisclosureExpanded(adobeProjectToggle)) {
+                        state.adobeProjectOpen = true;
+                    }
+                }
+            }
+
+            return state;
+        }
+
+        if (page === 'roles') {
+            if (isDisclosureExpanded(previewToggle)) {
+                state.previewOpen = true;
+
+                const preview = activeTabKeyForGroup('preview');
+
+                if (isAllowedTabKey('preview', preview)) {
+                    state.preview = preview;
+                }
+            } else if (isDisclosureExpanded(snippetsToggle)) {
+                state.snippetsOpen = true;
+
+                const output = activeTabKeyForGroup('output');
+
+                if (isAllowedTabKey('output', output)) {
+                    state.output = output;
+                }
+            }
+
+            return state;
+        }
 
         if (isDisclosureExpanded(previewToggle)) {
             state.previewOpen = true;
@@ -841,7 +1351,7 @@
             if (isAllowedTabKey('preview', preview)) {
                 state.preview = preview;
             }
-        } else if (isDisclosureExpanded(advancedToggle)) {
+        } else if (isDisclosureExpanded(snippetsToggle)) {
             state.advancedOpen = true;
 
             const studio = activeTabKeyForGroup('studio');
@@ -899,39 +1409,89 @@
             nextUrl.searchParams.delete(key);
         });
 
-        if (state.previewOpen) {
-            nextUrl.searchParams.set('tf_advanced', '1');
-            nextUrl.searchParams.set('tf_studio', 'preview');
-        } else if (state.advancedOpen) {
-            nextUrl.searchParams.set('tf_advanced', '1');
+        if (state.page) {
+            nextUrl.searchParams.set('tf_page', state.page);
         }
 
-        if (state.advancedOpen && state.studio) {
-            nextUrl.searchParams.set('tf_studio', state.studio);
-        }
+        if (currentPage === 'settings') {
+            if (state.studio) {
+                nextUrl.searchParams.set('tf_studio', state.studio);
+            }
+        } else if (currentPage === 'diagnostics') {
+            if (state.studio) {
+                nextUrl.searchParams.set('tf_studio', state.studio);
+            }
 
-        if (state.previewOpen && state.preview) {
-            nextUrl.searchParams.set('tf_preview', state.preview);
-        }
+            if (state.output) {
+                nextUrl.searchParams.set('tf_output', state.output);
+            }
+        } else if (currentPage === 'library') {
+            if (state.addFontsOpen) {
+                nextUrl.searchParams.set('tf_add_fonts', '1');
+            }
 
-        if (state.output) {
-            nextUrl.searchParams.set('tf_output', state.output);
-        }
+            if (state.source) {
+                nextUrl.searchParams.set('tf_source', state.source);
+            }
 
-        if (state.addFontsOpen) {
-            nextUrl.searchParams.set('tf_add_fonts', '1');
-        }
+            if (state.googleAccessOpen) {
+                nextUrl.searchParams.set('tf_google_access', '1');
+            }
 
-        if (state.source) {
-            nextUrl.searchParams.set('tf_source', state.source);
-        }
+            if (state.adobeProjectOpen) {
+                nextUrl.searchParams.set('tf_adobe_project', '1');
+            }
+        } else if (currentPage === 'roles') {
+            if (state.previewOpen) {
+                nextUrl.searchParams.set('tf_advanced', '1');
+                nextUrl.searchParams.set('tf_studio', 'preview');
+            }
 
-        if (state.googleAccessOpen) {
-            nextUrl.searchParams.set('tf_google_access', '1');
-        }
+            if (state.previewOpen && state.preview) {
+                nextUrl.searchParams.set('tf_preview', state.preview);
+            } else if (state.snippetsOpen) {
+                nextUrl.searchParams.set('tf_advanced', '1');
+                nextUrl.searchParams.set('tf_studio', 'snippets');
+            }
 
-        if (state.adobeProjectOpen) {
-            nextUrl.searchParams.set('tf_adobe_project', '1');
+            if (state.snippetsOpen && state.output) {
+                nextUrl.searchParams.set('tf_output', state.output);
+            }
+        } else {
+            if (state.previewOpen) {
+                nextUrl.searchParams.set('tf_advanced', '1');
+                nextUrl.searchParams.set('tf_studio', 'preview');
+            } else if (state.advancedOpen) {
+                nextUrl.searchParams.set('tf_advanced', '1');
+            }
+
+            if (state.advancedOpen && state.studio) {
+                nextUrl.searchParams.set('tf_studio', state.studio);
+            }
+
+            if (state.previewOpen && state.preview) {
+                nextUrl.searchParams.set('tf_preview', state.preview);
+            }
+
+            if (state.output) {
+                nextUrl.searchParams.set('tf_output', state.output);
+            }
+
+            if (state.addFontsOpen) {
+                nextUrl.searchParams.set('tf_add_fonts', '1');
+            }
+
+            if (state.source) {
+                nextUrl.searchParams.set('tf_source', state.source);
+            }
+
+            if (state.googleAccessOpen) {
+                nextUrl.searchParams.set('tf_google_access', '1');
+            }
+
+            if (state.adobeProjectOpen) {
+                nextUrl.searchParams.set('tf_adobe_project', '1');
+            }
         }
 
         if (nextUrl.toString() === currentUrl.toString()) {
@@ -1275,6 +1835,7 @@
 
         if (!isSaving) {
             syncRoleActionButtonStates();
+            syncPreviewActionButtonStates();
         }
     }
 
@@ -1320,8 +1881,10 @@
             roleDeploymentAnnouncement.textContent = tooltip;
         }
 
-        if (activeHelpButton === roleDeploymentPill && helpTooltipLayer && !helpTooltipLayer.hidden) {
-            helpTooltipLayer.textContent = tooltip;
+        const tooltipLayer = getHelpTooltipLayer();
+
+        if (activeHelpButton === roleDeploymentPill && tooltipLayer && !tooltipLayer.hidden) {
+            tooltipLayer.textContent = tooltip;
             positionHelpTooltip(roleDeploymentPill);
         }
     }
@@ -2022,7 +2585,7 @@
             const isActive = tab.getAttribute('data-tab-target') === key;
             tab.classList.toggle('is-active', isActive);
             tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
-            tab.setAttribute('tabindex', isActive ? '0' : '-1');
+            tab.setAttribute('tabindex', '0');
         });
 
         tabPanelsForGroup(group).forEach((panel) => {
@@ -2030,6 +2593,16 @@
             panel.classList.toggle('is-active', isActive);
             panel.hidden = !isActive;
         });
+
+        if (group === 'page' && key) {
+            currentPage = key;
+
+            const rootPage = document.querySelector('[data-current-page]');
+
+            if (rootPage) {
+                rootPage.setAttribute('data-current-page', key);
+            }
+        }
     }
 
     function setDisclosureState(toggle, expanded) {
@@ -2207,7 +2780,7 @@
         dismiss.type = 'button';
         dismiss.className = 'tasty-fonts-toast-dismiss';
         dismiss.setAttribute('data-toast-dismiss', '');
-        dismiss.setAttribute('aria-label', 'Dismiss notification');
+        dismiss.setAttribute('aria-label', getString('dismissNotification', 'Dismiss notification'));
         dismiss.innerHTML = '<span aria-hidden="true">&times;</span>';
 
         toast.appendChild(text);
@@ -2228,7 +2801,9 @@
     }
 
     function positionHelpTooltip(button) {
-        if (!button || !helpTooltipLayer || helpTooltipLayer.hidden) {
+        const tooltipLayer = getHelpTooltipLayer();
+
+        if (!button || !tooltipLayer || tooltipLayer.hidden) {
             return;
         }
 
@@ -2236,11 +2811,11 @@
         const gap = 10;
         const triggerRect = button.getBoundingClientRect();
 
-        helpTooltipLayer.style.left = '0px';
-        helpTooltipLayer.style.top = '0px';
-        helpTooltipLayer.style.maxWidth = `${Math.max(220, Math.min(320, window.innerWidth - (margin * 2)))}px`;
+        tooltipLayer.style.left = '0px';
+        tooltipLayer.style.top = '0px';
+        tooltipLayer.style.maxWidth = `${Math.max(220, Math.min(320, window.innerWidth - (margin * 2)))}px`;
 
-        const tooltipRect = helpTooltipLayer.getBoundingClientRect();
+        const tooltipRect = tooltipLayer.getBoundingClientRect();
         const left = Math.max(
             margin,
             Math.min(
@@ -2259,9 +2834,9 @@
             top = Math.max(margin, Math.min(top, window.innerHeight - tooltipRect.height - margin));
         }
 
-        helpTooltipLayer.style.left = `${left}px`;
-        helpTooltipLayer.style.top = `${top}px`;
-        helpTooltipLayer.classList.toggle('is-above', isAbove);
+        tooltipLayer.style.left = `${left}px`;
+        tooltipLayer.style.top = `${top}px`;
+        tooltipLayer.classList.toggle('is-above', isAbove);
     }
 
     function rememberHelpTooltipDescription(button) {
@@ -2288,16 +2863,20 @@
     }
 
     function applyHelpTooltipDescription(button) {
-        if (!button || !helpTooltipLayer) {
+        const tooltipLayer = getHelpTooltipLayer();
+
+        if (!button || !tooltipLayer) {
             return;
         }
 
         rememberHelpTooltipDescription(button);
-        button.setAttribute('aria-describedby', helpTooltipLayer.id);
+        button.setAttribute('aria-describedby', tooltipLayer.id);
     }
 
     function hideHelpTooltip() {
-        if (!helpTooltipLayer) {
+        const tooltipLayer = getHelpTooltipLayer();
+
+        if (!tooltipLayer) {
             return;
         }
 
@@ -2306,10 +2885,19 @@
             restoreHelpTooltipDescription(activeHelpButton);
         }
 
-        helpTooltipLayer.hidden = true;
-        helpTooltipLayer.textContent = '';
-        helpTooltipLayer.classList.remove('is-above');
+        tooltipLayer.hidden = true;
+        tooltipLayer.textContent = '';
+        tooltipLayer.classList.remove('is-above');
         activeHelpButton = null;
+    }
+
+    function prepareHelpTooltipTrigger(button) {
+        if (!button) {
+            return;
+        }
+
+        button.setAttribute('aria-expanded', 'false');
+        rememberHelpTooltipDescription(button);
     }
 
     function clearPassiveHelpTooltip(button) {
@@ -2341,6 +2929,7 @@
         button.setAttribute('data-help-tooltip', nextCopy);
         button.setAttribute('data-help-passive', '1');
         button.setAttribute('title', nextCopy);
+        prepareHelpTooltipTrigger(button);
     }
 
     function upgradePillTooltips(scope = document) {
@@ -2359,11 +2948,14 @@
 
             button.setAttribute('data-help-tooltip', copy);
             button.setAttribute('data-help-passive', '1');
+            prepareHelpTooltipTrigger(button);
         });
     }
 
     function showHelpTooltip(button) {
-        if (!button || !helpTooltipLayer) {
+        const tooltipLayer = getHelpTooltipLayer();
+
+        if (!button || !tooltipLayer) {
             return;
         }
 
@@ -2382,13 +2974,15 @@
         activeHelpButton = button;
         activeHelpButton.setAttribute('aria-expanded', 'true');
         applyHelpTooltipDescription(activeHelpButton);
-        helpTooltipLayer.textContent = copy;
-        helpTooltipLayer.hidden = false;
+        tooltipLayer.textContent = copy;
+        tooltipLayer.hidden = false;
         positionHelpTooltip(button);
     }
 
     function initHelpTooltips() {
-        if (!helpTooltipLayer) {
+        const tooltipLayer = getHelpTooltipLayer();
+
+        if (!tooltipLayer) {
             return;
         }
 
@@ -2405,43 +2999,69 @@
             return;
         }
 
-        helpButtons.forEach((button) => {
-            button.setAttribute('aria-expanded', 'false');
-            rememberHelpTooltipDescription(button);
+        helpButtons.forEach((button) => prepareHelpTooltipTrigger(button));
 
-            button.addEventListener('mouseenter', () => showHelpTooltip(button));
-            button.addEventListener('focus', () => showHelpTooltip(button));
-            button.addEventListener('mouseleave', () => {
+        if (helpTooltipEventsBound) {
+            return;
+        }
+
+        helpTooltipEventsBound = true;
+
+        document.addEventListener('mouseover', (event) => {
+            const button = event.target.closest('[data-help-tooltip]');
+
+            if (!button) {
+                return;
+            }
+
+            if (event.relatedTarget instanceof Node && button.contains(event.relatedTarget)) {
+                return;
+            }
+
+            showHelpTooltip(button);
+        });
+
+        document.addEventListener('mouseout', (event) => {
+            const button = event.target.closest('[data-help-tooltip]');
+
+            if (!button) {
+                return;
+            }
+
+            if (event.relatedTarget instanceof Node && button.contains(event.relatedTarget)) {
+                return;
+            }
+
+            if (activeHelpButton === button && document.activeElement !== button) {
+                hideHelpTooltip();
+            }
+        });
+
+        document.addEventListener('focusin', (event) => {
+            const button = event.target.closest('[data-help-tooltip]');
+
+            if (button) {
+                showHelpTooltip(button);
+            }
+        });
+
+        document.addEventListener('focusout', (event) => {
+            const button = event.target.closest('[data-help-tooltip]');
+
+            if (!button) {
+                return;
+            }
+
+            window.setTimeout(() => {
                 if (activeHelpButton === button && document.activeElement !== button) {
                     hideHelpTooltip();
                 }
-            });
-            button.addEventListener('blur', () => {
-                window.setTimeout(() => {
-                    if (activeHelpButton === button && document.activeElement !== button) {
-                        hideHelpTooltip();
-                    }
-                }, 0);
-            });
-            button.addEventListener('click', (event) => {
-                if (button.hasAttribute('data-help-passive')) {
-                    hideHelpTooltip();
-                    return;
-                }
-
-                event.preventDefault();
-
-                if (activeHelpButton === button && !helpTooltipLayer.hidden) {
-                    hideHelpTooltip();
-                    return;
-                }
-
-                showHelpTooltip(button);
-            });
+            }, 0);
         });
 
         document.addEventListener('click', (event) => {
             if (event.target.closest('[data-help-tooltip]')) {
+                hideHelpTooltip();
                 return;
             }
 
@@ -2598,14 +3218,24 @@
 
         target.classList.toggle('has-disabled-reason', !!nextCopy);
         target.tabIndex = disabled && !trainingWheelsOff ? 0 : -1;
-        target.setAttribute('aria-label', nextCopy);
+        if (nextCopy) {
+            target.setAttribute('aria-label', nextCopy);
+        } else {
+            target.removeAttribute('aria-label');
+        }
         setPassiveHelpTooltip(target, nextCopy);
 
         if (activeHelpButton === target) {
             if (!nextCopy || trainingWheelsOff) {
                 hideHelpTooltip();
-            } else if (helpTooltipLayer && !helpTooltipLayer.hidden) {
-                helpTooltipLayer.textContent = nextCopy;
+            } else {
+                const tooltipLayer = getHelpTooltipLayer();
+
+                if (!tooltipLayer || tooltipLayer.hidden) {
+                    return;
+                }
+
+                tooltipLayer.textContent = nextCopy;
                 positionHelpTooltip(target);
             }
         }
@@ -2641,8 +3271,30 @@
         );
     }
 
+    function currentPreviewRoleState() {
+        return normalizeRoleState(previewRoleState || currentDraftRoleState());
+    }
+
+    function syncPreviewActionButtonStates() {
+        const previewState = currentPreviewRoleState();
+        const previewDraftChanged = !roleStatesMatch(previewState, currentDraftRoleState());
+        const previewHasPendingLiveChanges = !!config.applyEverywhere && !roleStatesMatch(previewState, currentAppliedRoleState());
+
+        if (previewSaveDraftButton) {
+            previewSaveDraftButton.setAttribute('aria-disabled', previewDraftChanged ? 'false' : 'true');
+            previewSaveDraftButton.disabled = roleDraftSaveInFlight || !previewDraftChanged;
+        }
+
+        if (previewApplyLiveButton) {
+            previewApplyLiveButton.classList.toggle('button-primary', previewHasPendingLiveChanges);
+            previewApplyLiveButton.classList.toggle('is-pending-live-change', previewHasPendingLiveChanges);
+            previewApplyLiveButton.setAttribute('aria-disabled', previewHasPendingLiveChanges ? 'false' : 'true');
+            previewApplyLiveButton.disabled = roleDraftSaveInFlight || !previewHasPendingLiveChanges;
+        }
+    }
+
     function currentPreviewData() {
-        return buildRoleDataFromValues(previewRoleState || currentDraftRoleState());
+        return buildRoleDataFromValues(currentPreviewRoleState());
     }
 
     function computePreviewBaseline() {
@@ -2781,6 +3433,7 @@
         updatePreviewCopyCssButton(data);
         setPreviewSourceLabel(sourceLabel);
         updatePreviewDirtyState();
+        syncPreviewActionButtonStates();
     }
 
     function resetPreviewWorkspace() {
@@ -2839,57 +3492,88 @@
         const data = currentRoleData();
 
         headingRoleVariableCopies.forEach((button) => {
+            const copyTitle = formatMessage(
+                getString('headingVariableTitle', 'Heading font variable: %1$s. Resolved stack: %2$s'),
+                [data.headingVariable, data.headingStack]
+            );
             button.textContent = data.headingVariable;
             button.setAttribute('data-copy-text', data.headingVariable);
-            button.setAttribute('title', `Heading font variable: ${data.headingVariable}. Resolved stack: ${data.headingStack}`);
+            button.setAttribute('title', copyTitle);
+            button.setAttribute('aria-label', copyTitle);
         });
 
         bodyRoleVariableCopies.forEach((button) => {
+            const copyTitle = formatMessage(
+                getString('bodyVariableTitle', 'Body font variable: %1$s. Resolved stack: %2$s'),
+                [data.bodyVariable, data.bodyStack]
+            );
             button.textContent = data.bodyVariable;
             button.setAttribute('data-copy-text', data.bodyVariable);
-            button.setAttribute('title', `Body font variable: ${data.bodyVariable}. Resolved stack: ${data.bodyStack}`);
+            button.setAttribute('title', copyTitle);
+            button.setAttribute('aria-label', copyTitle);
         });
 
         monospaceRoleVariableCopies.forEach((button) => {
+            const copyTitle = formatMessage(
+                getString('monospaceVariableTitle', 'Monospace font variable: %1$s. Resolved stack: %2$s'),
+                [data.monospaceVariable, data.monospaceStack]
+            );
             button.textContent = data.monospaceVariable;
             button.setAttribute('data-copy-text', data.monospaceVariable);
-            button.setAttribute('title', `Monospace font variable: ${data.monospaceVariable}. Resolved stack: ${data.monospaceStack}`);
+            button.setAttribute('title', copyTitle);
+            button.setAttribute('aria-label', copyTitle);
         });
 
         headingFamilyVariableCopies.forEach((button) => {
+            const copyTitle = data.heading
+                ? formatMessage(
+                    getString('headingFamilyVariableTitle', 'Heading family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s'),
+                    [data.headingFamilyVariable, data.headingVariable, data.headingStack]
+                )
+                : formatMessage(
+                    getString('headingFamilyFallbackTitle', 'Heading uses the fallback stack directly: %1$s. Role alias: %2$s'),
+                    [data.headingStack, data.headingVariable]
+                );
             button.textContent = data.headingFamilyVariable;
             button.setAttribute('data-copy-text', data.headingFamilyVariable);
-            button.setAttribute(
-                'title',
-                data.heading
-                    ? `Heading family variable: ${data.headingFamilyVariable}. Role alias: ${data.headingVariable}. Resolved stack: ${data.headingStack}`
-                    : `Heading uses the fallback stack directly: ${data.headingStack}. Role alias: ${data.headingVariable}`
-            );
+            button.setAttribute('title', copyTitle);
+            button.setAttribute('aria-label', copyTitle);
         });
 
         bodyFamilyVariableCopies.forEach((button) => {
+            const copyTitle = data.body
+                ? formatMessage(
+                    getString('bodyFamilyVariableTitle', 'Body family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s'),
+                    [data.bodyFamilyVariable, data.bodyVariable, data.bodyStack]
+                )
+                : formatMessage(
+                    getString('bodyFamilyFallbackTitle', 'Body uses the fallback stack directly: %1$s. Role alias: %2$s'),
+                    [data.bodyStack, data.bodyVariable]
+                );
             button.textContent = data.bodyFamilyVariable;
             button.setAttribute('data-copy-text', data.bodyFamilyVariable);
-            button.setAttribute(
-                'title',
-                data.body
-                    ? `Body family variable: ${data.bodyFamilyVariable}. Role alias: ${data.bodyVariable}. Resolved stack: ${data.bodyStack}`
-                    : `Body uses the fallback stack directly: ${data.bodyStack}. Role alias: ${data.bodyVariable}`
-            );
+            button.setAttribute('title', copyTitle);
+            button.setAttribute('aria-label', copyTitle);
         });
 
         monospaceFamilyVariableCopies.forEach((button) => {
+            const copyTitle = data.monospace
+                ? formatMessage(
+                    getString('monospaceFamilyVariableTitle', 'Monospace family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s'),
+                    [data.monospaceFamilyVariable, data.monospaceVariable, data.monospaceStack]
+                )
+                : formatMessage(
+                    getString('monospaceFamilyFallbackTitle', 'Monospace uses the fallback stack directly: %1$s. Role alias: %2$s'),
+                    [data.monospaceStack, data.monospaceVariable]
+                );
             button.textContent = data.monospaceFamilyVariable;
             button.setAttribute('data-copy-text', data.monospaceFamilyVariable);
-            button.setAttribute(
-                'title',
-                data.monospace
-                    ? `Monospace family variable: ${data.monospaceFamilyVariable}. Role alias: ${data.monospaceVariable}. Resolved stack: ${data.monospaceStack}`
-                    : `Monospace uses the fallback stack directly: ${data.monospaceStack}. Role alias: ${data.monospaceVariable}`
-            );
+            button.setAttribute('title', copyTitle);
+            button.setAttribute('aria-label', copyTitle);
         });
 
         syncRoleActionButtonStates();
+        syncPreviewActionButtonStates();
 
         roleAssignButtons.forEach((button) => {
             const family = button.getAttribute('data-font-family') || '';
@@ -2910,8 +3594,10 @@
                 label.textContent = nextLabel;
             }
 
-            if (activeHelpButton === button && helpTooltipLayer && !helpTooltipLayer.hidden) {
-                helpTooltipLayer.textContent = nextHelp;
+            const tooltipLayer = getHelpTooltipLayer();
+
+            if (activeHelpButton === button && tooltipLayer && !tooltipLayer.hidden) {
+                tooltipLayer.textContent = nextHelp;
                 positionHelpTooltip(button);
             }
         });
@@ -2929,8 +3615,10 @@
 
             if (blockedMessage !== '') {
                 button.setAttribute('data-delete-blocked', blockedMessage);
-                if (activeHelpButton === button && helpTooltipLayer && !helpTooltipLayer.hidden) {
-                    helpTooltipLayer.textContent = blockedMessage;
+                const tooltipLayer = getHelpTooltipLayer();
+
+                if (activeHelpButton === button && tooltipLayer && !tooltipLayer.hidden) {
+                    tooltipLayer.textContent = blockedMessage;
                     positionHelpTooltip(button);
                 }
                 return;
@@ -2938,8 +3626,10 @@
 
             button.removeAttribute('data-delete-blocked');
 
-            if (activeHelpButton === button && helpTooltipLayer && !helpTooltipLayer.hidden) {
-                helpTooltipLayer.textContent = button.dataset.deleteReadyTitle || '';
+            const tooltipLayer = getHelpTooltipLayer();
+
+            if (activeHelpButton === button && tooltipLayer && !tooltipLayer.hidden) {
+                tooltipLayer.textContent = button.dataset.deleteReadyTitle || '';
                 positionHelpTooltip(button);
             }
         });
@@ -3778,7 +4468,12 @@
 
             meta.className = 'tasty-fonts-search-card-meta tasty-fonts-muted';
             category.textContent = item.category || fallback;
-            variants.textContent = formatPluralMessage('%d variant', '%d variants', variantCount, [variantCount]);
+            variants.textContent = formatPluralMessage(
+                getString('variantCountSingle', '%d variant'),
+                getString('variantCountMultiple', '%d variants'),
+                variantCount,
+                [variantCount]
+            );
 
             meta.append(category, variants);
             card.append(head, preview, meta);
@@ -3964,10 +4659,15 @@
             preview.style.fontFamily = `"${item.family}", ${fallback}`;
 
             meta.className = 'tasty-fonts-search-card-meta tasty-fonts-muted';
-            category.textContent = item.category_label || 'Bunny Fonts';
+            category.textContent = item.category_label || getString('bunnySourceLabel', 'Bunny Fonts');
             variants.textContent = styleCount > 0
-                ? formatPluralMessage('%d variant', '%d variants', styleCount, [styleCount])
-                : __('Bunny Fonts', 'tasty-fonts');
+                ? formatPluralMessage(
+                    getString('variantCountSingle', '%d variant'),
+                    getString('variantCountMultiple', '%d variants'),
+                    styleCount,
+                    [styleCount]
+                )
+                : getString('bunnySourceLabel', 'Bunny Fonts');
 
             meta.append(category, variants);
             card.append(head, preview, meta);
@@ -5026,6 +5726,95 @@
         applyActivityFilter();
     }
 
+    function getClearableSelectButtonTarget(button) {
+        if (!button) {
+            return null;
+        }
+
+        const explicitTargetId = String(button.getAttribute('data-clear-target') || '').trim();
+
+        if (explicitTargetId) {
+            return document.getElementById(explicitTargetId);
+        }
+
+        const field = button.closest('.tasty-fonts-select-field');
+
+        return field ? field.querySelector('select') : null;
+    }
+
+    function syncClearableSelectButton(button) {
+        const select = getClearableSelectButtonTarget(button);
+
+        if (!select) {
+            if (button) {
+                button.hidden = true;
+                button.disabled = true;
+            }
+
+            return;
+        }
+
+        const clearValue = String(button.getAttribute('data-clear-value') || '');
+        const field = button.closest('.tasty-fonts-select-field');
+        const hasClearValue = !select.disabled && String(select.value || '') !== clearValue;
+
+        button.hidden = !hasClearValue;
+        button.disabled = !hasClearValue;
+
+        if (field) {
+            field.classList.toggle('has-clear-value', hasClearValue);
+        }
+    }
+
+    function syncAllClearableSelectButtons() {
+        document.querySelectorAll('[data-clear-select-button]').forEach((button) => {
+            syncClearableSelectButton(button);
+        });
+    }
+
+    function handleClearableSelectClick(event) {
+        const button = event.target.closest('[data-clear-select-button]');
+
+        if (!button) {
+            return false;
+        }
+
+        const select = getClearableSelectButtonTarget(button);
+
+        if (!select || select.disabled) {
+            syncClearableSelectButton(button);
+            return true;
+        }
+
+        const clearValue = String(button.getAttribute('data-clear-value') || '');
+        const options = Array.from(select.options || []);
+        const hasClearOption = options.some((option) => String(option.value) === clearValue);
+        const previousValue = String(select.value || '');
+
+        if (hasClearOption) {
+            select.value = clearValue;
+        } else if (options.length > 0) {
+            select.selectedIndex = 0;
+        }
+
+        if (String(select.value || '') !== previousValue) {
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            select.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        syncClearableSelectButton(button);
+
+        if (typeof select.focus === 'function') {
+            try {
+                select.focus({ preventScroll: true });
+            } catch (error) {
+                select.focus();
+            }
+        }
+
+        return true;
+    }
+
     function handleDisclosureToggleClick(event) {
         const disclosureToggle = event.target.closest('[data-disclosure-toggle]');
 
@@ -5036,11 +5825,11 @@
         const isExpanded = disclosureToggle.getAttribute('aria-expanded') === 'true';
         const nextExpanded = !isExpanded;
         const targetId = disclosureToggle.getAttribute('data-disclosure-toggle') || '';
-        const isRoleToolToggle = targetId === 'tasty-fonts-role-preview-panel' || targetId === 'tasty-fonts-role-advanced-panel';
+        const isRoleToolToggle = targetId === 'tasty-fonts-role-preview-panel' || targetId === 'tasty-fonts-role-snippets-panel';
 
         if (nextExpanded && isRoleToolToggle) {
             const pairedTargetId = targetId === 'tasty-fonts-role-preview-panel'
-                ? 'tasty-fonts-role-advanced-panel'
+                ? 'tasty-fonts-role-snippets-panel'
                 : 'tasty-fonts-role-preview-panel';
             const pairedToggle = disclosureToggleByTargetId(pairedTargetId);
 
@@ -5121,25 +5910,10 @@
         }
 
         const currentIndex = buttons.indexOf(tab);
-        let nextIndex = currentIndex;
+        const nextIndex = getTabNavigationTargetIndex(event.key, currentIndex, buttons.length);
 
-        switch (event.key) {
-            case 'ArrowRight':
-            case 'ArrowDown':
-                nextIndex = (currentIndex + 1) % buttons.length;
-                break;
-            case 'ArrowLeft':
-            case 'ArrowUp':
-                nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
-                break;
-            case 'Home':
-                nextIndex = 0;
-                break;
-            case 'End':
-                nextIndex = buttons.length - 1;
-                break;
-            default:
-                return false;
+        if (nextIndex === null) {
+            return false;
         }
 
         event.preventDefault();
@@ -5514,6 +6288,10 @@
             return;
         }
 
+        if (handleClearableSelectClick(event)) {
+            return;
+        }
+
         if (handleDisclosureToggleClick(event)) {
             return;
         }
@@ -5691,6 +6469,23 @@
                     syncFamilyPublishStateSaveState(form);
                 }
             });
+        });
+    }
+
+    function bindClearableSelectControls() {
+        document.querySelectorAll('.tasty-fonts-select-field select').forEach((element) => {
+            const field = element.closest('.tasty-fonts-select-field');
+            const button = field ? field.querySelector('[data-clear-select-button]') : null;
+
+            if (!button) {
+                return;
+            }
+
+            element.addEventListener('change', () => {
+                syncClearableSelectButton(button);
+            });
+
+            syncClearableSelectButton(button);
         });
     }
 
@@ -6064,13 +6859,6 @@
         const classesEnabled = !!(outputMasterInputs.classes && outputMasterInputs.classes.checked);
         const variablesEnabled = !!(outputMasterInputs.variables && outputMasterInputs.variables.checked);
 
-        if (classesEnabled && variablesEnabled) {
-            const classFlagsEnabled = outputClassFlagInputs().every((input) => input.disabled || input.checked);
-            const variableFlagsEnabled = outputVariableFlagInputs().every((input) => input.disabled || input.checked);
-
-            return (classFlagsEnabled && variableFlagsEnabled) ? 'all' : 'custom';
-        }
-
         if (variablesEnabled && !classesEnabled) {
             return 'variables';
         }
@@ -6082,24 +6870,36 @@
         return 'custom';
     }
 
+    function syncPillOptionUi() {
+        pillOptions.forEach((option) => {
+            const input = option.querySelector('[data-pill-option-input]');
+            option.classList.toggle('is-active', !!(input && input.checked));
+        });
+    }
+
+    function setOutputAdvancedPanelState(expanded) {
+        if (!outputAdvancedPanel) {
+            return;
+        }
+
+        outputAdvancedPanel.hidden = !expanded;
+    }
+
     function syncOutputQuickModeUi() {
         const mode = deriveOutputQuickMode();
 
         outputQuickModeInputs.forEach((input) => {
             input.checked = input.value === mode;
         });
-
-        outputQuickModeOptions.forEach((option) => {
-            const input = option.querySelector('[data-output-quick-mode]');
-            option.classList.toggle('is-active', !!(input && input.checked));
-        });
+        setOutputAdvancedPanelState(mode === 'custom');
+        syncPillOptionUi();
     }
 
     function applyOutputQuickMode(mode) {
         const classFlags = outputClassFlagInputs();
         const variableFlags = outputVariableFlagInputs();
-        const enableClasses = mode === 'all' || mode === 'classes';
-        const enableVariables = mode === 'all' || mode === 'variables';
+        const enableClasses = mode !== 'variables';
+        const enableVariables = mode !== 'classes';
 
         if (outputMasterInputs.classes) {
             outputMasterInputs.classes.checked = enableClasses;
@@ -6139,14 +6939,23 @@
     }
 
     function bindOutputSettingsControls() {
+        pillOptionInputs.forEach((input) => {
+            input.addEventListener('change', syncPillOptionUi);
+        });
+
         outputQuickModeInputs.forEach((input) => {
             input.addEventListener('change', () => {
-                if (!input.checked || input.value === 'custom') {
-                    syncOutputSettingsUi();
+                if (!input.checked) {
                     return;
                 }
 
                 applyOutputQuickMode(input.value);
+
+                // Presets mutate the persisted checkbox fields programmatically, so
+                // explicitly queue an autosave for the owning settings form.
+                if (input.form) {
+                    scheduleSettingsAutosave(input.form);
+                }
             });
         });
 
@@ -6154,7 +6963,38 @@
             input.addEventListener('change', syncOutputSettingsUi);
         });
 
+        syncPillOptionUi();
         syncOutputSettingsUi();
+    }
+
+    function bindSettingsAutosave() {
+        settingsAutosaveForms.forEach((form) => {
+            const state = getSettingsAutosaveState(form);
+
+            if (state) {
+                state.lastSerialized = JSON.stringify(serializeSettingsForm(form));
+            }
+
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+            });
+
+            form.querySelectorAll('input, select, textarea').forEach((field) => {
+                const eventName = field.matches('input[type="text"], input[type="search"], input[type="url"], input[type="number"], textarea')
+                    ? 'input'
+                    : 'change';
+
+                field.addEventListener(eventName, () => {
+                    scheduleSettingsAutosave(form);
+                });
+
+                if (eventName !== 'change') {
+                    field.addEventListener('change', () => {
+                        scheduleSettingsAutosave(form);
+                    });
+                }
+            });
+        });
     }
 
     // Bootstrap
@@ -6175,11 +7015,13 @@
         bindFamilyFontDisplayControls();
         bindFamilyDeliveryControls();
         bindFamilyPublishStateControls();
+        bindClearableSelectControls();
         bindRolePreviewControls();
         bindGoogleImportControls();
         bindBunnyImportControls();
         bindUploadControls();
         bindOutputSettingsControls();
+        bindSettingsAutosave();
 
         syncDisclosureToggles();
         initToasts();
@@ -6194,16 +7036,17 @@
         updateBunnyImportSummary();
         syncImportDeliveryButtons();
         initializeTabs();
+        syncAllClearableSelectButtons();
         defaultTrackedUiState = captureTrackedUiState();
         applyTrackedUiState(initialTrackedUiState);
         syncTrackedUiUrl('replace');
         const previewToggle = disclosureToggleByTargetId('tasty-fonts-role-preview-panel');
-        const advancedToggle = disclosureToggleByTargetId('tasty-fonts-role-advanced-panel');
-        if (previewToggle && isDisclosureExpanded(previewToggle)) {
+        const snippetsToggle = disclosureToggleByTargetId('tasty-fonts-role-snippets-panel');
+        if (currentPage === 'roles' && previewToggle && isDisclosureExpanded(previewToggle)) {
             initializePreviewWorkspace();
             revealDisclosurePanel('tasty-fonts-role-preview-panel', previewToggle);
-        } else if (advancedToggle && isDisclosureExpanded(advancedToggle)) {
-            revealDisclosurePanel('tasty-fonts-role-advanced-panel', advancedToggle);
+        } else if (currentPage === 'roles' && snippetsToggle && isDisclosureExpanded(snippetsToggle)) {
+            revealDisclosurePanel('tasty-fonts-role-snippets-panel', snippetsToggle);
         }
         const appliedPendingUiState = applyPendingUiState();
 

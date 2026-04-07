@@ -20,13 +20,24 @@
                                             <?php echo esc_html(sprintf($logCount === 1 ? __('%d entry', 'tasty-fonts') : __('%d entries', 'tasty-fonts'), $logCount)); ?>
                                         </span>
                                         <label class="screen-reader-text" for="tasty-fonts-activity-actor-filter"><?php esc_html_e('Filter activity by account', 'tasty-fonts'); ?></label>
-                                        <span class="tasty-fonts-select-field tasty-fonts-activity-select">
+                                        <span class="tasty-fonts-select-field tasty-fonts-select-field--clearable tasty-fonts-activity-select">
                                             <select id="tasty-fonts-activity-actor-filter" data-activity-actor-filter>
                                                 <option value=""><?php esc_html_e('All Accounts', 'tasty-fonts'); ?></option>
                                                 <?php foreach ($activityActorOptions as $actor): ?>
                                                     <option value="<?php echo esc_attr((string) $actor); ?>"><?php echo esc_html((string) $actor); ?></option>
                                                 <?php endforeach; ?>
                                             </select>
+                                            <button
+                                                type="button"
+                                                class="tasty-fonts-select-clear"
+                                                data-clear-select-button
+                                                data-clear-target="tasty-fonts-activity-actor-filter"
+                                                data-clear-value=""
+                                                aria-label="<?php esc_attr_e('Clear account filter', 'tasty-fonts'); ?>"
+                                                hidden
+                                            >
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
                                         </span>
                                         <label class="screen-reader-text" for="tasty-fonts-activity-search"><?php esc_html_e('Search activity', 'tasty-fonts'); ?></label>
                                         <span class="tasty-fonts-search-field--compact tasty-fonts-search-field--activity">
@@ -40,7 +51,16 @@
                                         </span>
                                         <form method="post">
                                             <?php wp_nonce_field('tasty_fonts_clear_log'); ?>
-                                            <button type="submit" class="button tasty-fonts-button-danger" name="tasty_fonts_clear_log" value="1"><?php esc_html_e('Clear Log', 'tasty-fonts'); ?></button>
+                                            <button
+                                                type="submit"
+                                                class="button tasty-fonts-button-danger tasty-fonts-font-action-button--icon tasty-fonts-activity-clear-button"
+                                                name="tasty_fonts_clear_log"
+                                                value="1"
+                                                aria-label="<?php esc_attr_e('Clear Log', 'tasty-fonts'); ?>"
+                                                title="<?php esc_attr_e('Clear Log', 'tasty-fonts'); ?>"
+                                            >
+                                                <span class="screen-reader-text"><?php esc_html_e('Clear Log', 'tasty-fonts'); ?></span>
+                                            </button>
                                         </form>
                                     </div>
                                 <?php endif; ?>
@@ -50,7 +70,7 @@
                         <?php if ($logs === []): ?>
                             <div class="tasty-fonts-empty-state tasty-fonts-empty-state--rich tasty-fonts-empty-state--activity tasty-fonts-activity-empty">
                                 <div class="tasty-fonts-empty-state-body">
-                                    <h3 class="tasty-fonts-empty-state-title"><?php esc_html_e('No activity yet', 'tasty-fonts'); ?></h3>
+                                    <h3 class="tasty-fonts-empty-state-title"><?php esc_html_e('No Activity Yet', 'tasty-fonts'); ?></h3>
                                     <p class="tasty-fonts-empty-state-copy"><?php esc_html_e('Scans, imports, deletes, and generated stylesheet refreshes will appear here after you start managing fonts.', 'tasty-fonts'); ?></p>
                                 </div>
                             </div>
@@ -63,4 +83,3 @@
                     </section>
                     <?php $this->renderEnvironmentNotice($localEnvironmentNotice); ?>
                     <?php $this->renderFallbackSuggestionList(); ?>
-                    <div id="tasty-fonts-help-tooltip-layer" class="tasty-fonts-help-tooltip-layer" role="tooltip" hidden></div>

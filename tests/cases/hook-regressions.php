@@ -29,6 +29,28 @@ $tests['plugin_activation_creates_provider_index_files_and_generated_css'] = sta
     resetPluginSingleton();
 };
 
+$tests['plugin_boot_loads_the_textdomain_immediately'] = static function (): void {
+    global $loadedTextdomains;
+
+    resetTestState();
+    resetPluginSingleton();
+
+    Plugin::instance()->boot();
+
+    assertSameValue(
+        'tasty-fonts',
+        (string) ($loadedTextdomains[0]['domain'] ?? ''),
+        'Plugin boot should load the tasty-fonts textdomain before the rest of the plugin runtime hooks run.'
+    );
+    assertSameValue(
+        'etch-fonts/languages',
+        (string) ($loadedTextdomains[0]['path'] ?? ''),
+        'Plugin boot should resolve the languages directory from the plugin basename.'
+    );
+
+    resetPluginSingleton();
+};
+
 $tests['plugin_attachment_hooks_only_invalidate_catalog_for_files_within_font_storage'] = static function (): void {
     global $attachedFilePaths;
     global $optionStore;

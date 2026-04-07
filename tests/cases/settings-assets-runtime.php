@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use TastyFonts\Admin\AdminPageContextBuilder;
 use TastyFonts\Adobe\AdobeCssParser;
 use TastyFonts\Adobe\AdobeProjectClient;
 use TastyFonts\Bunny\BunnyFontsClient;
@@ -756,6 +757,91 @@ $tests['asset_service_can_refresh_generated_assets_without_logging_file_writes']
     $entries = $services['log']->all();
 
     assertSameValue(0, count($entries), 'Deferred CSS regeneration should honor the no-log file write option.');
+};
+
+$tests['asset_service_status_falls_back_to_legacy_generated_stylesheet_when_canonical_file_is_missing'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $legacyPath = trailingslashit((string) $services['storage']->getRoot()) . 'tasty-fonts.css';
+    $legacyUrl = untrailingslashit((string) $services['storage']->getRootUrlFull()) . '/tasty-fonts.css';
+    $contents = "/* Version: " . TASTY_FONTS_VERSION . " */\n" . $services['assets']->getCss();
+    $lastModified = 1710000000;
+
+    wp_mkdir_p(dirname($legacyPath));
+    file_put_contents($legacyPath, $contents);
+    touch($legacyPath, $lastModified);
+    clearstatcache(true, $legacyPath);
+
+    $status = $services['assets']->getStatus();
+
+    assertSameValue($legacyPath, (string) ($status['path'] ?? ''), 'Generated stylesheet status should fall back to the legacy file path when the canonical .generated file is absent.');
+    assertSameValue($legacyUrl, (string) ($status['url'] ?? ''), 'Generated stylesheet status should expose the legacy request URL when the legacy file is the only generated stylesheet on disk.');
+    assertSameValue(true, !empty($status['exists']), 'Generated stylesheet status should treat the legacy file as an existing generated asset.');
+    assertSameValue(filesize($legacyPath), (int) ($status['size'] ?? 0), 'Generated stylesheet status should report the legacy file size.');
+    assertSameValue($lastModified, (int) ($status['last_modified'] ?? 0), 'Generated stylesheet status should report the legacy file modification time.');
+};
+
+$tests['asset_service_enqueue_migrates_a_current_legacy_generated_stylesheet_to_the_canonical_location'] = static function (): void {
+    resetTestState();
+
+    global $enqueuedStyles;
+    global $inlineStyles;
+
+    $services = makeServiceGraph();
+    $legacyPath = trailingslashit((string) $services['storage']->getRoot()) . 'tasty-fonts.css';
+    $canonicalPath = (string) $services['storage']->getGeneratedCssPath();
+    $canonicalUrl = (string) $services['storage']->getGeneratedCssUrl();
+    $contents = "/* Version: " . TASTY_FONTS_VERSION . " */\n" . $services['assets']->getCss();
+
+    wp_mkdir_p(dirname($legacyPath));
+    file_put_contents($legacyPath, $contents);
+    clearstatcache(true, $legacyPath);
+
+    $services['assets']->enqueue('tasty-fonts-runtime');
+
+    assertSameValue(true, is_file($canonicalPath), 'Enqueue should rewrite a current legacy generated stylesheet into the canonical .generated location.');
+    assertSameValue($contents, (string) file_get_contents($canonicalPath), 'Canonical generated stylesheet migration should preserve the generated CSS contents.');
+    assertSameValue($canonicalUrl, (string) ($enqueuedStyles['tasty-fonts-runtime']['src'] ?? ''), 'File delivery should switch to the canonical generated stylesheet URL after migration.');
+    assertSameValue('', (string) ($inlineStyles['tasty-fonts-runtime'] ?? ''), 'A current legacy generated stylesheet should not force inline fallback during migration.');
+    assertSameValue(true, is_file($legacyPath), 'Migrating the generated stylesheet should not delete the legacy file.');
+};
+
+$tests['admin_page_context_builder_uses_asset_status_metadata_for_generated_css_diagnostics'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $optionStore['date_format'] = 'Y-m-d';
+    $optionStore['time_format'] = 'H:i:s';
+
+    $builder = new AdminPageContextBuilder(
+        $services['storage'],
+        $services['settings'],
+        $services['log'],
+        $services['catalog'],
+        $services['assets'],
+        new CssBuilder(),
+        $services['adobe'],
+        $services['google']
+    );
+
+    $items = $builder->buildDiagnosticItems(
+        [
+            'path' => '/tmp/missing-generated.css',
+            'url' => 'https://example.test/wp-content/uploads/fonts/.generated/tasty-fonts.css',
+            'exists' => true,
+            'size' => 2048,
+            'last_modified' => 1710000000,
+        ],
+        $services['storage']->get(),
+        [],
+        []
+    );
+
+    assertSameValue('2.0 KB', (string) ($items[2]['value'] ?? ''), 'Generated stylesheet diagnostics should use the provided asset status size instead of re-checking the filesystem path.');
+    assertSameValue('2024-03-09 16:00:00', (string) ($items[3]['value'] ?? ''), 'Generated stylesheet diagnostics should use the provided asset status timestamp instead of calling filemtime on the path again.');
 };
 
 $tests['asset_service_debounces_background_css_regeneration_events'] = static function (): void {

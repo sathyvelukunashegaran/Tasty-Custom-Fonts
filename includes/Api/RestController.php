@@ -15,6 +15,7 @@ final class RestController
     public const API_NAMESPACE = 'tasty-fonts/v1';
 
     private const ROUTES = [
+        'saveSettings' => 'settings',
         'searchGoogle' => 'google/search',
         'searchBunny' => 'bunny/search',
         'googleFamily' => 'google/family',
@@ -48,6 +49,7 @@ final class RestController
 
     public function registerRoutes(): void
     {
+        $this->registerRoute(self::ROUTES['saveSettings'], 'PATCH', [$this, 'saveSettings']);
         $this->registerRoute(self::ROUTES['searchGoogle'], 'GET', [$this, 'searchGoogle']);
         $this->registerRoute(self::ROUTES['searchBunny'], 'GET', [$this, 'searchBunny']);
         $this->registerRoute(self::ROUTES['googleFamily'], 'GET', [$this, 'fetchGoogleFamily']);
@@ -71,6 +73,15 @@ final class RestController
     public function searchGoogle(WP_REST_Request $request): mixed
     {
         return $this->restResult($this->admin->searchGoogle($this->getTextParam($request, 'query')));
+    }
+
+    public function saveSettings(WP_REST_Request $request): mixed
+    {
+        $params = $request->get_params();
+
+        return $this->restResult(
+            $this->admin->saveSettingsValues(is_array($params) ? $params : [])
+        );
     }
 
     public function searchBunny(WP_REST_Request $request): mixed

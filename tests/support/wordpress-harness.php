@@ -200,6 +200,30 @@ if (!function_exists('__')) {
     }
 }
 
+if (!function_exists('size_format')) {
+    function size_format(int $bytes): string
+    {
+        if ($bytes >= MB_IN_BYTES) {
+            return number_format($bytes / MB_IN_BYTES, 1) . ' MB';
+        }
+
+        if ($bytes >= 1024) {
+            return number_format($bytes / 1024, 1) . ' KB';
+        }
+
+        return $bytes . ' B';
+    }
+}
+
+if (!function_exists('wp_date')) {
+    function wp_date(string $format, ?int $timestamp = null): string
+    {
+        $timestamp = is_int($timestamp) ? $timestamp : time();
+
+        return gmdate($format, $timestamp);
+    }
+}
+
 if (!function_exists('trailingslashit')) {
     function trailingslashit(string $value): string
     {
@@ -512,6 +536,7 @@ $inlineStyles = [];
 $enqueuedScripts = [];
 $localizedScripts = [];
 $scriptTranslations = [];
+$loadedTextdomains = [];
 $redirectLocation = '';
 $isAdminRequest = false;
 $hookCallbacks = [];
@@ -674,6 +699,58 @@ if (!function_exists('add_action')) {
     function add_action(string $hookName, callable $callback, int $priority = 10, int $acceptedArgs = 1): bool
     {
         return add_filter($hookName, $callback, $priority, $acceptedArgs);
+    }
+}
+
+if (!function_exists('add_menu_page')) {
+    function add_menu_page(
+        string $pageTitle,
+        string $menuTitle,
+        string $capability,
+        string $menuSlug,
+        ?callable $callback = null,
+        string $iconUrl = '',
+        int|float|null $position = null
+    ): string {
+        global $menuPageCalls;
+
+        $menuPageCalls[] = [
+            'page_title' => $pageTitle,
+            'menu_title' => $menuTitle,
+            'capability' => $capability,
+            'menu_slug' => $menuSlug,
+            'callback' => $callback,
+            'icon_url' => $iconUrl,
+            'position' => $position,
+        ];
+
+        return 'toplevel_page_' . $menuSlug;
+    }
+}
+
+if (!function_exists('add_submenu_page')) {
+    function add_submenu_page(
+        string $parentSlug,
+        string $pageTitle,
+        string $menuTitle,
+        string $capability,
+        string $menuSlug,
+        ?callable $callback = null,
+        int|float|null $position = null
+    ): string {
+        global $submenuPageCalls;
+
+        $submenuPageCalls[] = [
+            'parent_slug' => $parentSlug,
+            'page_title' => $pageTitle,
+            'menu_title' => $menuTitle,
+            'capability' => $capability,
+            'menu_slug' => $menuSlug,
+            'callback' => $callback,
+            'position' => $position,
+        ];
+
+        return $parentSlug . '_page_' . $menuSlug;
     }
 }
 
@@ -921,6 +998,21 @@ if (!function_exists('wp_set_script_translations')) {
         $scriptTranslations[$handle] = [
             'domain' => $domain,
             'path' => $path,
+        ];
+
+        return true;
+    }
+}
+
+if (!function_exists('load_plugin_textdomain')) {
+    function load_plugin_textdomain(string $domain, bool $deprecated = false, string $pluginRelPath = ''): bool
+    {
+        global $loadedTextdomains;
+
+        $loadedTextdomains[] = [
+            'domain' => $domain,
+            'deprecated' => $deprecated,
+            'path' => $pluginRelPath,
         ];
 
         return true;
@@ -1239,6 +1331,8 @@ function resetTestState(): void
     global $inlineStyles;
     global $isAdminRequest;
     global $localizedScripts;
+    global $loadedTextdomains;
+    global $menuPageCalls;
     global $currentUserId;
     global $optionAutoload;
     global $optionDeleted;
@@ -1257,6 +1351,7 @@ function resetTestState(): void
     global $siteTransientSet;
     global $siteTransientStore;
     global $supportedPostTypes;
+    global $submenuPageCalls;
     global $transientDeleted;
     global $transientSet;
     global $transientStore;
@@ -1293,6 +1388,8 @@ function resetTestState(): void
     $inlineStyles = [];
     $enqueuedScripts = [];
     $localizedScripts = [];
+    $loadedTextdomains = [];
+    $menuPageCalls = [];
     $scriptTranslations = [];
     $redirectLocation = '';
     $isAdminRequest = false;
@@ -1301,6 +1398,7 @@ function resetTestState(): void
     $actionCalls = [];
     $registeredRestRoutes = [];
     $supportedPostTypes = ['wp_font_family', 'wp_font_face'];
+    $submenuPageCalls = [];
     $attachedFilePaths = [];
     $uploadBaseDir = uniqueTestDirectory('uploads');
     $uploadedFilePaths = [];

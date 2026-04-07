@@ -135,28 +135,32 @@ final class AdminPageContextBuilder
     {
         $cssPath = (string) ($assetStatus['path'] ?? '');
         $cssUrl = (string) ($assetStatus['url'] ?? '');
-        $cssExists = !empty($assetStatus['exists']) && $cssPath !== '' && file_exists($cssPath);
+        $cssExists = !empty($assetStatus['exists']);
+        $cssSize = (int) ($assetStatus['size'] ?? 0);
+        $cssLastModified = (int) ($assetStatus['last_modified'] ?? 0);
 
         return [
             [
                 'label' => __('Generated CSS File', 'tasty-fonts'),
                 'value' => $cssPath !== '' ? $cssPath : __('Not available', 'tasty-fonts'),
                 'code' => true,
+                'copyable' => $cssPath !== '',
             ],
             [
                 'label' => __('CSS Request URL', 'tasty-fonts'),
                 'value' => $cssUrl !== '' ? $cssUrl : __('Not available', 'tasty-fonts'),
                 'code' => true,
+                'copyable' => $cssUrl !== '',
             ],
             [
                 'label' => __('Stylesheet Size', 'tasty-fonts'),
-                'value' => $cssExists ? size_format((int) ($assetStatus['size'] ?? 0)) : __('Not generated', 'tasty-fonts'),
+                'value' => $cssExists ? size_format($cssSize) : __('Not generated', 'tasty-fonts'),
                 'code' => false,
             ],
             [
                 'label' => __('Last Generated', 'tasty-fonts'),
-                'value' => $cssExists
-                    ? wp_date(get_option('date_format') . ' ' . get_option('time_format'), (int) filemtime($cssPath))
+                'value' => $cssExists && $cssLastModified > 0
+                    ? wp_date(get_option('date_format') . ' ' . get_option('time_format'), $cssLastModified)
                     : __('Not available', 'tasty-fonts'),
                 'code' => false,
             ],
@@ -164,6 +168,7 @@ final class AdminPageContextBuilder
                 'label' => __('Fonts Directory', 'tasty-fonts'),
                 'value' => is_array($storage) ? (string) ($storage['dir'] ?? __('Not available', 'tasty-fonts')) : __('Not available', 'tasty-fonts'),
                 'code' => true,
+                'copyable' => is_array($storage) && !empty($storage['dir']),
             ],
             [
                 'label' => __('Fonts Public URL', 'tasty-fonts'),
@@ -171,26 +176,31 @@ final class AdminPageContextBuilder
                     ? (string) ($storage['url_full'] ?? $storage['url'] ?? __('Not available', 'tasty-fonts'))
                     : __('Not available', 'tasty-fonts'),
                 'code' => true,
+                'copyable' => is_array($storage) && (!empty($storage['url_full']) || !empty($storage['url'])),
             ],
             [
                 'label' => __('Google Import Folder', 'tasty-fonts'),
                 'value' => is_array($storage) ? (string) ($storage['google_dir'] ?? __('Not available', 'tasty-fonts')) : __('Not available', 'tasty-fonts'),
                 'code' => true,
+                'copyable' => is_array($storage) && !empty($storage['google_dir']),
             ],
             [
                 'label' => __('Bunny Import Folder', 'tasty-fonts'),
                 'value' => is_array($storage) ? (string) ($storage['bunny_dir'] ?? __('Not available', 'tasty-fonts')) : __('Not available', 'tasty-fonts'),
                 'code' => true,
+                'copyable' => is_array($storage) && !empty($storage['bunny_dir']),
             ],
             [
                 'label' => __('Local Upload Folder', 'tasty-fonts'),
                 'value' => is_array($storage) ? (string) ($storage['upload_dir'] ?? __('Not available', 'tasty-fonts')) : __('Not available', 'tasty-fonts'),
                 'code' => true,
+                'copyable' => is_array($storage) && !empty($storage['upload_dir']),
             ],
             [
                 'label' => __('Adobe Folder', 'tasty-fonts'),
                 'value' => is_array($storage) ? (string) ($storage['adobe_dir'] ?? __('Not available', 'tasty-fonts')) : __('Not available', 'tasty-fonts'),
                 'code' => true,
+                'copyable' => is_array($storage) && !empty($storage['adobe_dir']),
             ],
             [
                 'label' => __('Library Inventory', 'tasty-fonts'),
@@ -418,7 +428,7 @@ final class AdminPageContextBuilder
     public function buildFontDisplayOptions(): array
     {
         return [
-            ['value' => 'optional', 'label' => $this->formatFontDisplayLabel('optional', true)],
+            ['value' => 'optional', 'label' => $this->formatFontDisplayLabel('optional')],
             ['value' => 'swap', 'label' => $this->formatFontDisplayLabel('swap')],
             ['value' => 'fallback', 'label' => $this->formatFontDisplayLabel('fallback')],
             ['value' => 'block', 'label' => $this->formatFontDisplayLabel('block')],
@@ -452,16 +462,14 @@ final class AdminPageContextBuilder
         ];
     }
 
-    public function formatFontDisplayLabel(string $display, bool $recommended = false): string
+    public function formatFontDisplayLabel(string $display): string
     {
         return match ($display) {
             'auto' => __('Auto', 'tasty-fonts'),
             'block' => __('Block', 'tasty-fonts'),
             'swap' => __('Swap', 'tasty-fonts'),
             'fallback' => __('Fallback', 'tasty-fonts'),
-            default => $recommended
-                ? __('Optional (Recommended)', 'tasty-fonts')
-                : __('Optional', 'tasty-fonts'),
+            default => __('Optional', 'tasty-fonts'),
         };
     }
 
@@ -924,6 +932,7 @@ final class AdminPageContextBuilder
         return add_query_arg(
             [
                 'page' => AdminController::MENU_SLUG,
+                'tf_page' => AdminController::PAGE_DIAGNOSTICS,
                 self::DOWNLOAD_ACTION => '1',
                 '_wpnonce' => wp_create_nonce(self::DOWNLOAD_ACTION),
             ],
@@ -936,7 +945,7 @@ final class AdminPageContextBuilder
         return add_query_arg(
             [
                 'page' => AdminController::MENU_SLUG,
-                'tf_advanced' => '1',
+                'tf_page' => AdminController::PAGE_SETTINGS,
                 'tf_studio' => 'plugin-behavior',
             ],
             admin_url('admin.php')

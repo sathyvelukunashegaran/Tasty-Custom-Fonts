@@ -5,6 +5,8 @@
     color: var(--tasty-text);
     font-size: var(--tasty-type-body-size);
     line-height: var(--tasty-type-body-line-height);
+    isolation: isolate;
+    position: relative;
 }
 
 .tasty-fonts-admin *,
@@ -19,12 +21,95 @@
 
 .tasty-fonts-shell {
     display: grid;
-    gap: var(--tasty-space-4);
+    gap: var(--tasty-space-3);
+    padding: var(--tasty-space-3);
+    border-radius: calc(var(--tasty-radius-xl) + var(--tasty-space-2));
+    background: var(--tasty-gradient-page);
+    box-shadow: var(--tasty-shadow-shell);
 }
 
 .tasty-fonts-shell > * {
     min-width: 0;
     width: 100%;
+}
+
+.tasty-fonts-page-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    gap: var(--tasty-space-4) var(--tasty-space-5);
+    padding: 14px 24px;
+    border: 1px solid transparent;
+    border-radius: var(--tasty-radius-card);
+    background: var(--tasty-gradient-header) padding-box, var(--tasty-gradient-border-soft) border-box;
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.9), var(--tasty-shadow-masthead);
+}
+
+.tasty-fonts-page-header::before,
+.tasty-fonts-page-header::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    border-radius: 999px;
+    z-index: 0;
+}
+
+.tasty-fonts-page-header::before {
+    top: -88px;
+    left: -54px;
+    width: 270px;
+    height: 270px;
+    background: radial-gradient(circle, var(--tasty-gradient-cool-glow) 0%, var(--tasty-gradient-cool-wash) 36%, rgba(var(--tasty-accent-rgb), 0) 74%);
+}
+
+.tasty-fonts-page-header::after {
+    right: 20%;
+    bottom: -148px;
+    width: 340px;
+    height: 240px;
+    background: radial-gradient(circle, var(--tasty-gradient-warm-glow) 0%, var(--tasty-gradient-warm-wash) 38%, rgba(var(--tasty-warning-rgb), 0) 78%);
+}
+
+.tasty-fonts-page-header > * {
+    position: relative;
+    z-index: 1;
+}
+
+.tasty-fonts-page-header-brand {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.tasty-fonts-page-header-nav {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    align-self: stretch;
+    min-width: 0;
+}
+
+.tasty-fonts-page-header-nav .tasty-fonts-studio-switcher {
+    margin-left: auto;
+    max-width: min(100%, var(--tasty-masthead-nav-max-width));
+    align-items: flex-end;
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.tasty-fonts-page-header-nav .tasty-fonts-tab-button {
+    min-height: 40px;
+    padding: 0 14px;
+    color: var(--tasty-text-muted);
+    font-size: 15px;
+    font-weight: var(--tasty-font-weight-semibold);
 }
 
 .tasty-fonts-admin h1,
@@ -66,10 +151,12 @@
 .tasty-fonts-selected-card,
 /* Preview scenes */
 .tasty-fonts-preview-canvas {
-    background: var(--tasty-surface);
+    --tasty-surface-current: var(--tasty-gradient-surface-card);
+    background: var(--tasty-surface-current);
     border: 1px solid var(--tasty-border-subtle-strong);
     border-radius: var(--tasty-radius-card);
     box-shadow: var(--tasty-shadow-card);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .tasty-fonts-hero,
@@ -108,32 +195,60 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: var(--tasty-dashboard-title-gap-row) var(--tasty-dashboard-title-gap-column);
-    margin-bottom: var(--tasty-dashboard-title-gap-row);
+    gap: 6px var(--tasty-space-2);
+    margin-bottom: 4px;
+}
+
+.tasty-fonts-page-header .tasty-fonts-hero-title-row {
+    align-items: center;
+    gap: var(--tasty-space-2);
+    margin-bottom: 0;
+}
+
+.tasty-fonts-page-header .tasty-fonts-hero-title-row h1 {
+    max-width: min(100%, 22ch);
+    font-size: clamp(24px, 2.15vw, 32px);
+    line-height: 1;
+    letter-spacing: -0.04em;
 }
 
 .tasty-fonts-hero-copy h1 {
     font-size: var(--tasty-type-page-title-size);
-    font-weight: var(--tasty-type-title-weight);
-    line-height: 1.12;
-    letter-spacing: -0.025em;
+    font-weight: var(--tasty-font-weight-bold);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
     margin: 0;
 }
 
 .tasty-fonts-hero-text {
     color: var(--tasty-text-muted);
     font-size: var(--tasty-type-body-large-size);
-    line-height: var(--tasty-type-caption-line-height);
+    line-height: 1.38;
     margin: 0;
-    max-width: var(--tasty-dashboard-hero-text-width);
+    max-width: min(100%, 30rem);
 }
 
 .tasty-fonts-version-link {
     justify-content: center;
-    min-height: var(--tasty-dashboard-version-height);
-    padding: 0 var(--tasty-dashboard-version-padding-inline);
+    min-height: 26px;
+    padding: 0 9px;
     text-decoration: none;
     white-space: nowrap;
+}
+
+.tasty-fonts-page-header .tasty-fonts-version-link {
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border-color: var(--tasty-border-accent-soft);
+    background: linear-gradient(160deg, rgba(var(--tasty-white-rgb), 0.92) 0%, rgba(var(--tasty-white-rgb), 0.78) 100%);
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.96);
+    color: var(--tasty-accent);
+    font-size: var(--tasty-type-caption-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    letter-spacing: -0.01em;
 }
 
 .tasty-fonts-version-link:hover,
@@ -185,7 +300,7 @@
     padding: var(--tasty-card-padding-tight);
     border: 1px solid var(--tasty-border-subtle);
     border-radius: var(--tasty-radius-card);
-    background: var(--tasty-surface);
+    background: var(--tasty-gradient-surface-inset);
 }
 
 .tasty-fonts-diagnostics-grid {
@@ -239,10 +354,10 @@
     gap: 4px;
     min-height: auto;
     padding: var(--tasty-dashboard-metric-padding-block) var(--tasty-dashboard-metric-padding-inline);
-    border: 1px solid var(--tasty-border-subtle);
+    border: 1px solid var(--tasty-border-subtle-strong);
     border-radius: var(--tasty-radius-card);
-    background: var(--tasty-surface);
-    box-shadow: none;
+    background: linear-gradient(160deg, rgba(var(--tasty-white-rgb), 1) 0%, rgba(248, 250, 253, 0.96) 100%);
+    box-shadow: var(--tasty-shadow-card);
 }
 
 .tasty-fonts-metric-head {
@@ -264,72 +379,9 @@
 .tasty-fonts-metric-value {
     font-size: var(--tasty-type-metric-size);
     font-weight: var(--tasty-font-weight-bold);
-    letter-spacing: -0.03em;
-    line-height: 1.05;
+    letter-spacing: -0.04em;
+    line-height: 1.0;
     margin: 0;
-}
-
-.tasty-fonts-help-wrap {
-    display: inline-flex;
-    align-items: center;
-}
-
-.tasty-fonts-help-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    padding: 0;
-    border: 1px solid var(--tasty-control-border);
-    border-radius: 999px;
-    background: var(--tasty-control-surface-muted);
-    box-shadow: none;
-    color: var(--tasty-control-text-muted);
-    cursor: help;
-    line-height: 1;
-}
-
-.tasty-fonts-help-glyph {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    line-height: 0;
-}
-
-.tasty-fonts-help-glyph svg {
-    display: block;
-    width: 14px;
-    height: 14px;
-}
-
-.tasty-fonts-help-glyph circle,
-.tasty-fonts-help-glyph path {
-    stroke: currentColor;
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    fill: none;
-}
-
-.tasty-fonts-help-glyph .tasty-fonts-help-glyph-dot {
-    fill: currentColor;
-    stroke: none;
-}
-
-.tasty-fonts-help-button:hover,
-.tasty-fonts-help-button:focus {
-    border-color: var(--tasty-control-border-active);
-    background: var(--tasty-control-surface);
-    color: var(--tasty-accent);
-}
-
-.tasty-fonts-help-button[aria-expanded="true"] {
-    border-color: var(--tasty-accent);
-    background: var(--tasty-accent-soft);
-    color: var(--tasty-accent);
 }
 
 .tasty-fonts-help-tooltip-layer {
@@ -520,19 +572,19 @@
 .tasty-fonts-section-title {
     margin: 0;
     color: var(--tasty-text);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
 }
 
 h2.tasty-fonts-section-title {
     font-size: var(--tasty-type-section-title-size);
     font-weight: var(--tasty-font-weight-bold);
-    line-height: 1.15;
+    line-height: 1.12;
 }
 
 h3.tasty-fonts-section-title {
     font-size: var(--tasty-type-title-size);
     font-weight: var(--tasty-font-weight-bold);
-    line-height: 1.2;
+    line-height: 1.18;
 }
 
 .tasty-fonts-role-deployment {
@@ -836,21 +888,25 @@ h3.tasty-fonts-section-title {
     gap: 6px;
     min-height: 0;
     padding: 14px;
-    background: var(--tasty-surface);
+    --tasty-surface-current: var(--tasty-gradient-surface-card);
+    background: var(--tasty-surface-current);
     border: 1px solid var(--tasty-border-subtle);
-    box-shadow: none;
+    box-shadow: var(--tasty-shadow-card);
 }
 
 .tasty-fonts-status-card.is-success {
     border-color: var(--tasty-border-success-soft);
+    --tasty-surface-current: var(--tasty-gradient-surface-success);
 }
 
 .tasty-fonts-status-card.is-warning {
     border-color: var(--tasty-border-warning-soft);
+    --tasty-surface-current: var(--tasty-gradient-surface-warning);
 }
 
 .tasty-fonts-status-card.is-accent {
     border-color: var(--tasty-border-accent-soft);
+    --tasty-surface-current: var(--tasty-gradient-surface-accent);
 }
 
 .tasty-fonts-status-title {
@@ -1008,6 +1064,12 @@ h3.tasty-fonts-section-title {
     min-width: 0;
 }
 
+.tasty-fonts-role-box {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tasty-space-3);
+}
+
 .tasty-fonts-role-box-description {
     max-width: 30rem;
 }
@@ -1016,6 +1078,7 @@ h3.tasty-fonts-section-title {
     display: grid;
     gap: var(--tasty-space-2) var(--tasty-space-3);
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: auto;
 }
 
 .tasty-fonts-stack-field {
@@ -1171,6 +1234,44 @@ h3.tasty-fonts-section-title {
     padding-right: calc(var(--tasty-control-adornment) + var(--tasty-control-padding-inline));
 }
 
+.tasty-fonts-select-field {
+    position: relative;
+    display: block;
+}
+
+.tasty-fonts-select-field::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: var(--tasty-control-padding-inline-roomy);
+    width: 12px;
+    height: 8px;
+    transform: translateY(-50%);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1.5 1.25L6 5.75L10.5 1.25' stroke='%235d6d7b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: 12px 8px;
+    pointer-events: none;
+}
+
+.tasty-fonts-select-field--clearable::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: calc(var(--tasty-control-padding-inline-roomy) + 22px);
+    width: 1px;
+    height: calc(var(--tasty-control-height-regular) - 18px);
+    transform: translateY(-50%);
+    background: var(--tasty-control-divider);
+    opacity: 0;
+    transition: opacity 120ms ease, background-color 120ms ease;
+    pointer-events: none;
+}
+
+.tasty-fonts-select-field--clearable.has-clear-value::before,
+.tasty-fonts-select-field--clearable:focus-within::before {
+    opacity: 1;
+}
+
 .tasty-fonts-admin input:disabled,
 .tasty-fonts-admin select:disabled {
     background-color: var(--tasty-control-surface-muted);
@@ -1184,6 +1285,47 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-admin select:disabled {
     background-image: none;
     padding-right: var(--tasty-control-padding-inline-roomy);
+}
+
+.tasty-fonts-select-field select {
+    background-image: none;
+    padding-right: calc(var(--tasty-control-padding-inline) + 34px);
+}
+
+.tasty-fonts-select-field--clearable select {
+    padding-right: calc(var(--tasty-control-padding-inline) + 68px);
+}
+
+.tasty-fonts-select-clear {
+    position: absolute;
+    top: 50%;
+    right: calc(var(--tasty-control-padding-inline-roomy) + 30px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--tasty-control-text-muted);
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: background-color 120ms ease, color 120ms ease, opacity 120ms ease;
+}
+
+.tasty-fonts-select-clear:hover,
+.tasty-fonts-select-clear:focus-visible {
+    background: rgba(var(--tasty-accent-rgb), 0.08);
+    color: var(--tasty-control-text);
+    outline: none;
+}
+
+.tasty-fonts-select-field select:disabled + .tasty-fonts-select-clear,
+.tasty-fonts-select-clear[hidden] {
+    display: none;
 }
 
 .tasty-fonts-role-toolbar {
@@ -1210,7 +1352,7 @@ h3.tasty-fonts-section-title {
     padding: var(--tasty-card-padding-tight);
     border: 1px solid var(--tasty-border-subtle);
     border-radius: var(--tasty-radius-card);
-    background: var(--tasty-surface);
+    background: var(--tasty-gradient-surface-section);
     box-shadow: none;
 }
 
@@ -1314,7 +1456,7 @@ h3.tasty-fonts-section-title {
     padding: var(--tasty-card-padding-tight);
     border: 1px solid var(--tasty-border-subtle-strong);
     border-radius: var(--tasty-radius-card);
-    background: var(--tasty-surface);
+    background: var(--tasty-gradient-surface-card);
     box-shadow: none;
 }
 
@@ -1327,12 +1469,12 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-role-command-card--sitewide.is-draft {
-    background: var(--tasty-surface);
+    background: var(--tasty-gradient-surface-card);
     border-color: var(--tasty-border-subtle-strong);
 }
 
 .tasty-fonts-role-command-card--utilities {
-    background: var(--tasty-surface);
+    background: var(--tasty-gradient-surface-inset);
 }
 
 .tasty-fonts-studio-card-head {
@@ -1340,10 +1482,6 @@ h3.tasty-fonts-section-title {
     align-items: flex-start;
     justify-content: space-between;
     gap: var(--tasty-space-3);
-}
-
-.tasty-fonts-studio-card-head .tasty-fonts-help-wrap {
-    flex: 0 0 auto;
 }
 
 .tasty-fonts-studio-card-copy {
@@ -1376,112 +1514,6 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-role-command-actions .button {
     margin: 0;
-}
-
-.tasty-fonts-button-with-help {
-    --tasty-split-control-border: var(--tasty-control-border);
-    --tasty-split-control-divider: var(--tasty-control-divider);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) var(--tasty-control-adornment);
-    gap: 0;
-    align-items: stretch;
-    min-width: 0;
-    width: 100%;
-    border: 1px solid var(--tasty-split-control-border);
-    border-radius: var(--tasty-radius-control);
-    background: var(--tasty-control-surface);
-    overflow: hidden;
-}
-
-.tasty-fonts-button-with-help:not(:has(> .tasty-fonts-help-wrap)) {
-    grid-template-columns: minmax(0, 1fr);
-}
-
-.tasty-fonts-button-with-help:focus-within {
-    border-color: var(--tasty-accent);
-    box-shadow: var(--tasty-shadow-focus);
-}
-
-.tasty-fonts-button-with-help:has(> .button.button-primary) {
-    --tasty-split-control-border: var(--tasty-accent);
-    --tasty-split-control-divider: var(--tasty-control-divider-on-accent);
-    background: var(--tasty-accent);
-}
-
-.tasty-fonts-button-with-help:has(> .tasty-fonts-role-assign-button.is-current),
-.tasty-fonts-button-with-help:has(> .tasty-fonts-role-assign-button[aria-pressed="true"]),
-.tasty-fonts-button-with-help:has(> .tasty-fonts-disclosure-button[aria-expanded="true"]) {
-    --tasty-split-control-border: var(--tasty-control-border-active);
-    --tasty-split-control-divider: rgba(var(--tasty-accent-rgb), 0.18);
-    background: var(--tasty-accent-soft);
-}
-
-.tasty-fonts-button-with-help > .button {
-    width: 100%;
-    min-width: 0;
-    min-height: var(--tasty-control-height-regular);
-    margin: 0;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-}
-
-.tasty-fonts-button-with-help > .button:focus,
-.tasty-fonts-button-with-help .tasty-fonts-help-button:focus {
-    box-shadow: none;
-}
-
-.tasty-fonts-button-with-help > .tasty-fonts-help-wrap {
-    display: flex;
-    align-items: stretch;
-    min-width: 0;
-}
-
-.tasty-fonts-button-with-help .tasty-fonts-help-button {
-    width: 100%;
-    min-width: 0;
-    min-height: var(--tasty-control-height-regular);
-    height: 100%;
-    border: 0;
-    border-left: 1px solid var(--tasty-split-control-divider);
-    border-radius: 0;
-    background: transparent;
-    color: var(--tasty-control-text-muted);
-    box-shadow: none;
-}
-
-.tasty-fonts-button-with-help .tasty-fonts-help-button:hover,
-.tasty-fonts-button-with-help .tasty-fonts-help-button:focus {
-    background: rgba(var(--tasty-accent-rgb), 0.06);
-    color: var(--tasty-accent);
-}
-
-.tasty-fonts-button-with-help .tasty-fonts-help-button[aria-expanded="true"] {
-    background: var(--tasty-accent-soft);
-    color: var(--tasty-accent);
-}
-
-.tasty-fonts-button-with-help > .button.button-primary + .tasty-fonts-help-wrap .tasty-fonts-help-button {
-    background: var(--tasty-accent-hover);
-    color: var(--tasty-text-on-accent);
-}
-
-.tasty-fonts-button-with-help > .button.button-primary + .tasty-fonts-help-wrap .tasty-fonts-help-button:hover,
-.tasty-fonts-button-with-help > .button.button-primary + .tasty-fonts-help-wrap .tasty-fonts-help-button:focus {
-    background: var(--tasty-accent-active);
-    color: var(--tasty-text-on-accent);
-}
-
-.tasty-fonts-button-with-help > .button.button-primary + .tasty-fonts-help-wrap .tasty-fonts-help-button[aria-expanded="true"] {
-    background: var(--tasty-accent-active);
-    color: var(--tasty-text-on-accent);
-}
-
-.tasty-fonts-button-with-help > .tasty-fonts-role-assign-button.is-current + .tasty-fonts-help-wrap .tasty-fonts-help-button,
-.tasty-fonts-button-with-help > .tasty-fonts-role-assign-button[aria-pressed="true"] + .tasty-fonts-help-wrap .tasty-fonts-help-button,
-.tasty-fonts-button-with-help > .tasty-fonts-disclosure-button[aria-expanded="true"] + .tasty-fonts-help-wrap .tasty-fonts-help-button {
-    background: var(--tasty-accent-soft);
-    color: var(--tasty-accent);
 }
 
 .tasty-fonts-scope-button {
@@ -1539,24 +1571,6 @@ h3.tasty-fonts-section-title {
     border-color: var(--tasty-accent);
     background: var(--tasty-accent-soft);
     color: var(--tasty-accent-hover);
-}
-
-.tasty-fonts-button-with-help:has(> .tasty-fonts-button-danger) {
-    --tasty-split-control-border: var(--tasty-border-danger-soft);
-    --tasty-split-control-divider: rgba(var(--tasty-danger-rgb), 0.2);
-    background: var(--tasty-surface-danger);
-}
-
-.tasty-fonts-button-with-help > .tasty-fonts-button-danger + .tasty-fonts-help-wrap .tasty-fonts-help-button {
-    background: transparent;
-    color: var(--tasty-danger);
-}
-
-.tasty-fonts-button-with-help > .tasty-fonts-button-danger + .tasty-fonts-help-wrap .tasty-fonts-help-button:hover,
-.tasty-fonts-button-with-help > .tasty-fonts-button-danger + .tasty-fonts-help-wrap .tasty-fonts-help-button:focus,
-.tasty-fonts-button-with-help > .tasty-fonts-button-danger + .tasty-fonts-help-wrap .tasty-fonts-help-button[aria-expanded="true"] {
-    background: var(--tasty-surface-danger-strong);
-    color: var(--tasty-danger);
 }
 
 .tasty-fonts-scope-button-title {
@@ -1640,7 +1654,7 @@ h3.tasty-fonts-section-title {
     padding: var(--tasty-card-padding-tight);
     border: 1px solid var(--tasty-border);
     border-radius: var(--tasty-radius-card);
-    background: var(--tasty-surface);
+    background: var(--tasty-gradient-surface-inset);
     box-shadow: none;
 }
 
@@ -1648,7 +1662,7 @@ h3.tasty-fonts-section-title {
     padding: var(--tasty-card-padding-tight);
     border: 1px solid var(--tasty-border);
     border-radius: var(--tasty-radius-card);
-    background: var(--tasty-surface);
+    background: var(--tasty-gradient-surface-inset);
     display: flex;
     flex-direction: column;
     gap: var(--tasty-space-4);
@@ -1656,50 +1670,76 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-output-settings-panel {
     display: grid;
-    gap: var(--tasty-space-3);
-    padding: var(--tasty-space-4);
-    border: 1px solid var(--tasty-border);
-    border-radius: var(--tasty-radius-card);
-    background: var(--tasty-surface);
+    gap: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
 }
 
 .tasty-fonts-output-settings-copy {
     display: grid;
-    gap: 6px;
-    max-width: 38rem;
-}
-
-.tasty-fonts-output-settings-copy h3,
-.tasty-fonts-output-settings-copy p {
-    margin: 0;
+    gap: 0;
+    max-width: none;
+    padding-bottom: var(--tasty-space-3);
+    border-bottom: 1px solid var(--tasty-border-subtle);
+    margin-bottom: 0;
 }
 
 .tasty-fonts-output-settings-copy h3 {
-    font-size: var(--tasty-type-title-size);
-    font-weight: var(--tasty-type-title-weight);
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    display: none;
+}
+
+.tasty-fonts-output-settings-copy p {
+    margin: 0;
+    font-size: var(--tasty-type-caption-size);
+    line-height: 1.45;
+    color: var(--tasty-text-muted);
 }
 
 .tasty-fonts-output-settings-form {
     display: grid;
-    gap: var(--tasty-space-2);
+    gap: 0;
 }
 
 .tasty-fonts-output-settings-list {
     display: grid;
-    gap: var(--tasty-space-2);
+    gap: 0;
     width: 100%;
 }
 
 .tasty-fonts-output-settings-subsection {
-    display: grid;
-    gap: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--tasty-space-3);
+    padding: var(--tasty-space-4) 0 10px;
+}
+
+.tasty-fonts-output-settings-subsection:first-child {
+    padding-top: var(--tasty-space-2);
 }
 
 .tasty-fonts-output-settings-subsection:not(:first-child) {
-    padding-top: var(--tasty-space-2);
-    border-top: 1px solid var(--tasty-border-subtle);
+    padding-top: var(--tasty-space-5);
+    border-top: 0;
+}
+
+.tasty-fonts-output-settings-subsection > span {
+    font-size: 10px;
+    font-weight: var(--tasty-font-weight-bold);
+    letter-spacing: 0.1em;
+    line-height: 1.2;
+    text-transform: uppercase;
+    color: var(--tasty-text-muted);
+    white-space: nowrap;
+}
+
+.tasty-fonts-output-settings-subsection::after {
+    content: '';
+    flex: 1 1 0;
+    height: 1px;
+    background: var(--tasty-border);
+    opacity: 0.5;
 }
 
 .tasty-fonts-output-settings-subsection p {
@@ -1708,110 +1748,252 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-output-settings-submenu {
     display: grid;
-    gap: 12px;
-    margin: -2px 0 2px 52px;
-    padding: 14px;
-    border: 1px solid var(--tasty-border-subtle);
-    border-radius: var(--tasty-radius-control);
-    background: rgba(var(--tasty-white-rgb), 0.78);
+    gap: 0;
+    margin: 0 0 0 var(--tasty-space-3);
+    padding: 0 0 0 var(--tasty-space-4);
+    border: 0;
+    border-left: 2px solid var(--tasty-border-subtle-strong);
+    border-radius: 0;
+    background: transparent;
 }
 
 .tasty-fonts-output-settings-submenu.is-inactive {
-    opacity: 0.82;
+    opacity: 0.5;
 }
 
 .tasty-fonts-output-settings-submenu-copy {
     display: grid;
-    gap: 4px;
+    gap: 3px;
 }
 
-.tasty-fonts-output-settings-submenu-copy h4,
+.tasty-fonts-output-settings-submenu-copy h4 {
+    margin: 0;
+    font-size: var(--tasty-type-body-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    color: var(--tasty-text);
+    line-height: 1.3;
+}
+
 .tasty-fonts-output-settings-submenu-copy p {
     margin: 0;
+    font-size: var(--tasty-type-caption-size);
+    color: var(--tasty-text-muted);
+    line-height: 1.4;
 }
 
-.tasty-fonts-output-settings-submenu-copy h4,
+.tasty-fonts-output-settings-submenu > .tasty-fonts-output-settings-submenu-copy {
+    padding: var(--tasty-space-2) 0 var(--tasty-space-1);
+}
+
+.tasty-fonts-output-settings-submenu > .tasty-fonts-output-settings-submenu-copy h4 {
+    font-size: var(--tasty-type-caption-size);
+    font-weight: var(--tasty-font-weight-bold);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--tasty-text-muted);
+}
+
+.tasty-fonts-output-settings-submenu > .tasty-fonts-output-settings-submenu-copy p {
+    display: none;
+}
+
 .tasty-fonts-output-settings-submenu-group-title {
-    color: var(--tasty-text);
-    font-size: var(--tasty-type-label-size);
-    font-weight: var(--tasty-font-weight-semibold);
-    line-height: 1.35;
+    font-size: 10px;
+    font-weight: var(--tasty-font-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--tasty-text-muted);
+    line-height: 1.2;
+    padding: var(--tasty-space-2) 0 var(--tasty-space-1);
 }
 
 .tasty-fonts-output-settings-quick {
     display: grid;
-    gap: 12px;
-    padding: 14px;
-    border: 1px solid var(--tasty-border-subtle);
-    border-radius: var(--tasty-radius-control);
-    background: rgba(var(--tasty-white-rgb), 0.78);
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: var(--tasty-space-4);
+    row-gap: 3px;
+    padding: 13px 0;
+    border: 0;
+    border-bottom: 1px solid var(--tasty-border-subtle);
+    border-radius: 0;
+    background: transparent;
+}
+
+.tasty-fonts-output-settings-quick .tasty-fonts-output-settings-submenu-copy {
+    grid-column: 1;
+    grid-row: 1 / 3;
 }
 
 .tasty-fonts-output-quick-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+    grid-column: 2;
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 3px;
+    padding: 4px;
+    border: 1px solid var(--tasty-border);
+    border-radius: var(--tasty-radius-pill);
+    background: linear-gradient(170deg, var(--tasty-surface-muted) 0%, var(--tasty-gray-150) 100%);
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .tasty-fonts-output-quick-option {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    border: 1px solid var(--tasty-control-border);
-    border-radius: 999px;
-    background: var(--tasty-control-surface);
+    justify-content: center;
+    gap: 0;
+    padding: 5px 13px;
+    border: 1px solid transparent;
+    border-radius: var(--tasty-radius-pill);
+    background: transparent;
     cursor: pointer;
+    font-size: var(--tasty-type-caption-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    color: var(--tasty-text-muted);
+    line-height: 1;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tasty-fonts-output-quick-option:focus-within {
+    border-color: var(--tasty-accent);
+    color: var(--tasty-text);
+    box-shadow: var(--tasty-shadow-focus);
+    outline: none;
 }
 
 .tasty-fonts-output-quick-option.is-active {
+    background: var(--tasty-surface);
+    border-color: var(--tasty-border-subtle-strong);
+    color: var(--tasty-text);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.07);
+}
+
+.tasty-fonts-output-quick-option.is-active:focus-within {
     border-color: var(--tasty-accent);
-    background: rgba(var(--tasty-accent-rgb), 0.08);
+    box-shadow: var(--tasty-shadow-focus), 0 1px 3px rgba(15, 23, 42, 0.07);
 }
 
 .tasty-fonts-output-quick-option input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
     margin: 0;
+    cursor: pointer;
 }
 
 .tasty-fonts-output-settings-submenu-list,
 .tasty-fonts-output-settings-submenu-group-list {
     display: grid;
-    gap: 10px;
+    gap: 0;
 }
 
 .tasty-fonts-output-settings-submenu-group {
     display: grid;
-    gap: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--tasty-border-subtle);
+    gap: 0;
+    padding-top: 0;
+    border-top: 0;
 }
 
 .tasty-fonts-toggle-field--output {
     width: 100%;
-    align-items: flex-start;
-    padding: var(--tasty-space-3) var(--tasty-space-4);
+    align-items: center;
+    padding: 13px 0;
+    border: 0;
+    border-bottom: 1px solid var(--tasty-border-subtle);
+    border-radius: 0;
+    background: transparent;
+    cursor: pointer;
+    gap: var(--tasty-space-4);
+    flex: none;
 }
 
 .tasty-fonts-toggle-field--output.tasty-fonts-toggle-field--nested {
-    padding: 12px 14px;
-    background: rgba(var(--tasty-white-rgb), 0.92);
+    padding: 10px 0 10px var(--tasty-space-8);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid rgba(var(--tasty-gray-600-rgb), 0.08);
 }
 
 .tasty-fonts-toggle-field--output.is-disabled {
-    opacity: 0.65;
+    opacity: 0.5;
+    pointer-events: none;
 }
 
 .tasty-fonts-stack-field--output {
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 2px var(--tasty-space-4);
     width: 100%;
-    gap: 10px;
-    padding: var(--tasty-space-3) var(--tasty-space-4);
-    border: 1px solid var(--tasty-control-border);
-    border-radius: var(--tasty-radius-control);
-    background: var(--tasty-control-surface);
+    padding: 13px 0;
+    border: 0;
+    border-bottom: 1px solid var(--tasty-border-subtle);
+    border-radius: 0;
+    background: transparent;
 }
 
 .tasty-fonts-toggle-field--output .tasty-fonts-toggle-copy {
-    gap: 4px;
+    order: 1;
+    flex: 1 1 auto;
+    gap: 3px;
+}
+
+.tasty-fonts-toggle-field--output .tasty-fonts-toggle-switch {
+    order: 2;
+    flex: 0 0 auto;
+}
+
+.tasty-fonts-toggle-field--output .tasty-fonts-toggle-title {
+    font-size: var(--tasty-type-body-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    color: var(--tasty-text);
+    line-height: 1.3;
+}
+
+.tasty-fonts-toggle-field--output .tasty-fonts-toggle-description {
+    font-size: var(--tasty-type-caption-size);
+    line-height: 1.4;
+    max-width: none;
+}
+
+.tasty-fonts-stack-field--output > .tasty-fonts-field-label {
+    grid-column: 1;
+    grid-row: 1;
+    margin-bottom: 0;
+    font-size: var(--tasty-type-body-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--tasty-text);
+}
+
+.tasty-fonts-stack-field--output > .tasty-fonts-select-field {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+    flex: none;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+}
+
+.tasty-fonts-stack-field--output > .tasty-fonts-select-field select {
+    width: 100%;
+}
+
+.tasty-fonts-stack-field--output > .tasty-fonts-toggle-description {
+    grid-column: 1;
+    grid-row: 2;
+    display: block;
+    font-size: var(--tasty-type-caption-size);
+    color: var(--tasty-text-muted);
+    line-height: 1.4;
+    margin: 0;
 }
 
 .tasty-fonts-toggle-field {
@@ -1848,7 +2030,8 @@ h3.tasty-fonts-section-title {
     width: 42px;
     height: 24px;
     border-radius: 999px;
-    background: var(--tasty-control-border);
+    background: rgba(var(--tasty-gray-600-rgb), 0.28);
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.1);
     transition: background-color 0.18s ease, box-shadow 0.18s ease;
 }
 
@@ -1861,12 +2044,13 @@ h3.tasty-fonts-section-title {
     height: 20px;
     border-radius: 999px;
     background: var(--tasty-surface);
-    box-shadow: var(--tasty-shadow-card);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.16), 0 1px 1px rgba(15, 23, 42, 0.08);
     transition: transform 0.18s ease;
 }
 
 .tasty-fonts-toggle-input:checked + .tasty-fonts-toggle-switch {
     background: var(--tasty-accent);
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(var(--tasty-accent-rgb), 0.18);
 }
 
 .tasty-fonts-toggle-input:checked + .tasty-fonts-toggle-switch::after {
@@ -1902,9 +2086,10 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-output-settings-footnote {
-    margin: 0;
+    margin: var(--tasty-space-3) 0 0;
     font-size: var(--tasty-type-caption-size);
     line-height: 1.45;
+    color: var(--tasty-text-muted);
 }
 
 .tasty-fonts-output-settings-footnote strong {
@@ -1928,36 +2113,40 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-studio-switcher {
     display: inline-flex;
     flex-wrap: wrap;
-    gap: var(--tasty-space-1);
-    padding: var(--tasty-space-1);
-    border: 1px solid var(--tasty-control-border);
-    border-radius: calc(var(--tasty-radius-control) + var(--tasty-space-1));
-    background: var(--tasty-control-surface-muted);
+    gap: 3px;
+    padding: var(--tasty-masthead-switcher-padding);
+    border: 1px solid rgba(var(--tasty-gray-600-rgb), 0.16);
+    border-radius: var(--tasty-radius-panel);
+    background: linear-gradient(170deg, rgba(var(--tasty-white-rgb), 0.88) 0%, rgba(var(--tasty-white-rgb), 0.72) 100%);
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.9), 0 1px 4px rgba(15, 23, 42, 0.06);
 }
 
 .tasty-fonts-tab-button {
     align-items: center;
     background: transparent;
     border: 1px solid transparent;
-    border-radius: calc(var(--tasty-radius-control) - 2px);
+    border-radius: var(--tasty-masthead-tab-radius);
     box-shadow: none;
-    color: var(--tasty-control-text);
+    color: var(--tasty-text-muted);
     cursor: pointer;
     display: inline-flex;
     font-size: var(--tasty-type-control-size);
     font-weight: var(--tasty-font-weight-semibold);
     justify-content: center;
-    min-height: var(--tasty-control-height-regular);
-    padding: 0 var(--tasty-control-padding-inline-roomy);
+    letter-spacing: -0.005em;
+    min-height: var(--tasty-masthead-tab-height);
+    padding: 0 var(--tasty-masthead-tab-padding-inline);
     text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .tasty-fonts-tab-button.is-active {
-    background: var(--tasty-control-surface);
-    border-color: var(--tasty-control-border-active);
+    background: var(--tasty-gradient-tab-active) padding-box, var(--tasty-gradient-border-soft) border-box;
+    border-color: transparent;
     color: var(--tasty-accent);
     font-weight: 600;
-    box-shadow: none;
+    letter-spacing: -0.005em;
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.9), 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
 .tasty-fonts-studio-panel {
@@ -2817,9 +3006,10 @@ h3.tasty-fonts-section-title {
     display: block;
     line-height: 1.75;
     min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    white-space: pre;
+    overflow: hidden;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .tasty-fonts-preview-token-comment {
@@ -3289,7 +3479,7 @@ h3.tasty-fonts-section-title {
     border: 1px solid var(--tasty-border);
     border-radius: var(--tasty-radius-card);
     overflow: hidden;
-    background: var(--tasty-surface);
+    background: var(--tasty-gradient-surface-card);
 }
 
 .tasty-fonts-code-panel-head {
@@ -3298,7 +3488,7 @@ h3.tasty-fonts-section-title {
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: var(--tasty-surface-soft);
+    background: var(--tasty-gradient-surface-inset);
     border-bottom: 1px solid var(--tasty-border);
 }
 
@@ -3324,7 +3514,8 @@ h3.tasty-fonts-section-title {
     border: 0;
     box-shadow: none;
     padding: 14px;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
     background:
         linear-gradient(180deg, rgba(15, 23, 42, 0.02), rgba(15, 23, 42, 0)) padding-box,
         transparent;
@@ -3424,7 +3615,8 @@ h3.tasty-fonts-section-title {
     min-width: 0;
 }
 
-.tasty-fonts-select-field {
+.tasty-fonts-library-filterbar > .tasty-fonts-select-field,
+.tasty-fonts-activity-toolbar > .tasty-fonts-select-field {
     flex: 0 0 var(--tasty-toolbar-field-width);
     width: var(--tasty-toolbar-field-width);
     min-width: var(--tasty-toolbar-field-width);
@@ -3604,7 +3796,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-import-shell {
     margin-bottom: var(--tasty-space-4);
     padding: clamp(18px, 2vw, 24px);
-    border-radius: calc(var(--tasty-radius-card) + 2px);
+    border-radius: calc(var(--tasty-radius-card) + 4px);
     background: var(--tasty-surface);
     border: 1px solid var(--tasty-border-subtle-strong);
     box-shadow: var(--tasty-shadow-card);
@@ -3665,9 +3857,10 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-import-panel {
     min-width: 0;
     padding: 20px;
-    border: 1px solid var(--tasty-border-subtle);
+    border: 1px solid var(--tasty-border-subtle-strong);
     border-radius: var(--tasty-radius-large);
     background: var(--tasty-surface);
+    box-shadow: var(--tasty-shadow-card);
 }
 
 .tasty-fonts-source-card,
@@ -4752,14 +4945,15 @@ h3.tasty-fonts-section-title {
     min-width: 0;
     width: 100%;
     border-color: var(--tasty-border-subtle-strong);
-    background: var(--tasty-surface);
+    background: var(--tasty-gradient-surface-card);
     box-shadow: var(--tasty-shadow-card);
-    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .tasty-fonts-font-card:hover {
     border-color: var(--tasty-border-accent-soft);
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.055);
+    box-shadow: var(--tasty-shadow-card-hover);
+    transform: translateY(-1px);
 }
 
 #tasty-fonts-library-empty-filtered {
@@ -4768,13 +4962,14 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-font-card.is-active {
     border-color: var(--tasty-border-accent-strong);
-    background: var(--tasty-surface);
-    box-shadow: inset 0 0 0 1px rgba(var(--tasty-accent-rgb), 0.06);
+    background: var(--tasty-gradient-surface-accent);
+    box-shadow: 0 0 0 1px rgba(var(--tasty-accent-rgb), 0.1), var(--tasty-shadow-card);
+    transform: none;
 }
 
 .tasty-fonts-font-card.is-emphasized {
     border-color: var(--tasty-border-accent-strong);
-    background: var(--tasty-surface);
+    background: var(--tasty-gradient-surface-card);
     box-shadow: inset 0 0 0 1px rgba(var(--tasty-accent-rgb), 0.08);
 }
 
@@ -4801,6 +4996,8 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-font-card-top,
+.tasty-fonts-font-card-overview-main,
+.tasty-fonts-font-card-sidecolumn,
 .tasty-fonts-font-primary,
 .tasty-fonts-font-sidebar {
     min-width: 0;
@@ -4812,13 +5009,22 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-font-card.is-expanded .tasty-fonts-font-card-main {
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 380px);
     gap: var(--tasty-panel-gap);
+    align-items: start;
 }
 
-.tasty-fonts-font-card.is-expanded .tasty-fonts-font-card-top {
+.tasty-fonts-font-card-overview-main {
+    display: grid;
     gap: 18px;
-    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 380px);
+    align-content: start;
+}
+
+.tasty-fonts-font-card-sidecolumn {
+    display: grid;
+    gap: var(--tasty-library-card-section-gap);
     align-items: start;
+    align-content: start;
 }
 
 .tasty-fonts-font-primary {
@@ -4862,6 +5068,12 @@ h3.tasty-fonts-section-title {
     border-radius: var(--tasty-radius-panel);
     background: linear-gradient(180deg, rgba(var(--tasty-white-rgb), 0.94), rgba(var(--tasty-white-rgb), 0.86));
     box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.7);
+}
+
+.tasty-fonts-font-card.is-expanded .tasty-fonts-font-actions {
+    gap: var(--tasty-space-3);
+    padding-top: 0;
+    border-top: 0;
 }
 
 .tasty-fonts-font-identity {
@@ -5080,9 +5292,9 @@ h3.tasty-fonts-section-title {
     gap: var(--tasty-library-card-inline-gap);
     min-width: 0;
     padding: var(--tasty-library-preview-padding);
-    border: 1px solid var(--tasty-border-subtle);
+    border: 1px solid var(--tasty-border-subtle-strong);
     border-radius: var(--tasty-radius-control);
-    background: var(--tasty-control-surface-muted);
+    background: linear-gradient(160deg, rgba(var(--tasty-white-rgb), 0.6) 0%, rgba(248, 250, 253, 0.92) 100%);
 }
 
 .tasty-fonts-font-inline-preview.is-monospace,
@@ -5324,10 +5536,29 @@ h3.tasty-fonts-section-title {
     border-top: 1px solid var(--tasty-border-subtle);
 }
 
-.tasty-fonts-family-details.has-family-css-variables {
-    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+.tasty-fonts-family-details-grid {
+    display: grid;
     gap: 16px;
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.95fr);
+    grid-template-areas:
+        "primary utilities"
+        "faces faces";
     align-items: start;
+}
+
+.tasty-fonts-family-details-primary {
+    grid-area: primary;
+    display: grid;
+    gap: 16px;
+    min-width: 0;
+}
+
+.tasty-fonts-family-details-utilities {
+    grid-area: utilities;
+    display: grid;
+    gap: 16px;
+    align-content: start;
+    min-width: 0;
 }
 
 .tasty-fonts-detail-group {
@@ -5341,17 +5572,8 @@ h3.tasty-fonts-section-title {
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 
-.tasty-fonts-detail-group--profiles {
-    grid-column: 1;
-}
-
-.tasty-fonts-detail-group--variables {
-    grid-column: 2;
-    align-self: start;
-}
-
 .tasty-fonts-detail-group--faces {
-    grid-column: 1 / -1;
+    grid-area: faces;
 }
 
 .tasty-fonts-detail-group::before {
@@ -5553,14 +5775,14 @@ h3.tasty-fonts-section-title {
     background: rgba(var(--tasty-white-rgb), 0.78);
 }
 
-.tasty-fonts-detail-group--variables .tasty-fonts-detail-files {
+.tasty-fonts-detail-group--utility .tasty-fonts-detail-files {
     height: 100%;
     gap: 10px;
     justify-items: stretch;
     align-content: start;
 }
 
-.tasty-fonts-detail-group--variables .tasty-fonts-role-stacks--selection {
+.tasty-fonts-detail-group--utility .tasty-fonts-role-stacks--selection {
     display: grid;
     width: 100%;
     gap: 10px;
@@ -5568,20 +5790,21 @@ h3.tasty-fonts-section-title {
     justify-items: stretch;
 }
 
-.tasty-fonts-detail-group--variables .tasty-fonts-role-stack {
+.tasty-fonts-detail-group--utility .tasty-fonts-role-stack {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: start;
-    gap: 6px;
+    column-gap: 12px;
+    row-gap: 6px;
     width: 100%;
 }
 
-.tasty-fonts-detail-group--variables .tasty-fonts-role-stack-label {
-    padding-top: 0;
-    justify-self: start;
+.tasty-fonts-detail-group--utility .tasty-fonts-role-stack-label {
+    padding-top: 8px;
 }
 
-.tasty-fonts-detail-group--variables .tasty-fonts-role-stack-copy {
+.tasty-fonts-detail-group--utility .tasty-fonts-role-stack-copy,
+.tasty-fonts-detail-group--utility .tasty-fonts-role-stack .tasty-fonts-kbd {
     width: 100%;
     max-width: none;
     justify-content: flex-start;
@@ -5598,7 +5821,7 @@ h3.tasty-fonts-section-title {
     border-color: var(--tasty-border-subtle-strong);
 }
 
-.tasty-fonts-detail-group--variables .tasty-fonts-role-stack-copy::after {
+.tasty-fonts-detail-group--utility .tasty-fonts-role-stack-copy::after {
     align-self: flex-start;
     margin-top: 2px;
 }
@@ -5728,7 +5951,7 @@ h3.tasty-fonts-section-title {
     padding: var(--tasty-space-3);
     border: 1px solid var(--tasty-border);
     border-radius: var(--tasty-radius-control);
-    background: var(--tasty-surface);
+    background: var(--tasty-gradient-surface-inset);
     font-size: var(--tasty-type-body-size);
     line-height: var(--tasty-type-caption-line-height);
 }
@@ -5850,7 +6073,7 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-log-item + .tasty-fonts-log-item {
-    border-top: 1px solid var(--tasty-border-subtle);
+    border-top: 1px solid rgba(var(--tasty-gray-600-rgb), 0.09);
 }
 
 .tasty-fonts-log-marker {
@@ -5859,7 +6082,7 @@ h3.tasty-fonts-section-title {
     margin-top: var(--tasty-activity-log-marker-offset);
     border-radius: 999px;
     background: var(--tasty-accent);
-    box-shadow: 0 0 0 3px rgba(var(--tasty-accent-rgb), 0.04);
+    box-shadow: 0 0 0 3px rgba(var(--tasty-accent-rgb), 0.12), 0 0 0 5px rgba(var(--tasty-accent-rgb), 0.04);
 }
 
 .tasty-fonts-log-content {
@@ -5980,7 +6203,7 @@ h3.tasty-fonts-section-title {
     border: 1px solid var(--tasty-control-border);
     border-radius: var(--tasty-radius-control);
     box-sizing: border-box;
-    box-shadow: none;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.7);
     color: var(--tasty-control-text);
     display: inline-flex;
     font-size: var(--tasty-type-body-size);
@@ -6001,6 +6224,7 @@ h3.tasty-fonts-section-title {
     background: var(--tasty-accent);
     border-color: var(--tasty-accent);
     color: var(--tasty-text-on-accent);
+    box-shadow: var(--tasty-shadow-primary-button);
 }
 
 .tasty-fonts-admin .tasty-fonts-button-danger {
@@ -6022,32 +6246,6 @@ h3.tasty-fonts-section-title {
     border: 1px solid transparent;
     border-radius: calc(var(--tasty-radius-control) - 2px);
     box-shadow: none;
-}
-
-.tasty-fonts-admin .tasty-fonts-button-with-help > .button {
-    margin: 0;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-}
-
-.tasty-fonts-admin .tasty-fonts-button-with-help > .button:not(.button-primary) {
-    background: transparent;
-}
-
-.tasty-fonts-admin .tasty-fonts-button-with-help > .tasty-fonts-button-danger:hover,
-.tasty-fonts-admin .tasty-fonts-button-with-help > .tasty-fonts-button-danger:focus,
-.tasty-fonts-admin .tasty-fonts-button-with-help > .tasty-fonts-button-danger:active {
-    background: var(--tasty-surface-danger-strong);
-    color: var(--tasty-danger);
-}
-
-.tasty-fonts-admin .tasty-fonts-button-with-help > .tasty-fonts-button-danger.is-disabled:hover,
-.tasty-fonts-admin .tasty-fonts-button-with-help > .tasty-fonts-button-danger.is-disabled:focus,
-.tasty-fonts-admin .tasty-fonts-button-with-help > .tasty-fonts-button-danger[aria-disabled="true"]:hover,
-.tasty-fonts-admin .tasty-fonts-button-with-help > .tasty-fonts-button-danger[aria-disabled="true"]:focus {
-    background: transparent;
-    color: var(--tasty-control-text-muted);
 }
 
 .tasty-fonts-admin .button.button-small {
@@ -6097,16 +6295,10 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-admin .button-link:focus,
 .tasty-fonts-admin button:focus,
 .tasty-fonts-admin input:focus,
-.tasty-fonts-admin select:focus,
-.tasty-fonts-tab-button:focus {
+.tasty-fonts-admin select:focus {
     border-color: var(--tasty-accent);
     box-shadow: var(--tasty-shadow-focus);
     outline: none;
-}
-
-.tasty-fonts-admin .tasty-fonts-button-with-help > .button:focus,
-.tasty-fonts-admin .tasty-fonts-button-with-help .tasty-fonts-help-button:focus {
-    box-shadow: none;
 }
 
 .tasty-fonts-admin a.button:hover,
@@ -6114,12 +6306,42 @@ h3.tasty-fonts-section-title {
     border-color: var(--tasty-control-border-active);
     background: var(--tasty-control-surface);
     color: var(--tasty-control-text);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .tasty-fonts-admin .tasty-fonts-tab-button:hover {
-    background: var(--tasty-surface-accent-soft);
-    border-color: var(--tasty-border-accent-soft);
-    color: var(--tasty-control-text);
+    background: rgba(var(--tasty-white-rgb), 0.6);
+    border-color: rgba(var(--tasty-accent-rgb), 0.14);
+    color: var(--tasty-text);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.tasty-fonts-tab-button:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.tasty-fonts-admin .tasty-fonts-tab-button:focus-visible {
+    background: rgba(var(--tasty-white-rgb), 0.6);
+    border-color: var(--tasty-accent);
+    color: var(--tasty-text);
+    box-shadow: var(--tasty-shadow-focus);
+    outline: none;
+}
+
+.tasty-fonts-page-header-nav .tasty-fonts-tab-button {
+    border-color: transparent;
+    border-radius: 0;
+    color: var(--tasty-text-muted);
+    font-weight: var(--tasty-font-weight-semibold);
+    box-shadow: none;
+}
+
+.tasty-fonts-page-header-nav .tasty-fonts-tab-button:hover,
+.tasty-fonts-page-header-nav .tasty-fonts-tab-button:focus:not(:focus-visible) {
+    background: transparent;
+    border-color: transparent;
+    color: var(--tasty-text);
+    box-shadow: none;
 }
 
 .tasty-fonts-admin .button.button-primary:hover,
@@ -6127,6 +6349,7 @@ h3.tasty-fonts-section-title {
     background: var(--tasty-accent-hover);
     border-color: var(--tasty-accent-hover);
     color: var(--tasty-text-on-accent);
+    box-shadow: 0 2px 8px rgba(var(--tasty-accent-rgb), 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .tasty-fonts-admin .button:disabled,
@@ -6168,11 +6391,41 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-admin .tasty-fonts-tab-button.is-active,
 .tasty-fonts-admin .tasty-fonts-tab-button.is-active:hover,
-.tasty-fonts-admin .tasty-fonts-tab-button.is-active:focus {
-    background: var(--tasty-control-surface);
-    border-color: var(--tasty-control-border-active);
+.tasty-fonts-admin .tasty-fonts-tab-button.is-active:focus:not(:focus-visible) {
+    background: var(--tasty-gradient-tab-active) padding-box, var(--tasty-gradient-border-soft) border-box;
+    border-color: transparent;
+    color: var(--tasty-accent);
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.72);
+}
+
+.tasty-fonts-admin .tasty-fonts-tab-button.is-active:focus-visible {
+    background: var(--tasty-gradient-tab-active) padding-box, var(--tasty-gradient-border-soft) border-box;
+    border-color: transparent;
+    color: var(--tasty-accent);
+    box-shadow: var(--tasty-shadow-focus), inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.72);
+}
+
+.tasty-fonts-page-header-nav .tasty-fonts-tab-button.is-active,
+.tasty-fonts-page-header-nav .tasty-fonts-tab-button.is-active:hover,
+.tasty-fonts-page-header-nav .tasty-fonts-tab-button.is-active:focus:not(:focus-visible) {
+    background: transparent;
+    border-color: transparent;
     color: var(--tasty-accent);
     box-shadow: none;
+}
+
+.tasty-fonts-page-header-nav .tasty-fonts-tab-button:focus-visible {
+    background: rgba(var(--tasty-accent-rgb), 0.08);
+    border-color: rgba(var(--tasty-accent-rgb), 0.24);
+    border-radius: var(--tasty-masthead-tab-radius);
+    color: var(--tasty-text);
+    box-shadow: var(--tasty-shadow-focus), inset 0 -2px 0 rgba(var(--tasty-accent-rgb), 0.28);
+    outline: none;
+}
+
+.tasty-fonts-page-header-nav .tasty-fonts-tab-button.is-active:focus-visible {
+    color: var(--tasty-accent);
+    box-shadow: var(--tasty-shadow-focus), inset 0 -2px 0 var(--tasty-accent);
 }
 
 .tasty-fonts-admin .tasty-fonts-role-assign-button.is-current,
@@ -6199,6 +6452,675 @@ h3.tasty-fonts-section-title {
     border-color: var(--tasty-control-border);
     color: var(--tasty-control-text-muted);
     background: var(--tasty-control-surface-muted);
+}
+
+/* ===================================================
+   Settings page scoped overrides
+   =================================================== */
+
+/* Disclosure button inside settings acts as a section accordion header */
+#tasty-fonts-settings-page .tasty-fonts-disclosure-button.button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 0;
+    background: transparent;
+    border: 0;
+    border-top: 1px solid var(--tasty-border-subtle);
+    border-bottom: 1px solid var(--tasty-border-subtle);
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--tasty-text-muted);
+    font-size: var(--tasty-type-body-size);
+    font-weight: var(--tasty-font-weight-medium);
+    letter-spacing: 0;
+    text-align: left;
+    margin-bottom: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-disclosure-button.button:hover,
+#tasty-fonts-settings-page .tasty-fonts-disclosure-button.button:focus {
+    background: transparent;
+    border-color: var(--tasty-border-subtle-strong);
+    box-shadow: none;
+    color: var(--tasty-text);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-disclosure-button.button[aria-expanded="true"],
+#tasty-fonts-settings-page .tasty-fonts-disclosure-button.button[aria-expanded="true"]:hover {
+    color: var(--tasty-accent);
+}
+
+/* Settings card inner tab strip — tighter switcher */
+#tasty-fonts-settings-page {
+    padding: var(--tasty-card-padding-tight);
+    border: 1px solid var(--tasty-border-subtle-strong);
+    border-radius: var(--tasty-radius-card);
+    box-shadow: var(--tasty-shadow-card);
+    background: var(--tasty-gradient-surface-section);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-card-head {
+    margin-bottom: var(--tasty-space-3);
+}
+
+#tasty-fonts-settings-page > .tasty-fonts-studio-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-card-head--activity {
+    align-items: center;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-section-heading {
+    flex: 1 1 auto;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-head-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    margin-left: auto;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-panel {
+    gap: var(--tasty-space-3);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-copy:empty {
+    display: none;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-copy {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-form,
+#tasty-fonts-settings-page .tasty-fonts-output-settings-list {
+    gap: 0;
+}
+
+/* Keep the inner Output/Behavior sub-tabs snug — same visual style but tighter height */
+#tasty-fonts-settings-page .tasty-fonts-studio-switcher .tasty-fonts-tab-button {
+    min-height: 38px;
+    padding: 0 var(--tasty-space-4);
+    font-size: var(--tasty-type-caption-size);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-studio-panel.is-active {
+    padding-top: 0;
+}
+
+/* Settings footnote in context */
+#tasty-fonts-settings-page .tasty-fonts-output-settings-footnote {
+    border-top: 0;
+    padding-top: 0;
+    margin-top: 6px;
+}
+
+/* Settings actions */
+#tasty-fonts-settings-page .tasty-fonts-output-settings-actions {
+    padding-top: 0;
+}
+
+/* Fix: base .tasty-fonts-toggle-field has higher document-order precedence for border/bg/radius;
+   these scoped rules override it with higher specificity for the settings context */
+#tasty-fonts-settings-page .tasty-fonts-stack-field--output,
+#tasty-fonts-settings-page .tasty-fonts-output-settings-quick,
+#tasty-fonts-settings-page .tasty-fonts-toggle-field--output {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 12px 0;
+    flex: none;
+    gap: var(--tasty-space-4);
+    align-items: center;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-choice {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-choice .tasty-fonts-output-settings-submenu-copy {
+    grid-column: 1;
+    grid-row: 1 / 3;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-quick-options {
+    grid-column: 2;
+    justify-self: end;
+    max-width: 100%;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-toggle-field--output.tasty-fonts-toggle-field--nested {
+    padding: 8px 0;
+    border: 0;
+    background: transparent;
+}
+
+/* Fix: field label in select rows — override uppercase/small meta style */
+#tasty-fonts-settings-page .tasty-fonts-stack-field--output > .tasty-fonts-field-label {
+    font-size: var(--tasty-type-body-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--tasty-text);
+    margin-bottom: 0;
+}
+
+/* ===================================================
+   Settings — Advanced Output Controls hierarchy
+   =================================================== */
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-section--advanced {
+    display: grid;
+    gap: var(--tasty-space-3);
+    margin-top: var(--tasty-space-2);
+    padding-top: var(--tasty-space-3);
+    border-top: 1px solid var(--tasty-border-subtle);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-choice--advanced {
+    padding: 0;
+    border-bottom: 0;
+}
+
+#tasty-fonts-advanced-output-controls.tasty-fonts-settings-panel,
+#tasty-fonts-settings-page .tasty-fonts-output-settings-advanced-panel {
+    display: grid;
+    gap: var(--tasty-space-4);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    margin-top: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-detail-group {
+    display: grid;
+    gap: var(--tasty-space-3);
+    padding-top: var(--tasty-space-3);
+    border-top: 1px solid var(--tasty-border-subtle);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-detail-group:first-child {
+    padding-top: 0;
+    border-top: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-detail-group > .tasty-fonts-toggle-field--output {
+    padding: 0;
+    border-bottom: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-detail-group > .tasty-fonts-toggle-field--output .tasty-fonts-toggle-title {
+    font-weight: var(--tasty-font-weight-semibold);
+    color: var(--tasty-text);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu {
+    display: grid;
+    gap: var(--tasty-space-3);
+    margin: 0 0 0 calc(var(--tasty-space-4) + 2px);
+    padding: 0 0 0 var(--tasty-space-4);
+    border: 0;
+    border-left: 1px solid var(--tasty-border-subtle);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu.is-inactive {
+    opacity: 0.58;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu > .tasty-fonts-output-settings-submenu-copy {
+    gap: 4px;
+    padding: 0;
+    border-bottom: 0;
+    background: transparent;
+    margin: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu > .tasty-fonts-output-settings-submenu-copy h4 {
+    font-size: var(--tasty-type-body-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--tasty-text);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu .tasty-fonts-output-settings-submenu-list {
+    padding: 0;
+    gap: var(--tasty-space-3);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu-group {
+    gap: var(--tasty-space-2);
+    padding-top: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu-group-title {
+    font-size: 10px;
+    font-weight: var(--tasty-font-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(var(--tasty-ctrl-text-muted-rgb), 0.78);
+    padding: 0;
+    border-top: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu-group:first-child .tasty-fonts-output-settings-submenu-group-title {
+    padding-top: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu .tasty-fonts-output-settings-submenu-group-list {
+    padding: 0;
+    gap: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu .tasty-fonts-toggle-field--output.tasty-fonts-toggle-field--nested {
+    padding: 10px 0;
+    border: 0;
+    border-bottom: 1px solid rgba(var(--tasty-gray-600-rgb), 0.08);
+    gap: var(--tasty-space-3);
+    background: transparent;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu .tasty-fonts-toggle-field--output.tasty-fonts-toggle-field--nested:last-child {
+    border-bottom: 0;
+    padding-bottom: 2px;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu .tasty-fonts-toggle-field--output .tasty-fonts-toggle-title {
+    font-size: var(--tasty-type-body-size);
+    font-weight: var(--tasty-font-weight-medium);
+    color: var(--tasty-text);
+    line-height: 1.3;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu .tasty-fonts-toggle-field--output .tasty-fonts-toggle-description {
+    font-size: 11px;
+    color: rgba(var(--tasty-ctrl-text-muted-rgb), 0.9);
+    line-height: 1.38;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu .tasty-fonts-toggle-switch {
+    width: 36px;
+    height: 20px;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu .tasty-fonts-toggle-switch::after {
+    width: 16px;
+    height: 16px;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu .tasty-fonts-toggle-input:checked + .tasty-fonts-toggle-switch::after {
+    transform: translateX(16px);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-subsection {
+    padding: 2px 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-subsection:not(:first-child) {
+    padding-top: 10px;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-subsection::after {
+    display: none;
+}
+
+/* ===================================================
+   Advanced Tools — Diagnostics surfaces
+   =================================================== */
+
+/* Diagnostics card gap and panel layout */
+#tasty-fonts-diagnostics-page > .tasty-fonts-code-card--embedded {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tasty-space-3);
+}
+
+#tasty-fonts-diagnostics-page .tasty-fonts-diagnostics-head-actions {
+    margin-left: auto;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: var(--tasty-space-2);
+}
+
+/* Compact both Diagnostics tab strips */
+#tasty-fonts-diagnostics-page .tasty-fonts-studio-switcher {
+    margin-bottom: 0;
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-studio-switcher .tasty-fonts-tab-button {
+    min-height: 36px;
+    padding: 0 14px;
+    font-size: var(--tasty-type-caption-size);
+}
+
+.tasty-fonts-diagnostics-card + .tasty-fonts-activity-card {
+    margin-top: var(--tasty-space-5);
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-code-tabs {
+    margin-bottom: var(--tasty-space-2);
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-code-tabs .tasty-fonts-tab-button {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: var(--tasty-type-caption-size);
+}
+
+/* Code panel — refined chrome */
+#tasty-fonts-diagnostics-page .tasty-fonts-code-panel {
+    border-color: var(--tasty-border-subtle-strong);
+    box-shadow: var(--tasty-shadow-card);
+    border-radius: var(--tasty-radius-card);
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-code-panel-head {
+    padding: 8px 14px;
+    min-height: 36px;
+    background: var(--tasty-gradient-surface-inset);
+    border-bottom-color: var(--tasty-border-subtle);
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-code-panel-head > span {
+    font-size: var(--tasty-type-caption-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    letter-spacing: 0.015em;
+    color: var(--tasty-text-muted);
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-admin .tasty-fonts-output-display-toggle.button {
+    min-height: 28px;
+    height: 28px;
+    padding: 0 10px;
+    font-size: var(--tasty-type-caption-size);
+    border-radius: var(--tasty-radius-pill);
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-admin .tasty-fonts-output-copy-button.button {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
+    border-radius: var(--tasty-radius-control);
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-output {
+    padding: 14px 16px;
+    font-size: 12.5px;
+    line-height: 1.6;
+}
+
+/* System Details — strip generic card; promote individual items */
+#tasty-fonts-diagnostics-page .tasty-fonts-system-details-panel {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    gap: var(--tasty-space-2);
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-diagnostics-grid {
+    gap: var(--tasty-space-2);
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-diagnostic-item {
+    position: relative;
+    padding: 10px 14px;
+    border: 1px solid var(--tasty-border-subtle-strong);
+    border-radius: var(--tasty-radius-card);
+    background: var(--tasty-surface);
+    box-shadow: var(--tasty-shadow-card);
+    gap: var(--tasty-space-1);
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-diagnostic-item--copyable {
+    padding-right: calc(14px + var(--tasty-library-action-icon-size) + var(--tasty-space-2));
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-diagnostic-label {
+    font-size: 9px;
+    font-weight: var(--tasty-font-weight-bold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--tasty-text-muted);
+    line-height: 1.3;
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-diagnostic-value {
+    font-size: var(--tasty-type-body-size);
+    font-weight: var(--tasty-font-weight-medium);
+    color: var(--tasty-text);
+    line-height: 1.45;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-diagnostic-item-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    align-items: flex-start;
+}
+
+#tasty-fonts-diagnostics-page .tasty-fonts-diagnostic-copy-button.button {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
+    padding: 0;
+    border-color: transparent;
+    background: rgba(var(--tasty-ink-rgb), 0.035);
+    color: var(--tasty-text-muted);
+    box-shadow: none;
+    cursor: pointer;
+    transition: transform 0.16s ease, color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+#tasty-fonts-diagnostics-page .tasty-fonts-diagnostic-copy-button.button:hover,
+#tasty-fonts-diagnostics-page .tasty-fonts-diagnostic-copy-button.button:focus-visible {
+    background: rgba(var(--tasty-accent-rgb), 0.1);
+    border-color: rgba(var(--tasty-accent-rgb), 0.2);
+    color: var(--tasty-accent);
+    box-shadow: 0 0 0 3px rgba(var(--tasty-accent-rgb), 0.12);
+    transform: translateY(-1px);
+    outline: none;
+}
+
+#tasty-fonts-diagnostics-page .tasty-fonts-diagnostic-copy-button.button.is-copied {
+    background: rgba(var(--tasty-success-rgb), 0.1);
+    color: var(--tasty-success);
+    border-color: rgba(var(--tasty-success-rgb), 0.24);
+    box-shadow: 0 0 0 3px rgba(var(--tasty-success-rgb), 0.12);
+}
+
+/* ===================================================
+   Advanced Tools — Activity section
+   =================================================== */
+
+#tasty-fonts-diagnostics-page .tasty-fonts-activity-card {
+    gap: var(--tasty-space-3);
+}
+
+/* Activity toolbar — clean, aligned, no wrap */
+#tasty-fonts-diagnostics-page .tasty-fonts-card-head--activity {
+    align-items: center;
+    margin-bottom: 0;
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-activity-toolbar {
+    flex-wrap: nowrap;
+    gap: var(--tasty-space-2);
+    align-items: center;
+}
+
+/* Count badge — quiet label pill */
+#tasty-fonts-diagnostics-page #tasty-fonts-activity-count.tasty-fonts-badge {
+    background: var(--tasty-surface-muted);
+    border-color: var(--tasty-border-subtle-strong);
+    color: var(--tasty-text-muted);
+    font-size: var(--tasty-type-caption-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    min-height: 22px;
+    padding: 0 8px;
+}
+
+/* Select and search field width — tighter */
+#tasty-fonts-diagnostics-page .tasty-fonts-activity-select,
+#tasty-fonts-diagnostics-page .tasty-fonts-search-field--activity {
+    --tasty-activity-filter-field-width: clamp(140px, 16vw, 180px);
+}
+
+/* Clear Log button — icon-only to match other destructive actions */
+#tasty-fonts-diagnostics-page .tasty-fonts-activity-toolbar .tasty-fonts-activity-clear-button {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
+    padding: 0;
+    background: transparent;
+    border-color: var(--tasty-border);
+    color: var(--tasty-text-muted);
+    box-shadow: none;
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-activity-toolbar .tasty-fonts-activity-clear-button::before {
+    width: 11px;
+    height: 11px;
+    opacity: 0.6;
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-activity-toolbar .tasty-fonts-activity-clear-button:hover,
+#tasty-fonts-diagnostics-page .tasty-fonts-activity-toolbar .tasty-fonts-activity-clear-button:focus {
+    background: var(--tasty-surface-danger);
+    border-color: var(--tasty-border-danger-soft);
+    color: var(--tasty-danger);
+    box-shadow: none;
+}
+
+/* Activity shell */
+#tasty-fonts-diagnostics-page .tasty-fonts-activity-shell {
+    margin-top: var(--tasty-space-1);
+}
+
+/* Log items — more refined spacing */
+#tasty-fonts-diagnostics-page .tasty-fonts-log-item {
+    padding: 11px 0;
+    gap: var(--tasty-space-2);
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-log-message {
+    font-size: var(--tasty-type-body-size);
+    font-weight: var(--tasty-font-weight-medium);
+    color: var(--tasty-text);
+    line-height: 1.35;
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-log-time {
+    font-size: var(--tasty-type-label-size);
+    color: var(--tasty-text-muted);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 0;
+}
+#tasty-fonts-diagnostics-page .tasty-fonts-log-actor {
+    background: rgba(var(--tasty-gray-600-rgb), 0.05);
+    border-color: rgba(var(--tasty-gray-600-rgb), 0.12);
+    font-size: var(--tasty-type-label-size);
+    min-height: 18px;
+    padding: 0 6px;
+}
+
+/* ===================================================
+   Environment notice — composed info card
+   =================================================== */
+
+.tasty-fonts-page-notice.tasty-fonts-inline-note--warning {
+    background: var(--tasty-surface);
+    border-color: var(--tasty-border-subtle-strong);
+    border-left: 3px solid rgba(var(--tasty-accent-rgb), 0.45);
+    border-radius: var(--tasty-radius-card);
+    box-shadow: var(--tasty-shadow-card);
+    gap: var(--tasty-space-2);
+    padding: 14px 16px;
+    margin-top: var(--tasty-space-3);
+}
+.tasty-fonts-page-notice strong {
+    font-size: var(--tasty-type-body-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    color: var(--tasty-text);
+    line-height: 1.3;
+}
+.tasty-fonts-page-notice > span {
+    font-size: var(--tasty-type-caption-size);
+    color: var(--tasty-text-muted);
+    line-height: 1.5;
+    display: block;
+    max-width: 52rem;
+}
+.tasty-fonts-page-notice-actions {
+    margin-top: var(--tasty-space-1);
+    gap: var(--tasty-space-1) var(--tasty-space-2);
+}
+/* Primary action link */
+.tasty-fonts-page-notice-actions > a.button {
+    min-height: 28px;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: var(--tasty-radius-pill);
+    background: rgba(var(--tasty-accent-rgb), 0.08);
+    border-color: var(--tasty-border-accent-soft);
+    color: var(--tasty-accent);
+    font-size: var(--tasty-type-caption-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    box-shadow: none;
+}
+.tasty-fonts-page-notice-actions > a.button:hover {
+    background: rgba(var(--tasty-accent-rgb), 0.12);
+    border-color: var(--tasty-border-accent-strong);
+    color: var(--tasty-accent-hover);
+    box-shadow: none;
+}
+/* Dismiss buttons — very quiet */
+.tasty-fonts-page-notice-actions .tasty-fonts-page-notice-form .button {
+    min-height: 28px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: var(--tasty-radius-pill);
+    background: transparent;
+    border-color: var(--tasty-border-subtle);
+    color: var(--tasty-text-muted);
+    font-size: var(--tasty-type-caption-size);
+    font-weight: var(--tasty-font-weight-medium);
+    box-shadow: none;
+}
+.tasty-fonts-page-notice-actions .tasty-fonts-page-notice-form .button:hover {
+    background: var(--tasty-surface-muted);
+    border-color: var(--tasty-border);
+    color: var(--tasty-text);
+    box-shadow: none;
+}
+
+/* Mobile: stack the select-field rows and the quick-preset */
+@media (max-width: 782px) {
+    .tasty-fonts-stack-field--output {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+    }
+    .tasty-fonts-stack-field--output > .tasty-fonts-field-label {
+        grid-row: 1;
+    }
+    .tasty-fonts-stack-field--output > .tasty-fonts-select-field {
+        grid-column: 1;
+        grid-row: 2;
+    }
+    .tasty-fonts-stack-field--output > .tasty-fonts-toggle-description {
+        grid-row: 3;
+    }
+    .tasty-fonts-output-settings-quick {
+        grid-template-columns: 1fr;
+    }
+    .tasty-fonts-output-quick-options {
+        flex-wrap: wrap;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -6322,7 +7244,6 @@ h3.tasty-fonts-section-title {
     .tasty-fonts-admin button:focus,
     .tasty-fonts-admin input:focus,
     .tasty-fonts-admin select:focus,
-    .tasty-fonts-tab-button:focus,
     .tasty-fonts-version-link:focus,
     .tasty-fonts-badge--interactive:focus,
     .tasty-fonts-role-stack-copy:focus,
@@ -6333,7 +7254,12 @@ h3.tasty-fonts-section-title {
         box-shadow: none;
     }
 
-    .tasty-fonts-button-with-help:focus-within,
+    .tasty-fonts-tab-button:focus-visible {
+        outline: 2px solid Highlight;
+        outline-offset: 2px;
+        box-shadow: none;
+    }
+
     .tasty-fonts-upload-file-picker:focus-within,
     .tasty-fonts-toggle-input:focus-visible + .tasty-fonts-toggle-switch {
         outline: 2px solid Highlight;
@@ -6344,13 +7270,37 @@ h3.tasty-fonts-section-title {
 
 /* Responsive layout */
 @media (max-width: 1200px) {
-    .tasty-fonts-family-details.has-family-css-variables,
+    .tasty-fonts-page-header {
+        grid-template-columns: 1fr;
+        align-items: start;
+        padding: 16px 20px;
+    }
+
+    .tasty-fonts-page-header-nav {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .tasty-fonts-page-header-brand {
+        max-width: none;
+    }
+
+    .tasty-fonts-page-header-nav .tasty-fonts-studio-switcher {
+        margin-left: 0;
+        max-width: none;
+    }
+
+    .tasty-fonts-family-details-grid,
     .tasty-fonts-detail-card--face {
         grid-template-columns: 1fr;
     }
 
-    .tasty-fonts-detail-group--profiles,
-    .tasty-fonts-detail-group--variables,
+    .tasty-fonts-family-details-utilities {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    .tasty-fonts-family-details-primary,
+    .tasty-fonts-family-details-utilities,
     .tasty-fonts-detail-group--faces,
     .tasty-fonts-detail-card--face .tasty-fonts-detail-files--css,
     .tasty-fonts-detail-card--face .tasty-fonts-detail-files--paths {
@@ -6482,6 +7432,10 @@ h3.tasty-fonts-section-title {
         grid-template-columns: 1fr;
     }
 
+    .tasty-fonts-family-details-utilities {
+        grid-template-columns: 1fr;
+    }
+
     .tasty-fonts-detail-meta {
         grid-template-columns: 1fr;
     }
@@ -6565,17 +7519,18 @@ h3.tasty-fonts-section-title {
     }
 
     .tasty-fonts-font-card.is-expanded .tasty-fonts-font-card-main {
-        gap: var(--tasty-library-card-gap);
-    }
-
-    .tasty-fonts-font-card.is-expanded .tasty-fonts-font-card-top {
         display: grid;
         gap: var(--tasty-library-card-gap);
         grid-template-columns: 1fr;
     }
 
+    .tasty-fonts-font-card-overview-main {
+        gap: var(--tasty-library-card-gap);
+    }
+
     .tasty-fonts-font-sidebar,
-    .tasty-fonts-font-actions {
+    .tasty-fonts-font-actions,
+    .tasty-fonts-font-card-sidecolumn {
         max-width: none;
         width: 100%;
     }
@@ -6760,6 +7715,32 @@ h3.tasty-fonts-section-title {
         padding: var(--tasty-space-5);
     }
 
+    #tasty-fonts-settings-page .tasty-fonts-settings-head-actions {
+        width: 100%;
+        margin-left: 0;
+        justify-content: flex-start;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-output-settings-choice {
+        grid-template-columns: 1fr;
+        gap: var(--tasty-space-2);
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-output-quick-options {
+        grid-column: 1;
+        justify-self: stretch;
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-output-settings-submenu {
+        margin-left: 0;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-output-settings-submenu .tasty-fonts-output-settings-submenu-group-list {
+        padding-left: 0;
+    }
+
     .tasty-fonts-output-settings-submenu {
         margin-left: 0;
     }
@@ -6851,7 +7832,8 @@ h3.tasty-fonts-section-title {
         justify-content: flex-start;
     }
 
-    .tasty-fonts-select-field,
+    .tasty-fonts-library-filterbar > .tasty-fonts-select-field,
+    .tasty-fonts-activity-toolbar > .tasty-fonts-select-field,
     .tasty-fonts-search-field--activity {
         flex: 1 1 100%;
         width: 100%;
@@ -6955,6 +7937,14 @@ h3.tasty-fonts-section-title {
         width: 100%;
     }
 
+    .tasty-fonts-detail-group--utility .tasty-fonts-role-stack {
+        grid-template-columns: 1fr;
+    }
+
+    .tasty-fonts-detail-group--utility .tasty-fonts-role-stack-label {
+        padding-top: 0;
+    }
+
     .tasty-fonts-role-assign-button--icon-only,
     .tasty-fonts-admin .tasty-fonts-button-danger.tasty-fonts-font-action-button--icon {
         width: 100%;
@@ -6998,5 +7988,41 @@ h3.tasty-fonts-section-title {
     .tasty-fonts-code-tabs {
         display: grid;
         grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 782px) {
+    .tasty-fonts-shell {
+        padding: var(--tasty-space-2);
+    }
+
+    .tasty-fonts-page-header {
+        padding: 14px 16px;
+        gap: var(--tasty-space-2);
+    }
+
+    .tasty-fonts-page-header .tasty-fonts-hero-title-row {
+        align-items: flex-start;
+    }
+
+    .tasty-fonts-page-header .tasty-fonts-version-link {
+        align-self: flex-start;
+    }
+
+    .tasty-fonts-page-header-nav .tasty-fonts-studio-switcher {
+        width: 100%;
+    }
+
+    .tasty-fonts-tab-list,
+    .tasty-fonts-studio-switcher {
+        gap: 4px;
+        width: 100%;
+    }
+
+    .tasty-fonts-tab-button {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 0;
+        min-height: 42px;
+        padding: 0 14px;
     }
 }

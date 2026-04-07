@@ -202,6 +202,7 @@ final class Plugin
         }
 
         $this->booted = true;
+        $this->loadTextdomain();
         $this->registerRuntimeHooks();
         $this->registerAdminHooks();
         $this->registerRestHooks();
@@ -219,7 +220,6 @@ final class Plugin
 
     private function registerRuntimeHooks(): void
     {
-        add_action('plugins_loaded', [$this, 'loadTextdomain']);
         add_action(AssetService::ACTION_REGENERATE_CSS, [$this->assets, 'ensureGeneratedCssFile']);
         add_action('wp_enqueue_scripts', [$this->runtime, 'enqueueFrontend']);
         add_action('wp_head', [$this->runtime, 'outputPreloadHints'], 1);

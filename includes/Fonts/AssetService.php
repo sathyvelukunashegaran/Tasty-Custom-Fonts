@@ -154,7 +154,7 @@ final class AssetService
             return false;
         }
 
-        if (!empty($state['is_current'])) {
+        if (!empty($state['is_current']) && empty($state['needs_migration'])) {
             return true;
         }
 
@@ -192,6 +192,12 @@ final class AssetService
     {
         $css = $this->getCss();
         $state = $this->getGeneratedStylesheetState();
+
+        if (!empty($state['is_current']) && !empty($state['needs_migration'])) {
+            $this->writeGeneratedCssFile($state, false);
+            $state = $this->getGeneratedStylesheetState();
+        }
+
         $url = (string) $state['url'];
         $expectedHash = (string) $state['expected_hash'];
 
@@ -242,6 +248,7 @@ final class AssetService
      *     url: string,
      *     exists: bool,
      *     size: int,
+     *     last_modified: int,
      *     expected_hash: string
      * } Generated stylesheet status payload.
      */
@@ -254,6 +261,7 @@ final class AssetService
             'url' => $state['url'],
             'exists' => $state['exists'],
             'size' => $state['size'],
+            'last_modified' => $state['last_modified'],
             'expected_hash' => $state['expected_hash'],
         ];
     }
@@ -324,26 +332,43 @@ final class AssetService
     {
         $path = $this->storage->getGeneratedCssPath() ?? '';
         $url = $this->storage->getGeneratedCssUrl() ?? '';
-        $exists = $path !== '' && file_exists($path);
+        $writePath = $path;
+        $canonicalState = $this->buildStylesheetStateForPath($path, $url);
         $expectedHash = $this->expectedFileHash();
-        $currentHash = $exists ? (string) hash_file('crc32b', $path) : '';
+        $state = $canonicalState;
+
+        if (!$canonicalState['exists']) {
+            $legacyPath = $this->getLegacyGeneratedCssPath();
+            $legacyUrl = $this->getLegacyGeneratedCssUrl();
+
+            if ($legacyPath !== '' && $legacyUrl !== '') {
+                $legacyState = $this->buildStylesheetStateForPath($legacyPath, $legacyUrl);
+
+                if ($legacyState['exists']) {
+                    $state = $legacyState;
+                }
+            }
+        }
 
         return [
-            'path' => $path,
-            'url' => $url,
-            'exists' => $exists,
-            'size' => $exists ? (int) filesize($path) : 0,
+            'path' => $state['path'],
+            'url' => $state['url'],
+            'exists' => $state['exists'],
+            'size' => $state['size'],
+            'last_modified' => $state['last_modified'],
             'expected_hash' => $expectedHash,
-            'current_hash' => $currentHash,
-            'is_current' => $exists && $currentHash === $expectedHash,
+            'current_hash' => $state['current_hash'],
+            'is_current' => $state['exists'] && $state['current_hash'] === $expectedHash,
+            'write_path' => $writePath,
+            'needs_migration' => $state['exists'] && $writePath !== '' && $state['path'] !== $writePath,
         ];
     }
 
     private function writeGeneratedCssFile(array $state, bool $logWriteResult = true): bool
     {
-        $path = (string) ($state['path'] ?? '');
+        $path = (string) ($state['write_path'] ?? $state['path'] ?? '');
 
-        if ($path === '' || !empty($state['is_current'])) {
+        if ($path === '' || (!empty($state['is_current']) && empty($state['needs_migration']))) {
             return $path !== '' && !empty($state['is_current']);
         }
 
@@ -358,5 +383,45 @@ final class AssetService
         }
 
         return $written;
+    }
+
+    private function buildStylesheetStateForPath(string $path, string $url): array
+    {
+        if ($path !== '') {
+            clearstatcache(true, $path);
+        }
+
+        $exists = $path !== '' && file_exists($path);
+
+        return [
+            'path' => $path,
+            'url' => $url,
+            'exists' => $exists,
+            'size' => $exists ? (int) filesize($path) : 0,
+            'last_modified' => $exists ? (int) filemtime($path) : 0,
+            'current_hash' => $exists ? (string) hash_file('crc32b', $path) : '',
+        ];
+    }
+
+    private function getLegacyGeneratedCssPath(): string
+    {
+        $root = $this->storage->getRoot();
+
+        if (!is_string($root) || $root === '') {
+            return '';
+        }
+
+        return trailingslashit($root) . 'tasty-fonts.css';
+    }
+
+    private function getLegacyGeneratedCssUrl(): string
+    {
+        $rootUrl = $this->storage->getRootUrlFull();
+
+        if (!is_string($rootUrl) || $rootUrl === '') {
+            return '';
+        }
+
+        return untrailingslashit($rootUrl) . '/tasty-fonts.css';
     }
 }

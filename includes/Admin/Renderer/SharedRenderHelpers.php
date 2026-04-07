@@ -66,7 +66,7 @@ trait SharedRenderHelpers
                 data-copy-text="<?php echo esc_attr($value); ?>"
                 data-copy-success="<?php echo esc_attr($successMessage); ?>"
                 data-copy-static-label="1"
-                aria-label="<?php echo esc_attr(sprintf(__('Copy %s', 'tasty-fonts'), $label)); ?>"
+                aria-label="<?php echo esc_attr(sprintf(__('Copy %1$s: %2$s', 'tasty-fonts'), $label, $value)); ?>"
                 title="<?php echo esc_attr($value); ?>"
             >
                 <?php echo esc_html($value); ?>
@@ -161,40 +161,6 @@ trait SharedRenderHelpers
         <?php
     }
 
-    public function renderHelpTip(string $copy, string $label = ''): void
-    {
-        $copy = trim($copy);
-        $label = trim($label);
-
-        if ($this->trainingWheelsOff || $copy === '') {
-            return;
-        }
-
-        $ariaLabel = $label !== ''
-            ? sprintf(__('More information about %s', 'tasty-fonts'), $label)
-            : __('More information', 'tasty-fonts');
-        ?>
-        <span class="tasty-fonts-help-wrap">
-            <button
-                type="button"
-                class="tasty-fonts-help-button"
-                data-help-tooltip="<?php echo esc_attr($copy); ?>"
-                aria-label="<?php echo esc_attr($ariaLabel); ?>"
-                aria-controls="tasty-fonts-help-tooltip-layer"
-                aria-expanded="false"
-            >
-                <span class="tasty-fonts-help-glyph" aria-hidden="true">
-                    <svg viewBox="0 0 16 16" focusable="false" aria-hidden="true">
-                        <circle cx="8" cy="8" r="6.25"></circle>
-                        <path d="M6.6 6.2a1.8 1.8 0 0 1 3.1 1.3c0 1.3-1.3 1.7-1.7 2.5"></path>
-                        <circle class="tasty-fonts-help-glyph-dot" cx="8" cy="11.45" r="0.8"></circle>
-                    </svg>
-                </span>
-            </button>
-        </span>
-        <?php
-    }
-
     public function buildLibraryCategoryOptions(): array
     {
         return [
@@ -236,15 +202,12 @@ trait SharedRenderHelpers
         echo ' title="' . esc_attr($copy) . '"';
     }
 
-    public function renderSectionHeading(string $tag, string $title, string $help, string $copy = ''): void
+    public function renderSectionHeading(string $tag, string $title, string $copy = ''): void
     {
         ?>
         <div class="tasty-fonts-section-heading">
             <div class="tasty-fonts-section-title-row">
                 <<?php echo esc_html($tag); ?> class="tasty-fonts-section-title"><?php echo esc_html($title); ?></<?php echo esc_html($tag); ?>>
-                <?php if ($help !== '') : ?>
-                    <?php $this->renderHelpTip($help, $title); ?>
-                <?php endif; ?>
             </div>
             <?php if ($copy !== ''): ?>
                 <p class="tasty-fonts-section-copy"><?php echo esc_html($copy); ?></p>
@@ -253,14 +216,11 @@ trait SharedRenderHelpers
         <?php
     }
 
-    public function renderFieldLabel(string $label, string $help = ''): void
+    public function renderFieldLabel(string $label): void
     {
         ?>
         <span class="tasty-fonts-field-label-row">
             <span class="tasty-fonts-field-label-text"><?php echo esc_html($label); ?></span>
-            <?php if ($help !== ''): ?>
-                <?php $this->renderHelpTip($help, $label); ?>
-            <?php endif; ?>
         </span>
         <?php
     }

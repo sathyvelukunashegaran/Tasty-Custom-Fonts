@@ -52,7 +52,8 @@ final class FamilyCardRenderer extends AbstractSectionRenderer
         string $previewText,
         array $categoryAliasOwners = [],
         array $extendedVariableOptions = [],
-        bool $monospaceRoleEnabled = false
+        bool $monospaceRoleEnabled = false,
+        array $classOutputOptions = []
     ): void {
         $familyName = (string) ($family['family'] ?? '');
         $familySlug = (string) ($family['slug'] ?? FontUtils::slugify($familyName));
@@ -132,6 +133,13 @@ final class FamilyCardRenderer extends AbstractSectionRenderer
             (string) ($family['font_category'] ?? ''),
             $categoryAliasOwners,
             $extendedVariableOptions
+        );
+        $familyCssClassSnippets = $this->buildFamilyCssClassSnippets(
+            $familyName,
+            $assignedRoleKeys,
+            (string) ($family['font_category'] ?? ''),
+            $categoryAliasOwners,
+            $classOutputOptions
         );
         $canChangePublishState = $publishState !== 'role_active';
         $isExpanded = false;

@@ -188,6 +188,67 @@ trait FamilyCardRendererSupport
         return $snippets;
     }
 
+    protected function buildFamilyCssClassSnippets(
+        string $familyName,
+        array $assignedRoleKeys,
+        string $fontCategory,
+        array $categoryAliasOwners = [],
+        array $classOutputOptions = []
+    ): array {
+        if (!$this->classOutputEnabled($classOutputOptions)) {
+            return [];
+        }
+
+        $snippets = [];
+        $familyClassSelector = $this->buildFamilyClassSelector($familyName);
+
+        if ($familyClassSelector !== '' && $this->classOutputFamiliesEnabled($classOutputOptions)) {
+            $snippets['Family Class'] = $familyClassSelector;
+        }
+
+        if (in_array('heading', $assignedRoleKeys, true) && $this->classOutputRoleEnabled($classOutputOptions, 'heading')) {
+            $snippets['Heading Class'] = '.font-heading';
+        }
+
+        if (in_array('body', $assignedRoleKeys, true)) {
+            if ($this->classOutputRoleEnabled($classOutputOptions, 'body')) {
+                $snippets['Body Class'] = '.font-body';
+            }
+
+            if ($this->classOutputRoleAliasEnabled($classOutputOptions, 'interface')) {
+                $snippets['Interface Alias'] = '.font-interface';
+            }
+
+            if ($this->classOutputRoleAliasEnabled($classOutputOptions, 'ui')) {
+                $snippets['UI Alias'] = '.font-ui';
+            }
+        }
+
+        if (in_array('monospace', $assignedRoleKeys, true)) {
+            if ($this->classOutputRoleEnabled($classOutputOptions, 'monospace')) {
+                $snippets['Monospace Class'] = '.font-monospace';
+            }
+
+            if ($this->classOutputRoleAliasEnabled($classOutputOptions, 'code')) {
+                $snippets['Code Alias'] = '.font-code';
+            }
+        }
+
+        $categoryAliasProperty = $this->resolveCategoryAliasProperty($fontCategory);
+        $categoryAliasSelector = $this->resolveCategoryAliasSelector($fontCategory);
+
+        if (
+            $categoryAliasProperty !== ''
+            && $categoryAliasSelector !== ''
+            && (($categoryAliasOwners[$categoryAliasProperty] ?? '') === $familyName)
+            && $this->classOutputCategoryAliasEnabled($classOutputOptions, $categoryAliasProperty)
+        ) {
+            $snippets['Category Class'] = $categoryAliasSelector;
+        }
+
+        return $snippets;
+    }
+
     protected function buildWeightReference(string $weight, array $extendedVariableOptions = []): string
     {
         if ($this->extendedVariableWeightTokensEnabled($extendedVariableOptions)) {
@@ -225,6 +286,85 @@ trait FamilyCardRendererSupport
     protected function extendedVariableCategoryAliasEnabled(array $options, string $categoryAliasProperty): bool
     {
         if (!$this->extendedVariableOutputEnabled($options)) {
+            return false;
+        }
+
+        $field = match ($categoryAliasProperty) {
+            '--font-sans' => 'category_sans',
+            '--font-serif' => 'category_serif',
+            '--font-mono' => 'category_mono',
+            default => '',
+        };
+
+        return $field !== ''
+            && (!array_key_exists($field, $options) || !empty($options[$field]));
+    }
+
+    protected function buildFamilyClassSelector(string $familyName): string
+    {
+        $slug = FontUtils::slugify($familyName);
+
+        return $slug !== '' ? '.font-' . $slug : '';
+    }
+
+    protected function resolveCategoryAliasSelector(string $category): string
+    {
+        return match (strtolower(trim($category))) {
+            'sans-serif', 'sans serif' => '.font-sans',
+            'serif', 'slab-serif', 'slab serif' => '.font-serif',
+            'monospace' => '.font-mono',
+            default => '',
+        };
+    }
+
+    protected function classOutputEnabled(array $options): bool
+    {
+        return !empty($options['enabled']);
+    }
+
+    protected function classOutputFamiliesEnabled(array $options): bool
+    {
+        return $this->classOutputEnabled($options)
+            && (!array_key_exists('families', $options) || !empty($options['families']));
+    }
+
+    protected function classOutputRoleEnabled(array $options, string $roleKey): bool
+    {
+        if (!$this->classOutputEnabled($options)) {
+            return false;
+        }
+
+        $field = match ($roleKey) {
+            'heading' => 'role_heading',
+            'body' => 'role_body',
+            'monospace' => 'role_monospace',
+            default => '',
+        };
+
+        return $field !== ''
+            && (!array_key_exists($field, $options) || !empty($options[$field]));
+    }
+
+    protected function classOutputRoleAliasEnabled(array $options, string $aliasKey): bool
+    {
+        if (!$this->classOutputEnabled($options)) {
+            return false;
+        }
+
+        $field = match ($aliasKey) {
+            'interface' => 'role_alias_interface',
+            'ui' => 'role_alias_ui',
+            'code' => 'role_alias_code',
+            default => '',
+        };
+
+        return $field !== ''
+            && (!array_key_exists($field, $options) || !empty($options[$field]));
+    }
+
+    protected function classOutputCategoryAliasEnabled(array $options, string $categoryAliasProperty): bool
+    {
+        if (!$this->classOutputEnabled($options)) {
             return false;
         }
 

@@ -787,6 +787,8 @@ $tests['block_editor_font_library_sync_logs_actionable_certificate_failures'] = 
 
     assertContainsValue('could not verify this site', (string) ($entries[0]['message'] ?? ''), 'TLS trust failures should be rewritten into actionable log messages.');
     assertSameValue('Open Plugin Behavior', (string) ($entries[0]['action_label'] ?? ''), 'TLS trust failures should include a direct action label for the settings panel.');
+    assertContainsValue('page=tasty-custom-fonts', (string) ($entries[0]['action_url'] ?? ''), 'TLS trust failures should point to the unified admin page.');
+    assertContainsValue('tf_page=settings', (string) ($entries[0]['action_url'] ?? ''), 'TLS trust failures should activate the Settings tab.');
     assertContainsValue('tf_studio=plugin-behavior', (string) ($entries[0]['action_url'] ?? ''), 'TLS trust failures should deep-link to the Plugin Behavior tab.');
 };
 

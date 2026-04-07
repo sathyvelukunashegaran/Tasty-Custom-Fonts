@@ -5,7 +5,7 @@
     --tasty-gray-50: #fafaf9;
     --tasty-gray-100: #f5f5f3;
     --tasty-gray-150: #f2f3f5;
-    --tasty-gray-300: #d8dee5;
+    --tasty-gray-300: #d1d9e2;
     --tasty-gray-600: #7d8794;
     --tasty-gray-600-rgb: 125, 135, 148;
     --tasty-gray-700: #495664;
@@ -33,12 +33,12 @@
     --tasty-accent-hover: var(--wp-admin-theme-color-darker-10, #006ba1);
     --tasty-accent-active: var(--wp-admin-theme-color-darker-20, #005a87);
     --tasty-accent-rgb: var(--wp-admin-theme-color--rgb, 0, 124, 186);
-    --tasty-accent-soft: rgba(var(--tasty-accent-rgb), 0.06);
+    --tasty-accent-soft: rgba(var(--tasty-accent-rgb), 0.07);
 
     --tasty-surface: var(--tasty-gray-0);
     --tasty-surface-soft: var(--tasty-gray-50);
     --tasty-surface-muted: var(--tasty-gray-150);
-    --tasty-surface-accent-subtle: rgba(var(--tasty-accent-rgb), 0.025);
+    --tasty-surface-accent-subtle: rgba(var(--tasty-accent-rgb), 0.03);
     --tasty-surface-accent-soft: var(--tasty-accent-soft);
     --tasty-surface-success: var(--tasty-success-soft);
     --tasty-surface-warning-subtle: rgba(var(--tasty-warning-rgb), 0.045);
@@ -52,25 +52,25 @@
     --tasty-border: var(--tasty-gray-300);
     --tasty-border-strong: var(--tasty-gray-600);
     --tasty-border-subtle: rgba(var(--tasty-gray-600-rgb), 0.14);
-    --tasty-border-subtle-strong: rgba(var(--tasty-gray-600-rgb), 0.2);
+    --tasty-border-subtle-strong: rgba(var(--tasty-gray-600-rgb), 0.21);
     --tasty-border-subtle-faint: rgba(var(--tasty-gray-600-rgb), 0.1);
     --tasty-border-contrast-soft: rgba(var(--tasty-gray-900-rgb), 0.07);
-    --tasty-border-accent-soft: rgba(var(--tasty-accent-rgb), 0.14);
-    --tasty-border-accent-strong: rgba(var(--tasty-accent-rgb), 0.2);
-    --tasty-border-success-soft: rgba(var(--tasty-success-rgb), 0.16);
-    --tasty-border-warning-soft: rgba(var(--tasty-warning-rgb), 0.16);
-    --tasty-border-danger-soft: rgba(var(--tasty-danger-rgb), 0.14);
+    --tasty-border-accent-soft: rgba(var(--tasty-accent-rgb), 0.15);
+    --tasty-border-accent-strong: rgba(var(--tasty-accent-rgb), 0.22);
+    --tasty-border-success-soft: rgba(var(--tasty-success-rgb), 0.18);
+    --tasty-border-warning-soft: rgba(var(--tasty-warning-rgb), 0.18);
+    --tasty-border-danger-soft: rgba(var(--tasty-danger-rgb), 0.15);
 
     /* Semantic text and status */
     --tasty-text: var(--tasty-gray-900);
     --tasty-text-muted: var(--tasty-gray-700);
     --tasty-text-on-accent: var(--tasty-gray-0);
     --tasty-success: var(--tasty-success-raw);
-    --tasty-success-soft: rgba(var(--tasty-success-rgb), 0.05);
+    --tasty-success-soft: rgba(var(--tasty-success-rgb), 0.055);
     --tasty-warning: var(--tasty-warning-raw);
     --tasty-warning-soft: rgba(var(--tasty-warning-rgb), 0.055);
     --tasty-danger: var(--tasty-danger-raw);
-    --tasty-danger-soft: rgba(var(--tasty-danger-rgb), 0.05);
+    --tasty-danger-soft: rgba(var(--tasty-danger-rgb), 0.055);
 
     /* Spacing */
     --tasty-space-1: 4px;
@@ -184,10 +184,14 @@
     --tasty-icon-size-regular: 18px;
     --tasty-icon-size-preview: 44px;
 
-    /* Shadows */
-    --tasty-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.035);
-    --tasty-shadow-overlay: 0 12px 28px rgba(15, 23, 42, 0.12);
-    --tasty-shadow-focus: 0 0 0 2px var(--tasty-surface), 0 0 0 4px var(--tasty-accent);
+    /* Shadows — layered for more natural depth */
+    --tasty-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 5px rgba(15, 23, 42, 0.03);
+    --tasty-shadow-card-hover: 0 3px 10px rgba(15, 23, 42, 0.09), 0 1px 4px rgba(15, 23, 42, 0.04);
+    --tasty-shadow-overlay: 0 8px 24px rgba(15, 23, 42, 0.13), 0 2px 8px rgba(15, 23, 42, 0.06);
+    --tasty-shadow-focus: 0 0 0 2px var(--tasty-surface), 0 0 0 4px rgba(var(--tasty-accent-rgb), 0.5);
+    --tasty-shadow-masthead: 0 2px 12px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+    --tasty-shadow-shell: 0 4px 24px rgba(15, 23, 42, 0.07), 0 1px 4px rgba(15, 23, 42, 0.04);
+    --tasty-shadow-primary-button: 0 1px 3px rgba(var(--tasty-accent-rgb), 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.14);
 
     /* Layout constants */
     --tasty-admin-max-width: 1360px;
@@ -250,4 +254,36 @@
     --tasty-activity-log-marker-offset: 5px;
     --tasty-activity-log-actor-height: 20px;
     --tasty-activity-log-actor-padding-inline: 7px;
+
+    /* Masthead and structural gradients */
+    --tasty-masthead-padding-block: 18px;
+    --tasty-masthead-padding-inline: 28px;
+    --tasty-masthead-padding-inline-compact: 20px;
+    --tasty-masthead-gap: var(--tasty-space-3);
+    --tasty-masthead-brand-max-width: 40rem;
+    --tasty-masthead-brand-padding-block: 22px;
+    --tasty-masthead-brand-padding-inline: 24px;
+    --tasty-masthead-nav-max-width: 42rem;
+    --tasty-masthead-switcher-padding: 5px;
+    --tasty-masthead-tab-height: 46px;
+    --tasty-masthead-tab-padding-inline: 18px;
+    --tasty-masthead-tab-radius: 12px;
+    --tasty-masthead-title-size: clamp(30px, 2.8vw, 40px);
+    --tasty-masthead-lead-size: clamp(16px, 1.35vw, 20px);
+    --tasty-masthead-summary-width: 38rem;
+    --tasty-gradient-cool-glow: rgba(var(--tasty-accent-rgb), 0.22);
+    --tasty-gradient-cool-wash: rgba(var(--tasty-accent-rgb), 0.08);
+    --tasty-gradient-warm-glow: rgba(var(--tasty-warning-rgb), 0.16);
+    --tasty-gradient-warm-wash: rgba(var(--tasty-warning-rgb), 0.05);
+    --tasty-gradient-page: linear-gradient(160deg, #f5f7fa 0%, #f3f5f9 50%, #f4f6fa 100%);
+    --tasty-gradient-header: linear-gradient(160deg, rgba(var(--tasty-white-rgb), 0.99) 0%, rgba(var(--tasty-white-rgb), 0.97) 60%, rgba(248, 250, 253, 0.95) 100%);
+    --tasty-gradient-tab-active: linear-gradient(160deg, rgba(var(--tasty-white-rgb), 0.99) 0%, rgba(var(--tasty-white-rgb), 0.94) 100%);
+    --tasty-gradient-border-soft: linear-gradient(135deg, rgba(var(--tasty-white-rgb), 0.92) 0%, rgba(var(--tasty-accent-rgb), 0.13) 52%, rgba(var(--tasty-warning-rgb), 0.07) 100%);
+    --tasty-gradient-surface-card: linear-gradient(165deg, rgba(var(--tasty-white-rgb), 0.998) 0%, rgba(250, 251, 253, 0.987) 62%, rgba(247, 249, 252, 0.978) 100%);
+    --tasty-gradient-surface-section: linear-gradient(160deg, rgba(var(--tasty-accent-rgb), 0.018) 0%, rgba(var(--tasty-white-rgb), 0.995) 34%, rgba(var(--tasty-white-rgb), 0.985) 68%, rgba(var(--tasty-warning-rgb), 0.014) 100%);
+    --tasty-gradient-surface-inset: linear-gradient(160deg, rgba(var(--tasty-white-rgb), 0.972) 0%, rgba(248, 250, 253, 0.95) 100%);
+    --tasty-gradient-surface-accent: linear-gradient(160deg, rgba(var(--tasty-accent-rgb), 0.03) 0%, rgba(var(--tasty-white-rgb), 0.995) 52%, rgba(var(--tasty-warning-rgb), 0.012) 100%);
+    --tasty-gradient-surface-success: linear-gradient(160deg, rgba(var(--tasty-success-rgb), 0.035) 0%, rgba(var(--tasty-white-rgb), 1) 66%);
+    --tasty-gradient-surface-warning: linear-gradient(160deg, rgba(var(--tasty-warning-rgb), 0.04) 0%, rgba(var(--tasty-white-rgb), 1) 66%);
+    --tasty-gradient-surface-muted: linear-gradient(170deg, rgba(var(--tasty-white-rgb), 0.9) 0%, rgba(248, 250, 253, 0.98) 100%);
 }

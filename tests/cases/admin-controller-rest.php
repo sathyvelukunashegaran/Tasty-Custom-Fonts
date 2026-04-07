@@ -160,6 +160,7 @@ $tests['admin_controller_builds_specific_settings_saved_message'] = static funct
     assertContainsValue('Block Editor Font Library sync enabled', $message, 'Settings save messages should explain editor sync changes.');
     assertContainsValue('onboarding hints hidden', $message, 'Settings save messages should explain plugin behavior changes.');
     assertContainsValue('preview text updated', $message, 'Settings save messages should explain preview text changes.');
+    assertContainsValue('Reload the page to apply this change.', $message, 'Settings save messages should mention reload-only behavior changes.');
 };
 
 $tests['admin_controller_exposes_all_font_display_options_with_optional_first'] = static function (): void {
@@ -285,6 +286,51 @@ $tests['admin_controller_detects_which_setting_changes_require_asset_refresh'] =
             ]
         ),
         'Changing class output settings should trigger a generated CSS refresh because emitted CSS changes.'
+    );
+};
+
+$tests['admin_controller_detects_which_setting_changes_require_reload'] = static function (): void {
+    resetTestState();
+
+    $controller = makeAdminControllerTestInstance();
+
+    assertSameValue(
+        true,
+        invokePrivateMethod(
+            $controller,
+            'settingsChangeRequiresReload',
+            [
+                ['training_wheels_off' => false, 'monospace_role_enabled' => false],
+                ['training_wheels_off' => true, 'monospace_role_enabled' => false],
+            ]
+        ),
+        'Toggling onboarding hints should require a page reload because the admin shell only reads that state on boot.'
+    );
+
+    assertSameValue(
+        true,
+        invokePrivateMethod(
+            $controller,
+            'settingsChangeRequiresReload',
+            [
+                ['training_wheels_off' => false, 'monospace_role_enabled' => false],
+                ['training_wheels_off' => false, 'monospace_role_enabled' => true],
+            ]
+        ),
+        'Toggling the monospace role should require a page reload because server-rendered controls depend on that setting.'
+    );
+
+    assertSameValue(
+        false,
+        invokePrivateMethod(
+            $controller,
+            'settingsChangeRequiresReload',
+            [
+                ['training_wheels_off' => false, 'monospace_role_enabled' => false, 'preload_primary_fonts' => true],
+                ['training_wheels_off' => false, 'monospace_role_enabled' => false, 'preload_primary_fonts' => false],
+            ]
+        ),
+        'Settings that apply without rebuilding the admin shell should not ask for a page reload.'
     );
 };
 
@@ -798,6 +844,43 @@ $tests['admin_controller_localizes_rest_transport_config'] = static function ():
         (string) ($localizedScripts['tasty-fonts-admin']['data']['previewBootstrap']['baselineSource'] ?? ''),
         'Admin scripts should receive the preview baseline source for the workspace bootstrap.'
     );
+    assertSameValue(
+        AdminController::PAGE_ROLES,
+        (string) ($localizedScripts['tasty-fonts-admin']['data']['currentPage'] ?? ''),
+        'Admin scripts should receive the current admin page identifier for page-scoped UI state.'
+    );
+};
+
+$tests['admin_controller_registers_hidden_legacy_admin_routes'] = static function (): void {
+    resetTestState();
+
+    global $menuPageCalls;
+    global $submenuPageCalls;
+
+    $services = makeServiceGraph();
+    $services['controller']->registerMenu();
+
+    assertSameValue(AdminController::MENU_SLUG, (string) ($menuPageCalls[0]['menu_slug'] ?? ''), 'The top-level Tasty Fonts menu should keep the existing menu slug.');
+    assertSameValue(
+        [
+            AdminController::MENU_SLUG_LIBRARY,
+            AdminController::MENU_SLUG_SETTINGS,
+            AdminController::MENU_SLUG_DIAGNOSTICS,
+        ],
+        array_map(static fn (array $entry): string => (string) ($entry['menu_slug'] ?? ''), $submenuPageCalls),
+        'The admin menu should keep hidden legacy routes for Library, Settings, and Diagnostics.'
+    );
+};
+
+$tests['admin_controller_recognizes_task_based_admin_hooks'] = static function (): void {
+    resetTestState();
+
+    assertSameValue(true, AdminController::isPluginAdminHook('toplevel_page_' . AdminController::MENU_SLUG), 'The top-level roles page hook should be recognized.');
+    assertSameValue(true, AdminController::isPluginAdminHook('tasty-fonts_page_' . AdminController::MENU_SLUG_LIBRARY), 'The Library submenu hook should be recognized.');
+    assertSameValue(true, AdminController::isPluginAdminHook('tasty-fonts_page_' . AdminController::MENU_SLUG_SETTINGS), 'The Settings submenu hook should be recognized.');
+    assertSameValue(true, AdminController::isPluginAdminHook('tasty-fonts_page_' . AdminController::MENU_SLUG_DIAGNOSTICS), 'The Diagnostics submenu hook should be recognized.');
+    assertSameValue(true, AdminController::isPluginAdminHook('custom-parent_page_' . AdminController::MENU_SLUG_SETTINGS), 'Submenu hooks should be recognized by their page slug even when the parent hook prefix differs.');
+    assertSameValue(false, AdminController::isPluginAdminHook('settings_page_general'), 'Unrelated admin hooks should not load plugin assets.');
 };
 
 $tests['admin_controller_omits_ajax_transport_config_from_localized_admin_data'] = static function (): void {
@@ -905,6 +988,7 @@ $tests['rest_controller_registers_expected_admin_routes'] = static function (): 
     $services['rest']->registerRoutes();
 
     $expectedRoutes = [
+        'tasty-fonts/v1/settings' => 'PATCH',
         'tasty-fonts/v1/google/search' => 'GET',
         'tasty-fonts/v1/bunny/search' => 'GET',
         'tasty-fonts/v1/google/family' => 'GET',
@@ -960,6 +1044,49 @@ $tests['rest_controller_returns_native_payloads_for_write_routes'] = static func
     assertSameValue(true, $response instanceof WP_REST_Response, 'REST write routes should return a native REST response object.');
     assertSameValue('Inter', (string) ($response->get_data()['family'] ?? ''), 'REST write routes should return the saved family in the response body.');
     assertSameValue('serif', (string) ($response->get_data()['fallback'] ?? ''), 'REST write routes should return the saved fallback in the response body.');
+};
+
+$tests['rest_controller_settings_accepts_patch_payloads'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $request = new WP_REST_Request('PATCH', '/' . RestController::API_NAMESPACE . '/settings');
+    $request->set_body_params([
+        'css_delivery_mode' => 'inline',
+        'font_display' => 'swap',
+        'minify_css_output' => '0',
+        'tasty_fonts_output_quick_mode' => 'custom',
+        'class_output_enabled' => '1',
+        'per_variant_font_variables_enabled' => '1',
+        'class_output_families_enabled' => '1',
+        'extended_variable_weight_tokens_enabled' => '1',
+    ]);
+
+    $response = $services['rest']->saveSettings($request);
+    $data = $response->get_data();
+
+    assertSameValue(true, $response instanceof WP_REST_Response, 'The settings autosave route should return a native REST response object.');
+    assertSameValue('inline', (string) ($data['settings']['css_delivery_mode'] ?? ''), 'The settings autosave route should return the saved CSS delivery mode.');
+    assertSameValue('swap', (string) ($data['settings']['font_display'] ?? ''), 'The settings autosave route should return the saved font-display mode.');
+    assertSameValue(true, !empty($data['settings']['class_output_enabled']), 'The settings autosave route should continue to persist class output via explicit booleans rather than a removed all preset.');
+    assertSameValue(true, !empty($data['settings']['per_variant_font_variables_enabled']), 'The settings autosave route should continue to persist variable output via explicit booleans rather than a removed all preset.');
+    assertContainsValue('Plugin settings saved', (string) ($data['message'] ?? ''), 'The settings autosave route should return the save summary message.');
+};
+
+$tests['rest_controller_settings_reload_toast_mentions_reload_when_needed'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $request = new WP_REST_Request('PATCH', '/' . RestController::API_NAMESPACE . '/settings');
+    $request->set_body_params([
+        'training_wheels_off' => '1',
+    ]);
+
+    $response = $services['rest']->saveSettings($request);
+    $data = $response->get_data();
+
+    assertSameValue(true, $response instanceof WP_REST_Response, 'The settings autosave route should return a native REST response object.');
+    assertContainsValue('Reload the page to apply this change.', (string) ($data['message'] ?? ''), 'Reload-only settings should mention the required page reload in the autosave toast message.');
 };
 
 $tests['rest_controller_roles_draft_accepts_and_returns_monospace_fields'] = static function (): void {
@@ -1231,15 +1358,13 @@ $tests['admin_controller_preserves_only_allowed_tracked_ui_query_args_in_redirec
     assertSameValue(
         [
             'page' => AdminController::MENU_SLUG,
-            'tf_advanced' => '1',
-            'tf_studio' => 'preview',
-            'tf_preview' => 'card',
+            'tf_page' => AdminController::PAGE_LIBRARY,
             'tf_add_fonts' => '1',
             'tf_source' => 'google',
             'tf_google_access' => '1',
         ],
         $query,
-        'Redirect URLs should preserve only the canonical tracked UI query args for the current admin view.'
+        'Redirect URLs should preserve only the canonical tracked UI query args for the resolved task page.'
     );
 };
 
@@ -1259,7 +1384,53 @@ $tests['admin_controller_preserves_plugin_behavior_studio_tab_in_redirect_urls']
 
     parse_str((string) ($parts['query'] ?? ''), $query);
 
-    assertSameValue('plugin-behavior', (string) ($query['tf_studio'] ?? ''), 'Redirect URLs should preserve the Plugin Behavior tab selection when it is active.');
+    assertSameValue(AdminController::MENU_SLUG, (string) ($query['page'] ?? ''), 'Legacy Plugin Behavior deep links should canonicalize to the single admin page.');
+    assertSameValue(AdminController::PAGE_SETTINGS, (string) ($query['tf_page'] ?? ''), 'Legacy Plugin Behavior deep links should activate the Settings top-level tab.');
+    assertSameValue('plugin-behavior', (string) ($query['tf_studio'] ?? ''), 'Redirect URLs should preserve the Behavior tab selection when it is active.');
+};
+
+$tests['admin_controller_maps_legacy_diagnostics_tabs_to_the_diagnostics_page'] = static function (): void {
+    resetTestState();
+
+    $_GET = [
+        'page' => AdminController::MENU_SLUG,
+        'tf_advanced' => '1',
+        'tf_studio' => 'generated',
+    ];
+
+    $controller = makeAdminControllerTestInstance();
+    $url = invokePrivateMethod($controller, 'buildAdminPageUrl');
+    $parts = parse_url($url);
+    $query = [];
+
+    parse_str((string) ($parts['query'] ?? ''), $query);
+
+    assertSameValue(AdminController::MENU_SLUG, (string) ($query['page'] ?? ''), 'Legacy diagnostics tabs should canonicalize to the single admin page.');
+    assertSameValue(AdminController::PAGE_DIAGNOSTICS, (string) ($query['tf_page'] ?? ''), 'Legacy diagnostics tabs should activate the Diagnostics top-level tab.');
+    assertSameValue('generated', (string) ($query['tf_studio'] ?? ''), 'Redirect URLs should preserve the requested diagnostics tab.');
+};
+
+$tests['admin_controller_maps_snippets_disclosure_state_to_the_roles_page'] = static function (): void {
+    resetTestState();
+
+    $_GET = [
+        'page' => AdminController::MENU_SLUG,
+        'tf_advanced' => '1',
+        'tf_studio' => 'snippets',
+        'tf_output' => 'variables',
+    ];
+
+    $controller = makeAdminControllerTestInstance();
+    $url = invokePrivateMethod($controller, 'buildAdminPageUrl');
+    $parts = parse_url($url);
+    $query = [];
+
+    parse_str((string) ($parts['query'] ?? ''), $query);
+
+    assertSameValue(AdminController::MENU_SLUG, (string) ($query['page'] ?? ''), 'Snippets deep links should canonicalize to the single admin page.');
+    assertSameValue(false, isset($query['tf_page']), 'Snippets deep links should use the default Deploy Fonts page without emitting an extra tf_page query arg.');
+    assertSameValue('snippets', (string) ($query['tf_studio'] ?? ''), 'Redirect URLs should preserve the snippets disclosure state.');
+    assertSameValue('variables', (string) ($query['tf_output'] ?? ''), 'Redirect URLs should preserve the active snippets tab.');
 };
 
 $tests['admin_controller_preserves_code_preview_tab_in_redirect_urls'] = static function (): void {
@@ -1364,7 +1535,9 @@ $tests['admin_controller_builds_local_environment_notice_again_when_snooze_expir
     $notice = invokePrivateMethod($services['controller'], 'buildLocalEnvironmentNotice', [$services['settings']->getSettings()]);
 
     assertSameValue('Local environment detected', (string) ($notice['title'] ?? ''), 'Expired snoozes should allow the local-environment reminder to appear again.');
-    assertSameValue('Open Plugin Behavior', (string) ($notice['settings_label'] ?? ''), 'The rebuilt reminder should still offer the Plugin Behavior deep link.');
+    assertSameValue('Open Plugin Behavior', (string) ($notice['settings_label'] ?? ''), 'The rebuilt reminder should still offer the Behavior deep link.');
+    assertContainsValue('page=' . AdminController::MENU_SLUG, (string) ($notice['settings_url'] ?? ''), 'The reminder deep link should point to the unified admin page.');
+    assertContainsValue('tf_page=' . AdminController::PAGE_SETTINGS, (string) ($notice['settings_url'] ?? ''), 'The reminder deep link should activate the Settings tab.');
 };
 
 $tests['admin_controller_resolves_sitewide_toggle_submissions_into_role_actions'] = static function (): void {

@@ -456,11 +456,11 @@ msgid "Fallback"
 msgstr ""
 
 #: includes/Admin/AdminController.php:1384
-msgid "Optional (Recommended)"
+msgid "Optional"
 msgstr ""
 
-#: includes/Admin/AdminController.php:1385
-msgid "Optional"
+#: includes/Admin/AdminController.php:1398
+msgid "Reload the page to apply this change."
 msgstr ""
 
 #: includes/Admin/AdminController.php:1392
@@ -1100,7 +1100,7 @@ msgid "Monospace uses the fallback stack directly: %1$s. Role alias: %2$s"
 msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:549
-msgid "Choose the saved family or fallback stack used for code and monospace UI."
+msgid "Choose the saved family and fallback stack used for monospace text."
 msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:568
@@ -1315,20 +1315,12 @@ msgstr ""
 msgid "Control editor sync, optional roles, guidance, and uninstall cleanup."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1086
-msgid "Editor Integrations"
-msgstr ""
-
 #: includes/Admin/AdminPageRenderer.php:1099
 msgid "Enable Block Editor Font Library Sync"
 msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:1100
 msgid "Mirrors imported families into WordPress typography controls. Keep off locally until loopback HTTPS works."
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:1104
-msgid "Role Options"
 msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:1117
@@ -1339,16 +1331,8 @@ msgstr ""
 msgid "Adds a saved role for code and pre, exposed as --font-monospace."
 msgstr ""
 
-#: includes/Admin/AdminPageRenderer.php:1132
-msgid "Training Wheels Off"
-msgstr ""
-
 #: includes/Admin/AdminPageRenderer.php:1133
 msgid "Hides helper tips and extra info buttons."
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:1137
-msgid "Uninstall Settings"
 msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:1150
@@ -1357,10 +1341,6 @@ msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:1151
 msgid "Removes plugin-managed files from uploads/fonts when the plugin is deleted."
-msgstr ""
-
-#: includes/Admin/AdminPageRenderer.php:1155
-msgid "Behavior changes apply on the next page load."
 msgstr ""
 
 #: includes/Admin/AdminPageRenderer.php:1157
@@ -3504,4 +3484,28 @@ msgstr ""
 #: assets/js/admin.js:240
 #, js-format
 msgid "%1$d of %2$d entries"
+msgstr ""
+
+#: includes/Admin/Renderer/SharedRenderHelpers.php:67
+#, php-format
+msgid "Copy %1$s: %2$s"
+msgstr ""
+
+#: includes/Admin/Renderer/templates/family-card.php:22
+#, php-format
+msgid "Copy font stack for %1$s: %2$s"
+msgstr ""
+
+#: assets/js/admin.js:269
+#, js-format
+msgid "%d variant"
+msgstr ""
+
+#: assets/js/admin.js:270
+#, js-format
+msgid "%d variants"
+msgstr ""
+
+#: assets/js/admin.js:271
+msgid "Request failed."
 msgstr ""

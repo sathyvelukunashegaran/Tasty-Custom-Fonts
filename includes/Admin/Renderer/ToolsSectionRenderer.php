@@ -35,12 +35,12 @@ final class ToolsSectionRenderer extends AbstractSectionRenderer
                         type="button"
                         class="button tasty-fonts-output-display-toggle"
                         data-snippet-display-toggle
-                        data-label-default="<?php esc_attr_e('Readable preview', 'tasty-fonts'); ?>"
-                        data-label-active="<?php esc_attr_e('Show actual output', 'tasty-fonts'); ?>"
+                        data-label-default="<?php esc_attr_e('Readable Preview', 'tasty-fonts'); ?>"
+                        data-label-active="<?php esc_attr_e('Show Actual Output', 'tasty-fonts'); ?>"
                         aria-pressed="false"
                         aria-controls="<?php echo esc_attr(trim($target . ' ' . $readableTarget)); ?>"
                     >
-                        <?php esc_html_e('Readable preview', 'tasty-fonts'); ?>
+                        <?php esc_html_e('Readable Preview', 'tasty-fonts'); ?>
                     </button>
                 <?php endif; ?>
                 <button

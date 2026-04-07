@@ -29,8 +29,30 @@
         return String(family || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     }
 
+    function getTabNavigationTargetIndex(key, currentIndex, count) {
+        if (typeof currentIndex !== 'number' || typeof count !== 'number' || count < 2 || currentIndex < 0 || currentIndex >= count) {
+            return null;
+        }
+
+        switch (key) {
+            case 'ArrowRight':
+            case 'ArrowDown':
+                return (currentIndex + 1) % count;
+            case 'ArrowLeft':
+            case 'ArrowUp':
+                return (currentIndex - 1 + count) % count;
+            case 'Home':
+                return 0;
+            case 'End':
+                return count - 1;
+            default:
+                return null;
+        }
+    }
+
     return {
         escapeFontFamily,
+        getTabNavigationTargetIndex,
         sanitizeFallback,
         slugify,
     };

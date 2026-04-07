@@ -6,6 +6,8 @@ namespace TastyFonts\Admin\Renderer;
 
 defined('ABSPATH') || exit;
 
+use TastyFonts\Admin\AdminController;
+
 final class StudioSectionRenderer extends AbstractSectionRenderer
 {
     private readonly PreviewSectionRenderer $previewRenderer;
@@ -27,9 +29,15 @@ final class StudioSectionRenderer extends AbstractSectionRenderer
         $this->previewRenderer->render($view);
         $view['embeddedPreviewSection'] = (string) ob_get_clean();
 
-        ob_start();
-        $this->toolsRenderer->render($view);
-        $view['embeddedToolsSection'] = (string) ob_get_clean();
+        $view['currentPage'] = (string) ($view['currentPage'] ?? AdminController::PAGE_ROLES);
+
+        if ($view['currentPage'] === AdminController::PAGE_ROLES) {
+            ob_start();
+            $this->toolsRenderer->render($view);
+            $view['embeddedToolsSection'] = (string) ob_get_clean();
+        } else {
+            $view['embeddedToolsSection'] = '';
+        }
 
         $this->renderTemplate('studio-section.php', $view);
     }

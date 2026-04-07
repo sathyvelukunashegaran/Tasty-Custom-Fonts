@@ -98,7 +98,7 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
                     <div class="tasty-fonts-preview-support-grid">
                         <article class="tasty-fonts-preview-support-card">
                             <span class="tasty-fonts-preview-support-label" data-role-preview="body"><?php esc_html_e('Hero Lockup', 'tasty-fonts'); ?></span>
-                            <h3 class="tasty-fonts-preview-support-title" data-role-preview="heading"><?php esc_html_e('A type pairing that feels intentional at every scale', 'tasty-fonts'); ?></h3>
+                            <h3 class="tasty-fonts-preview-support-title" data-role-preview="heading"><?php esc_html_e('A Type Pairing That Feels Intentional at Every Scale', 'tasty-fonts'); ?></h3>
                             <p class="tasty-fonts-preview-support-copy" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
                             <div class="tasty-fonts-preview-support-meta">
                                 <span><?php esc_html_e('Landing Page', 'tasty-fonts'); ?></span>
@@ -108,7 +108,7 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
 
                         <article class="tasty-fonts-preview-support-card">
                             <span class="tasty-fonts-preview-support-label" data-role-preview="body"><?php esc_html_e('Feature Module', 'tasty-fonts'); ?></span>
-                            <h3 class="tasty-fonts-preview-support-title" data-role-preview="heading"><?php esc_html_e('Clean cards with enough contrast for product copy', 'tasty-fonts'); ?></h3>
+                            <h3 class="tasty-fonts-preview-support-title" data-role-preview="heading"><?php esc_html_e('Clean Cards With Enough Contrast for Product Copy', 'tasty-fonts'); ?></h3>
                             <p class="tasty-fonts-preview-support-copy" data-role-preview="body"><?php esc_html_e('Use this sample to judge title tone, supporting copy rhythm, and whether the body face stays calm inside UI surfaces.', 'tasty-fonts'); ?></p>
                             <div class="tasty-fonts-preview-support-meta">
                                 <span><?php esc_html_e('Surface Check', 'tasty-fonts'); ?></span>
@@ -165,7 +165,7 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
                             <div class="tasty-fonts-preview-card-body">
                                 <span class="tasty-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Collection', 'tasty-fonts'); ?></span>
                                 <h3 class="tasty-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('Modern Layouts', 'tasty-fonts'); ?></h3>
-                                <p class="tasty-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Structured and calm', 'tasty-fonts'); ?></p>
+                                <p class="tasty-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Structured and Calm', 'tasty-fonts'); ?></p>
                                 <p class="tasty-fonts-preview-card-copy" data-role-preview="body"><?php esc_html_e('Compare how the chosen heading face holds attention while the body face keeps supporting detail easy to scan.', 'tasty-fonts'); ?></p>
                                 <div class="tasty-fonts-preview-card-actions">
                                     <span class="button" aria-hidden="true"><?php esc_html_e('Review', 'tasty-fonts'); ?></span>
@@ -180,8 +180,8 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
                             </div>
                             <div class="tasty-fonts-preview-card-body">
                                 <span class="tasty-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Product Card', 'tasty-fonts'); ?></span>
-                                <h3 class="tasty-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('System-ready', 'tasty-fonts'); ?></h3>
-                                <p class="tasty-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Useful in real UI', 'tasty-fonts'); ?></p>
+                                <h3 class="tasty-fonts-preview-card-title" data-role-preview="heading"><?php esc_html_e('System-Ready', 'tasty-fonts'); ?></h3>
+                                <p class="tasty-fonts-preview-card-subtitle" data-role-preview="body"><?php esc_html_e('Useful in Real UI', 'tasty-fonts'); ?></p>
                                 <p class="tasty-fonts-preview-card-copy" data-role-preview="body"><?php esc_html_e('This view is intentionally compact so you can judge hierarchy, spacing, and button copy without oversized demo content.', 'tasty-fonts'); ?></p>
                                 <div class="tasty-fonts-preview-card-actions">
                                     <span class="button" aria-hidden="true"><?php esc_html_e('Later', 'tasty-fonts'); ?></span>
@@ -199,7 +199,7 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
                 <article class="tasty-fonts-preview-reading-sheet">
                     <div class="tasty-fonts-preview-reading-head">
                         <span class="tasty-fonts-preview-reading-label" data-role-preview="body"><?php esc_html_e('Long-Form Reading', 'tasty-fonts'); ?></span>
-                        <h3 class="tasty-fonts-preview-reading-title" data-role-preview="heading"><?php esc_html_e('Readable paragraphs with steady rhythm', 'tasty-fonts'); ?></h3>
+                        <h3 class="tasty-fonts-preview-reading-title" data-role-preview="heading"><?php esc_html_e('Readable Paragraphs With Steady Rhythm', 'tasty-fonts'); ?></h3>
                     </div>
                     <p class="tasty-fonts-preview-reading-lead" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
                     <div class="tasty-fonts-preview-reading-layout">
@@ -310,18 +310,32 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
         ?>
         <label class="tasty-fonts-stack-field tasty-fonts-preview-tray-field">
             <?php $this->renderFieldLabel($label); ?>
-            <select
-                data-preview-role-select="<?php echo esc_attr($roleKey); ?>"
-                data-preview-draft-family="<?php echo esc_attr($draftFamily); ?>"
-                data-preview-fallback="<?php echo esc_attr($fallbackValue); ?>"
-            >
+            <span class="tasty-fonts-select-field<?php echo $allowFallbackOnly ? ' tasty-fonts-select-field--clearable' : ''; ?>">
+                <select
+                    data-preview-role-select="<?php echo esc_attr($roleKey); ?>"
+                    data-preview-draft-family="<?php echo esc_attr($draftFamily); ?>"
+                    data-preview-fallback="<?php echo esc_attr($fallbackValue); ?>"
+                >
+                    <?php if ($allowFallbackOnly): ?>
+                        <option value="" <?php selected($selectedFamily, ''); ?>><?php esc_html_e('Use Fallback Only', 'tasty-fonts'); ?></option>
+                    <?php endif; ?>
+                    <?php foreach ($availableFamilies as $familyName): ?>
+                        <option value="<?php echo esc_attr((string) $familyName); ?>" <?php selected($selectedFamily, $familyName); ?>><?php echo esc_html((string) $familyName); ?></option>
+                    <?php endforeach; ?>
+                </select>
                 <?php if ($allowFallbackOnly): ?>
-                    <option value="" <?php selected($selectedFamily, ''); ?>><?php esc_html_e('Use fallback only', 'tasty-fonts'); ?></option>
+                    <button
+                        type="button"
+                        class="tasty-fonts-select-clear"
+                        data-clear-select-button
+                        data-clear-value=""
+                        aria-label="<?php echo esc_attr(sprintf(__('Clear %s', 'tasty-fonts'), $label)); ?>"
+                        hidden
+                    >
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 <?php endif; ?>
-                <?php foreach ($availableFamilies as $familyName): ?>
-                    <option value="<?php echo esc_attr((string) $familyName); ?>" <?php selected($selectedFamily, $familyName); ?>><?php echo esc_html((string) $familyName); ?></option>
-                <?php endforeach; ?>
-            </select>
+            </span>
         </label>
         <?php
     }
@@ -334,7 +348,7 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
         <div class="tasty-fonts-preview-code-workspace">
             <aside class="tasty-fonts-preview-code-overview">
                 <span class="tasty-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Code Preview', 'tasty-fonts'); ?></span>
-                <h3 class="tasty-fonts-preview-code-title" data-role-preview="heading"><?php esc_html_e('Inspect how your code reads in an editor and published block', 'tasty-fonts'); ?></h3>
+                <h3 class="tasty-fonts-preview-code-title" data-role-preview="heading"><?php esc_html_e('Inspect How Your Code Reads in an Editor and Published Block', 'tasty-fonts'); ?></h3>
                 <p class="tasty-fonts-preview-code-copy" data-role-preview="body" data-preview-dynamic-text><?php echo esc_html($previewText); ?></p>
                 <div class="tasty-fonts-preview-code-meta">
                     <div class="tasty-fonts-preview-code-meta-item">
@@ -355,8 +369,8 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
                     <code class="tasty-fonts-preview-code-inline-sample" data-role-preview="monospace">var(--font-monospace)</code>
                 </div>
                 <div class="tasty-fonts-preview-code-chip-row">
-                    <span class="tasty-fonts-preview-code-chip"><?php echo esc_html($monospaceRoleEnabled ? __('Monospace role enabled', 'tasty-fonts') : __('Fallback stack preview', 'tasty-fonts')); ?></span>
-                    <span class="tasty-fonts-preview-code-chip"><?php esc_html_e('Syntax highlighting', 'tasty-fonts'); ?></span>
+                    <span class="tasty-fonts-preview-code-chip"><?php echo esc_html($monospaceRoleEnabled ? __('Monospace Role Enabled', 'tasty-fonts') : __('Fallback Stack Preview', 'tasty-fonts')); ?></span>
+                    <span class="tasty-fonts-preview-code-chip"><?php esc_html_e('Syntax Highlighting', 'tasty-fonts'); ?></span>
                 </div>
             </aside>
 
@@ -429,7 +443,7 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
                     <div class="tasty-fonts-preview-code-block-head">
                         <div class="tasty-fonts-preview-code-block-head-copy">
                             <span class="tasty-fonts-preview-card-label" data-role-preview="body"><?php esc_html_e('Published Code Block', 'tasty-fonts'); ?></span>
-                            <h4 id="<?php echo esc_attr($blockPreviewHeadingId); ?>" class="tasty-fonts-preview-code-block-title" data-role-preview="heading"><?php esc_html_e('Front-end snippet with readable line height and punctuation', 'tasty-fonts'); ?></h4>
+                            <h4 id="<?php echo esc_attr($blockPreviewHeadingId); ?>" class="tasty-fonts-preview-code-block-title" data-role-preview="heading"><?php esc_html_e('Front-End Snippet With Readable Line Height and Punctuation', 'tasty-fonts'); ?></h4>
                         </div>
                         <span class="tasty-fonts-preview-code-badge tasty-fonts-preview-code-badge--light">CSS</span>
                     </div>

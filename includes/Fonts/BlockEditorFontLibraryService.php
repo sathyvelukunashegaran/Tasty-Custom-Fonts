@@ -583,7 +583,7 @@ final class BlockEditorFontLibraryService
             'action_url' => add_query_arg(
                 [
                     'page' => AdminController::MENU_SLUG,
-                    'tf_advanced' => '1',
+                    'tf_page' => AdminController::PAGE_SETTINGS,
                     'tf_studio' => 'plugin-behavior',
                 ],
                 admin_url('admin.php')

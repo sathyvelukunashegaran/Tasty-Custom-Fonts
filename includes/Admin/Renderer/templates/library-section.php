@@ -3,8 +3,7 @@
                             <?php
                             $this->renderSectionHeading(
                                 'h2',
-                                __('Font Library', 'tasty-fonts'),
-                                __('Browse every family in the studio, switch live delivery, publish or park families, assign roles, and add fonts from Google, Bunny, Adobe, and direct uploads.', 'tasty-fonts')
+                                __('Font Library', 'tasty-fonts')
                             );
                             ?>
                             <div class="tasty-fonts-library-tools">
@@ -20,7 +19,7 @@
                                         >
                                     </div>
                                     <label class="screen-reader-text" for="tasty-fonts-library-source-filter"><?php esc_html_e('Filter fonts by source', 'tasty-fonts'); ?></label>
-                                    <span class="tasty-fonts-select-field tasty-fonts-library-select">
+                                    <span class="tasty-fonts-select-field tasty-fonts-select-field--clearable tasty-fonts-library-select">
                                         <select
                                             id="tasty-fonts-library-source-filter"
                                             data-library-source-filter
@@ -36,9 +35,20 @@
                                             <option value="bunny-cdn"><?php esc_html_e('Bunny CDN', 'tasty-fonts'); ?></option>
                                             <option value="adobe-hosted"><?php esc_html_e('Adobe-hosted', 'tasty-fonts'); ?></option>
                                         </select>
+                                        <button
+                                            type="button"
+                                            class="tasty-fonts-select-clear"
+                                            data-clear-select-button
+                                            data-clear-target="tasty-fonts-library-source-filter"
+                                            data-clear-value="all"
+                                            aria-label="<?php esc_attr_e('Clear source filter', 'tasty-fonts'); ?>"
+                                            hidden
+                                        >
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
                                     </span>
                                     <label class="screen-reader-text" for="tasty-fonts-library-category-filter"><?php esc_html_e('Filter fonts by type', 'tasty-fonts'); ?></label>
-                                    <span class="tasty-fonts-select-field tasty-fonts-library-select">
+                                    <span class="tasty-fonts-select-field tasty-fonts-select-field--clearable tasty-fonts-library-select">
                                         <select
                                             id="tasty-fonts-library-category-filter"
                                             data-library-category-filter
@@ -49,6 +59,17 @@
                                                 <option value="<?php echo esc_attr((string) ($option['value'] ?? '')); ?>"><?php echo esc_html((string) ($option['label'] ?? '')); ?></option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <button
+                                            type="button"
+                                            class="tasty-fonts-select-clear"
+                                            data-clear-select-button
+                                            data-clear-target="tasty-fonts-library-category-filter"
+                                            data-clear-value="all"
+                                            aria-label="<?php esc_attr_e('Clear type filter', 'tasty-fonts'); ?>"
+                                            hidden
+                                        >
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
                                     </span>
                                 </div>
                                 <div class="tasty-fonts-actions tasty-fonts-actions--library">
@@ -75,9 +96,9 @@
                         <div id="tasty-fonts-add-font-panel" class="tasty-fonts-import-shell" hidden>
                             <div class="tasty-fonts-add-font-tabs tasty-fonts-tab-list" role="tablist" aria-label="<?php esc_attr_e('Add font source', 'tasty-fonts'); ?>" aria-orientation="horizontal">
                                 <button type="button" class="button tasty-fonts-add-font-tab tasty-fonts-tab-button is-active" id="tasty-fonts-add-font-tab-google" data-tab-group="add-font" data-tab-target="google" aria-selected="true" tabindex="0" aria-controls="tasty-fonts-add-font-panel-google" role="tab"><?php esc_html_e('Google Fonts', 'tasty-fonts'); ?></button>
-                                <button type="button" class="button tasty-fonts-add-font-tab tasty-fonts-tab-button" id="tasty-fonts-add-font-tab-bunny" data-tab-group="add-font" data-tab-target="bunny" aria-selected="false" tabindex="-1" aria-controls="tasty-fonts-add-font-panel-bunny" role="tab"><?php esc_html_e('Bunny Fonts', 'tasty-fonts'); ?></button>
-                                <button type="button" class="button tasty-fonts-add-font-tab tasty-fonts-tab-button" id="tasty-fonts-add-font-tab-adobe" data-tab-group="add-font" data-tab-target="adobe" aria-selected="false" tabindex="-1" aria-controls="tasty-fonts-add-font-panel-adobe" role="tab"><?php esc_html_e('Adobe Fonts', 'tasty-fonts'); ?></button>
-                                <button type="button" class="button tasty-fonts-add-font-tab tasty-fonts-tab-button" id="tasty-fonts-add-font-tab-upload" data-tab-group="add-font" data-tab-target="upload" aria-selected="false" tabindex="-1" aria-controls="tasty-fonts-add-font-panel-upload" role="tab"><?php esc_html_e('Upload Files', 'tasty-fonts'); ?></button>
+                                <button type="button" class="button tasty-fonts-add-font-tab tasty-fonts-tab-button" id="tasty-fonts-add-font-tab-bunny" data-tab-group="add-font" data-tab-target="bunny" aria-selected="false" tabindex="0" aria-controls="tasty-fonts-add-font-panel-bunny" role="tab"><?php esc_html_e('Bunny Fonts', 'tasty-fonts'); ?></button>
+                                <button type="button" class="button tasty-fonts-add-font-tab tasty-fonts-tab-button" id="tasty-fonts-add-font-tab-adobe" data-tab-group="add-font" data-tab-target="adobe" aria-selected="false" tabindex="0" aria-controls="tasty-fonts-add-font-panel-adobe" role="tab"><?php esc_html_e('Adobe Fonts', 'tasty-fonts'); ?></button>
+                                <button type="button" class="button tasty-fonts-add-font-tab tasty-fonts-tab-button" id="tasty-fonts-add-font-tab-upload" data-tab-group="add-font" data-tab-target="upload" aria-selected="false" tabindex="0" aria-controls="tasty-fonts-add-font-panel-upload" role="tab"><?php esc_html_e('Upload Files', 'tasty-fonts'); ?></button>
                             </div>
 
                             <div class="tasty-fonts-add-font-panels">
@@ -581,20 +602,24 @@
 
                                                                         <label class="tasty-fonts-stack-field">
                                                                             <span class="screen-reader-text"><?php esc_html_e('Weight', 'tasty-fonts'); ?></span>
-                                                                            <select data-upload-field="weight">
-                                                                                <?php foreach (range(100, 900, 100) as $weight): ?>
-                                                                                    <option value="<?php echo esc_attr((string) $weight); ?>" <?php selected((string) $weight, '400'); ?>><?php echo esc_html((string) $weight); ?></option>
-                                                                                <?php endforeach; ?>
-                                                                            </select>
+                                                                            <span class="tasty-fonts-select-field">
+                                                                                <select data-upload-field="weight">
+                                                                                    <?php foreach (range(100, 900, 100) as $weight): ?>
+                                                                                        <option value="<?php echo esc_attr((string) $weight); ?>" <?php selected((string) $weight, '400'); ?>><?php echo esc_html((string) $weight); ?></option>
+                                                                                    <?php endforeach; ?>
+                                                                                </select>
+                                                                            </span>
                                                                         </label>
 
                                                                         <label class="tasty-fonts-stack-field">
                                                                             <span class="screen-reader-text"><?php esc_html_e('Style', 'tasty-fonts'); ?></span>
-                                                                            <select data-upload-field="style">
-                                                                                <option value="normal"><?php esc_html_e('Normal', 'tasty-fonts'); ?></option>
-                                                                                <option value="italic"><?php esc_html_e('Italic', 'tasty-fonts'); ?></option>
-                                                                                <option value="oblique"><?php esc_html_e('Oblique', 'tasty-fonts'); ?></option>
-                                                                            </select>
+                                                                            <span class="tasty-fonts-select-field">
+                                                                                <select data-upload-field="style">
+                                                                                    <option value="normal"><?php esc_html_e('Normal', 'tasty-fonts'); ?></option>
+                                                                                    <option value="italic"><?php esc_html_e('Italic', 'tasty-fonts'); ?></option>
+                                                                                    <option value="oblique"><?php esc_html_e('Oblique', 'tasty-fonts'); ?></option>
+                                                                                </select>
+                                                                            </span>
                                                                         </label>
 
                                                                         <button
@@ -686,20 +711,24 @@
 
                                                                         <label class="tasty-fonts-stack-field">
                                                                             <span class="screen-reader-text"><?php esc_html_e('Weight', 'tasty-fonts'); ?></span>
-                                                                            <select data-upload-field="weight">
-                                                                                <?php foreach (range(100, 900, 100) as $weight): ?>
-                                                                                    <option value="<?php echo esc_attr((string) $weight); ?>" <?php selected((string) $weight, '400'); ?>><?php echo esc_html((string) $weight); ?></option>
-                                                                                <?php endforeach; ?>
-                                                                            </select>
+                                                                            <span class="tasty-fonts-select-field">
+                                                                                <select data-upload-field="weight">
+                                                                                    <?php foreach (range(100, 900, 100) as $weight): ?>
+                                                                                        <option value="<?php echo esc_attr((string) $weight); ?>" <?php selected((string) $weight, '400'); ?>><?php echo esc_html((string) $weight); ?></option>
+                                                                                    <?php endforeach; ?>
+                                                                                </select>
+                                                                            </span>
                                                                         </label>
 
                                                                         <label class="tasty-fonts-stack-field">
                                                                             <span class="screen-reader-text"><?php esc_html_e('Style', 'tasty-fonts'); ?></span>
-                                                                            <select data-upload-field="style">
-                                                                                <option value="normal"><?php esc_html_e('Normal', 'tasty-fonts'); ?></option>
-                                                                                <option value="italic"><?php esc_html_e('Italic', 'tasty-fonts'); ?></option>
-                                                                                <option value="oblique"><?php esc_html_e('Oblique', 'tasty-fonts'); ?></option>
-                                                                            </select>
+                                                                            <span class="tasty-fonts-select-field">
+                                                                                <select data-upload-field="style">
+                                                                                    <option value="normal"><?php esc_html_e('Normal', 'tasty-fonts'); ?></option>
+                                                                                    <option value="italic"><?php esc_html_e('Italic', 'tasty-fonts'); ?></option>
+                                                                                    <option value="oblique"><?php esc_html_e('Oblique', 'tasty-fonts'); ?></option>
+                                                                                </select>
+                                                                            </span>
                                                                         </label>
 
                                                                         <button
@@ -745,20 +774,24 @@
 
                                                             <label class="tasty-fonts-stack-field">
                                                                 <span class="screen-reader-text"><?php esc_html_e('Weight', 'tasty-fonts'); ?></span>
-                                                                <select data-upload-field="weight">
-                                                                    <?php foreach (range(100, 900, 100) as $weight): ?>
-                                                                        <option value="<?php echo esc_attr((string) $weight); ?>" <?php selected((string) $weight, '400'); ?>><?php echo esc_html((string) $weight); ?></option>
-                                                                    <?php endforeach; ?>
-                                                                </select>
+                                                                <span class="tasty-fonts-select-field">
+                                                                    <select data-upload-field="weight">
+                                                                        <?php foreach (range(100, 900, 100) as $weight): ?>
+                                                                            <option value="<?php echo esc_attr((string) $weight); ?>" <?php selected((string) $weight, '400'); ?>><?php echo esc_html((string) $weight); ?></option>
+                                                                        <?php endforeach; ?>
+                                                                    </select>
+                                                                </span>
                                                             </label>
 
                                                             <label class="tasty-fonts-stack-field">
                                                                 <span class="screen-reader-text"><?php esc_html_e('Style', 'tasty-fonts'); ?></span>
-                                                                <select data-upload-field="style">
-                                                                    <option value="normal"><?php esc_html_e('Normal', 'tasty-fonts'); ?></option>
-                                                                    <option value="italic"><?php esc_html_e('Italic', 'tasty-fonts'); ?></option>
-                                                                    <option value="oblique"><?php esc_html_e('Oblique', 'tasty-fonts'); ?></option>
-                                                                </select>
+                                                                <span class="tasty-fonts-select-field">
+                                                                    <select data-upload-field="style">
+                                                                        <option value="normal"><?php esc_html_e('Normal', 'tasty-fonts'); ?></option>
+                                                                        <option value="italic"><?php esc_html_e('Italic', 'tasty-fonts'); ?></option>
+                                                                        <option value="oblique"><?php esc_html_e('Oblique', 'tasty-fonts'); ?></option>
+                                                                    </select>
+                                                                </span>
                                                             </label>
 
                                                             <button
@@ -796,7 +829,7 @@
                         <?php if ($catalog === []): ?>
                             <div class="tasty-fonts-empty-state tasty-fonts-empty-state--rich tasty-fonts-empty-state--library">
                                 <div class="tasty-fonts-empty-state-body">
-                                    <h3 class="tasty-fonts-empty-state-title"><?php esc_html_e('Your library is empty', 'tasty-fonts'); ?></h3>
+                                    <h3 class="tasty-fonts-empty-state-title"><?php esc_html_e('Your Library Is Empty', 'tasty-fonts'); ?></h3>
                                     <p class="tasty-fonts-empty-state-copy"><?php esc_html_e('Import a Google or Bunny family, connect an Adobe Fonts project, or upload local files to start building your library and assigning heading and body roles.', 'tasty-fonts'); ?></p>
                                 </div>
                                 <div class="tasty-fonts-empty-state-actions">
@@ -807,7 +840,7 @@
                             <div id="tasty-fonts-library-empty-filtered" class="tasty-fonts-empty tasty-fonts-empty-state" hidden><?php esc_html_e('No fonts match the current filters.', 'tasty-fonts'); ?></div>
                             <div class="tasty-fonts-library-grid">
                                 <?php foreach ($catalog as $family): ?>
-                                    <?php $familyCardRenderer->renderFamilyRow($family, $roles, $familyFallbacks, $familyFontDisplays, $familyFontDisplayOptions, $previewText, $categoryAliasOwners, $extendedVariableOptions, $monospaceRoleEnabled); ?>
+                                    <?php $familyCardRenderer->renderFamilyRow($family, $roles, $familyFallbacks, $familyFontDisplays, $familyFontDisplayOptions, $previewText, $categoryAliasOwners, $extendedVariableOptions, $monospaceRoleEnabled, $classOutputOptions); ?>
                                 <?php endforeach; ?>
                             </div>
                         <?php endif; ?>
