@@ -43,7 +43,7 @@ $tests['plugin_boot_loads_the_textdomain_immediately'] = static function (): voi
         'Plugin boot should load the tasty-fonts textdomain before the rest of the plugin runtime hooks run.'
     );
     assertSameValue(
-        'etch-fonts/languages',
+        dirname(plugin_basename(TASTY_FONTS_FILE)) . '/languages',
         (string) ($loadedTextdomains[0]['path'] ?? ''),
         'Plugin boot should resolve the languages directory from the plugin basename.'
     );
