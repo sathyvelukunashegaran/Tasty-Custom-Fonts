@@ -11,6 +11,18 @@ Tasty Custom Fonts lets you upload local font files, import Google Fonts or Bunn
 
 **Works especially well with [EtchWP](https://etch.com) and [Automatic CSS](https://automaticcss.com).**
 
+## Documentation
+
+Use the repo-native docs for the full knowledge base:
+
+- [Documentation Hub](docs/README.md)
+- [Getting Started](docs/getting-started.md)
+- [Deploy Fonts](docs/deploy-fonts.md)
+- [Font Library](docs/font-library.md)
+- [Settings](docs/settings.md)
+- [Advanced Tools](docs/advanced-tools.md)
+- [Developer Docs](docs/developer/architecture.md)
+
 ## What You Can Do
 
 - Upload `WOFF2`, `WOFF`, `TTF`, and `OTF` files from the dashboard.
@@ -194,7 +206,7 @@ Pull requests are welcome. For larger changes, open an issue first so the direct
 
 - Match the WordPress conventions already used in the plugin.
 - Run `php tests/run.php` before submitting changes.
-- Update the README when user-facing behavior changes.
+- Update `README.md` and the relevant pages under `docs/` when user-facing behavior changes.
 
 ## License
 
