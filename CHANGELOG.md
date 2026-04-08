@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-04-09
+
 ### Added
 
 - Added an Automatic.css integration service plus a dedicated Settings > Integrations workflow for syncing ACSS heading/body font-family settings to `var(--font-heading)` and `var(--font-body)`, including status messaging, backup/restore handling, and managed-mapping visibility in the dashboard.
