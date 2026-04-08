@@ -2,10 +2,13 @@
 
 Import Bunny Fonts as self-hosted files or keep them on the Bunny CDN.
 
+Bunny Fonts mirrors the Google Fonts catalog and is a drop-in GDPR-friendly alternative. No API key is required. Traffic is routed through Bunny.net's European infrastructure instead of Google's servers.
+
 ## Use This Page When
 
 - you want Bunny-hosted families in the plugin library
 - you need to choose between self-hosted and CDN delivery
+- you are concerned about GDPR and want to avoid Google CDN
 - you are troubleshooting Bunny import behavior
 
 ## Steps
@@ -66,3 +69,4 @@ Bunny Fonts is a GDPR-friendly alternative to the Google CDN. If you want CDN de
 - [Generated CSS](../troubleshooting/generated-css.md)
 - [Imports And Deliveries](../troubleshooting/imports-and-deliveries.md)
 - [Concepts](../concepts.md)
+- [FAQ](../faq.md)

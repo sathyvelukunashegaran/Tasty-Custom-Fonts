@@ -28,6 +28,8 @@ Use the repo-native docs for the full knowledge base:
 - [Settings](docs/settings.md)
 - [Advanced Tools](docs/advanced-tools.md)
 - [Developer Docs](docs/developer/architecture.md)
+- [FAQ](docs/faq.md)
+- [Glossary](docs/glossary.md)
 
 ## What You Can Do
 

@@ -62,6 +62,17 @@ Self-hosted local files are stored at:
 
 **Runtime CSS does not include the family** — confirm the family is `Published` or `In Use` in the library and that the active delivery profile is set to local self-hosted delivery.
 
+## Choosing A Format
+
+| Format | When to use |
+|---|---|
+| **WOFF2** | Always prefer this. Smallest file size, supported by all modern browsers. |
+| **WOFF** | Use as a backup alongside WOFF2 if you need to support older browsers (IE 11). |
+| **TTF** | Use if WOFF2 is not available. Larger file size but widely compatible. |
+| **OTF** | Same as TTF. Upload OTF if that is the only format you have. The plugin will serve it, but WOFF2 is preferred for web delivery. |
+
+> **Best practice:** if you have the source font in `.ttf` or `.otf` format, convert it to WOFF2 using a tool like [Fonttools](https://github.com/fonttools/fonttools) or an online converter before uploading. WOFF2 files load faster and improve Core Web Vitals scores.
+
 ## Notes
 
 - Local uploads feed the same library used by Google, Bunny, and Adobe sources.
@@ -74,3 +85,4 @@ Self-hosted local files are stored at:
 - [Font Library](../font-library.md)
 - [Generated CSS](../troubleshooting/generated-css.md)
 - [Concepts](../concepts.md)
+- [FAQ](../faq.md)

@@ -10,6 +10,24 @@ Control the plugin’s output model, integrations, behavior defaults, and mainte
 - you need to understand what the autosaving settings panels affect
 - you need to reset cached or detected plugin state during development or support work
 
+## Recommended Starting Settings For New Users
+
+If you just activated the plugin and are not sure where to begin, start with these defaults:
+
+| Setting | Recommended value | Why |
+|---|---|---|
+| CSS Delivery | File (default) | Best performance — browser caches the file independently |
+| Output Preset | Minimal | Outputs only `--font-heading` and `--font-body` — enough for most themes |
+| font-display | optional (default) | Best Core Web Vitals score; swap in body text if brand fidelity matters more |
+| Minify Generated CSS | On (default) | Smaller file size in production |
+| Preload Primary Fonts | On (if using self-hosted WOFF2 above the fold) | Improves LCP |
+| Block Editor Sync | Off on local, On on staging/production | Avoids loopback TLS failures on local environments |
+| Monospace Role | Off (default) | Enable only if your site displays code content |
+
+Once you have a working font deployment, revisit Settings and adjust from these defaults if needed.
+
+---
+
 ## Settings Tabs At A Glance
 
 The Settings page is split into four tabs:
@@ -213,3 +231,4 @@ Developer actions can affect:
 - [Font Library](font-library.md)
 - [Local Development](troubleshooting/local-development.md)
 - [Generated CSS](troubleshooting/generated-css.md)
+- [FAQ](faq.md)

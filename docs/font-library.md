@@ -5,8 +5,14 @@ Manage families, delivery profiles, publish state, fallback stacks, and per-fami
 ## Use This Page When
 
 - you want to browse everything the plugin knows about
-- you need to switch a family’s active delivery profile
+- you need to switch a family's active delivery profile
 - you need to change publish state, fallback behavior, or per-family `font-display`
+
+## Overview
+
+The Font Library is your central inventory. Every font family added to the plugin — regardless of whether it came from a local upload, Google, Bunny, or Adobe — lives here. You do not assign roles from this page (that happens in Deploy Fonts), but you do control how each family is delivered and whether it participates in runtime output.
+
+---
 
 ## Steps
 
@@ -14,9 +20,9 @@ Manage families, delivery profiles, publish state, fallback stacks, and per-fami
 
 Use the library filters to narrow by:
 
-- source
-- runtime state
-- category
+- source (Local, Google, Bunny, Adobe)
+- runtime state (In Use, Published, In Library Only)
+- category (serif, sans-serif, monospace, display, handwriting)
 - search text
 
 This is the fastest way to isolate imported families, local uploads, CDN profiles, or families that are currently in use.
@@ -25,15 +31,19 @@ This is the fastest way to isolate imported families, local uploads, CDN profile
 
 Families can appear in three main runtime states:
 
-- `In Use`: the family is currently used by an active live role
-- `Published`: the family is available for runtime use
-- `In Library Only`: the family stays stored in the library but is not served at runtime
+| State | What it means |
+|---|---|
+| **In Use** | The family is assigned to an active live role. Set automatically — you do not set this manually. |
+| **Published** | The family is part of runtime output but not assigned to a specific role. Use this for families referenced in custom CSS or theme templates. |
+| **In Library Only** | Stored for future use. No CSS is generated or served for this family right now. |
 
 **Decision guide:**
 
-- Use `In Use` state is set automatically when the family is assigned to an applied sitewide role. You do not set this manually.
+- `In Use` is set automatically when the family is assigned to an applied sitewide role. You do not set this manually.
 - Set a family to `Published` when it should be part of the available runtime output but is not yet assigned to a specific role. For example, a family used in custom CSS or a theme template can stay Published without needing a Heading/Body role assignment.
 - Set a family to `In Library Only` when you want to keep it available for future use without serving any CSS for it right now. This is useful for staging imports before a design decision is made.
+
+> **Beginner tip:** if you imported a family and your site is not showing it, check that it is set to `Published` or `In Use` (not `In Library Only`) and that it has an active delivery profile.
 
 ### 3. Switch Active Delivery Profiles
 
@@ -53,9 +63,21 @@ Keeping multiple profiles on one family lets you switch delivery modes without l
 
 Each family can store its own fallback stack. This affects how generated stacks resolve when that family is used in runtime output and snippets.
 
+A fallback stack is a comma-separated list of font families the browser tries if your primary font is unavailable. Example:
+
+```
+Georgia, 'Times New Roman', serif
+```
+
+The plugin will append this fallback sequence to the family name in all generated `font-family` declarations. If you leave this blank, a generic fallback category (e.g., `sans-serif`) is used.
+
 ### 5. Save Per-Family Font Display
 
 Each family can also store a per-family `font-display` override. Use this when a specific family should behave differently from the global default set in `Settings`.
+
+For example, if your global default is `optional` (best for performance) but you have a branding font that absolutely must render correctly, set that family to `swap` — it will always show the custom font rather than falling back silently.
+
+Per-family settings always take precedence over the global default.
 
 ### 6. Delete Carefully
 
@@ -67,6 +89,8 @@ The library lets you delete:
 
 The plugin blocks destructive actions when doing so would break a live applied role or an active profile still required by runtime output.
 
+---
+
 ## Notes
 
 - Google and Bunny self-hosted imports become local files under provider-specific upload directories.
@@ -76,7 +100,10 @@ The plugin blocks destructive actions when doing so would break a live applied r
 ## Related Docs
 
 - [Getting Started](getting-started.md)
+- [Deploy Fonts](deploy-fonts.md)
 - [Local Fonts](providers/local-fonts.md)
 - [Google Fonts](providers/google-fonts.md)
 - [Bunny Fonts](providers/bunny-fonts.md)
 - [Adobe Fonts](providers/adobe-fonts.md)
+- [Imports And Deliveries](troubleshooting/imports-and-deliveries.md)
+- [FAQ](faq.md)
