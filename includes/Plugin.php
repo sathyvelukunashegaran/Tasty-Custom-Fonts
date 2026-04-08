@@ -27,6 +27,9 @@ use TastyFonts\Google\GoogleCssParser;
 use TastyFonts\Google\GoogleFontsClient;
 use TastyFonts\Google\GoogleImportService;
 use TastyFonts\Integrations\AcssIntegrationService;
+use TastyFonts\Integrations\BricksIntegrationService;
+use TastyFonts\Integrations\OxygenIntegrationService;
+use TastyFonts\Maintenance\DeveloperToolsService;
 use TastyFonts\Repository\ImportRepository;
 use TastyFonts\Repository\LogRepository;
 use TastyFonts\Repository\SettingsRepository;
@@ -69,8 +72,11 @@ final class Plugin
     private readonly GoogleFontsClient $googleClient;
     private readonly GoogleImportService $googleImport;
     private readonly AcssIntegrationService $acssIntegration;
+    private readonly BricksIntegrationService $bricksIntegration;
+    private readonly OxygenIntegrationService $oxygenIntegration;
     private readonly RuntimeService $runtime;
     private readonly BlockEditorFontLibraryService $blockEditorFontLibrary;
+    private readonly DeveloperToolsService $developerTools;
     private readonly AdminController $admin;
     private readonly RestController $rest;
     private readonly GitHubUpdater $updater;
@@ -147,12 +153,30 @@ final class Plugin
             $this->log
         );
         $this->acssIntegration = new AcssIntegrationService();
-        $this->runtime = new RuntimeService($this->planner, $this->assets, $this->adobe);
+        $this->bricksIntegration = new BricksIntegrationService();
+        $this->oxygenIntegration = new OxygenIntegrationService();
+        $this->runtime = new RuntimeService(
+            $this->planner,
+            $this->assets,
+            $this->adobe,
+            $this->settings,
+            $this->bricksIntegration,
+            $this->oxygenIntegration
+        );
         $this->blockEditorFontLibrary = new BlockEditorFontLibraryService(
             $this->storage,
             $this->imports,
             $this->settings,
             $this->log
+        );
+        $this->developerTools = new DeveloperToolsService(
+            $this->storage,
+            $this->settings,
+            $this->imports,
+            $this->catalog,
+            $this->assets,
+            $this->blockEditorFontLibrary,
+            $this->googleClient
         );
         $this->updater = new GitHubUpdater();
         $this->admin = new AdminController(
@@ -169,7 +193,10 @@ final class Plugin
             $this->bunnyImport,
             $this->googleClient,
             $this->googleImport,
-            $this->acssIntegration
+            $this->acssIntegration,
+            $this->bricksIntegration,
+            $this->oxygenIntegration,
+            $this->developerTools
         );
         $this->rest = new RestController($this->admin);
     }
@@ -190,13 +217,7 @@ final class Plugin
 
     public static function deactivate(): void
     {
-        foreach (self::TRANSIENT_KEYS as $transientKey) {
-            delete_transient($transientKey);
-        }
-
-        if (function_exists('wp_clear_scheduled_hook')) {
-            wp_clear_scheduled_hook(AssetService::ACTION_REGENERATE_CSS);
-        }
+        self::instance()->developerTools->clearDeactivationCaches();
     }
 
     public function boot(): void
@@ -231,8 +252,11 @@ final class Plugin
         add_action('enqueue_block_editor_assets', [$this->runtime, 'enqueueBlockEditor']);
         add_action('enqueue_block_assets', [$this->runtime, 'enqueueBlockEditorContent']);
         add_action('admin_enqueue_scripts', [$this->runtime, 'enqueueAdminScreenFonts']);
+        add_filter('block_editor_settings_all', [$this->runtime, 'filterBlockEditorSettings'], 10, 2);
+        add_filter('bricks/builder/standard_fonts', [$this->runtime, 'filterBricksStandardFonts']);
         add_filter('wp_theme_json_data_theme', [$this->runtime, 'injectEditorFontPresets']);
         add_filter('style_loader_tag', [$this->runtime, 'filterExternalStylesheetTag'], 10, 4);
+        $this->runtime->registerOxygenCompatibilityShim();
     }
 
     private function registerAdminHooks(): void
@@ -294,34 +318,7 @@ final class Plugin
 
     private function onActivate(): void
     {
-        $this->storage->get();
-        $this->ensureIndexFiles();
+        $this->developerTools->ensureStorageScaffolding();
         $this->assets->ensureGeneratedCssFile();
-    }
-
-    private function ensureIndexFiles(): void
-    {
-        $root = $this->storage->getRoot();
-
-        if (!$root) {
-            return;
-        }
-
-        $stub = '<?php // Silence is golden.';
-
-        foreach (
-            [
-                trailingslashit($root) . 'index.php',
-                trailingslashit($root) . 'google/index.php',
-                trailingslashit($root) . 'bunny/index.php',
-                trailingslashit($root) . 'upload/index.php',
-                trailingslashit($root) . 'adobe/index.php',
-                trailingslashit($root) . '.generated/index.php',
-            ] as $path
-        ) {
-            if (!file_exists($path)) {
-                $this->storage->writeAbsoluteFile($path, $stub);
-            }
-        }
     }
 }

@@ -134,7 +134,7 @@ final class BlockEditorFontLibraryService
      * @param string $familyName Optional family name used for log messages.
      * @return void
      */
-    public function deleteSyncedFamily(string $familySlug, string $familyName = ''): void
+    public function deleteSyncedFamily(string $familySlug, string $familyName = '', bool $force = false): void
     {
         $result = [
             'status' => 'deleted',
@@ -142,7 +142,7 @@ final class BlockEditorFontLibraryService
             'family_slug' => $familySlug,
         ];
 
-        if (!$this->shouldSync($result, 'delete')) {
+        if (!$this->shouldSync($result, 'delete', $force)) {
             return;
         }
 
@@ -172,7 +172,7 @@ final class BlockEditorFontLibraryService
      *
      * @return void
      */
-    public function deleteAllSyncedFamilies(): void
+    public function deleteAllSyncedFamilies(bool $force = false): void
     {
         foreach ($this->imports->allFamilies() as $family) {
             if (!is_array($family)) {
@@ -186,13 +186,13 @@ final class BlockEditorFontLibraryService
                 continue;
             }
 
-            $this->deleteSyncedFamily($familySlug, $familyName);
+            $this->deleteSyncedFamily($familySlug, $familyName, $force);
         }
     }
 
-    private function shouldSync(array $result, string $provider): bool
+    private function shouldSync(array $result, string $provider, bool $force = false): bool
     {
-        if (!$this->settings->isBlockEditorFontLibrarySyncEnabled()) {
+        if (!$force && !$this->settings->isBlockEditorFontLibrarySyncEnabled()) {
             return false;
         }
 

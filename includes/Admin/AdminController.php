@@ -18,6 +18,9 @@ use TastyFonts\Fonts\LocalUploadService;
 use TastyFonts\Google\GoogleFontsClient;
 use TastyFonts\Google\GoogleImportService;
 use TastyFonts\Integrations\AcssIntegrationService;
+use TastyFonts\Integrations\BricksIntegrationService;
+use TastyFonts\Integrations\OxygenIntegrationService;
+use TastyFonts\Maintenance\DeveloperToolsService;
 use TastyFonts\Repository\LogRepository;
 use TastyFonts\Repository\SettingsRepository;
 use TastyFonts\Support\FontUtils;
@@ -42,10 +45,14 @@ final class AdminController
     private const NOTICE_TTL = 300;
     public const NOTICE_TRANSIENT_PREFIX = 'tasty_fonts_admin_notices_';
     private const SEARCH_CACHE_TTL = 900;
-    private const SEARCH_CACHE_TRANSIENT_PREFIX = 'tasty_fonts_search_cache_';
-    private const SEARCH_COOLDOWN_TRANSIENT_PREFIX = 'tasty_fonts_search_cooldown_';
+    public const SEARCH_CACHE_TRANSIENT_PREFIX = 'tasty_fonts_search_cache_';
+    public const SEARCH_COOLDOWN_TRANSIENT_PREFIX = 'tasty_fonts_search_cooldown_';
     private const SEARCH_COOLDOWN_WINDOW_SECONDS = 0.5;
     private const SEARCH_COOLDOWN_TRANSIENT_TTL = 1;
+    private const CONFIRM_RESET_SETTINGS = 'RESET SETTINGS';
+    private const CONFIRM_WIPE_FONT_LIBRARY = 'WIPE FONT LIBRARY';
+    private const CONFIRM_RESET_INTEGRATIONS = 'RESET INTEGRATIONS';
+    private const SETTINGS_STUDIO_TABS = ['output-settings', 'integrations', 'plugin-behavior', 'developer'];
     private readonly AdminPageRenderer $renderer;
     private readonly AdminPageContextBuilder $pageContextBuilder;
 
@@ -63,7 +70,10 @@ final class AdminController
         private readonly BunnyImportService $bunnyImport,
         private readonly GoogleFontsClient $googleClient,
         private readonly GoogleImportService $googleImport,
-        private readonly AcssIntegrationService $acssIntegration
+        private readonly AcssIntegrationService $acssIntegration,
+        private readonly BricksIntegrationService $bricksIntegration,
+        private readonly OxygenIntegrationService $oxygenIntegration,
+        private readonly DeveloperToolsService $developerTools
     ) {
         $this->renderer = new AdminPageRenderer($this->storage);
         $this->pageContextBuilder = new AdminPageContextBuilder(
@@ -75,7 +85,9 @@ final class AdminController
             $this->cssBuilder,
             $this->adobe,
             $this->googleClient,
-            $this->acssIntegration
+            $this->acssIntegration,
+            $this->bricksIntegration,
+            $this->oxygenIntegration
         );
     }
 
@@ -220,6 +232,26 @@ final class AdminController
         }
 
         if ($this->handleLocalEnvironmentNoticeAction()) {
+            return;
+        }
+
+        if ($this->handleResetPluginSettingsAction()) {
+            return;
+        }
+
+        if ($this->handleWipeManagedFontLibraryAction()) {
+            return;
+        }
+
+        if ($this->handleClearPluginCachesAction()) {
+            return;
+        }
+
+        if ($this->handleResetIntegrationDetectionStateAction()) {
+            return;
+        }
+
+        if ($this->handleResetSuppressedNoticesAction()) {
             return;
         }
 
@@ -469,6 +501,7 @@ final class AdminController
         $submittedGoogleKey = sanitize_text_field((string) ($submittedValues['google_api_key'] ?? ''));
         $clearGoogleKey = !empty($submittedValues['tasty_fonts_clear_google_api_key']);
         $settingsInput = $this->buildSettingsSaveInput($submittedValues);
+        $settingsInput = $this->preserveUnavailableIntegrationSettings($settingsInput);
         $savedSettings = $this->settings->saveSettings($settingsInput);
 
         $this->googleClient->clearCatalogCache();
@@ -548,6 +581,106 @@ final class AdminController
             'settings' => $savedSettings,
             'reload_required' => $reloadRequired,
         ];
+    }
+
+    public function resetPluginSettingsToDefaults(string $confirmation): array|WP_Error
+    {
+        $validation = $this->validateDeveloperConfirmation(
+            $confirmation,
+            self::CONFIRM_RESET_SETTINGS,
+            __('Reset Plugin Settings', 'tasty-fonts')
+        );
+
+        if (is_wp_error($validation)) {
+            return $validation;
+        }
+
+        $settings = $this->developerTools->resetPluginSettings();
+
+        if (is_wp_error($settings)) {
+            return $settings;
+        }
+
+        $message = __('Plugin settings reset to defaults. Font library preserved.', 'tasty-fonts');
+        $this->log->add($message);
+
+        return [
+            'message' => $message,
+            'settings' => $settings,
+        ];
+    }
+
+    public function wipeManagedFontLibrary(string $confirmation): array|WP_Error
+    {
+        $validation = $this->validateDeveloperConfirmation(
+            $confirmation,
+            self::CONFIRM_WIPE_FONT_LIBRARY,
+            __('Wipe Managed Font Library', 'tasty-fonts')
+        );
+
+        if (is_wp_error($validation)) {
+            return $validation;
+        }
+
+        $settings = $this->developerTools->wipeManagedFontLibrary();
+
+        if (is_wp_error($settings)) {
+            return $settings;
+        }
+
+        $message = __('Managed font library wiped. Storage reset to an empty scaffold.', 'tasty-fonts');
+        $this->log->add($message);
+
+        return [
+            'message' => $message,
+            'settings' => $settings,
+        ];
+    }
+
+    public function clearPluginCachesAndRegenerateAssets(): array|WP_Error
+    {
+        if (!$this->developerTools->clearPluginCachesAndRegenerateAssets()) {
+            return new WP_Error(
+                'tasty_fonts_maintenance_failed',
+                __('Plugin caches were cleared, but generated assets could not be rebuilt.', 'tasty-fonts')
+            );
+        }
+
+        $message = __('Plugin caches cleared and generated assets refreshed.', 'tasty-fonts');
+        $this->log->add($message);
+
+        return ['message' => $message];
+    }
+
+    public function resetIntegrationDetectionState(string $confirmation): array|WP_Error
+    {
+        $validation = $this->validateDeveloperConfirmation(
+            $confirmation,
+            self::CONFIRM_RESET_INTEGRATIONS,
+            __('Reset Integration Detection State', 'tasty-fonts')
+        );
+
+        if (is_wp_error($validation)) {
+            return $validation;
+        }
+
+        $settings = $this->developerTools->resetIntegrationDetectionState();
+        $message = __('Integration detection state reset.', 'tasty-fonts');
+        $this->log->add($message);
+
+        return [
+            'message' => $message,
+            'settings' => $settings,
+        ];
+    }
+
+    public function resetSuppressedNotices(): array
+    {
+        $this->developerTools->resetSuppressedNotices();
+        $message = __('Suppressed notices reset. Hidden reminders can appear again.', 'tasty-fonts');
+        $this->log->add($message);
+
+        return ['message' => $message];
     }
 
     public function saveFamilyDeliveryValue(string $familySlug, string $deliveryId): array|WP_Error
@@ -633,6 +766,87 @@ final class AdminController
         }
 
         $this->redirectWithSuccess($message);
+    }
+
+    private function handleResetPluginSettingsAction(): bool
+    {
+        if (!isset($_POST['tasty_fonts_reset_plugin_settings'])) {
+            return false;
+        }
+
+        check_admin_referer('tasty_fonts_reset_plugin_settings');
+
+        $result = $this->resetPluginSettingsToDefaults($this->getPostedText('tasty_fonts_reset_settings_confirmation'));
+
+        if (is_wp_error($result)) {
+            $this->redirectWithError($result->get_error_message());
+        }
+
+        $this->redirectWithSuccess((string) ($result['message'] ?? __('Plugin settings reset.', 'tasty-fonts')));
+    }
+
+    private function handleWipeManagedFontLibraryAction(): bool
+    {
+        if (!isset($_POST['tasty_fonts_wipe_managed_font_library'])) {
+            return false;
+        }
+
+        check_admin_referer('tasty_fonts_wipe_managed_font_library');
+
+        $result = $this->wipeManagedFontLibrary($this->getPostedText('tasty_fonts_wipe_font_library_confirmation'));
+
+        if (is_wp_error($result)) {
+            $this->redirectWithError($result->get_error_message());
+        }
+
+        $this->redirectWithSuccess((string) ($result['message'] ?? __('Managed font library wiped.', 'tasty-fonts')));
+    }
+
+    private function handleClearPluginCachesAction(): bool
+    {
+        if (!isset($_POST['tasty_fonts_clear_plugin_caches'])) {
+            return false;
+        }
+
+        check_admin_referer('tasty_fonts_clear_plugin_caches');
+
+        $result = $this->clearPluginCachesAndRegenerateAssets();
+
+        if (is_wp_error($result)) {
+            $this->redirectWithError($result->get_error_message());
+        }
+
+        $this->redirectWithSuccess((string) ($result['message'] ?? __('Plugin caches cleared.', 'tasty-fonts')));
+    }
+
+    private function handleResetIntegrationDetectionStateAction(): bool
+    {
+        if (!isset($_POST['tasty_fonts_reset_integration_detection_state'])) {
+            return false;
+        }
+
+        check_admin_referer('tasty_fonts_reset_integration_detection_state');
+
+        $result = $this->resetIntegrationDetectionState($this->getPostedText('tasty_fonts_reset_integrations_confirmation'));
+
+        if (is_wp_error($result)) {
+            $this->redirectWithError($result->get_error_message());
+        }
+
+        $this->redirectWithSuccess((string) ($result['message'] ?? __('Integration detection state reset.', 'tasty-fonts')));
+    }
+
+    private function handleResetSuppressedNoticesAction(): bool
+    {
+        if (!isset($_POST['tasty_fonts_reset_suppressed_notices'])) {
+            return false;
+        }
+
+        check_admin_referer('tasty_fonts_reset_suppressed_notices');
+
+        $result = $this->resetSuppressedNotices();
+
+        $this->redirectWithSuccess((string) ($result['message'] ?? __('Suppressed notices reset.', 'tasty-fonts')));
     }
 
     private function handleSaveSettingsAction(): bool
@@ -898,6 +1112,9 @@ final class AdminController
                     self::PAGE_SETTINGS . '_behavior' => $this->buildPageUrl(self::PAGE_SETTINGS, [
                         'tf_studio' => 'plugin-behavior',
                     ]),
+                    self::PAGE_SETTINGS . '_developer' => $this->buildPageUrl(self::PAGE_SETTINGS, [
+                        'tf_studio' => 'developer',
+                    ]),
                     self::PAGE_DIAGNOSTICS => $this->buildPageUrl(self::PAGE_DIAGNOSTICS),
                 ],
             ]
@@ -978,6 +1195,18 @@ final class AdminController
                 : __('CSS minification disabled', 'tasty-fonts');
         }
 
+        if (!empty($before['role_usage_font_weight_enabled']) !== !empty($after['role_usage_font_weight_enabled'])) {
+            $changes[] = !empty($after['role_usage_font_weight_enabled'])
+                ? __('role font-weight output enabled', 'tasty-fonts')
+                : __('role font-weight output disabled', 'tasty-fonts');
+        }
+
+        if (!empty($before['minimal_output_preset_enabled']) !== !empty($after['minimal_output_preset_enabled'])) {
+            $changes[] = !empty($after['minimal_output_preset_enabled'])
+                ? __('minimal output preset enabled', 'tasty-fonts')
+                : __('minimal output preset disabled', 'tasty-fonts');
+        }
+
         if (!empty($before['per_variant_font_variables_enabled']) !== !empty($after['per_variant_font_variables_enabled'])) {
             $changes[] = !empty($after['per_variant_font_variables_enabled'])
                 ? __('extended font output variables enabled', 'tasty-fonts')
@@ -1004,6 +1233,18 @@ final class AdminController
             $changes[] = !empty($after['block_editor_font_library_sync_enabled'])
                 ? __('Block Editor Font Library sync enabled', 'tasty-fonts')
                 : __('Block Editor Font Library sync disabled', 'tasty-fonts');
+        }
+
+        if (($before['bricks_integration_enabled'] ?? null) !== ($after['bricks_integration_enabled'] ?? null)) {
+            $changes[] = ($after['bricks_integration_enabled'] ?? null) === true
+                ? __('Bricks integration enabled', 'tasty-fonts')
+                : __('Bricks integration disabled', 'tasty-fonts');
+        }
+
+        if (($before['oxygen_integration_enabled'] ?? null) !== ($after['oxygen_integration_enabled'] ?? null)) {
+            $changes[] = ($after['oxygen_integration_enabled'] ?? null) === true
+                ? __('Oxygen integration enabled', 'tasty-fonts')
+                : __('Oxygen integration disabled', 'tasty-fonts');
         }
 
         if (!empty($before['training_wheels_off']) !== !empty($after['training_wheels_off'])) {
@@ -1055,6 +1296,8 @@ final class AdminController
             || !empty($before['class_output_enabled']) !== !empty($after['class_output_enabled'])
             || $this->classOutputSubsettingsDiffer($before, $after)
             || !empty($before['minify_css_output']) !== !empty($after['minify_css_output'])
+            || !empty($before['role_usage_font_weight_enabled']) !== !empty($after['role_usage_font_weight_enabled'])
+            || !empty($before['minimal_output_preset_enabled']) !== !empty($after['minimal_output_preset_enabled'])
             || !empty($before['per_variant_font_variables_enabled']) !== !empty($after['per_variant_font_variables_enabled'])
             || $this->extendedVariableSubsettingsDiffer($before, $after)
             || !empty($before['monospace_role_enabled']) !== !empty($after['monospace_role_enabled']);
@@ -1065,6 +1308,8 @@ final class AdminController
         return !empty($before['training_wheels_off']) !== !empty($after['training_wheels_off'])
             || !empty($before['monospace_role_enabled']) !== !empty($after['monospace_role_enabled'])
             || !empty($before['block_editor_font_library_sync_enabled']) !== !empty($after['block_editor_font_library_sync_enabled'])
+            || ($before['bricks_integration_enabled'] ?? null) !== ($after['bricks_integration_enabled'] ?? null)
+            || ($before['oxygen_integration_enabled'] ?? null) !== ($after['oxygen_integration_enabled'] ?? null)
             || ($before['acss_font_role_sync_enabled'] ?? null) !== ($after['acss_font_role_sync_enabled'] ?? null)
             || !empty($before['acss_font_role_sync_applied']) !== !empty($after['acss_font_role_sync_applied']);
     }
@@ -1615,6 +1860,8 @@ final class AdminController
                 'class_output_category_mono_enabled',
                 'class_output_families_enabled',
                 'per_variant_font_variables_enabled',
+                'minimal_output_preset_enabled',
+                'role_usage_font_weight_enabled',
                 'extended_variable_weight_tokens_enabled',
                 'extended_variable_role_aliases_enabled',
                 'extended_variable_category_sans_enabled',
@@ -1623,6 +1870,8 @@ final class AdminController
                 'preload_primary_fonts',
                 'remote_connection_hints',
                 'block_editor_font_library_sync_enabled',
+                'bricks_integration_enabled',
+                'oxygen_integration_enabled',
                 'acss_font_role_sync_enabled',
                 'delete_uploaded_files_on_uninstall',
                 'training_wheels_off',
@@ -1635,6 +1884,23 @@ final class AdminController
 
         if (array_key_exists('monospace_role_enabled', $submittedValues)) {
             $settingsInput['monospace_role_enabled'] = $submittedValues['monospace_role_enabled'];
+        }
+
+        return $settingsInput;
+    }
+
+    private function preserveUnavailableIntegrationSettings(array $settingsInput): array
+    {
+        if (!$this->bricksIntegration->isAvailable()) {
+            unset($settingsInput['bricks_integration_enabled']);
+        }
+
+        if (!$this->oxygenIntegration->isAvailable()) {
+            unset($settingsInput['oxygen_integration_enabled']);
+        }
+
+        if (!$this->acssIntegration->isAvailable()) {
+            unset($settingsInput['acss_font_role_sync_enabled']);
         }
 
         return $settingsInput;
@@ -1667,13 +1933,34 @@ final class AdminController
 
     private function initializeDetectedIntegrations(): void
     {
+        $this->initializeDetectedBuilderIntegration(
+            'bricks_integration_enabled',
+            $this->bricksIntegration->isAvailable(),
+            __('Bricks Builder detected. Bricks integration has been enabled in Integrations.', 'tasty-fonts'),
+            __('Bricks integration detected. Enabled automatically.', 'tasty-fonts')
+        );
+        $this->initializeDetectedBuilderIntegration(
+            'oxygen_integration_enabled',
+            $this->oxygenIntegration->isAvailable(),
+            __('Oxygen Builder detected. Oxygen integration has been enabled in Integrations.', 'tasty-fonts'),
+            __('Oxygen integration detected. Enabled automatically.', 'tasty-fonts')
+        );
+
         $settings = $this->settings->getSettings();
 
-        if (($settings['acss_font_role_sync_enabled'] ?? null) !== null || !$this->acssIntegration->isAvailable()) {
+        if (!$this->acssIntegration->isAvailable()) {
             return;
         }
 
         $current = $this->acssIntegration->getCurrentSettings();
+
+        if (
+            ($settings['acss_font_role_sync_enabled'] ?? null) !== null
+            && !$this->shouldRecoverLegacyAcssDetectionState($settings, $current)
+        ) {
+            return;
+        }
+
         $settings = $this->settings->saveAcssFontRoleSyncState(true, false, $current['heading'], $current['body']);
         $message = __('Automatic.css detected. Automatic.css font sync has been enabled in Integrations.', 'tasty-fonts');
         $syncMessage = $this->syncAcssIntegrationForRuntimeState($settings);
@@ -1691,6 +1978,33 @@ final class AdminController
 
         $this->queueNoticeToast('success', $message, 'status');
         $this->log->add(__('Automatic.css integration detected. Font sync enabled automatically.', 'tasty-fonts'));
+    }
+
+    private function initializeDetectedBuilderIntegration(
+        string $settingsKey,
+        bool $available,
+        string $toastMessage,
+        string $logMessage
+    ): void {
+        $settings = $this->settings->getSettings();
+
+        if (($settings[$settingsKey] ?? null) !== null || !$available) {
+            return;
+        }
+
+        $this->settings->saveSettings([$settingsKey => '1']);
+        $this->queueNoticeToast('success', $toastMessage, 'status');
+        $this->log->add($logMessage);
+    }
+
+    private function shouldRecoverLegacyAcssDetectionState(array $settings, array $current): bool
+    {
+        return ($settings['acss_font_role_sync_enabled'] ?? null) === false
+            && empty($settings['acss_font_role_sync_applied'])
+            && trim((string) ($settings['acss_font_role_sync_previous_heading_font_family'] ?? '')) === ''
+            && trim((string) ($settings['acss_font_role_sync_previous_text_font_family'] ?? '')) === ''
+            && trim((string) ($current['heading'] ?? '')) === ''
+            && trim((string) ($current['body'] ?? '')) === '';
     }
 
     private function reconcileAcssIntegrationDrift(): void
@@ -1958,6 +2272,22 @@ final class AdminController
         };
     }
 
+    private function validateDeveloperConfirmation(string $confirmation, string $expectedPhrase, string $label): WP_Error|null
+    {
+        if (strtoupper(trim($confirmation)) === strtoupper(trim($expectedPhrase))) {
+            return null;
+        }
+
+        return new WP_Error(
+            'tasty_fonts_confirmation_required',
+            sprintf(
+                __('Type "%1$s" to confirm %2$s.', 'tasty-fonts'),
+                $expectedPhrase,
+                $label
+            )
+        );
+    }
+
     private function redirectWithNoticeKey(string $key): never
     {
         $message = $this->buildNoticeMessage($key);
@@ -2030,7 +2360,7 @@ final class AdminController
             }
         }
 
-        if ($pageType === self::PAGE_SETTINGS && in_array($studio, ['output-settings', 'integrations', 'plugin-behavior'], true)) {
+        if ($pageType === self::PAGE_SETTINGS && in_array($studio, self::SETTINGS_STUDIO_TABS, true)) {
             $args['tf_studio'] = $studio;
         }
 
@@ -2072,7 +2402,7 @@ final class AdminController
 
         return match ($key) {
             'tf_page' => in_array($value, [self::PAGE_ROLES, self::PAGE_LIBRARY, self::PAGE_SETTINGS, self::PAGE_DIAGNOSTICS], true) ? $value : '',
-            'tf_studio' => in_array($value, ['preview', 'snippets', 'generated', 'system', 'activity', 'output-settings', 'integrations', 'plugin-behavior'], true) ? $value : '',
+            'tf_studio' => in_array($value, array_merge(['preview', 'snippets', 'generated', 'system', 'activity'], self::SETTINGS_STUDIO_TABS), true) ? $value : '',
             'tf_preview' => in_array($value, ['editorial', 'card', 'reading', 'interface', 'code'], true) ? $value : '',
             'tf_output' => in_array($value, ['usage', 'variables', 'stacks', 'names'], true) ? $value : '',
             'tf_source' => in_array($value, ['google', 'bunny', 'adobe', 'upload'], true) ? $value : '',
@@ -2107,7 +2437,7 @@ final class AdminController
 
         $studio = $this->getAllowedTrackedUiTabValue('tf_studio');
 
-        if (in_array($studio, ['output-settings', 'integrations', 'plugin-behavior'], true)) {
+        if (in_array($studio, self::SETTINGS_STUDIO_TABS, true)) {
             return self::PAGE_SETTINGS;
         }
 

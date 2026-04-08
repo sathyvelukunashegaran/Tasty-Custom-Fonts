@@ -7,6 +7,9 @@ namespace TastyFonts\Fonts;
 defined('ABSPATH') || exit;
 
 use TastyFonts\Adobe\AdobeProjectClient;
+use TastyFonts\Integrations\BricksIntegrationService;
+use TastyFonts\Integrations\OxygenIntegrationService;
+use TastyFonts\Repository\SettingsRepository;
 use WP_Theme_JSON_Data;
 
 final class RuntimeService
@@ -23,7 +26,10 @@ final class RuntimeService
     public function __construct(
         private readonly RuntimeAssetPlanner $planner,
         private readonly AssetService $assets,
-        private readonly AdobeProjectClient $adobe
+        private readonly AdobeProjectClient $adobe,
+        private readonly SettingsRepository $settings,
+        private readonly BricksIntegrationService $bricksIntegration,
+        private readonly OxygenIntegrationService $oxygenIntegration
     ) {
     }
 
@@ -170,6 +176,49 @@ final class RuntimeService
         );
     }
 
+    public function filterBlockEditorSettings(array $editorSettings, mixed $editorContext = null): array
+    {
+        $styles = [];
+        $runtimeFamilies = $this->planner->getRuntimeFamilies();
+
+        if ($this->builderIntegrationEnabled('bricks') && $this->bricksIntegration->isAvailable()) {
+            $styles = array_merge($styles, $this->bricksIntegration->getEditorStyles($runtimeFamilies));
+        }
+
+        if ($this->builderIntegrationEnabled('oxygen') && $this->oxygenIntegration->isAvailable()) {
+            $styles = array_merge($styles, $this->oxygenIntegration->getEditorStyles($runtimeFamilies));
+        }
+
+        $styles = array_values(array_unique(array_filter($styles, 'strlen')));
+
+        if ($styles === []) {
+            return $editorSettings;
+        }
+
+        $editorSettings['styles'] = is_array($editorSettings['styles'] ?? null) ? $editorSettings['styles'] : [];
+        $editorSettings['styles'][] = ['css' => implode("\n", $styles)];
+
+        return $editorSettings;
+    }
+
+    public function filterBricksStandardFonts(array $fonts): array
+    {
+        if (!$this->builderIntegrationEnabled('bricks') || !$this->bricksIntegration->isAvailable()) {
+            return $fonts;
+        }
+
+        return $this->bricksIntegration->filterStandardFonts($fonts, $this->planner->getRuntimeFamilies());
+    }
+
+    public function registerOxygenCompatibilityShim(): void
+    {
+        if (!$this->builderIntegrationEnabled('oxygen') || !$this->oxygenIntegration->isAvailable()) {
+            return;
+        }
+
+        $this->oxygenIntegration->registerCompatibilityShim($this->planner->getRuntimeFamilies());
+    }
+
     public function filterExternalStylesheetTag(string $html, string $handle, string $href, string $media): string
     {
         if (!$this->isExternalStylesheetHandle($handle) || str_contains($html, ' crossorigin=')) {
@@ -286,6 +335,24 @@ final class RuntimeService
         }
 
         return false;
+    }
+
+    private function builderIntegrationEnabled(string $builder): bool
+    {
+        $settings = $this->settings->getSettings();
+        $key = match ($builder) {
+            'bricks' => 'bricks_integration_enabled',
+            'oxygen' => 'oxygen_integration_enabled',
+            default => '',
+        };
+
+        if ($key === '') {
+            return false;
+        }
+
+        $value = $settings[$key] ?? null;
+
+        return $value !== false;
     }
 
     private function hasEtchCanvasRequest(): bool

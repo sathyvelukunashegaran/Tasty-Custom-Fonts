@@ -133,6 +133,8 @@
     const pillOptions = Array.from(document.querySelectorAll('[data-pill-option]'));
     const outputQuickModeInputs = Array.from(document.querySelectorAll('[data-output-quick-mode]'));
     const outputAdvancedPanel = document.getElementById('tasty-fonts-advanced-output-controls');
+    const outputMinimalPresetInput = document.querySelector('[data-output-minimal-preset]');
+    const developerConfirmInputs = Array.from(document.querySelectorAll('[data-developer-confirm-input]'));
     const outputMasterInputs = {
         classes: document.querySelector('[data-output-master="classes"]'),
         variables: document.querySelector('[data-output-master="variables"]'),
@@ -142,6 +144,7 @@
         variables: document.querySelector('[data-output-panel="variables"]'),
     };
     const outputMonoDependentInputs = Array.from(document.querySelectorAll('[data-output-mono-dependent]'));
+    const outputRoleWeightInput = document.querySelector('input[name="role_usage_font_weight_enabled"]');
     const settingsAutosaveForms = Array.from(document.querySelectorAll('[data-settings-autosave]'));
 
     let selectedSearchFamily = null;
@@ -653,6 +656,7 @@
 
         [
             'minify_css_output',
+            'role_usage_font_weight_enabled',
             'class_output_enabled',
             'class_output_role_heading_enabled',
             'class_output_role_body_enabled',
@@ -684,6 +688,10 @@
 
             syncCheckboxFields(field, !!settings[field]);
         });
+
+        if (Object.prototype.hasOwnProperty.call(settings, 'minimal_output_preset_enabled') && outputMinimalPresetInput) {
+            outputMinimalPresetInput.value = settings.minimal_output_preset_enabled ? '1' : '0';
+        }
 
         if (Object.prototype.hasOwnProperty.call(settings, 'monospace_role_enabled')) {
             monospaceRoleEnabled = !!settings.monospace_role_enabled && !!roleMonospace && !!roleMonospaceFallback;
@@ -1511,6 +1519,26 @@
 
     function handleTrackedUiPopState() {
         applyTrackedUiState(readTrackedUiState(window.location));
+        syncRoleDisclosureForCurrentPage();
+    }
+
+    function syncRoleDisclosureForCurrentPage() {
+        if (currentPage !== 'roles') {
+            return;
+        }
+
+        const previewToggle = disclosureToggleByTargetId('tasty-fonts-role-preview-panel');
+        const snippetsToggle = disclosureToggleByTargetId('tasty-fonts-role-snippets-panel');
+
+        if (previewToggle && isDisclosureExpanded(previewToggle)) {
+            initializePreviewWorkspace();
+            revealDisclosurePanel('tasty-fonts-role-preview-panel', previewToggle);
+            return;
+        }
+
+        if (snippetsToggle && isDisclosureExpanded(snippetsToggle)) {
+            revealDisclosurePanel('tasty-fonts-role-snippets-panel', snippetsToggle);
+        }
     }
 
     function deliveryButtonLabel(mode, provider) {
@@ -2582,6 +2610,19 @@
         return targetId ? document.getElementById(targetId) : null;
     }
 
+    function collapseRoleDisclosures() {
+        const previewToggle = disclosureToggleByTargetId('tasty-fonts-role-preview-panel');
+        const snippetsToggle = disclosureToggleByTargetId('tasty-fonts-role-snippets-panel');
+
+        if (previewToggle) {
+            setDisclosureState(previewToggle, false);
+        }
+
+        if (snippetsToggle) {
+            setDisclosureState(snippetsToggle, false);
+        }
+    }
+
     function tabButtonsForGroup(group) {
         return tabButtons.filter((tab) => tab.getAttribute('data-tab-group') === group);
     }
@@ -2611,6 +2652,10 @@
         });
 
         if (group === 'page' && key) {
+            if (key !== 'roles') {
+                collapseRoleDisclosures();
+            }
+
             currentPage = key;
 
             const rootPage = document.querySelector('[data-current-page]');
@@ -3385,6 +3430,30 @@
         return lines.join('\n');
     }
 
+    function buildOutputVariableLines(data) {
+        if (!data.headingSlug || !data.bodySlug) {
+            return [];
+        }
+
+        const variableLines = [
+            `--font-${data.headingSlug}: ${data.headingStack};`,
+            `--font-${data.bodySlug}: ${data.bodyStack};`,
+            `--font-heading: var(--font-${data.headingSlug});`,
+            `--font-body: var(--font-${data.bodySlug});`,
+        ];
+
+        if (data.includeMonospace) {
+            if (data.monospaceSlug) {
+                variableLines.push(`--font-${data.monospaceSlug}: ${data.monospaceStack};`);
+                variableLines.push(`--font-monospace: var(--font-${data.monospaceSlug});`);
+            } else {
+                variableLines.push(`--font-monospace: ${data.monospaceStack};`);
+            }
+        }
+
+        return variableLines;
+    }
+
     function updatePreviewCopyCssButton(data) {
         if (!previewCopyCssButton) {
             return;
@@ -3507,6 +3576,17 @@
     function updateRoleOutputs() {
         const data = currentRoleData();
 
+        const setButtonLabel = (button, value) => {
+            const label = button.querySelector('.tasty-fonts-role-box-copy-label');
+
+            if (label) {
+                label.textContent = value;
+                return;
+            }
+
+            button.textContent = value;
+        };
+
         headingRoleVariableCopies.forEach((button) => {
             const copyTitle = formatMessage(
                 getString('headingVariableTitle', 'Heading font variable: %1$s. Resolved stack: %2$s'),
@@ -3550,7 +3630,7 @@
                     getString('headingFamilyFallbackTitle', 'Heading uses the fallback stack directly: %1$s. Role alias: %2$s'),
                     [data.headingStack, data.headingVariable]
                 );
-            button.textContent = data.headingFamilyVariable;
+            setButtonLabel(button, data.headingFamilyVariable);
             button.setAttribute('data-copy-text', data.headingFamilyVariable);
             button.setAttribute('title', copyTitle);
             button.setAttribute('aria-label', copyTitle);
@@ -3566,7 +3646,7 @@
                     getString('bodyFamilyFallbackTitle', 'Body uses the fallback stack directly: %1$s. Role alias: %2$s'),
                     [data.bodyStack, data.bodyVariable]
                 );
-            button.textContent = data.bodyFamilyVariable;
+            setButtonLabel(button, data.bodyFamilyVariable);
             button.setAttribute('data-copy-text', data.bodyFamilyVariable);
             button.setAttribute('title', copyTitle);
             button.setAttribute('aria-label', copyTitle);
@@ -3582,7 +3662,7 @@
                     getString('monospaceFamilyFallbackTitle', 'Monospace uses the fallback stack directly: %1$s. Role alias: %2$s'),
                     [data.monospaceStack, data.monospaceVariable]
                 );
-            button.textContent = data.monospaceFamilyVariable;
+            setButtonLabel(button, data.monospaceFamilyVariable);
             button.setAttribute('data-copy-text', data.monospaceFamilyVariable);
             button.setAttribute('title', copyTitle);
             button.setAttribute('aria-label', copyTitle);
@@ -3670,29 +3750,8 @@
             outputStacks.value = stacks.join('\n');
         }
 
-        let variableSnippet = '';
-
-        if (data.headingSlug && data.bodySlug) {
-            const variableLines = [
-                ':root {',
-                `  --font-${data.headingSlug}: ${data.headingStack};`,
-                `  --font-${data.bodySlug}: ${data.bodyStack};`,
-                `  --font-heading: var(--font-${data.headingSlug});`,
-                `  --font-body: var(--font-${data.bodySlug});`,
-            ];
-
-            if (data.includeMonospace) {
-                if (data.monospaceSlug) {
-                    variableLines.push(`  --font-${data.monospaceSlug}: ${data.monospaceStack};`);
-                    variableLines.push(`  --font-monospace: var(--font-${data.monospaceSlug});`);
-                } else {
-                    variableLines.push(`  --font-monospace: ${data.monospaceStack};`);
-                }
-            }
-
-            variableLines.push('}');
-            variableSnippet = variableLines.join('\n');
-        }
+        const variableLines = buildOutputVariableLines(data);
+        const variableSnippet = variableLines.join('\n');
 
         if (outputVars) {
             outputVars.value = variableSnippet;
@@ -3703,7 +3762,9 @@
                 outputUsage.value = '';
             } else {
                 const usageLines = [
-                    variableSnippet,
+                    ':root {',
+                    ...variableLines.map((line) => `  ${line}`),
+                    '}',
                     '',
                     'body {',
                     '  font-family: var(--font-body);',
@@ -5901,6 +5962,10 @@
 
             activateTabGroup(group, tab.getAttribute('data-tab-target'));
 
+            if (group === 'page') {
+                syncRoleDisclosureForCurrentPage();
+            }
+
             if (isTrackedTabGroup(group)) {
                 syncTrackedUiUrl('push');
             }
@@ -5936,6 +6001,10 @@
 
         const nextTab = buttons[nextIndex];
         activateTabGroup(group, nextTab.getAttribute('data-tab-target'));
+
+        if (group === 'page') {
+            syncRoleDisclosureForCurrentPage();
+        }
 
         if (isTrackedTabGroup(group)) {
             syncTrackedUiUrl('push');
@@ -6874,6 +6943,11 @@
     function deriveOutputQuickMode() {
         const classesEnabled = !!(outputMasterInputs.classes && outputMasterInputs.classes.checked);
         const variablesEnabled = !!(outputMasterInputs.variables && outputMasterInputs.variables.checked);
+        const minimalEnabled = !!(outputMinimalPresetInput && outputMinimalPresetInput.value === '1');
+
+        if (minimalEnabled && variablesEnabled && !classesEnabled) {
+            return 'minimal';
+        }
 
         if (variablesEnabled && !classesEnabled) {
             return 'variables';
@@ -6904,6 +6978,10 @@
     function syncOutputQuickModeUi() {
         const mode = deriveOutputQuickMode();
 
+        if (outputMinimalPresetInput) {
+            outputMinimalPresetInput.value = mode === 'minimal' ? '1' : '0';
+        }
+
         outputQuickModeInputs.forEach((input) => {
             input.checked = input.value === mode;
         });
@@ -6914,8 +6992,15 @@
     function applyOutputQuickMode(mode) {
         const classFlags = outputClassFlagInputs();
         const variableFlags = outputVariableFlagInputs();
-        const enableClasses = mode !== 'variables';
-        const enableVariables = mode !== 'classes';
+        const minimalMode = mode === 'minimal';
+        const enableClasses = mode === 'classes' || mode === 'custom';
+        const enableVariables = mode === 'variables' || mode === 'custom' || minimalMode;
+        const enableClassFlags = mode === 'classes' || mode === 'custom';
+        const enableVariableFlags = mode === 'variables' || mode === 'custom';
+
+        if (outputMinimalPresetInput) {
+            outputMinimalPresetInput.value = minimalMode ? '1' : '0';
+        }
 
         if (outputMasterInputs.classes) {
             outputMasterInputs.classes.checked = enableClasses;
@@ -6927,15 +7012,19 @@
 
         classFlags.forEach((input) => {
             if (!input.disabled) {
-                input.checked = enableClasses;
+                input.checked = enableClassFlags;
             }
         });
 
         variableFlags.forEach((input) => {
             if (!input.disabled) {
-                input.checked = enableVariables;
+                input.checked = enableVariableFlags;
             }
         });
+
+        if (outputRoleWeightInput && minimalMode) {
+            outputRoleWeightInput.checked = false;
+        }
 
         syncOutputSettingsUi();
     }
@@ -7013,6 +7102,39 @@
         });
     }
 
+    function syncDeveloperConfirmButtonState(key) {
+        if (!key) {
+            return;
+        }
+
+        const input = document.querySelector('[data-developer-confirm-input="' + key + '"]');
+        const button = document.querySelector('[data-developer-confirm-button="' + key + '"]');
+
+        if (!button) {
+            return;
+        }
+
+        const expected = String((input && input.getAttribute('data-confirm-expected')) || '').trim().toUpperCase();
+        const actual = String((input && input.value) || '').trim().toUpperCase();
+
+        button.disabled = expected === '' || actual !== expected;
+    }
+
+    function bindDeveloperToolsControls() {
+        developerConfirmInputs.forEach((input) => {
+            const key = String(input.getAttribute('data-developer-confirm-input') || '').trim();
+
+            if (!key) {
+                return;
+            }
+
+            const sync = () => syncDeveloperConfirmButtonState(key);
+            input.addEventListener('input', sync);
+            input.addEventListener('change', sync);
+            sync();
+        });
+    }
+
     // Bootstrap
     function bootstrap() {
         const initialTrackedUiState = readTrackedUiState(window.location);
@@ -7038,6 +7160,7 @@
         bindUploadControls();
         bindOutputSettingsControls();
         bindSettingsAutosave();
+        bindDeveloperToolsControls();
 
         syncDisclosureToggles();
         initToasts();
@@ -7056,14 +7179,7 @@
         defaultTrackedUiState = captureTrackedUiState();
         applyTrackedUiState(initialTrackedUiState);
         syncTrackedUiUrl('replace');
-        const previewToggle = disclosureToggleByTargetId('tasty-fonts-role-preview-panel');
-        const snippetsToggle = disclosureToggleByTargetId('tasty-fonts-role-snippets-panel');
-        if (currentPage === 'roles' && previewToggle && isDisclosureExpanded(previewToggle)) {
-            initializePreviewWorkspace();
-            revealDisclosurePanel('tasty-fonts-role-preview-panel', previewToggle);
-        } else if (currentPage === 'roles' && snippetsToggle && isDisclosureExpanded(snippetsToggle)) {
-            revealDisclosurePanel('tasty-fonts-role-snippets-panel', snippetsToggle);
-        }
+        syncRoleDisclosureForCurrentPage();
         const appliedPendingUiState = applyPendingUiState();
 
         if (!appliedPendingUiState && !hasTrackedUiState(initialTrackedUiState)) {

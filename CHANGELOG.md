@@ -8,18 +8,25 @@ All notable changes to this project will be documented in this file.
 
 - Added an Automatic.css integration service plus a dedicated Settings > Integrations workflow for syncing ACSS heading/body font-family settings to `var(--font-heading)` and `var(--font-body)`, including status messaging, backup/restore handling, and managed-mapping visibility in the dashboard.
 - Added renderer, REST, runtime, storage, and JavaScript contract coverage for the new integrations flow, Etch canvas stylesheet handling, and filesystem-context regression protection for generated CSS writes.
+- Added Bricks Builder and Oxygen Builder integrations with auto-detection, settings toggles, published-family exposure in builder font controls, and Gutenberg editor style mirroring for matching builder typography choices.
+- Added a Settings > Developer tab with guarded maintenance actions for clearing plugin caches, resetting suppressed notices, restoring default settings, wiping the managed font library, and resetting integration detection.
 
 ### Changed
 
 - Moved Gutenberg Font Library sync controls and related local-environment guidance into the dedicated Integrations tab, including updated deep links from notices and activity log actions.
 - Simplified Settings > Integrations so Gutenberg Font Library and Automatic.css each render as a single primary settings row with inline status, reducing duplicated copy and visual repetition.
 - Removed the horizontal separator treatment across the Settings surfaces in favor of spacing-only grouping for a cleaner layout.
+- Added a minimal output preset plus an opt-in role font-weight toggle so generated CSS can stay token-focused by default while advanced installs can restore explicit body and heading weights.
+- Updated output snippets and Advanced Tools formatting so CSS variable panels emit declaration lists without the surrounding `:root` wrapper and render those snippets cleanly.
 
 ### Fixed
 
 - Made `Hide Onboarding Hints` suppress settings helper descriptions consistently at render time across Output, Integrations, and Behavior instead of relying only on CSS hiding.
 - Improved generated CSS filesystem context resolution so writes can fall back to the nearest existing parent directory when the final target path does not exist yet.
 - Added renderer regression coverage for the streamlined integrations layout and the no-descriptions settings state when onboarding hints are disabled.
+- Preserved unavailable Bricks, Oxygen, and Automatic.css integration detection state during settings saves so companion plugins can still auto-enable later when they become available.
+- Fixed Block Editor cleanup during managed-library wipes and uninstall so synced font families are removed even when Gutenberg sync is currently disabled.
+- Recovered legacy Automatic.css detection state so activating ACSS later can still bootstrap the managed role-variable mapping correctly.
 
 ## [1.6.0] - 2026-04-08
 

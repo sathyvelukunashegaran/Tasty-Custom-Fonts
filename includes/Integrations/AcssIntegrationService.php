@@ -29,6 +29,7 @@ final class AcssIntegrationService
     public function readState(bool $sitewideRolesEnabled, bool $syncEnabled, bool $syncApplied): array
     {
         $available = $this->isAvailable();
+        $effectiveEnabled = $available && $syncEnabled;
         $current = $available ? $this->getCurrentSettings() : $this->emptySettings();
         $desired = $this->desiredSettings();
         $synced = $available
@@ -37,13 +38,14 @@ final class AcssIntegrationService
 
         return [
             'available' => $available,
-            'enabled' => $syncEnabled,
+            'enabled' => $effectiveEnabled,
+            'configured' => $syncEnabled,
             'applied' => $syncApplied,
             'sitewide_roles_enabled' => $sitewideRolesEnabled,
             'current' => $current,
             'desired' => $desired,
             'synced' => $synced,
-            'status' => $this->resolveStatus($available, $syncEnabled, $syncApplied, $sitewideRolesEnabled, $synced),
+            'status' => $this->resolveStatus($available, $effectiveEnabled, $syncApplied, $sitewideRolesEnabled, $synced),
         ];
     }
 

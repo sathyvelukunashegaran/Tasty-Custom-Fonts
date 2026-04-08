@@ -85,8 +85,10 @@ final class AdminPageViewBuilder
         $classOutputFamiliesEnabled = !array_key_exists('class_output_families_enabled', $context)
             || !empty($context['class_output_families_enabled']);
         $minifyCssOutput = !empty($context['minify_css_output']);
+        $roleUsageFontWeightEnabled = !empty($context['role_usage_font_weight_enabled']);
         $perVariantFontVariablesEnabled = !array_key_exists('per_variant_font_variables_enabled', $context)
             || !empty($context['per_variant_font_variables_enabled']);
+        $minimalOutputPresetEnabled = !empty($context['minimal_output_preset_enabled']);
         $extendedVariableWeightTokensEnabled = !array_key_exists('extended_variable_weight_tokens_enabled', $context)
             || !empty($context['extended_variable_weight_tokens_enabled']);
         $extendedVariableRoleAliasesEnabled = !array_key_exists('extended_variable_role_aliases_enabled', $context)
@@ -111,6 +113,8 @@ final class AdminPageViewBuilder
         $gutenbergIntegration = is_array($context['gutenberg_integration'] ?? null) ? $context['gutenberg_integration'] : [];
         $etchIntegration = is_array($context['etch_integration'] ?? null) ? $context['etch_integration'] : [];
         $acssIntegration = is_array($context['acss_integration'] ?? null) ? $context['acss_integration'] : [];
+        $bricksIntegration = is_array($context['bricks_integration'] ?? null) ? $context['bricks_integration'] : [];
+        $oxygenIntegration = is_array($context['oxygen_integration'] ?? null) ? $context['oxygen_integration'] : [];
         $toasts = is_array($context['toasts'] ?? null) ? $context['toasts'] : [];
         $applyEverywhere = !empty($context['apply_everywhere']);
         $previewBaselineSource = (string) ($context['preview_baseline_source'] ?? ($applyEverywhere ? 'live_sitewide' : 'draft'));
@@ -174,6 +178,7 @@ final class AdminPageViewBuilder
         $categoryAliasOwners = $this->buildCategoryAliasOwners($catalog, $roles, $monospaceRoleEnabled);
         $extendedVariableOptions = [
             'enabled' => $perVariantFontVariablesEnabled,
+            'minimal' => $minimalOutputPresetEnabled,
             'weight_tokens' => $extendedVariableWeightTokensEnabled,
             'role_aliases' => $extendedVariableRoleAliasesEnabled,
             'category_sans' => $extendedVariableCategorySansEnabled,
@@ -210,6 +215,11 @@ final class AdminPageViewBuilder
     {
         $classEnabled = !empty($classOutputOptions['enabled']);
         $variableEnabled = !empty($extendedVariableOptions['enabled']);
+        $minimalEnabled = !empty($extendedVariableOptions['minimal']);
+
+        if ($minimalEnabled && $variableEnabled && !$classEnabled) {
+            return 'minimal';
+        }
 
         if ($variableEnabled && !$classEnabled) {
             return 'variables';

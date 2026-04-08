@@ -54,6 +54,14 @@ if (!defined('MB_IN_BYTES')) {
     define('MB_IN_BYTES', 1048576);
 }
 
+if (!defined('BRICKS_DB_THEME_STYLES')) {
+    define('BRICKS_DB_THEME_STYLES', 'bricks_theme_styles');
+}
+
+if (!defined('CT_VERSION')) {
+    define('CT_VERSION', '4.0.0');
+}
+
 require_once dirname(__DIR__) . '/bootstrap.php';
 
 use TastyFonts\Adobe\AdobeCssParser;
@@ -79,6 +87,9 @@ use TastyFonts\Google\GoogleCssParser;
 use TastyFonts\Google\GoogleFontsClient;
 use TastyFonts\Google\GoogleImportService;
 use TastyFonts\Integrations\AcssIntegrationService;
+use TastyFonts\Integrations\BricksIntegrationService;
+use TastyFonts\Integrations\OxygenIntegrationService;
+use TastyFonts\Maintenance\DeveloperToolsService;
 use TastyFonts\Plugin;
 use TastyFonts\Repository\ImportRepository;
 use TastyFonts\Repository\LogRepository;
@@ -1221,6 +1232,47 @@ if (!function_exists('is_admin')) {
     }
 }
 
+if (!function_exists('get_the_ID')) {
+    function get_the_ID(): int
+    {
+        global $currentPostId;
+
+        return (int) $currentPostId;
+    }
+}
+
+if (!function_exists('ct_get_global_settings')) {
+    function ct_get_global_settings(): array
+    {
+        global $oxygenGlobalSettings;
+
+        return is_array($oxygenGlobalSettings) ? $oxygenGlobalSettings : [];
+    }
+}
+
+if (!class_exists('Bricks\\Database')) {
+    eval(<<<'PHP'
+namespace Bricks;
+
+class Database
+{
+    public static function screen_conditions($foundStyles, $styleId, $conditions, $postId, $context)
+    {
+        if (!is_array($foundStyles)) {
+            $foundStyles = [];
+        }
+
+        if (is_array($conditions) && $conditions !== []) {
+            $priority = isset($conditions[0]['priority']) ? (int) $conditions[0]['priority'] : (int) $styleId;
+            $foundStyles[$priority] = (string) $styleId;
+        }
+
+        return $foundStyles;
+    }
+}
+PHP);
+}
+
 final class TestWpFilesystem
 {
     public array $mkdirCalls = [];
@@ -1346,7 +1398,9 @@ function resetTestState(): void
     global $localizedScripts;
     global $loadedTextdomains;
     global $menuPageCalls;
+    global $currentPostId;
     global $currentUserId;
+    global $oxygenGlobalSettings;
     global $optionAutoload;
     global $optionDeleted;
     global $optionStore;
@@ -1415,7 +1469,9 @@ function resetTestState(): void
     $attachedFilePaths = [];
     $uploadBaseDir = uniqueTestDirectory('uploads');
     $uploadedFilePaths = [];
+    $currentPostId = 0;
     $currentUserId = 1;
+    $oxygenGlobalSettings = [];
     $wpdb = new TestWpdb();
     $wpdbQueries = [];
     $wp_filesystem = new TestWpFilesystem();
@@ -1462,7 +1518,18 @@ function makeServiceGraph(): array
     $bunnyImport = new BunnyImportService($storage, $imports, $bunny, new BunnyCssParser(), $catalog, $assets, $log);
     $googleImport = new GoogleImportService($storage, $imports, $google, new GoogleCssParser(), $catalog, $assets, $log);
     $acssIntegration = new AcssIntegrationService();
+    $bricksIntegration = new BricksIntegrationService();
+    $oxygenIntegration = new OxygenIntegrationService();
     $blockEditorFontLibrary = new BlockEditorFontLibraryService($storage, $imports, $settings, $log);
+    $developerTools = new DeveloperToolsService(
+        $storage,
+        $settings,
+        $imports,
+        $catalog,
+        $assets,
+        $blockEditorFontLibrary,
+        $google
+    );
     $controller = new AdminController(
         $storage,
         $settings,
@@ -1477,10 +1544,13 @@ function makeServiceGraph(): array
         $bunnyImport,
         $google,
         $googleImport,
-        $acssIntegration
+        $acssIntegration,
+        $bricksIntegration,
+        $oxygenIntegration,
+        $developerTools
     );
     $rest = new RestController($controller);
-    $runtime = new RuntimeService($planner, $assets, $adobe);
+    $runtime = new RuntimeService($planner, $assets, $adobe, $settings, $bricksIntegration, $oxygenIntegration);
 
     return [
         'storage' => $storage,
@@ -1498,7 +1568,10 @@ function makeServiceGraph(): array
         'google' => $google,
         'google_import' => $googleImport,
         'acss_integration' => $acssIntegration,
+        'bricks_integration' => $bricksIntegration,
+        'oxygen_integration' => $oxygenIntegration,
         'block_editor_font_library' => $blockEditorFontLibrary,
+        'developer_tools' => $developerTools,
         'controller' => $controller,
         'rest' => $rest,
         'runtime' => $runtime,

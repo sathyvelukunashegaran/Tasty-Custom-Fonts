@@ -30,6 +30,7 @@ $tests['plugin_activation_creates_provider_index_files_and_generated_css'] = sta
 };
 
 $tests['plugin_boot_loads_the_textdomain_immediately'] = static function (): void {
+    global $hookCallbacks;
     global $loadedTextdomains;
 
     resetTestState();
@@ -47,6 +48,8 @@ $tests['plugin_boot_loads_the_textdomain_immediately'] = static function (): voi
         (string) ($loadedTextdomains[0]['path'] ?? ''),
         'Plugin boot should resolve the languages directory from the plugin basename.'
     );
+    assertTrueValue(isset($hookCallbacks['block_editor_settings_all']), 'Plugin boot should register the block editor settings filter used for builder font mirroring.');
+    assertTrueValue(isset($hookCallbacks['bricks/builder/standard_fonts']), 'Plugin boot should register the Bricks standard fonts filter.');
 
     resetPluginSingleton();
 };

@@ -265,6 +265,13 @@ final class ImportRepository
         return $library[$familySlug];
     }
 
+    public function clearLibrary(): void
+    {
+        delete_option(self::OPTION_LIBRARY);
+        delete_option(self::OPTION_IMPORTS);
+        delete_option(self::LEGACY_OPTION_IMPORTS);
+    }
+
     private function getLibrary(): array
     {
         $value = get_option(self::OPTION_LIBRARY, null);

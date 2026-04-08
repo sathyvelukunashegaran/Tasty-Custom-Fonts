@@ -240,6 +240,10 @@
                                                 <span class="tasty-fonts-panel-kicker"><?php esc_html_e('Heading', 'tasty-fonts'); ?></span>
                                                 <h4><?php esc_html_e('Heading Font', 'tasty-fonts'); ?></h4>
                                             </div>
+                                        </div>
+                                        <p class="tasty-fonts-studio-card-copy tasty-fonts-role-box-description"><?php esc_html_e('Choose the saved family and fallback stack used for headings.', 'tasty-fonts'); ?></p>
+                                        <div class="tasty-fonts-role-box-meta">
+                                            <span class="tasty-fonts-role-box-meta-label"><?php esc_html_e('Current Value', 'tasty-fonts'); ?></span>
                                             <button
                                                 type="button"
                                                 class="tasty-fonts-pill tasty-fonts-pill--code tasty-fonts-pill--interactive tasty-fonts-pill--copy tasty-fonts-kbd tasty-fonts-role-stack-copy tasty-fonts-role-box-copy"
@@ -250,10 +254,9 @@
                                                 aria-label="<?php echo esc_attr($headingFamily !== '' ? sprintf(__('Heading family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s', 'tasty-fonts'), $headingFamilyVariable, $headingVariable, $headingStack) : sprintf(__('Heading uses the fallback stack directly: %1$s. Role alias: %2$s', 'tasty-fonts'), $headingStack, $headingVariable)); ?>"
                                                 title="<?php echo esc_attr($headingFamily !== '' ? sprintf(__('Heading family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s', 'tasty-fonts'), $headingFamilyVariable, $headingVariable, $headingStack) : sprintf(__('Heading uses the fallback stack directly: %1$s. Role alias: %2$s', 'tasty-fonts'), $headingStack, $headingVariable)); ?>"
                                             >
-                                                <?php echo esc_html($headingFamilyVariable); ?>
+                                                <span class="tasty-fonts-role-box-copy-label"><?php echo esc_html($headingFamilyVariable); ?></span>
                                             </button>
                                         </div>
-                                        <p class="tasty-fonts-studio-card-copy tasty-fonts-role-box-description"><?php esc_html_e('Choose the saved family and fallback stack used for headings.', 'tasty-fonts'); ?></p>
                                         <div class="tasty-fonts-role-fields">
                                             <label class="tasty-fonts-stack-field">
                                                 <?php $this->renderFieldLabel(__('Family', 'tasty-fonts')); ?>
@@ -300,6 +303,10 @@
                                                 <span class="tasty-fonts-panel-kicker"><?php esc_html_e('Body', 'tasty-fonts'); ?></span>
                                                 <h4><?php esc_html_e('Body Font', 'tasty-fonts'); ?></h4>
                                             </div>
+                                        </div>
+                                        <p class="tasty-fonts-studio-card-copy tasty-fonts-role-box-description"><?php esc_html_e('Choose the saved family and fallback stack used for body copy.', 'tasty-fonts'); ?></p>
+                                        <div class="tasty-fonts-role-box-meta">
+                                            <span class="tasty-fonts-role-box-meta-label"><?php esc_html_e('Current Value', 'tasty-fonts'); ?></span>
                                             <button
                                                 type="button"
                                                 class="tasty-fonts-pill tasty-fonts-pill--code tasty-fonts-pill--interactive tasty-fonts-pill--copy tasty-fonts-kbd tasty-fonts-role-stack-copy tasty-fonts-role-box-copy"
@@ -310,10 +317,9 @@
                                                 aria-label="<?php echo esc_attr($bodyFamily !== '' ? sprintf(__('Body family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s', 'tasty-fonts'), $bodyFamilyVariable, $bodyVariable, $bodyStack) : sprintf(__('Body uses the fallback stack directly: %1$s. Role alias: %2$s', 'tasty-fonts'), $bodyStack, $bodyVariable)); ?>"
                                                 title="<?php echo esc_attr($bodyFamily !== '' ? sprintf(__('Body family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s', 'tasty-fonts'), $bodyFamilyVariable, $bodyVariable, $bodyStack) : sprintf(__('Body uses the fallback stack directly: %1$s. Role alias: %2$s', 'tasty-fonts'), $bodyStack, $bodyVariable)); ?>"
                                             >
-                                                <?php echo esc_html($bodyFamilyVariable); ?>
+                                                <span class="tasty-fonts-role-box-copy-label"><?php echo esc_html($bodyFamilyVariable); ?></span>
                                             </button>
                                         </div>
-                                        <p class="tasty-fonts-studio-card-copy tasty-fonts-role-box-description"><?php esc_html_e('Choose the saved family and fallback stack used for body copy.', 'tasty-fonts'); ?></p>
                                         <div class="tasty-fonts-role-fields">
                                             <label class="tasty-fonts-stack-field">
                                                 <?php $this->renderFieldLabel(__('Family', 'tasty-fonts')); ?>
@@ -361,6 +367,10 @@
                                                 <span class="tasty-fonts-panel-kicker"><?php esc_html_e('Monospace', 'tasty-fonts'); ?></span>
                                                 <h4><?php esc_html_e('Monospace Font', 'tasty-fonts'); ?></h4>
                                             </div>
+                                        </div>
+                                        <p class="tasty-fonts-studio-card-copy tasty-fonts-role-box-description"><?php esc_html_e('Choose the saved family and fallback stack used for monospace text.', 'tasty-fonts'); ?></p>
+                                        <div class="tasty-fonts-role-box-meta">
+                                            <span class="tasty-fonts-role-box-meta-label"><?php esc_html_e('Current Value', 'tasty-fonts'); ?></span>
                                             <button
                                                 type="button"
                                                 class="tasty-fonts-pill tasty-fonts-pill--code tasty-fonts-pill--interactive tasty-fonts-pill--copy tasty-fonts-kbd tasty-fonts-role-stack-copy tasty-fonts-role-box-copy"
@@ -371,10 +381,9 @@
                                                 aria-label="<?php echo esc_attr($monospaceFamily !== '' ? sprintf(__('Monospace family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s', 'tasty-fonts'), $monospaceFamilyVariable, $monospaceVariable, $monospaceStack) : sprintf(__('Monospace uses the fallback stack directly: %1$s. Role alias: %2$s', 'tasty-fonts'), $monospaceStack, $monospaceVariable)); ?>"
                                                 title="<?php echo esc_attr($monospaceFamily !== '' ? sprintf(__('Monospace family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s', 'tasty-fonts'), $monospaceFamilyVariable, $monospaceVariable, $monospaceStack) : sprintf(__('Monospace uses the fallback stack directly: %1$s. Role alias: %2$s', 'tasty-fonts'), $monospaceStack, $monospaceVariable)); ?>"
                                             >
-                                                <?php echo esc_html($monospaceFamilyVariable); ?>
+                                                <span class="tasty-fonts-role-box-copy-label"><?php echo esc_html($monospaceFamilyVariable); ?></span>
                                             </button>
                                         </div>
-                                        <p class="tasty-fonts-studio-card-copy tasty-fonts-role-box-description"><?php esc_html_e('Choose the saved family and fallback stack used for monospace text.', 'tasty-fonts'); ?></p>
                                         <div class="tasty-fonts-role-fields">
                                             <label class="tasty-fonts-stack-field">
                                                 <?php $this->renderFieldLabel(__('Family', 'tasty-fonts')); ?>
@@ -417,4 +426,9 @@
                                 <?php endif; ?>
                             </div>
                             </div>
+                            <?php if ($localEnvironmentNotice !== []): ?>
+                                <div class="tasty-fonts-role-command-notice">
+                                    <?php $this->renderEnvironmentNotice($localEnvironmentNotice); ?>
+                                </div>
+                            <?php endif; ?>
                     </section>

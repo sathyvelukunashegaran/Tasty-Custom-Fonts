@@ -117,6 +117,7 @@ $tests['admin_controller_builds_specific_settings_saved_message'] = static funct
                 'class_output_category_mono_enabled' => true,
                 'class_output_families_enabled' => true,
                 'minify_css_output' => true,
+                'role_usage_font_weight_enabled' => false,
                 'per_variant_font_variables_enabled' => true,
                 'extended_variable_weight_tokens_enabled' => true,
                 'preload_primary_fonts' => false,
@@ -139,6 +140,7 @@ $tests['admin_controller_builds_specific_settings_saved_message'] = static funct
                 'class_output_category_mono_enabled' => true,
                 'class_output_families_enabled' => true,
                 'minify_css_output' => false,
+                'role_usage_font_weight_enabled' => true,
                 'per_variant_font_variables_enabled' => false,
                 'extended_variable_weight_tokens_enabled' => false,
                 'preload_primary_fonts' => true,
@@ -154,6 +156,7 @@ $tests['admin_controller_builds_specific_settings_saved_message'] = static funct
     assertContainsValue('class output enabled', $message, 'Settings save messages should explain class-output enablement changes.');
     assertContainsValue('class output settings updated', $message, 'Settings save messages should explain granular class-output changes.');
     assertContainsValue('CSS minification disabled', $message, 'Settings save messages should explain CSS minification changes.');
+    assertContainsValue('role font-weight output enabled', $message, 'Settings save messages should explain role font-weight output changes.');
     assertContainsValue('extended font output variables disabled', $message, 'Settings save messages should explain extended font output changes.');
     assertContainsValue('extended variable subsettings updated', $message, 'Settings save messages should explain granular extended-variable changes.');
     assertContainsValue('primary font preloads enabled', $message, 'Settings save messages should explain preload setting changes.');
@@ -411,7 +414,11 @@ $tests['admin_controller_builds_monospace_role_output_panels_when_enabled'] = st
         'body_fallback' => 'sans-serif',
         'monospace_fallback' => 'monospace',
     ];
-    $settings = $services['settings']->saveSettings(['monospace_role_enabled' => '1', 'minify_css_output' => '0']);
+    $settings = $services['settings']->saveSettings([
+        'monospace_role_enabled' => '1',
+        'minify_css_output' => '0',
+        'minimal_output_preset_enabled' => '0',
+    ]);
     $panels = invokePrivateMethod(
         $services['controller'],
         'buildOutputPanels',
@@ -670,6 +677,7 @@ $tests['admin_controller_builds_variant_variable_output_panel_content'] = static
     assertContainsValue('--weight-400: 400;', $panelValues['variables'] ?? '', 'The CSS Variables panel should include numeric global weight tokens.');
     assertContainsValue('--weight-bold: var(--weight-700);', $panelValues['variables'] ?? '', 'The CSS Variables panel should include semantic global weight aliases.');
     assertNotContainsValue('--font-inter-regular', $panelValues['variables'] ?? '', 'The CSS Variables panel should no longer expose per-family semantic variant aliases.');
+    assertNotContainsValue(':root', $panelValues['variables'] ?? '', 'The CSS Variables panel should expose declarations only, without the root selector wrapper.');
 };
 
 $tests['admin_controller_builds_five_preview_panels_including_code'] = static function (): void {
@@ -1055,11 +1063,13 @@ $tests['rest_controller_settings_accepts_patch_payloads'] = static function (): 
         'css_delivery_mode' => 'inline',
         'font_display' => 'swap',
         'minify_css_output' => '0',
-        'tasty_fonts_output_quick_mode' => 'custom',
-        'class_output_enabled' => '1',
+        'role_usage_font_weight_enabled' => '1',
+        'tasty_fonts_output_quick_mode' => 'minimal',
+        'minimal_output_preset_enabled' => '1',
+        'class_output_enabled' => '0',
         'per_variant_font_variables_enabled' => '1',
-        'class_output_families_enabled' => '1',
-        'extended_variable_weight_tokens_enabled' => '1',
+        'class_output_families_enabled' => '0',
+        'extended_variable_weight_tokens_enabled' => '0',
     ]);
 
     $response = $services['rest']->saveSettings($request);
@@ -1068,7 +1078,9 @@ $tests['rest_controller_settings_accepts_patch_payloads'] = static function (): 
     assertSameValue(true, $response instanceof WP_REST_Response, 'The settings autosave route should return a native REST response object.');
     assertSameValue('inline', (string) ($data['settings']['css_delivery_mode'] ?? ''), 'The settings autosave route should return the saved CSS delivery mode.');
     assertSameValue('swap', (string) ($data['settings']['font_display'] ?? ''), 'The settings autosave route should return the saved font-display mode.');
-    assertSameValue(true, !empty($data['settings']['class_output_enabled']), 'The settings autosave route should continue to persist class output via explicit booleans rather than a removed all preset.');
+    assertSameValue(false, !empty($data['settings']['role_usage_font_weight_enabled']), 'The minimal preset should suppress role font-weight output.');
+    assertSameValue(true, !empty($data['settings']['minimal_output_preset_enabled']), 'The settings autosave route should persist the minimal output preset flag.');
+    assertSameValue(false, !empty($data['settings']['class_output_enabled']), 'The minimal preset should suppress class output.');
     assertSameValue(true, !empty($data['settings']['per_variant_font_variables_enabled']), 'The settings autosave route should continue to persist variable output via explicit booleans rather than a removed all preset.');
     assertSameValue(false, !empty($data['reload_required']), 'Settings that only patch client-synced controls should not ask the autosave client to reload the page.');
     assertContainsValue('Plugin settings saved', (string) ($data['message'] ?? ''), 'The settings autosave route should return the save summary message.');
@@ -1427,6 +1439,26 @@ $tests['admin_controller_preserves_integrations_studio_tab_in_redirect_urls'] = 
     assertSameValue('integrations', (string) ($query['tf_studio'] ?? ''), 'Redirect URLs should preserve the Integrations tab selection when it is active.');
 };
 
+$tests['admin_controller_preserves_developer_studio_tab_in_redirect_urls'] = static function (): void {
+    resetTestState();
+
+    $_GET = [
+        'page' => AdminController::MENU_SLUG,
+        'tf_studio' => 'developer',
+    ];
+
+    $controller = makeAdminControllerTestInstance();
+    $url = invokePrivateMethod($controller, 'buildAdminPageUrl');
+    $parts = parse_url($url);
+    $query = [];
+
+    parse_str((string) ($parts['query'] ?? ''), $query);
+
+    assertSameValue(AdminController::MENU_SLUG, (string) ($query['page'] ?? ''), 'Developer deep links should canonicalize to the single admin page.');
+    assertSameValue(AdminController::PAGE_SETTINGS, (string) ($query['tf_page'] ?? ''), 'Developer deep links should activate the Settings top-level tab.');
+    assertSameValue('developer', (string) ($query['tf_studio'] ?? ''), 'Redirect URLs should preserve the Developer tab selection when it is active.');
+};
+
 $tests['admin_controller_maps_legacy_diagnostics_tabs_to_the_diagnostics_page'] = static function (): void {
     resetTestState();
 
@@ -1577,6 +1609,94 @@ $tests['admin_controller_builds_local_environment_notice_again_when_snooze_expir
     assertContainsValue('page=' . AdminController::MENU_SLUG, (string) ($notice['settings_url'] ?? ''), 'The reminder deep link should point to the unified admin page.');
     assertContainsValue('tf_page=' . AdminController::PAGE_SETTINGS, (string) ($notice['settings_url'] ?? ''), 'The reminder deep link should activate the Settings tab.');
     assertContainsValue('tf_studio=integrations', (string) ($notice['settings_url'] ?? ''), 'The reminder deep link should activate the Integrations panel.');
+};
+
+$tests['admin_controller_rejects_invalid_developer_confirmation_phrases'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+
+    $error = assertWpErrorCode(
+        'tasty_fonts_confirmation_required',
+        $services['controller']->resetPluginSettingsToDefaults('wrong phrase'),
+        'Reset settings should require the exact confirmation phrase.'
+    );
+    assertContainsValue('RESET SETTINGS', $error->get_error_message(), 'Reset settings errors should mention the expected phrase.');
+
+    $error = assertWpErrorCode(
+        'tasty_fonts_confirmation_required',
+        $services['controller']->wipeManagedFontLibrary('wrong phrase'),
+        'Wipe library should require the exact confirmation phrase.'
+    );
+    assertContainsValue('WIPE FONT LIBRARY', $error->get_error_message(), 'Wipe library errors should mention the expected phrase.');
+
+    $error = assertWpErrorCode(
+        'tasty_fonts_confirmation_required',
+        $services['controller']->resetIntegrationDetectionState('wrong phrase'),
+        'Reset integrations should require the exact confirmation phrase.'
+    );
+    assertContainsValue('RESET INTEGRATIONS', $error->get_error_message(), 'Reset integrations errors should mention the expected phrase.');
+};
+
+$tests['admin_controller_clears_plugin_caches_and_logs_the_reset'] = static function (): void {
+    resetTestState();
+
+    global $transientStore;
+
+    $services = makeServiceGraph();
+    $transientStore = [
+        'tasty_fonts_catalog_v2' => ['cached'],
+        'tasty_fonts_css_v2' => 'cached',
+        'tasty_fonts_css_hash_v2' => 'hash',
+        'tasty_fonts_google_catalog_v1' => ['google'],
+        'tasty_fonts_bunny_catalog_v1' => ['bunny'],
+    ];
+
+    set_transient(AdminController::SEARCH_CACHE_TRANSIENT_PREFIX . 'google_inter', ['Inter'], 300);
+    set_transient(AdminController::SEARCH_COOLDOWN_TRANSIENT_PREFIX . 'google_inter', 1, 1);
+
+    $result = $services['controller']->clearPluginCachesAndRegenerateAssets();
+
+    assertSameValue(
+        'Plugin caches cleared and generated assets refreshed.',
+        (string) ($result['message'] ?? ''),
+        'Cache reset should return a success message.'
+    );
+    assertSameValue(
+        'Plugin caches cleared and generated assets refreshed.',
+        (string) ($services['log']->all()[0]['message'] ?? ''),
+        'Cache reset should append an audit log entry.'
+    );
+};
+
+$tests['admin_controller_resets_suppressed_notices_and_logs_the_action'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $optionStore[AdminController::LOCAL_ENV_NOTICE_OPTION] = [
+        1 => ['hidden_until' => 123456, 'dismissed_forever' => true],
+        2 => ['hidden_until' => 789012, 'dismissed_forever' => false],
+    ];
+
+    $result = $services['controller']->resetSuppressedNotices();
+
+    assertSameValue(
+        'Suppressed notices reset. Hidden reminders can appear again.',
+        (string) ($result['message'] ?? ''),
+        'Reset suppressed notices should return a success message.'
+    );
+    assertSameValue(
+        false,
+        array_key_exists(AdminController::LOCAL_ENV_NOTICE_OPTION, $optionStore),
+        'Reset suppressed notices should clear the stored notice preferences.'
+    );
+    assertSameValue(
+        'Suppressed notices reset. Hidden reminders can appear again.',
+        (string) ($services['log']->all()[0]['message'] ?? ''),
+        'Reset suppressed notices should append an audit log entry.'
+    );
 };
 
 $tests['admin_controller_resolves_sitewide_toggle_submissions_into_role_actions'] = static function (): void {

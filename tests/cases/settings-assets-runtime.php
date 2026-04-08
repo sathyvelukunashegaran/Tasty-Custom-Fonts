@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use TastyFonts\Admin\AdminPageContextBuilder;
+use TastyFonts\Admin\AdminController;
 use TastyFonts\Adobe\AdobeCssParser;
 use TastyFonts\Adobe\AdobeProjectClient;
 use TastyFonts\Bunny\BunnyFontsClient;
@@ -244,6 +245,258 @@ $tests['settings_repository_persists_preload_primary_fonts_preference'] = static
     assertSameValue(false, !empty($saved['preload_primary_fonts']), 'Settings should persist the primary font preload preference when disabled.');
 };
 
+$tests['developer_tools_reset_plugin_settings_preserves_library_and_files'] = static function (): void {
+    resetTestState();
+
+    global $actionCalls;
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $services['developer_tools']->ensureStorageScaffolding();
+
+    $filePath = (string) $services['storage']->pathForRelativePath('upload/inter/inter-400-normal.woff2');
+    $services['storage']->writeAbsoluteFile($filePath, 'font-data');
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-upload',
+            'label' => 'Local Upload',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                [
+                    'family' => 'Inter',
+                    'slug' => 'inter',
+                    'source' => 'local',
+                    'weight' => '400',
+                    'style' => 'normal',
+                    'files' => ['woff2' => 'upload/inter/inter-400-normal.woff2'],
+                    'paths' => ['woff2' => 'upload/inter/inter-400-normal.woff2'],
+                ],
+            ],
+        ],
+        'published',
+        true
+    );
+    $services['settings']->saveSettings([
+        'auto_apply_roles' => '1',
+        'preview_sentence' => 'Changed preview',
+        'font_display' => 'swap',
+        'training_wheels_off' => '1',
+        'monospace_role_enabled' => '1',
+    ]);
+    $services['settings']->saveRoles(
+        [
+            'heading' => 'Inter',
+            'body' => 'Inter',
+            'heading_fallback' => 'serif',
+            'body_fallback' => 'sans-serif',
+        ],
+        ['Inter']
+    );
+    $services['settings']->saveAdobeProject('abc123', true);
+    $services['settings']->saveFamilyFallback('Inter', 'serif');
+    $services['settings']->saveFamilyFontDisplay('Inter', 'fallback');
+    update_option(AdminController::LOCAL_ENV_NOTICE_OPTION, [1 => ['hidden_until' => 123456, 'dismissed_forever' => true]], false);
+    update_option(
+        SettingsRepository::OPTION_GOOGLE_API_KEY_DATA,
+        [
+            'google_api_key' => 'live-key',
+            'google_api_key_status' => 'valid',
+            'google_api_key_status_message' => 'Ready',
+            'google_api_key_checked_at' => 123,
+        ],
+        false
+    );
+
+    $result = $services['developer_tools']->resetPluginSettings();
+
+    assertFalseValue(is_wp_error($result), 'Reset plugin settings should succeed.');
+    assertSameValue(true, file_exists($filePath), 'Reset plugin settings should preserve managed font files.');
+    assertSameValue(true, $services['imports']->getFamily('inter') !== null, 'Reset plugin settings should preserve the saved font library.');
+    assertSameValue('optional', (string) ($result['font_display'] ?? ''), 'Reset plugin settings should restore the default font-display.');
+    assertSameValue(false, !empty($result['training_wheels_off']), 'Reset plugin settings should restore behavior toggles to their defaults.');
+    assertSameValue('', (string) ($result['google_api_key'] ?? ''), 'Reset plugin settings should clear the saved Google API key.');
+    assertSameValue(false, array_key_exists(AdminController::LOCAL_ENV_NOTICE_OPTION, $optionStore), 'Reset plugin settings should clear suppressed notice preferences.');
+    assertSameValue(1, did_action('tasty_fonts_before_reset_settings'), 'Reset plugin settings should emit a before hook.');
+    assertSameValue(1, did_action('tasty_fonts_after_reset_settings'), 'Reset plugin settings should emit an after hook.');
+    assertSameValue(true, isset($actionCalls['tasty_fonts_after_reset_settings'][0][0]), 'Reset plugin settings should pass the restored settings into the after hook.');
+};
+
+$tests['developer_tools_wipe_managed_font_library_rebuilds_empty_storage'] = static function (): void {
+    resetTestState();
+
+    global $actionCalls;
+    global $remoteGetResponses;
+    global $remoteRequestResponses;
+
+    $services = makeServiceGraph();
+    $services['developer_tools']->ensureStorageScaffolding();
+
+    $filePath = (string) $services['storage']->pathForRelativePath('upload/inter/inter-400-normal.woff2');
+    $services['storage']->writeAbsoluteFile($filePath, 'font-data');
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-upload',
+            'label' => 'Local Upload',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                [
+                    'family' => 'Inter',
+                    'slug' => 'inter',
+                    'source' => 'local',
+                    'weight' => '400',
+                    'style' => 'normal',
+                    'files' => ['woff2' => 'upload/inter/inter-400-normal.woff2'],
+                    'paths' => ['woff2' => 'upload/inter/inter-400-normal.woff2'],
+                ],
+            ],
+        ],
+        'published',
+        true
+    );
+    $services['settings']->saveSettings([
+        'minify_css_output' => '0',
+        'block_editor_font_library_sync_enabled' => '0',
+        'adobe_enabled' => '1',
+    ]);
+    $services['settings']->saveRoles(
+        [
+            'heading' => 'Inter',
+            'body' => 'Inter',
+            'heading_fallback' => 'serif',
+            'body_fallback' => 'sans-serif',
+        ],
+        ['Inter']
+    );
+    $services['settings']->saveFamilyFallback('Inter', 'serif');
+    $services['settings']->saveFamilyFontDisplay('Inter', 'swap');
+    $services['settings']->saveAdobeProject('abc123', true);
+
+    $baseUrl = 'https://example.test/wp-json/wp/v2/font-families';
+    $findUrl = $baseUrl . '?slug=tasty-fonts-inter&context=edit';
+    $deleteUrl = $baseUrl . '/44?force=true';
+    $remoteGetResponses[$findUrl] = [
+        'response' => ['code' => 200],
+        'body' => wp_json_encode([['id' => 44, 'font_faces' => []]]),
+    ];
+    $remoteRequestResponses['DELETE ' . $deleteUrl] = [
+        'response' => ['code' => 200],
+        'body' => wp_json_encode(['deleted' => true]),
+    ];
+
+    $result = $services['developer_tools']->wipeManagedFontLibrary();
+
+    assertFalseValue(is_wp_error($result), 'Wiping the managed library should succeed.');
+    assertSameValue([], $services['imports']->allFamilies(), 'Wiping the managed library should clear saved family records.');
+    assertSameValue(false, file_exists($filePath), 'Wiping the managed library should remove managed font files.');
+    assertSameValue(false, !empty($result['auto_apply_roles']), 'Wiping the managed library should disable sitewide role application.');
+    assertSameValue([], (array) ($result['family_fallbacks'] ?? []), 'Wiping the managed library should clear per-family fallback overrides.');
+    assertSameValue([], (array) ($result['family_font_displays'] ?? []), 'Wiping the managed library should clear per-family font-display overrides.');
+    assertSameValue(false, !empty($result['adobe_enabled']), 'Wiping the managed library should clear Adobe project state.');
+    assertSameValue(false, !empty($result['minify_css_output']), 'Wiping the managed library should preserve unrelated output settings.');
+    assertSameValue(true, is_dir((string) $services['storage']->getRoot()), 'Wiping the managed library should recreate the storage root.');
+    assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('index.php')), 'Wiping the managed library should restore the root index stub.');
+    assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('google/index.php')), 'Wiping the managed library should restore the Google storage stub.');
+    assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('bunny/index.php')), 'Wiping the managed library should restore the Bunny storage stub.');
+    assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('upload/index.php')), 'Wiping the managed library should restore the uploads storage stub.');
+    assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('adobe/index.php')), 'Wiping the managed library should restore the Adobe storage stub.');
+    assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('.generated/index.php')), 'Wiping the managed library should restore the generated-assets storage stub.');
+    assertSameValue(1, did_action('tasty_fonts_before_wipe_font_library'), 'Wiping the managed library should emit a before hook.');
+    assertSameValue(1, did_action('tasty_fonts_after_wipe_font_library'), 'Wiping the managed library should emit an after hook.');
+    assertSameValue(true, isset($actionCalls['tasty_fonts_after_wipe_font_library'][0][0]), 'Wiping the managed library should pass the restored settings into the after hook.');
+};
+
+$tests['developer_tools_clear_plugin_caches_and_regenerate_assets'] = static function (): void {
+    resetTestState();
+
+    global $clearedScheduledHooks;
+    global $transientDeleted;
+    global $transientStore;
+
+    $services = makeServiceGraph();
+    $services['developer_tools']->ensureStorageScaffolding();
+    $services['settings']->saveAdobeProject('abc123', true);
+    $transientStore = [
+        CatalogService::TRANSIENT_CATALOG => ['cached'],
+        AssetService::TRANSIENT_CSS => 'body{}',
+        AssetService::TRANSIENT_HASH => 'hash',
+        AssetService::TRANSIENT_REGENERATE_CSS_QUEUED => true,
+        GoogleFontsClient::TRANSIENT_CATALOG => ['Inter'],
+        BunnyFontsClient::TRANSIENT_CATALOG => ['Inter'],
+        'tasty_fonts_github_release_v1' => ['version' => '1.0.0'],
+        'tasty_fonts_github_release_version_v1' => '1.0.0',
+        BunnyFontsClient::TRANSIENT_FAMILY_PREFIX . 'abc' => ['family' => 'Inter'],
+        AdminController::SEARCH_CACHE_TRANSIENT_PREFIX . 'google_inter' => ['Inter'],
+        AdminController::SEARCH_COOLDOWN_TRANSIENT_PREFIX . 'google_inter' => 1,
+        AdobeProjectClient::TRANSIENT_PREFIX . md5('abc123') => ['families' => ['Inter']],
+    ];
+
+    $result = $services['developer_tools']->clearPluginCachesAndRegenerateAssets();
+
+    assertTrueValue($result, 'Clearing plugin caches should report success.');
+    assertSameValue(true, in_array(CatalogService::TRANSIENT_CATALOG, $transientDeleted, true), 'Clearing plugin caches should invalidate the catalog transient.');
+    assertSameValue(true, in_array(AssetService::TRANSIENT_CSS, $transientDeleted, true), 'Clearing plugin caches should invalidate the CSS transient.');
+    assertSameValue(true, in_array(AssetService::TRANSIENT_HASH, $transientDeleted, true), 'Clearing plugin caches should invalidate the CSS hash transient.');
+    assertSameValue(true, in_array(GoogleFontsClient::TRANSIENT_CATALOG, $transientDeleted, true), 'Clearing plugin caches should invalidate the Google catalog transient.');
+    assertSameValue(true, in_array(BunnyFontsClient::TRANSIENT_CATALOG, $transientDeleted, true), 'Clearing plugin caches should invalidate the Bunny catalog transient.');
+    assertSameValue(true, in_array(AdobeProjectClient::TRANSIENT_PREFIX . md5('abc123'), $transientDeleted, true), 'Clearing plugin caches should invalidate the saved Adobe project transient.');
+    assertSameValue(true, in_array(AssetService::ACTION_REGENERATE_CSS, $clearedScheduledHooks, true), 'Clearing plugin caches should clear queued CSS regeneration hooks.');
+    assertSameValue(1, did_action('tasty_fonts_before_clear_plugin_caches'), 'Clearing plugin caches should emit a before hook.');
+    assertSameValue(1, did_action('tasty_fonts_after_clear_plugin_caches'), 'Clearing plugin caches should emit an after hook.');
+};
+
+$tests['developer_tools_reset_integration_detection_state_and_suppressed_notices'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings([
+        'block_editor_font_library_sync_enabled' => '1',
+        'bricks_integration_enabled' => '1',
+        'oxygen_integration_enabled' => '0',
+        'acss_font_role_sync_enabled' => '1',
+    ]);
+    $services['settings']->saveAcssFontRoleSyncState(true, true, 'Inter, sans-serif', 'system-ui, sans-serif');
+    $optionStore[AdminController::LOCAL_ENV_NOTICE_OPTION] = [
+        1 => ['hidden_until' => 123456, 'dismissed_forever' => true],
+    ];
+
+    $settings = $services['developer_tools']->resetIntegrationDetectionState();
+
+    $storedSettings = is_array($optionStore[SettingsRepository::OPTION_SETTINGS] ?? null)
+        ? $optionStore[SettingsRepository::OPTION_SETTINGS]
+        : [];
+
+    assertSameValue(
+        true,
+        !array_key_exists('block_editor_font_library_sync_enabled', $storedSettings)
+            || $storedSettings['block_editor_font_library_sync_enabled'] === null,
+        'Integration reset should clear the stored block editor sync preference back to an unconfigured state.'
+    );
+    assertSameValue(null, $settings['bricks_integration_enabled'], 'Integration reset should clear Bricks detection state.');
+    assertSameValue(null, $settings['oxygen_integration_enabled'], 'Integration reset should clear Oxygen detection state.');
+    assertSameValue(null, $settings['acss_font_role_sync_enabled'], 'Integration reset should clear Automatic.css detection state.');
+    assertSameValue(false, !empty($settings['acss_font_role_sync_applied']), 'Integration reset should clear the applied Automatic.css sync flag.');
+    assertSameValue('', (string) ($settings['acss_font_role_sync_previous_heading_font_family'] ?? ''), 'Integration reset should clear Automatic.css heading backups.');
+    assertSameValue('', (string) ($settings['acss_font_role_sync_previous_text_font_family'] ?? ''), 'Integration reset should clear Automatic.css body backups.');
+    assertSameValue(1, did_action('tasty_fonts_before_reset_integration_detection'), 'Integration reset should emit a before hook.');
+    assertSameValue(1, did_action('tasty_fonts_after_reset_integration_detection'), 'Integration reset should emit an after hook.');
+
+    $services['developer_tools']->resetSuppressedNotices();
+
+    assertSameValue(false, array_key_exists(AdminController::LOCAL_ENV_NOTICE_OPTION, $optionStore), 'Reset suppressed notices should clear saved notice preferences.');
+    assertSameValue(1, did_action('tasty_fonts_before_reset_suppressed_notices'), 'Reset suppressed notices should emit a before hook.');
+    assertSameValue(1, did_action('tasty_fonts_after_reset_suppressed_notices'), 'Reset suppressed notices should emit an after hook.');
+};
+
 $tests['settings_repository_defaults_and_persists_class_output_settings'] = static function (): void {
     resetTestState();
 
@@ -358,6 +611,8 @@ $tests['settings_repository_enables_per_variant_font_variables_by_default_and_pe
         !empty($settings->getSettings()['per_variant_font_variables_enabled']),
         'Per-variant font variables should default to enabled for new installs.'
     );
+    assertSameValue(true, !empty($settings->getSettings()['minimal_output_preset_enabled']), 'Minimal output preset should default to enabled for new installs.');
+    assertSameValue(false, !empty($settings->getSettings()['role_usage_font_weight_enabled']), 'Role usage font weights should default to disabled.');
     assertSameValue(true, !empty($settings->getSettings()['extended_variable_weight_tokens_enabled']), 'Extended weight tokens should default to enabled.');
     assertSameValue(true, !empty($settings->getSettings()['extended_variable_role_aliases_enabled']), 'Extended role aliases should default to enabled.');
     assertSameValue(true, !empty($settings->getSettings()['extended_variable_category_sans_enabled']), 'Extended sans category alias should default to enabled.');
@@ -378,7 +633,16 @@ $tests['settings_repository_enables_per_variant_font_variables_by_default_and_pe
         'Settings should persist enabled per-variant font variable output.'
     );
 
+    $settings->saveSettings(['role_usage_font_weight_enabled' => '1']);
+    assertSameValue(
+        true,
+        !empty($settings->getSettings()['role_usage_font_weight_enabled']),
+        'Settings should persist enabled role usage font-weight output.'
+    );
+
     $settings->saveSettings([
+        'role_usage_font_weight_enabled' => '0',
+        'minimal_output_preset_enabled' => '1',
         'extended_variable_weight_tokens_enabled' => '0',
         'extended_variable_role_aliases_enabled' => '0',
         'extended_variable_category_sans_enabled' => '0',
@@ -387,11 +651,34 @@ $tests['settings_repository_enables_per_variant_font_variables_by_default_and_pe
     ]);
     $saved = $settings->getSettings();
 
+    assertSameValue(true, $saved['minimal_output_preset_enabled'], 'Settings should persist the minimal output preset flag.');
+    assertSameValue(false, $saved['class_output_enabled'], 'Minimal output preset should suppress class output.');
+    assertSameValue(true, $saved['per_variant_font_variables_enabled'], 'Minimal output preset should keep variable output enabled.');
+    assertSameValue(false, $saved['role_usage_font_weight_enabled'], 'Settings should persist disabled role usage font-weight output.');
     assertSameValue(false, $saved['extended_variable_weight_tokens_enabled'], 'Settings should persist disabled extended weight tokens.');
     assertSameValue(false, $saved['extended_variable_role_aliases_enabled'], 'Settings should persist disabled extended role aliases.');
     assertSameValue(false, $saved['extended_variable_category_sans_enabled'], 'Settings should persist disabled extended sans aliases.');
     assertSameValue(false, $saved['extended_variable_category_serif_enabled'], 'Settings should persist disabled extended serif aliases.');
     assertSameValue(false, $saved['extended_variable_category_mono_enabled'], 'Settings should persist disabled extended mono aliases.');
+};
+
+$tests['settings_repository_preserves_legacy_output_modes_when_minimal_flag_is_missing'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $optionStore[SettingsRepository::OPTION_SETTINGS] = [
+        'class_output_enabled' => true,
+        'class_output_families_enabled' => true,
+        'per_variant_font_variables_enabled' => true,
+    ];
+
+    $settings = new SettingsRepository();
+    $normalized = $settings->getSettings();
+
+    assertSameValue(false, !empty($normalized['minimal_output_preset_enabled']), 'Legacy saved output settings should not silently opt into the new minimal preset.');
+    assertSameValue(true, !empty($normalized['class_output_enabled']), 'Legacy saved class output settings should be preserved when the minimal flag is missing.');
+    assertSameValue(true, !empty($normalized['per_variant_font_variables_enabled']), 'Legacy saved variable output settings should be preserved when the minimal flag is missing.');
 };
 
 $tests['settings_repository_defaults_block_editor_font_library_sync_on_by_default'] = static function (): void {
@@ -474,6 +761,7 @@ $tests['settings_repository_keeps_boolean_output_settings_when_fields_are_absent
     $settings = new SettingsRepository();
     $settings->saveSettings([
         'minify_css_output' => '0',
+        'role_usage_font_weight_enabled' => '1',
         'class_output_enabled' => '1',
         'class_output_role_heading_enabled' => '1',
         'class_output_role_body_enabled' => '1',
@@ -502,6 +790,7 @@ $tests['settings_repository_keeps_boolean_output_settings_when_fields_are_absent
     $saved = $settings->getSettings();
 
     assertSameValue(false, $saved['minify_css_output'], 'Saving unrelated settings should not re-enable CSS minification.');
+    assertSameValue(true, $saved['role_usage_font_weight_enabled'], 'Saving unrelated settings should not disable role usage font-weight output.');
     assertSameValue(true, $saved['class_output_enabled'], 'Saving unrelated settings should not disable class output.');
     assertSameValue(false, $saved['class_output_role_monospace_enabled'], 'Saving unrelated settings should not re-enable disabled class subsettings.');
     assertSameValue(false, $saved['class_output_role_alias_code_enabled'], 'Saving unrelated settings should not re-enable disabled alias class subsettings.');
@@ -874,7 +1163,9 @@ $tests['admin_page_context_builder_uses_asset_status_metadata_for_generated_css_
         new CssBuilder(),
         $services['adobe'],
         $services['google'],
-        $services['acss_integration']
+        $services['acss_integration'],
+        $services['bricks_integration'],
+        $services['oxygen_integration']
     );
 
     $items = $builder->buildDiagnosticItems(
@@ -917,7 +1208,9 @@ $tests['admin_page_context_builder_reports_acss_sync_waiting_for_sitewide_roles'
         new CssBuilder(),
         $services['adobe'],
         $services['google'],
-        $services['acss_integration']
+        $services['acss_integration'],
+        $services['bricks_integration'],
+        $services['oxygen_integration']
     );
 
     $context = $builder->build();
@@ -925,6 +1218,49 @@ $tests['admin_page_context_builder_reports_acss_sync_waiting_for_sitewide_roles'
     assertSameValue('waiting_for_sitewide_roles', (string) ($context['acss_integration']['status'] ?? ''), 'Automatic.css sync should report that it is waiting when sitewide role delivery is still off.');
     assertSameValue('', (string) ($context['acss_integration']['current']['heading'] ?? ''), 'Automatic.css integration context should expose the current heading font-family value.');
     assertSameValue('', (string) ($context['acss_integration']['current']['body'] ?? ''), 'Automatic.css integration context should expose the current text font-family value.');
+};
+
+$tests['admin_page_context_builder_treats_unavailable_integrations_as_inactive_even_when_previously_enabled'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $optionStore[SettingsRepository::OPTION_SETTINGS] = [
+        'auto_apply_roles' => true,
+        'block_editor_font_library_sync_enabled' => true,
+        'bricks_integration_enabled' => true,
+        'oxygen_integration_enabled' => true,
+        'acss_font_role_sync_enabled' => true,
+        'acss_font_role_sync_applied' => true,
+    ];
+
+    add_filter('tasty_fonts_bricks_integration_available', static fn (): bool => false);
+    add_filter('tasty_fonts_oxygen_integration_available', static fn (): bool => false);
+    add_filter('tasty_fonts_acss_integration_available', static fn (): bool => false);
+
+    $services = makeServiceGraph();
+    $builder = new \TastyFonts\Admin\AdminPageContextBuilder(
+        $services['storage'],
+        $services['settings'],
+        $services['log'],
+        $services['catalog'],
+        $services['assets'],
+        new CssBuilder(),
+        $services['adobe'],
+        $services['google'],
+        $services['acss_integration'],
+        $services['bricks_integration'],
+        $services['oxygen_integration']
+    );
+
+    $context = $builder->build();
+
+    assertSameValue(false, (bool) ($context['acss_integration']['enabled'] ?? true), 'Automatic.css should render as inactive when the plugin is unavailable, even if the stored preference was previously enabled.');
+    assertSameValue('unavailable', (string) ($context['acss_integration']['status'] ?? ''), 'Automatic.css should report an unavailable status when the plugin is inactive.');
+    assertSameValue(false, (bool) ($context['bricks_integration']['enabled'] ?? true), 'Bricks should render as inactive when the plugin is unavailable, even if the stored preference was previously enabled.');
+    assertSameValue('unavailable', (string) ($context['bricks_integration']['status'] ?? ''), 'Bricks should report an unavailable status when the plugin is inactive.');
+    assertSameValue(false, (bool) ($context['oxygen_integration']['enabled'] ?? true), 'Oxygen should render as inactive when the plugin is unavailable, even if the stored preference was previously enabled.');
+    assertSameValue('unavailable', (string) ($context['oxygen_integration']['status'] ?? ''), 'Oxygen should report an unavailable status when the plugin is inactive.');
 };
 
 $tests['admin_controller_applies_acss_font_mapping_when_sync_is_enabled'] = static function (): void {
@@ -951,6 +1287,72 @@ $tests['admin_controller_applies_acss_font_mapping_when_sync_is_enabled'] = stat
     assertSameValue(true, (bool) ($result['settings']['acss_font_role_sync_applied'] ?? false), 'Controller saves should mark Automatic.css sync as applied after the ACSS settings update succeeds.');
     assertSameValue('Inter, sans-serif', (string) ($result['settings']['acss_font_role_sync_previous_heading_font_family'] ?? ''), 'The previous ACSS heading value should be backed up before Tasty Fonts overwrites it.');
     assertContainsValue('Automatic.css now uses Tasty Fonts role variables', (string) ($result['message'] ?? ''), 'The settings response should explain that Automatic.css is now mapped to Tasty Fonts variables.');
+};
+
+$tests['admin_controller_recovers_legacy_acss_detection_state_when_acss_is_activated_later'] = static function (): void {
+    resetTestState();
+
+    global $automaticCssSettings;
+    global $optionStore;
+
+    $automaticCssSettings = [
+        'heading-font-family' => '',
+        'text-font-family' => '',
+    ];
+
+    $optionStore[SettingsRepository::OPTION_SETTINGS] = [
+        'auto_apply_roles' => true,
+        'acss_font_role_sync_enabled' => false,
+        'acss_font_role_sync_applied' => false,
+        'acss_font_role_sync_previous_heading_font_family' => '',
+        'acss_font_role_sync_previous_text_font_family' => '',
+    ];
+
+    add_filter('tasty_fonts_acss_integration_available', static fn (): bool => true);
+
+    $services = makeServiceGraph();
+
+    invokePrivateMethod($services['controller'], 'initializeDetectedIntegrations');
+
+    $saved = $services['settings']->getSettings();
+
+    assertSameValue(true, $saved['acss_font_role_sync_enabled'], 'Automatic.css should auto-enable when the stored state was stuck false from legacy unavailable detection and ACSS is activated later.');
+    assertSameValue(true, $saved['acss_font_role_sync_applied'], 'Automatic.css should mark the managed mapping applied after recovering the legacy detection state.');
+    assertSameValue('var(--font-heading)', (string) ($automaticCssSettings['heading-font-family'] ?? ''), 'Recovering the legacy Automatic.css detection state should apply the heading role variable.');
+    assertSameValue('var(--font-body)', (string) ($automaticCssSettings['text-font-family'] ?? ''), 'Recovering the legacy Automatic.css detection state should apply the body role variable.');
+};
+
+$tests['admin_controller_preserves_unavailable_integration_detection_state_on_settings_save'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $optionStore[SettingsRepository::OPTION_SETTINGS] = [
+        'bricks_integration_enabled' => null,
+        'oxygen_integration_enabled' => null,
+        'acss_font_role_sync_enabled' => null,
+    ];
+
+    add_filter('tasty_fonts_bricks_integration_available', static fn (): bool => false);
+    add_filter('tasty_fonts_oxygen_integration_available', static fn (): bool => false);
+    add_filter('tasty_fonts_acss_integration_available', static fn (): bool => false);
+
+    $services = makeServiceGraph();
+    $saved = $services['settings']->getSettings();
+
+    assertSameValue(null, $saved['bricks_integration_enabled'], 'Bricks integration should start unconfigured for this regression test.');
+    assertSameValue(null, $saved['oxygen_integration_enabled'], 'Oxygen integration should start unconfigured for this regression test.');
+    assertSameValue(null, $saved['acss_font_role_sync_enabled'], 'Automatic.css integration should start unconfigured for this regression test.');
+
+    $result = $services['controller']->saveSettingsValues([
+        'bricks_integration_enabled' => '0',
+        'oxygen_integration_enabled' => '0',
+        'acss_font_role_sync_enabled' => '0',
+    ]);
+
+    assertSameValue(null, $result['settings']['bricks_integration_enabled'], 'Saving settings while Bricks is unavailable should preserve its unconfigured detection state so later installs can still auto-enable it.');
+    assertSameValue(null, $result['settings']['oxygen_integration_enabled'], 'Saving settings while Oxygen is unavailable should preserve its unconfigured detection state so later installs can still auto-enable it.');
+    assertSameValue(null, $result['settings']['acss_font_role_sync_enabled'], 'Saving settings while Automatic.css is unavailable should preserve its unconfigured detection state so later installs can still auto-enable it.');
 };
 
 $tests['admin_controller_restores_previous_acss_font_values_when_sitewide_roles_are_disabled'] = static function (): void {
@@ -1339,4 +1741,183 @@ $tests['runtime_service_skips_font_preloads_when_setting_or_live_roles_are_disab
 
     assertSameValue('', $outputWithSitewideOff, 'Frontend preload output should stay empty while live sitewide role output is disabled.');
     assertSameValue('', $outputWithPreloadsOff, 'Frontend preload output should stay empty when the preload setting is turned off.');
+};
+
+$tests['settings_repository_tracks_builder_integration_state'] = static function (): void {
+    resetTestState();
+
+    $settings = new SettingsRepository();
+    $defaults = $settings->getSettings();
+
+    assertSameValue(null, $defaults['bricks_integration_enabled'], 'Bricks integration should start unconfigured so supported sites can default on once detected.');
+    assertSameValue(null, $defaults['oxygen_integration_enabled'], 'Oxygen integration should start unconfigured so supported sites can default on once detected.');
+
+    $saved = $settings->saveSettings([
+        'bricks_integration_enabled' => '1',
+        'oxygen_integration_enabled' => '0',
+    ]);
+
+    assertSameValue(true, $saved['bricks_integration_enabled'], 'Saving the Bricks integration toggle should persist an explicit enabled state.');
+    assertSameValue(false, $saved['oxygen_integration_enabled'], 'Saving the Oxygen integration toggle should persist an explicit disabled state.');
+};
+
+$tests['runtime_service_adds_only_runtime_families_to_bricks_standard_fonts'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $profile = [
+        'id' => 'local-self-hosted',
+        'label' => 'Local upload',
+        'provider' => 'local',
+        'type' => 'self_hosted',
+        'variants' => ['regular'],
+        'faces' => [[
+            'family' => 'Inter',
+            'slug' => 'inter',
+            'source' => 'local',
+            'weight' => '400',
+            'style' => 'normal',
+            'files' => ['woff2' => 'upload/inter/inter-400-normal.woff2'],
+            'paths' => ['woff2' => 'upload/inter/inter-400-normal.woff2'],
+        ]],
+    ];
+
+    $services['imports']->saveProfile('Inter', 'inter', $profile, 'published', true);
+    $services['imports']->saveProfile('Draft Sans', 'draft-sans', array_replace($profile, [
+        'faces' => [[
+            'family' => 'Draft Sans',
+            'slug' => 'draft-sans',
+            'source' => 'local',
+            'weight' => '400',
+            'style' => 'normal',
+            'files' => ['woff2' => 'upload/draft-sans/draft-sans-400-normal.woff2'],
+            'paths' => ['woff2' => 'upload/draft-sans/draft-sans-400-normal.woff2'],
+        ]],
+    ]), 'library_only', true);
+
+    $fonts = $services['runtime']->filterBricksStandardFonts(['Arial']);
+
+    assertSameValue(['Arial', 'Inter'], $fonts, 'Bricks should receive existing standard fonts plus published Tasty Fonts runtime families only.');
+};
+
+$tests['runtime_service_appends_builder_editor_styles_for_managed_bricks_and_oxygen_fonts'] = static function (): void {
+    resetTestState();
+
+    global $currentPostId;
+    global $optionStore;
+    global $oxygenGlobalSettings;
+
+    $services = makeServiceGraph();
+    $baseProfile = [
+        'id' => 'local-self-hosted',
+        'label' => 'Local upload',
+        'provider' => 'local',
+        'type' => 'self_hosted',
+        'variants' => ['regular'],
+        'faces' => [[
+            'family' => 'Inter',
+            'slug' => 'inter',
+            'source' => 'local',
+            'weight' => '400',
+            'style' => 'normal',
+            'files' => ['woff2' => 'upload/inter/inter-400-normal.woff2'],
+            'paths' => ['woff2' => 'upload/inter/inter-400-normal.woff2'],
+        ]],
+    ];
+
+    $services['imports']->saveProfile('Inter', 'inter', $baseProfile, 'published', true);
+    $services['imports']->saveProfile('Merriweather', 'merriweather', array_replace($baseProfile, [
+        'faces' => [[
+            'family' => 'Merriweather',
+            'slug' => 'merriweather',
+            'source' => 'local',
+            'weight' => '400',
+            'style' => 'normal',
+            'files' => ['woff2' => 'upload/merriweather/merriweather-400-normal.woff2'],
+            'paths' => ['woff2' => 'upload/merriweather/merriweather-400-normal.woff2'],
+        ]],
+    ]), 'published', true);
+    $services['imports']->saveProfile('Draft Sans', 'draft-sans', array_replace($baseProfile, [
+        'faces' => [[
+            'family' => 'Draft Sans',
+            'slug' => 'draft-sans',
+            'source' => 'local',
+            'weight' => '400',
+            'style' => 'normal',
+            'files' => ['woff2' => 'upload/draft-sans/draft-sans-400-normal.woff2'],
+            'paths' => ['woff2' => 'upload/draft-sans/draft-sans-400-normal.woff2'],
+        ]],
+    ]), 'library_only', true);
+
+    $currentPostId = 42;
+    $optionStore[BRICKS_DB_THEME_STYLES] = [
+        'style-primary' => [
+            'settings' => [
+                'conditions' => [
+                    'conditions' => [
+                        ['priority' => 10],
+                    ],
+                ],
+                'typography' => [
+                    'typographyBody' => ['font-family' => 'Inter'],
+                    'typographyHeadingH1' => ['font-family' => 'Merriweather'],
+                    'typographyHeadingH2' => ['font-family' => 'Draft Sans'],
+                ],
+            ],
+        ],
+    ];
+    $oxygenGlobalSettings = [
+        'fonts' => [
+            'Text' => 'Inter',
+            'Display' => 'Merriweather',
+        ],
+    ];
+
+    $settings = $services['runtime']->filterBlockEditorSettings([], null);
+    $css = (string) ($settings['styles'][0]['css'] ?? '');
+
+    assertContainsValue('body{font-family:"Inter", sans-serif;}', $css, 'Builder editor styles should mirror managed body families into Gutenberg.');
+    assertContainsValue('body :is(h1, .editor-post-title){font-family:"Merriweather", sans-serif;}', $css, 'Bricks heading styles should mirror managed H1 selections into Gutenberg.');
+    assertContainsValue('body :is(h1, h2, h3, h4, h5, h6, .editor-post-title){font-family:"Merriweather", sans-serif;}', $css, 'Oxygen display families should mirror into Gutenberg heading styles.');
+    assertNotContainsValue('Draft Sans', $css, 'Builder editor styles should ignore library-only families that are not part of the runtime catalog.');
+};
+
+$tests['oxygen_compatibility_shim_returns_only_runtime_family_names'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $profile = [
+        'id' => 'local-self-hosted',
+        'label' => 'Local upload',
+        'provider' => 'local',
+        'type' => 'self_hosted',
+        'variants' => ['regular'],
+        'faces' => [[
+            'family' => 'Inter',
+            'slug' => 'inter',
+            'source' => 'local',
+            'weight' => '400',
+            'style' => 'normal',
+            'files' => ['woff2' => 'upload/inter/inter-400-normal.woff2'],
+            'paths' => ['woff2' => 'upload/inter/inter-400-normal.woff2'],
+        ]],
+    ];
+
+    $services['imports']->saveProfile('Inter', 'inter', $profile, 'published', true);
+    $services['imports']->saveProfile('Draft Sans', 'draft-sans', array_replace($profile, [
+        'faces' => [[
+            'family' => 'Draft Sans',
+            'slug' => 'draft-sans',
+            'source' => 'local',
+            'weight' => '400',
+            'style' => 'normal',
+            'files' => ['woff2' => 'upload/draft-sans/draft-sans-400-normal.woff2'],
+            'paths' => ['woff2' => 'upload/draft-sans/draft-sans-400-normal.woff2'],
+        ]],
+    ]), 'library_only', true);
+
+    $services['runtime']->registerOxygenCompatibilityShim();
+
+    assertTrueValue(class_exists('ECF_Plugin', false), 'Registering the Oxygen integration should define the compatibility shim when Oxygen support is enabled.');
+    assertSameValue(['Inter'], \ECF_Plugin::get_font_families(), 'The Oxygen compatibility shim should expose published runtime Tasty Fonts families only.');
 };

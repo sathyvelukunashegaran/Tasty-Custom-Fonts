@@ -66,11 +66,19 @@ final class ToolsSectionRenderer extends AbstractSectionRenderer
     {
         $trimmed = trim($value);
 
-        if ($trimmed === '' || preg_match("/\r\n|\n|\r/", $trimmed) === 1 || !$this->looksLikeCssSnippet($trimmed)) {
+        if ($trimmed === '' || preg_match("/\r\n|\n|\r/", $trimmed) === 1) {
             return $value;
         }
 
-        return $this->prettyPrintCssSnippet($trimmed);
+        if ($this->looksLikeCssSnippet($trimmed)) {
+            return $this->prettyPrintCssSnippet($trimmed);
+        }
+
+        if ($this->looksLikeCssDeclarationList($trimmed)) {
+            return $this->prettyPrintCssDeclarationList($trimmed);
+        }
+
+        return $value;
     }
 
     public function looksLikeCssSnippet(string $value): bool
@@ -78,6 +86,14 @@ final class ToolsSectionRenderer extends AbstractSectionRenderer
         return str_contains($value, '{')
             && str_contains($value, '}')
             && str_contains($value, ':');
+    }
+
+    public function looksLikeCssDeclarationList(string $value): bool
+    {
+        return !str_contains($value, '{')
+            && !str_contains($value, '}')
+            && str_contains($value, ';')
+            && preg_match('/(?:^|;)\s*--[\w-]+\s*:/', $value) === 1;
     }
 
     public function prettyPrintCssSnippet(string $value): string
@@ -175,6 +191,56 @@ final class ToolsSectionRenderer extends AbstractSectionRenderer
         }
 
         $this->appendFormattedCssLine($lines, $current, $indentLevel);
+
+        return implode("\n", $lines);
+    }
+
+    public function prettyPrintCssDeclarationList(string $value): string
+    {
+        $lines = [];
+        $current = '';
+        $quote = null;
+        $escapeNext = false;
+        $length = strlen($value);
+
+        for ($index = 0; $index < $length; $index++) {
+            $character = $value[$index];
+
+            if ($quote !== null) {
+                $current .= $character;
+
+                if ($escapeNext) {
+                    $escapeNext = false;
+                    continue;
+                }
+
+                if ($character === '\\') {
+                    $escapeNext = true;
+                    continue;
+                }
+
+                if ($character === $quote) {
+                    $quote = null;
+                }
+
+                continue;
+            }
+
+            if ($character === '"' || $character === '\'') {
+                $quote = $character;
+                $current .= $character;
+                continue;
+            }
+
+            $current .= $character;
+
+            if ($character === ';') {
+                $this->appendFormattedCssLine($lines, $current, 0);
+                $current = '';
+            }
+        }
+
+        $this->appendFormattedCssLine($lines, $current, 0);
 
         return implode("\n", $lines);
     }

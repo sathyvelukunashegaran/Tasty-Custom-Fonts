@@ -118,6 +118,25 @@ final class CssBuilder
         return implode("\n", $variableLines);
     }
 
+    public function buildRoleVariableDeclarationsSnippet(
+        array $roles,
+        bool $includeMonospace = false,
+        array $variableFamilies = [],
+        array $settings = []
+    ): string {
+        $variableLines = $this->buildRoleVariableLines($roles, $includeMonospace, $variableFamilies, $settings);
+
+        if ($variableLines === []) {
+            return '';
+        }
+
+        if ($variableLines[0] === ':root {' && $variableLines[count($variableLines) - 1] === '}') {
+            $variableLines = array_slice($variableLines, 1, -1);
+        }
+
+        return implode("\n", $variableLines);
+    }
+
     public function buildRoleStackSnippet(array $roles, bool $includeMonospace = false): string
     {
         $stacks = [
@@ -385,21 +404,26 @@ final class CssBuilder
 
     private function buildRoleUsageRulesSnippet(array $roles, bool $includeMonospace = false, array $settings = []): string
     {
+        if ($this->minimalOutputPresetEnabled($settings)) {
+            return '';
+        }
+
         if (trim((string) ($roles['heading'] ?? '')) === '' || trim((string) ($roles['body'] ?? '')) === '') {
             return '';
         }
 
         $includeExtendedVariables = $this->extendedVariableOutputEnabled($settings);
         $includeWeightTokens = $this->extendedVariableWeightTokensEnabled($settings);
+        $includeRoleFontWeights = $this->roleUsageFontWeightEnabled($settings);
 
         $lines = [
             'body {',
             '  font-family: var(--font-body);',
         ];
 
-        if ($includeWeightTokens) {
+        if ($includeRoleFontWeights && $includeWeightTokens) {
             $lines[] = '  font-weight: var(--weight-regular);';
-        } elseif ($includeExtendedVariables) {
+        } elseif ($includeRoleFontWeights && $includeExtendedVariables) {
             $lines[] = '  font-weight: 400;';
         }
 
@@ -411,9 +435,9 @@ final class CssBuilder
             '  font-family: var(--font-heading);',
         ];
 
-        if ($includeWeightTokens) {
+        if ($includeRoleFontWeights && $includeWeightTokens) {
             $lines[] = '  font-weight: var(--weight-bold);';
-        } elseif ($includeExtendedVariables) {
+        } elseif ($includeRoleFontWeights && $includeExtendedVariables) {
             $lines[] = '  font-weight: 700;';
         }
 
@@ -438,6 +462,21 @@ final class CssBuilder
         array $variableFamilies = [],
         array $settings = []
     ): array {
+        if ($this->minimalOutputPresetEnabled($settings)) {
+            return [
+                ':root {',
+                '  --font-heading: ' . FontUtils::buildFontStack(
+                    (string) ($roles['heading'] ?? ''),
+                    (string) ($roles['heading_fallback'] ?? 'sans-serif')
+                ) . ';',
+                '  --font-body: ' . FontUtils::buildFontStack(
+                    (string) ($roles['body'] ?? ''),
+                    (string) ($roles['body_fallback'] ?? 'sans-serif')
+                ) . ';',
+                '}',
+            ];
+        }
+
         $includeExtendedVariables = $this->extendedVariableOutputEnabled($settings);
         $declarations = $this->buildFamilyVariableDeclarations($variableFamilies, $settings);
         $headingFamily = trim((string) ($roles['heading'] ?? ''));
@@ -774,7 +813,12 @@ final class CssBuilder
 
     private function classOutputEnabled(array $settings): bool
     {
-        return !empty($settings['class_output_enabled']);
+        return !$this->minimalOutputPresetEnabled($settings) && !empty($settings['class_output_enabled']);
+    }
+
+    private function minimalOutputPresetEnabled(array $settings): bool
+    {
+        return !empty($settings['minimal_output_preset_enabled']);
     }
 
     private function classOutputFamiliesEnabled(array $settings): bool
@@ -854,6 +898,11 @@ final class CssBuilder
         return $this->extendedVariableOutputEnabled($settings)
             && (!array_key_exists('extended_variable_weight_tokens_enabled', $settings)
                 || !empty($settings['extended_variable_weight_tokens_enabled']));
+    }
+
+    private function roleUsageFontWeightEnabled(array $settings): bool
+    {
+        return !empty($settings['role_usage_font_weight_enabled']);
     }
 
     private function extendedVariableRoleAliasesEnabled(array $settings): bool

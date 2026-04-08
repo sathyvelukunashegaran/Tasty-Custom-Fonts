@@ -81,5 +81,4 @@
                             </div>
                         <?php endif; ?>
                     </section>
-                    <?php $this->renderEnvironmentNotice($localEnvironmentNotice); ?>
                     <?php $this->renderFallbackSuggestionList(); ?>

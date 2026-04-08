@@ -47,7 +47,9 @@ final class SettingsRepository
         'class_output_category_mono_enabled' => true,
         'class_output_families_enabled' => true,
         'minify_css_output' => true,
+        'role_usage_font_weight_enabled' => false,
         'per_variant_font_variables_enabled' => true,
+        'minimal_output_preset_enabled' => true,
         'extended_variable_weight_tokens_enabled' => true,
         'extended_variable_role_aliases_enabled' => true,
         'extended_variable_category_sans_enabled' => true,
@@ -56,6 +58,8 @@ final class SettingsRepository
         'preload_primary_fonts' => true,
         'remote_connection_hints' => true,
         'block_editor_font_library_sync_enabled' => null,
+        'bricks_integration_enabled' => null,
+        'oxygen_integration_enabled' => null,
         'training_wheels_off' => false,
         'monospace_role_enabled' => false,
         'acss_font_role_sync_enabled' => null,
@@ -106,7 +110,9 @@ final class SettingsRepository
         $settings['auto_apply_roles'] = !empty($settings['auto_apply_roles']);
         $settings['font_display'] = $this->normalizeFontDisplay((string) ($settings['font_display'] ?? 'optional'));
         $settings['minify_css_output'] = !empty($settings['minify_css_output']);
+        $settings['role_usage_font_weight_enabled'] = !empty($settings['role_usage_font_weight_enabled']);
         $settings['per_variant_font_variables_enabled'] = !empty($settings['per_variant_font_variables_enabled']);
+        $settings['minimal_output_preset_enabled'] = $this->resolveMinimalOutputPresetEnabled($storedSettings, $settings);
         $settings['extended_variable_weight_tokens_enabled'] = !empty($settings['extended_variable_weight_tokens_enabled']);
         $settings['extended_variable_role_aliases_enabled'] = !empty($settings['extended_variable_role_aliases_enabled']);
         $settings['extended_variable_category_sans_enabled'] = !empty($settings['extended_variable_category_sans_enabled']);
@@ -117,6 +123,8 @@ final class SettingsRepository
         $settings['block_editor_font_library_sync_enabled'] = $this->normalizeBlockEditorFontLibrarySyncSetting(
             $settings['block_editor_font_library_sync_enabled'] ?? null
         );
+        $settings['bricks_integration_enabled'] = $this->normalizeOptionalBoolean($settings['bricks_integration_enabled'] ?? null);
+        $settings['oxygen_integration_enabled'] = $this->normalizeOptionalBoolean($settings['oxygen_integration_enabled'] ?? null);
         $settings['training_wheels_off'] = !empty($settings['training_wheels_off']);
         $settings['monospace_role_enabled'] = !empty($settings['monospace_role_enabled']);
         $settings['acss_font_role_sync_enabled'] = $this->normalizeOptionalBoolean($settings['acss_font_role_sync_enabled'] ?? null);
@@ -140,6 +148,7 @@ final class SettingsRepository
         $settings['family_fallbacks'] = $this->normalizeFamilyFallbacks($settings['family_fallbacks'] ?? []);
         $settings['family_font_displays'] = $this->normalizeFamilyFontDisplays($settings['family_font_displays'] ?? []);
         $settings['delete_uploaded_files_on_uninstall'] = !empty($settings['delete_uploaded_files_on_uninstall']);
+        $settings = $this->normalizeMinimalOutputPresetSettings($settings);
 
         return $this->cacheSettings($settings);
     }
@@ -190,8 +199,18 @@ final class SettingsRepository
             $settingsChanged = true;
         }
 
+        if (array_key_exists('role_usage_font_weight_enabled', $input)) {
+            $settings['role_usage_font_weight_enabled'] = !empty($input['role_usage_font_weight_enabled']);
+            $settingsChanged = true;
+        }
+
         if (array_key_exists('per_variant_font_variables_enabled', $input)) {
             $settings['per_variant_font_variables_enabled'] = !empty($input['per_variant_font_variables_enabled']);
+            $settingsChanged = true;
+        }
+
+        if (array_key_exists('minimal_output_preset_enabled', $input)) {
+            $settings['minimal_output_preset_enabled'] = !empty($input['minimal_output_preset_enabled']);
             $settingsChanged = true;
         }
 
@@ -227,6 +246,16 @@ final class SettingsRepository
             $settingsChanged = true;
         }
 
+        if (array_key_exists('bricks_integration_enabled', $input)) {
+            $settings['bricks_integration_enabled'] = $this->normalizeOptionalBoolean($input['bricks_integration_enabled']);
+            $settingsChanged = true;
+        }
+
+        if (array_key_exists('oxygen_integration_enabled', $input)) {
+            $settings['oxygen_integration_enabled'] = $this->normalizeOptionalBoolean($input['oxygen_integration_enabled']);
+            $settingsChanged = true;
+        }
+
         if (array_key_exists('delete_uploaded_files_on_uninstall', $input)) {
             $settings['delete_uploaded_files_on_uninstall'] = !empty($input['delete_uploaded_files_on_uninstall']);
             $settingsChanged = true;
@@ -251,6 +280,16 @@ final class SettingsRepository
             $settings['preview_sentence'] = sanitize_text_field((string) $input['preview_sentence']);
             $settingsChanged = true;
         }
+
+        if (
+            !array_key_exists('minimal_output_preset_enabled', $input)
+            && $this->hasExplicitNonMinimalOutputInput($input)
+        ) {
+            $settings['minimal_output_preset_enabled'] = false;
+            $settingsChanged = true;
+        }
+
+        $settings = $this->normalizeMinimalOutputPresetSettings($settings);
 
         if ($settingsChanged) {
             update_option(self::OPTION_SETTINGS, $this->withoutGoogleApiKeyData($settings), false);
@@ -384,6 +423,51 @@ final class SettingsRepository
         $settings['acss_font_role_sync_applied'] = $applied;
         $settings['acss_font_role_sync_previous_heading_font_family'] = $this->sanitizeTextValue($previousHeading);
         $settings['acss_font_role_sync_previous_text_font_family'] = $this->sanitizeTextValue($previousText);
+
+        return $this->persistSettings($settings);
+    }
+
+    public function resetStoredSettingsToDefaults(): array
+    {
+        delete_option(self::OPTION_SETTINGS);
+        delete_option(self::OPTION_ROLES);
+        delete_option(self::OPTION_GOOGLE_API_KEY_DATA);
+        delete_option(self::LEGACY_OPTION_SETTINGS);
+        delete_option(self::LEGACY_OPTION_ROLES);
+        $this->settingsCache = null;
+
+        return $this->getSettings();
+    }
+
+    public function resetLibraryStateAfterWipe(): array
+    {
+        $settings = $this->getSettings();
+        $settings['auto_apply_roles'] = false;
+        $settings['applied_roles'] = [];
+        $settings['family_fallbacks'] = [];
+        $settings['family_font_displays'] = [];
+        $settings['adobe_enabled'] = false;
+        $settings['adobe_project_id'] = '';
+        $settings['adobe_project_status'] = 'empty';
+        $settings['adobe_project_status_message'] = '';
+        $settings['adobe_project_checked_at'] = 0;
+
+        delete_option(self::OPTION_ROLES);
+        delete_option(self::LEGACY_OPTION_ROLES);
+
+        return $this->persistSettings($settings);
+    }
+
+    public function resetIntegrationDetectionState(): array
+    {
+        $settings = $this->getSettings();
+        $settings['block_editor_font_library_sync_enabled'] = null;
+        $settings['bricks_integration_enabled'] = null;
+        $settings['oxygen_integration_enabled'] = null;
+        $settings['acss_font_role_sync_enabled'] = null;
+        $settings['acss_font_role_sync_applied'] = false;
+        $settings['acss_font_role_sync_previous_heading_font_family'] = '';
+        $settings['acss_font_role_sync_previous_text_font_family'] = '';
 
         return $this->persistSettings($settings);
     }
@@ -670,12 +754,88 @@ final class SettingsRepository
         }
 
         $settings = array_replace($settings, $this->normalizeClassOutputSettings($settings));
+        $settings = $this->normalizeMinimalOutputPresetSettings($settings);
         $settings = $this->withoutGoogleApiKeyData($settings);
 
         update_option(self::OPTION_SETTINGS, $settings, false);
         $googleApiKeyData = $this->persistGoogleApiKeyData($googleApiKeyData);
 
         return $this->cacheSettings($this->mergeGoogleApiKeyDataIntoSettings($settings, $googleApiKeyData));
+    }
+
+    private function normalizeMinimalOutputPresetSettings(array $settings): array
+    {
+        if (empty($settings['minimal_output_preset_enabled'])) {
+            return $settings;
+        }
+
+        $settings['class_output_enabled'] = false;
+        $settings['role_usage_font_weight_enabled'] = false;
+        $settings['per_variant_font_variables_enabled'] = true;
+
+        return $settings;
+    }
+
+    private function hasExplicitNonMinimalOutputInput(array $input): bool
+    {
+        if ($this->hasClassOutputInput($input)) {
+            return true;
+        }
+
+        foreach (
+            [
+                'role_usage_font_weight_enabled',
+                'per_variant_font_variables_enabled',
+                'extended_variable_weight_tokens_enabled',
+                'extended_variable_role_aliases_enabled',
+                'extended_variable_category_sans_enabled',
+                'extended_variable_category_serif_enabled',
+                'extended_variable_category_mono_enabled',
+            ] as $field
+        ) {
+            if (array_key_exists($field, $input)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function resolveMinimalOutputPresetEnabled(array $storedSettings, array $settings): bool
+    {
+        if (array_key_exists('minimal_output_preset_enabled', $storedSettings)) {
+            return !empty($settings['minimal_output_preset_enabled']);
+        }
+
+        foreach (
+            [
+                'class_output_mode',
+                'class_output_enabled',
+                'class_output_role_heading_enabled',
+                'class_output_role_body_enabled',
+                'class_output_role_monospace_enabled',
+                'class_output_role_alias_interface_enabled',
+                'class_output_role_alias_ui_enabled',
+                'class_output_role_alias_code_enabled',
+                'class_output_category_sans_enabled',
+                'class_output_category_serif_enabled',
+                'class_output_category_mono_enabled',
+                'class_output_families_enabled',
+                'role_usage_font_weight_enabled',
+                'per_variant_font_variables_enabled',
+                'extended_variable_weight_tokens_enabled',
+                'extended_variable_role_aliases_enabled',
+                'extended_variable_category_sans_enabled',
+                'extended_variable_category_serif_enabled',
+                'extended_variable_category_mono_enabled',
+            ] as $field
+        ) {
+            if (array_key_exists($field, $storedSettings)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function getGoogleApiKeyDataFromOptions(array $settings = []): array

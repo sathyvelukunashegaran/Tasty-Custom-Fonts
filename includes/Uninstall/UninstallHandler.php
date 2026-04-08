@@ -9,10 +9,8 @@ defined('ABSPATH') || exit;
 use TastyFonts\Admin\AdminController;
 use TastyFonts\Adobe\AdobeProjectClient;
 use TastyFonts\Bunny\BunnyFontsClient;
-use TastyFonts\Fonts\AssetService;
 use TastyFonts\Fonts\BlockEditorFontLibraryService;
-use TastyFonts\Fonts\CatalogService;
-use TastyFonts\Google\GoogleFontsClient;
+use TastyFonts\Maintenance\DeveloperToolsService;
 use TastyFonts\Repository\ImportRepository;
 use TastyFonts\Repository\LogRepository;
 use TastyFonts\Repository\SettingsRepository;
@@ -26,7 +24,8 @@ final class UninstallHandler
     public function __construct(
         private readonly array $settings,
         private readonly Storage $storage,
-        private readonly BlockEditorFontLibraryService $blockEditorFontLibrary
+        private readonly BlockEditorFontLibraryService $blockEditorFontLibrary,
+        private readonly DeveloperToolsService $developerTools
     ) {
     }
 
@@ -47,7 +46,7 @@ final class UninstallHandler
             return;
         }
 
-        $this->blockEditorFontLibrary->deleteAllSyncedFamilies();
+        $this->blockEditorFontLibrary->deleteAllSyncedFamilies(true);
     }
 
     private function deleteGeneratedCssArtifacts(): void
@@ -101,18 +100,7 @@ final class UninstallHandler
 
     private function deleteTransients(): void
     {
-        foreach (
-            [
-                CatalogService::TRANSIENT_CATALOG,
-                AssetService::TRANSIENT_CSS,
-                AssetService::TRANSIENT_HASH,
-                AssetService::TRANSIENT_REGENERATE_CSS_QUEUED,
-                GoogleFontsClient::TRANSIENT_CATALOG,
-                BunnyFontsClient::TRANSIENT_CATALOG,
-            ] as $transientKey
-        ) {
-            delete_transient($transientKey);
-        }
+        $this->developerTools->clearDeactivationCaches();
     }
 
     private function deleteWildcardTransients(): void

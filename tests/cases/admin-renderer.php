@@ -262,6 +262,7 @@ $tests['admin_page_renderer_renders_single_page_tabs_with_settings_active'] = st
     assertSameValue(1, preg_match('/id="tasty-fonts-page-tab-library"[\s\S]*?tabindex="0"/', $output), 'All top-level page tabs should remain in the normal keyboard tab order.');
     assertSameValue(1, preg_match('/id="tasty-fonts-settings-tab-integrations"[\s\S]*?tabindex="0"/', $output), 'The Settings sub-tabs should keep the Integrations button in the normal keyboard tab order.');
     assertSameValue(1, preg_match('/id="tasty-fonts-settings-tab-plugin-behavior"[\s\S]*?tabindex="0"/', $output), 'The Settings sub-tabs should keep the Behavior button in the normal keyboard tab order.');
+    assertSameValue(1, preg_match('/id="tasty-fonts-settings-tab-developer"[\s\S]*?tabindex="0"/', $output), 'The Settings sub-tabs should keep the Developer button in the normal keyboard tab order.');
     assertSameValue(1, preg_match('/id="tasty-fonts-preview-tab-code"[\s\S]*?tabindex="0"/', $output), 'Inactive preview tabs should remain in the normal keyboard tab order.');
     assertSameValue(1, preg_match('/id="tasty-fonts-add-font-tab-bunny"[\s\S]*?tabindex="0"/', $output), 'Inactive add-font tabs should remain in the normal keyboard tab order.');
     assertSameValue(1, preg_match('/id="tasty-fonts-diagnostics-tab-system"[\s\S]*?tabindex="0"/', $output), 'Inactive diagnostics tabs should remain in the normal keyboard tab order.');
@@ -269,6 +270,7 @@ $tests['admin_page_renderer_renders_single_page_tabs_with_settings_active'] = st
     assertContainsValue('data-settings-autosave="output"', $output, 'The Settings tab should render the output settings form with autosave enabled.');
     assertContainsValue('data-settings-autosave="integrations"', $output, 'The Settings tab should render the integrations settings form with autosave enabled.');
     assertContainsValue('data-settings-autosave="behavior"', $output, 'The Settings tab should render the behavior settings form with autosave enabled.');
+    assertNotContainsValue('data-settings-autosave="developer"', $output, 'Developer actions should not participate in settings autosave.');
     assertNotContainsValue('Save Output Settings', $output, 'The Settings tab should no longer render a dedicated output save button.');
     assertNotContainsValue('Save Behavior Settings', $output, 'The Settings tab should no longer render a dedicated behavior save button.');
     assertContainsValue('>Font Library<', $output, 'The unified admin page should still include the library section inside its own tab panel.');
@@ -523,6 +525,7 @@ $tests['admin_page_renderer_renders_unified_output_controls'] = static function 
         preg_match('/name="tasty_fonts_output_quick_mode"[\s\S]*value="all"/', $output),
         'Output Settings should not render a separate all preset now that custom is the both-enabled baseline.'
     );
+    assertContainsValue('value="minimal"', $output, 'The output quick-mode controls should expose the minimal preset.');
     assertContainsValue('value="classes"', $output, 'The output quick-mode controls should expose the classes-only option.');
     assertContainsValue('name="class_output_enabled"', $output, 'The class output master toggle should submit through the shared settings form.');
     assertContainsValue('Family Classes', $output, 'Output Settings should group the per-family class toggle under its own submenu heading.');
@@ -562,6 +565,32 @@ $tests['admin_page_view_builder_derives_output_quick_modes_from_explicit_flag_se
     );
     assertSameValue('custom', $customAllEnabledMode, 'Quick mode should resolve to custom when both class and variable output are enabled, even if every subgroup is on.');
 
+    $minimalMode = invokePrivateMethod(
+        $builder,
+        'deriveOutputQuickMode',
+        [
+            [
+                'enabled' => false,
+                'role_heading' => false,
+                'role_body' => false,
+                'role_alias_interface' => false,
+                'role_alias_ui' => false,
+                'category_sans' => false,
+                'category_serif' => false,
+                'families' => false,
+            ],
+            [
+                'enabled' => true,
+                'minimal' => true,
+                'weight_tokens' => false,
+                'role_aliases' => false,
+                'category_sans' => false,
+                'category_serif' => false,
+            ],
+        ]
+    );
+    assertSameValue('minimal', $minimalMode, 'Quick mode should resolve to minimal when the minimal preset is enabled with variables on and classes off.');
+
     $variablesMode = invokePrivateMethod(
         $builder,
         'deriveOutputQuickMode',
@@ -578,6 +607,7 @@ $tests['admin_page_view_builder_derives_output_quick_modes_from_explicit_flag_se
             ],
             [
                 'enabled' => true,
+                'minimal' => false,
                 'weight_tokens' => false,
                 'role_aliases' => false,
                 'category_sans' => false,
@@ -603,6 +633,7 @@ $tests['admin_page_view_builder_derives_output_quick_modes_from_explicit_flag_se
             ],
             [
                 'enabled' => false,
+                'minimal' => false,
                 'weight_tokens' => false,
                 'role_aliases' => false,
                 'category_sans' => false,
@@ -628,6 +659,7 @@ $tests['admin_page_view_builder_derives_output_quick_modes_from_explicit_flag_se
             ],
             [
                 'enabled' => true,
+                'minimal' => false,
                 'weight_tokens' => true,
                 'role_aliases' => true,
                 'category_sans' => true,
@@ -1441,6 +1473,7 @@ $tests['admin_page_renderer_exposes_behavior_tab_and_can_hide_help_ui'] = static
     $output = (string) ob_get_clean();
 
     assertContainsValue('Behavior', $output, 'The settings switcher should expose the dedicated Behavior tab.');
+    assertContainsValue('Developer', $output, 'The settings switcher should expose the dedicated Developer tab.');
     assertContainsValue('Integrations', $output, 'The settings switcher should expose the dedicated Integrations tab.');
     assertContainsValue('Gutenberg Font Library', $output, 'The Integrations tab should expose the Gutenberg integration card.');
     assertContainsValue('Automatic.css', $output, 'The Integrations tab should expose the Automatic.css integration card.');
@@ -1450,6 +1483,12 @@ $tests['admin_page_renderer_exposes_behavior_tab_and_can_hide_help_ui'] = static
     assertNotContainsValue('Enable Block Editor Font Library Sync', $output, 'The Behavior panel should no longer render the Gutenberg sync toggle after it moves into Integrations.');
     assertContainsValue('Enable Monospace Role', $output, 'The Behavior panel should still render the monospace toggle.');
     assertContainsValue('Delete Uploaded Fonts on Uninstall', $output, 'The Behavior panel should still render the uninstall cleanup toggle.');
+    assertContainsValue('Reset Plugin Settings', $output, 'The Developer tab should expose the reset-settings action.');
+    assertContainsValue('Wipe Managed Font Library', $output, 'The Developer tab should expose the library-wipe action.');
+    assertContainsValue('Clear Plugin Caches and Regenerate Assets', $output, 'The Developer tab should expose the cache-reset action.');
+    assertContainsValue('Reset Integration Detection State', $output, 'The Developer tab should expose the integration-reset action.');
+    assertContainsValue('Reset Suppressed Notices', $output, 'The Developer tab should expose the suppressed-notices reset action.');
+    assertContainsValue('data-developer-confirm-input="reset-settings"', $output, 'Destructive developer actions should render typed-confirmation inputs.');
     assertNotContainsValue('Editor Integrations', $output, 'The Behavior panel should no longer render the editor integrations subsection title.');
     assertNotContainsValue('Role Options', $output, 'The Behavior panel should no longer render the role options subsection title.');
     assertNotContainsValue('Uninstall Settings', $output, 'The Behavior panel should no longer render the uninstall settings subsection title.');
@@ -1660,6 +1699,165 @@ $tests['admin_page_renderer_keeps_dashboard_titles_and_buttons_in_title_case'] =
     ] as $sentenceCaseLabel) {
         assertNotContainsValue($sentenceCaseLabel, $output, 'Dashboard titles and button labels should not regress to sentence case.');
     }
+};
+
+$tests['admin_page_renderer_hides_acss_managed_mapping_when_sync_is_not_enabled'] = static function (): void {
+    resetTestState();
+
+    $renderer = new AdminPageRenderer(new Storage());
+
+    ob_start();
+    $renderer->renderPage([
+        'storage' => ['root' => '/tmp/uploads/fonts'],
+        'catalog' => [],
+        'available_families' => [],
+        'roles' => [],
+        'logs' => [],
+        'activity_actor_options' => [],
+        'family_fallbacks' => [],
+        'family_font_displays' => [],
+        'family_font_display_options' => [],
+        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+        'preview_size' => 32,
+        'font_display' => 'optional',
+        'font_display_options' => [],
+        'minify_css_output' => true,
+        'preload_primary_fonts' => true,
+        'remote_connection_hints' => true,
+        'block_editor_font_library_sync_enabled' => true,
+        'training_wheels_off' => false,
+        'delete_uploaded_files_on_uninstall' => false,
+        'diagnostic_items' => [],
+        'overview_metrics' => [],
+        'output_panels' => [],
+        'generated_css_panel' => [],
+        'preview_panels' => [],
+        'local_environment_notice' => [],
+        'toasts' => [],
+        'apply_everywhere' => false,
+        'gutenberg_integration' => [
+            'title' => 'Gutenberg Font Library',
+            'description' => 'Mirror imported families into WordPress typography controls so the block editor and site editor can use the same fonts managed by Tasty Fonts.',
+            'status_label' => 'On',
+            'enabled' => true,
+        ],
+        'acss_integration' => [
+            'title' => 'Automatic.css',
+            'description' => 'Sync ACSS heading and body font-family settings to Tasty Fonts role variables for clean interoperability.',
+            'status_label' => 'Off',
+            'enabled' => false,
+            'available' => false,
+            'current' => [
+                'heading' => '',
+                'body' => '',
+            ],
+            'desired' => [
+                \TastyFonts\Integrations\AcssIntegrationService::OPTION_HEADING_FONT_FAMILY => 'var(--font-heading)',
+                \TastyFonts\Integrations\AcssIntegrationService::OPTION_TEXT_FONT_FAMILY => 'var(--font-body)',
+            ],
+        ],
+        'role_deployment' => [
+            'badge' => 'Draft',
+            'badge_class' => '',
+            'title' => 'Draft',
+            'copy' => 'Current selections are not being served sitewide.',
+        ],
+    ]);
+    $output = (string) ob_get_clean();
+
+    assertContainsValue('Automatic.css', $output, 'The Automatic.css integration row should still render when the integration is unavailable or disabled.');
+    assertNotContainsValue('Managed Mapping', $output, 'The Automatic.css managed mapping section should stay hidden until the integration is enabled.');
+    assertNotContainsValue('Current Automatic.css Values', $output, 'The Automatic.css current-values panel should stay hidden until the integration is enabled.');
+    assertNotContainsValue('Desired Mapping', $output, 'The Automatic.css desired-mapping panel should stay hidden until the integration is enabled.');
+};
+
+$tests['admin_page_renderer_disables_unavailable_plugin_integrations'] = static function (): void {
+    resetTestState();
+
+    $renderer = new AdminPageRenderer(new Storage());
+
+    ob_start();
+    $renderer->renderPage([
+        'storage' => ['root' => '/tmp/uploads/fonts'],
+        'catalog' => [],
+        'available_families' => [],
+        'roles' => [],
+        'logs' => [],
+        'activity_actor_options' => [],
+        'family_fallbacks' => [],
+        'family_font_displays' => [],
+        'family_font_display_options' => [],
+        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+        'preview_size' => 32,
+        'font_display' => 'optional',
+        'font_display_options' => [],
+        'minify_css_output' => true,
+        'preload_primary_fonts' => true,
+        'remote_connection_hints' => true,
+        'block_editor_font_library_sync_enabled' => true,
+        'training_wheels_off' => false,
+        'delete_uploaded_files_on_uninstall' => false,
+        'diagnostic_items' => [],
+        'overview_metrics' => [],
+        'output_panels' => [],
+        'generated_css_panel' => [],
+        'preview_panels' => [],
+        'local_environment_notice' => [],
+        'toasts' => [],
+        'apply_everywhere' => false,
+        'bricks_integration' => [
+            'title' => 'Bricks Builder',
+            'description' => 'Expose published Tasty Fonts families inside Bricks selectors and mirror Bricks theme font families into Gutenberg.',
+            'status_label' => 'Not Active',
+            'enabled' => false,
+            'available' => false,
+        ],
+        'oxygen_integration' => [
+            'title' => 'Oxygen Builder',
+            'description' => 'Expose published Tasty Fonts families through Oxygen’s custom-font compatibility layer and mirror Oxygen global font families into Gutenberg.',
+            'status_label' => 'Not Active',
+            'enabled' => false,
+            'available' => false,
+        ],
+        'gutenberg_integration' => [
+            'title' => 'Gutenberg Font Library',
+            'description' => 'Mirror imported families into WordPress typography controls so the block editor and site editor can use the same fonts managed by Tasty Fonts.',
+            'status_label' => 'On',
+            'enabled' => true,
+        ],
+        'acss_integration' => [
+            'title' => 'Automatic.css',
+            'description' => 'Sync ACSS heading and body font-family settings to Tasty Fonts role variables for clean interoperability.',
+            'status_label' => 'Not Active',
+            'enabled' => false,
+            'available' => false,
+            'current' => [
+                'heading' => '',
+                'body' => '',
+            ],
+            'desired' => [
+                \TastyFonts\Integrations\AcssIntegrationService::OPTION_HEADING_FONT_FAMILY => 'var(--font-heading)',
+                \TastyFonts\Integrations\AcssIntegrationService::OPTION_TEXT_FONT_FAMILY => 'var(--font-body)',
+            ],
+        ],
+        'role_deployment' => [
+            'badge' => 'Draft',
+            'badge_class' => '',
+            'title' => 'Draft',
+            'copy' => 'Current selections are not being served sitewide.',
+        ],
+    ]);
+    $output = (string) ob_get_clean();
+
+    assertContainsValue('name="bricks_integration_enabled"', $output, 'The Bricks integration toggle should still render when the plugin is unavailable.');
+    assertContainsValue('name="oxygen_integration_enabled"', $output, 'The Oxygen integration toggle should still render when the plugin is unavailable.');
+    assertContainsValue('name="acss_font_role_sync_enabled"', $output, 'The Automatic.css integration toggle should still render when the plugin is unavailable.');
+    assertSameValue(1, preg_match('/name="bricks_integration_enabled"[^>]*disabled/', $output), 'The Bricks integration toggle should be disabled when Bricks is unavailable.');
+    assertSameValue(1, preg_match('/name="oxygen_integration_enabled"[^>]*disabled/', $output), 'The Oxygen integration toggle should be disabled when Oxygen is unavailable.');
+    assertSameValue(1, preg_match('/name="acss_font_role_sync_enabled"[^>]*disabled/', $output), 'The Automatic.css integration toggle should be disabled when Automatic.css is unavailable.');
+    assertSameValue(0, preg_match('/name="bricks_integration_enabled"[^>]*checked/', $output), 'The Bricks integration toggle should render unchecked when Bricks is unavailable.');
+    assertSameValue(0, preg_match('/name="oxygen_integration_enabled"[^>]*checked/', $output), 'The Oxygen integration toggle should render unchecked when Oxygen is unavailable.');
+    assertSameValue(0, preg_match('/name="acss_font_role_sync_enabled"[^>]*checked/', $output), 'The Automatic.css integration toggle should render unchecked when Automatic.css is unavailable.');
 };
 
 $tests['admin_page_renderer_omits_deprecated_inline_help_buttons_when_training_wheels_are_enabled'] = static function (): void {
@@ -2317,6 +2515,28 @@ $tests['admin_page_renderer_pretty_prints_minified_snippets_for_highlighted_disp
     assertContainsValue('data-copy-text=":root{--font-heading:&quot;Inter&quot;,serif;--font-body:&quot;Noto Sans&quot;,sans-serif}body{font-family:var(--font-body)}"', $output, 'Display formatting should not change the copied snippet payload.');
 };
 
+$tests['admin_page_renderer_pretty_prints_minified_variable_declaration_lists_for_display'] = static function (): void {
+    resetTestState();
+
+    $renderer = new AdminPageRenderer(new Storage());
+
+    ob_start();
+    invokePrivateMethod(
+        $renderer,
+        'renderCodeEditor',
+        [[
+            'label' => 'CSS Variables',
+            'target' => 'tasty-fonts-output-vars',
+            'value' => '--font-heading:"Inter",serif;--font-body:"Noto Sans",sans-serif;',
+        ]]
+    );
+    $output = (string) ob_get_clean();
+
+    assertContainsValue("<span class=\"tasty-fonts-syntax-property\">--font-heading</span>", $output, 'Minified variable lists should still highlight the first declaration.');
+    assertContainsValue("\n<span class=\"tasty-fonts-syntax-property\">--font-body</span>", $output, 'Minified variable lists should be split into one declaration per line for display.');
+    assertContainsValue('data-copy-text="--font-heading:&quot;Inter&quot;,serif;--font-body:&quot;Noto Sans&quot;,sans-serif;"', $output, 'Variable list copy payloads should remain minified.');
+};
+
 $tests['admin_page_renderer_generated_css_defaults_to_actual_minified_output_with_readable_toggle'] = static function (): void {
     resetTestState();
 
@@ -2481,7 +2701,7 @@ $tests['admin_page_renderer_makes_copyable_diagnostic_values_click_to_copy'] = s
     assertNotContainsValue('data-copy-text="4 KB"', $output, 'Plain diagnostic values should not become copy controls.');
 };
 
-$tests['admin_page_renderer_renders_local_environment_notice_below_activity_with_reminder_actions'] = static function (): void {
+$tests['admin_page_renderer_renders_local_environment_notice_at_the_end_of_deploy_fonts_with_reminder_actions'] = static function (): void {
     resetTestState();
 
     $renderer = new AdminPageRenderer(new Storage());
@@ -2524,8 +2744,10 @@ $tests['admin_page_renderer_renders_local_environment_notice_below_activity_with
         'role_deployment' => [],
     ]);
     $output = (string) ob_get_clean();
-    $activityPosition = strpos($output, 'No Activity Yet');
     $noticePosition = strpos($output, 'Local environment detected');
+    $deploymentPosition = strpos($output, 'Publish Workflow');
+    $roleSelectionPosition = strpos($output, 'Choose the Family and Fallback for Each Saved Role.');
+    $activityPosition = strpos($output, 'No Activity Yet');
 
     assertContainsValue('Local environment detected', $output, 'The admin page should surface a dedicated notice for local environments.');
     assertContainsValue('Open Integrations', $output, 'The local-environment notice should include a direct action to open the Integrations panel.');
@@ -2537,7 +2759,9 @@ $tests['admin_page_renderer_renders_local_environment_notice_below_activity_with
     assertContainsValue('tf_studio=integrations', $output, 'The local-environment notice action should deep-link to the Integrations tab.');
     assertContainsValue('role="alert"', $output, 'Warning notices should render as announced alert regions.');
     assertContainsValue('aria-live="assertive"', $output, 'Warning notices should use assertive live-region semantics.');
-    assertSameValue(true, $activityPosition !== false && $noticePosition !== false && $activityPosition < $noticePosition, 'The local-environment notice should render after the Activity section.');
+    assertSameValue(true, $noticePosition !== false && $deploymentPosition !== false && $deploymentPosition < $noticePosition, 'The local-environment notice should render after the Deploy Fonts workflow controls.');
+    assertSameValue(true, $noticePosition !== false && $roleSelectionPosition !== false && $roleSelectionPosition < $noticePosition, 'The local-environment notice should render after the last Deploy Fonts section.');
+    assertSameValue(true, $noticePosition !== false && $activityPosition !== false && $noticePosition < $activityPosition, 'The local-environment notice should no longer be buried after the Activity section.');
 };
 
 $tests['admin_page_renderer_associates_code_previews_and_snippet_panels_with_visible_labels'] = static function (): void {

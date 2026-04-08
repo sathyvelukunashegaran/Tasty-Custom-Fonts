@@ -12,6 +12,8 @@ use TastyFonts\Fonts\CatalogService;
 use TastyFonts\Fonts\CssBuilder;
 use TastyFonts\Google\GoogleFontsClient;
 use TastyFonts\Integrations\AcssIntegrationService;
+use TastyFonts\Integrations\BricksIntegrationService;
+use TastyFonts\Integrations\OxygenIntegrationService;
 use TastyFonts\Repository\LogRepository;
 use TastyFonts\Repository\SettingsRepository;
 use TastyFonts\Support\FontUtils;
@@ -32,7 +34,9 @@ final class AdminPageContextBuilder
         private readonly CssBuilder $cssBuilder,
         private readonly AdobeProjectClient $adobe,
         private readonly GoogleFontsClient $googleClient,
-        private readonly AcssIntegrationService $acssIntegration
+        private readonly AcssIntegrationService $acssIntegration,
+        private readonly BricksIntegrationService $bricksIntegration,
+        private readonly OxygenIntegrationService $oxygenIntegration
     ) {
     }
 
@@ -58,6 +62,8 @@ final class AdminPageContextBuilder
         $gutenbergIntegration = $this->buildGutenbergIntegrationContext($settings);
         $etchIntegration = $this->buildEtchIntegrationContext();
         $acssIntegration = $this->buildAcssIntegrationContext($settings);
+        $bricksIntegration = $this->buildBricksIntegrationContext($settings);
+        $oxygenIntegration = $this->buildOxygenIntegrationContext($settings);
         $previewBaselineSource = $applyEverywhere ? 'live_sitewide' : 'draft';
         $previewBaselineLabel = $applyEverywhere
             ? __('Live sitewide', 'tasty-fonts')
@@ -114,7 +120,9 @@ final class AdminPageContextBuilder
             'class_output_category_mono_enabled' => !empty($settings['class_output_category_mono_enabled']),
             'class_output_families_enabled' => !empty($settings['class_output_families_enabled']),
             'minify_css_output' => !empty($settings['minify_css_output']),
+            'role_usage_font_weight_enabled' => !empty($settings['role_usage_font_weight_enabled']),
             'per_variant_font_variables_enabled' => !empty($settings['per_variant_font_variables_enabled']),
+            'minimal_output_preset_enabled' => !empty($settings['minimal_output_preset_enabled']),
             'extended_variable_weight_tokens_enabled' => !empty($settings['extended_variable_weight_tokens_enabled']),
             'extended_variable_role_aliases_enabled' => !empty($settings['extended_variable_role_aliases_enabled']),
             'extended_variable_category_sans_enabled' => !empty($settings['extended_variable_category_sans_enabled']),
@@ -135,6 +143,8 @@ final class AdminPageContextBuilder
             'gutenberg_integration' => $gutenbergIntegration,
             'etch_integration' => $etchIntegration,
             'acss_integration' => $acssIntegration,
+            'bricks_integration' => $bricksIntegration,
+            'oxygen_integration' => $oxygenIntegration,
             'toasts' => $this->buildNoticeToasts(),
         ];
     }
@@ -283,7 +293,7 @@ final class AdminPageContextBuilder
                 'label' => __('CSS Variables', 'tasty-fonts'),
                 'target' => 'tasty-fonts-output-vars',
                 'value' => $this->cssBuilder->formatOutput(
-                    $this->cssBuilder->buildRoleVariableSnippet($snippetRoles, $includeMonospace, $catalog, $settings),
+                    $this->cssBuilder->buildRoleVariableDeclarationsSnippet($snippetRoles, $includeMonospace, $catalog, $settings),
                     $minifyOutput
                 ),
                 'active' => false,
@@ -630,6 +640,36 @@ final class AdminPageContextBuilder
         );
     }
 
+    public function buildBricksIntegrationContext(array $settings): array
+    {
+        $state = $this->bricksIntegration->readState($settings['bricks_integration_enabled'] ?? null);
+
+        return array_merge(
+            $state,
+            [
+                'title' => __('Bricks Builder', 'tasty-fonts'),
+                'description' => __('Expose published Tasty Fonts families inside Bricks selectors and mirror Bricks theme font families into Gutenberg.', 'tasty-fonts'),
+                'status_label' => $this->buildBuilderIntegrationStatusLabel((string) ($state['status'] ?? 'disabled')),
+                'status_copy' => $this->buildBricksIntegrationStatusCopy((string) ($state['status'] ?? 'disabled')),
+            ]
+        );
+    }
+
+    public function buildOxygenIntegrationContext(array $settings): array
+    {
+        $state = $this->oxygenIntegration->readState($settings['oxygen_integration_enabled'] ?? null);
+
+        return array_merge(
+            $state,
+            [
+                'title' => __('Oxygen Builder', 'tasty-fonts'),
+                'description' => __('Expose published Tasty Fonts families through Oxygen’s custom-font compatibility layer and mirror Oxygen global font families into Gutenberg.', 'tasty-fonts'),
+                'status_label' => $this->buildBuilderIntegrationStatusLabel((string) ($state['status'] ?? 'disabled')),
+                'status_copy' => $this->buildOxygenIntegrationStatusCopy((string) ($state['status'] ?? 'disabled')),
+            ]
+        );
+    }
+
     public function buildPreviewContext(array $settings): array
     {
         $previewText = isset($_GET['preview_text'])
@@ -838,6 +878,33 @@ final class AdminPageContextBuilder
                 $current['heading'] !== '' ? $current['heading'] : __('empty', 'tasty-fonts'),
                 $current['body'] !== '' ? $current['body'] : __('empty', 'tasty-fonts')
             ),
+        };
+    }
+
+    private function buildBuilderIntegrationStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'active' => __('On', 'tasty-fonts'),
+            'unavailable' => __('Not Active', 'tasty-fonts'),
+            default => __('Off', 'tasty-fonts'),
+        };
+    }
+
+    private function buildBricksIntegrationStatusCopy(string $status): string
+    {
+        return match ($status) {
+            'active' => __('Bricks is active. Published Tasty Fonts families will appear in Bricks selectors, and matching Bricks theme font families will be mirrored into Gutenberg.', 'tasty-fonts'),
+            'unavailable' => __('Bricks is not active on this site yet. If you install or reactivate Bricks later, this integration can turn on automatically.', 'tasty-fonts'),
+            default => __('Bricks integration is off. Tasty Fonts will stay out of Bricks selectors and will not mirror Bricks font-family choices into Gutenberg.', 'tasty-fonts'),
+        };
+    }
+
+    private function buildOxygenIntegrationStatusCopy(string $status): string
+    {
+        return match ($status) {
+            'active' => __('Oxygen is active. Published Tasty Fonts families are exposed through the compatibility shim, and matching Oxygen global font families will be mirrored into Gutenberg.', 'tasty-fonts'),
+            'unavailable' => __('Oxygen is not active on this site yet. If you install or reactivate Oxygen later, this integration can turn on automatically.', 'tasty-fonts'),
+            default => __('Oxygen integration is off. Tasty Fonts will not register the Oxygen compatibility shim or mirror Oxygen font-family choices into Gutenberg.', 'tasty-fonts'),
         };
     }
 
