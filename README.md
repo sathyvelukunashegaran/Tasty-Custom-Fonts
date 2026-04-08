@@ -1,6 +1,6 @@
 # Tasty Custom Fonts
 
-Typography management for Etch, Gutenberg, and the frontend.
+Typography Management for WordPress Professionals (Deeply integrated with Etch, Bricks, Gutenberg and WP as a whole). Works with Google Fonts, Typekit, Adobe Fonts, Self-hosted fonts, and more.
 
 ## Release Rails
 
