@@ -20,7 +20,7 @@ php tests/run.php
 
 This is the main local PHP harness. It does not require PHPUnit, Composer, or external services.
 
-On success, each test prints a green dot or a `PASS` label. On failure, the failing assertion and its context are printed.
+Each test prints `[PASS] <name>` on success. On failure it prints `[FAIL] <name>` followed by the assertion message.
 
 ### 2. Run The JavaScript Contract Tests
 

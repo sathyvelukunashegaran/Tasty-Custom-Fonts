@@ -215,7 +215,16 @@ The plugin emits these variables inside `:root {}` in the generated runtime styl
 
 ### How do I hook into the plugin's generated CSS output?
 
-The plugin does not currently expose a public PHP filter for modifying the generated stylesheet string before it is written to disk. If you need to append or override generated rules, add your own stylesheet that loads after the plugin's generated file. The generated stylesheet is enqueued with a known handle — inspect `RuntimeService` for the enqueue handle names.
+The plugin exposes a `tasty_fonts_generated_css` filter that receives the fully assembled stylesheet string after `CssBuilder` generates it and before it is cached and written to disk. Use it to append or rewrite rules:
+
+```php
+add_filter( 'tasty_fonts_generated_css', function ( string $css, array $catalog, array $roles, array $settings ): string {
+    // Append a custom rule after the generated output.
+    return $css . ':root { --my-custom-var: var(--font-heading); }';
+}, 10, 4 );
+```
+
+> **Stability note:** this filter is used internally and is not versioned as a stable public API. Verify its signature against `includes/Fonts/AssetService.php` when upgrading between minor releases.
 
 ### Where are plugin settings stored?
 
@@ -224,11 +233,23 @@ Settings are stored in WordPress options. Use `get_option('tasty_fonts_settings'
 ### How do I clear the plugin cache programmatically?
 
 ```php
-// Delete the main generated-asset transient.
-delete_transient( 'tasty_fonts_generated_css' );
+// Delete the generated-asset transients directly.
+delete_transient( 'tasty_fonts_css_v2' );
+delete_transient( 'tasty_fonts_css_hash_v2' );
 
-// Alternatively, the AssetService exposes a public invalidate method — call it
-// via the plugin's service container if you need the full regeneration path.
+// Preferred: call AssetService::invalidate() via the service container.
+// This clears both transients in one call.
+TastyFonts\Plugin::instance()
+    ->get_service( TastyFonts\Fonts\AssetService::class )
+    ->invalidate();
+```
+
+To force a full regeneration (invalidate catalog + rebuild + write file):
+
+```php
+TastyFonts\Plugin::instance()
+    ->get_service( TastyFonts\Fonts\AssetService::class )
+    ->refreshGeneratedAssets();
 ```
 
 ### How do I run the test suite?

@@ -29,10 +29,9 @@ includes/
   Repository/            — options, transients, library state, activity logging
   Support/               — storage helpers, environment detection, font utilities
   Fonts/                 — catalog, CSS building, runtime planning, library mutations, asset handling
-  Providers/
-    Google/              — Google Fonts import and catalog logic
-    Bunny/               — Bunny Fonts import and catalog logic
-    Adobe/               — Adobe Fonts import and catalog logic
+  Google/                — Google Fonts import and catalog logic
+  Bunny/                 — Bunny Fonts import and catalog logic
+  Adobe/                 — Adobe Fonts import and catalog logic
   Admin/                 — page controller, context builders, view builders, section renderers
   Api/                   — REST adapter over admin actions
   Updates/               — GitHub release updater integration
@@ -74,7 +73,7 @@ Each family can store one or more delivery profiles. A profile carries:
 - faces (array of generated `@font-face` parameters)
 - optional metadata (e.g., Google API response details)
 
-The active delivery profile controls runtime output for that family. Profile data is stored serialized in a WordPress option via `Repository/LibraryRepository.php`.
+The active delivery profile controls runtime output for that family. Profile data is stored serialized in a WordPress option via `Repository/ImportRepository.php`.
 
 ---
 
@@ -140,18 +139,39 @@ The admin UI operates entirely through a plugin REST API adapter (`Api/RestContr
 | What | Where |
 |---|---|
 | Settings | `get_option('tasty_fonts_settings')` — see `Repository/SettingsRepository.php` |
-| Font library | `get_option('tasty_fonts_library')` — see `Repository/LibraryRepository.php` |
-| Draft roles | Stored alongside settings; keyed separately from applied roles |
-| Applied (live) roles | Part of settings; used by `CssBuilder` at runtime |
-| Activity log | Transient-based; see `Repository/ActivityRepository.php` |
-| Generated CSS cache | Transient: `tasty_fonts_generated_css` |
+| Font library | `get_option('tasty_fonts_library')` — see `Repository/ImportRepository.php` |
+| Draft roles | `get_option('tasty_fonts_roles')` — see `SettingsRepository::OPTION_ROLES` |
+| Applied (live) roles | Stored under `applied_roles` within `tasty_fonts_settings`; used by `CssBuilder` at runtime |
+| Activity log | `get_option('tasty_fonts_log')` — see `Repository/LogRepository.php` |
+| Generated CSS cache | Transients: `tasty_fonts_css_v2` (stylesheet) and `tasty_fonts_css_hash_v2` (content hash) — see `AssetService::TRANSIENT_CSS` / `TRANSIENT_HASH` |
 | Integration detection | Stored in settings; reset via `Settings → Developer` |
 
 ---
 
 ## Extension Points For Developers
 
-The plugin does not currently expose a formal PHP filter/action API for third-party extensions. If you need to modify behavior:
+The plugin exposes several WordPress filters. These are internal hooks used by the plugin's own systems; they are not versioned as a stable public API and may change between releases. Use with that in mind.
+
+| Filter | Signature | What it does |
+|---|---|---|
+| `tasty_fonts_generated_css` | `( string $css, array $localCatalog, array $roles, array $settings )` | Filters the generated stylesheet string after `CssBuilder` assembles it and before it is cached and written to disk. Use this to append or rewrite rules. |
+| `tasty_fonts_catalog` | `( array $catalog )` | Filters the unified family catalog built by `CatalogService`. |
+| `tasty_fonts_http_request_args` | `( array $args, string $url )` | Filters `wp_remote_request` args used by Google, Bunny, and Adobe provider HTTP clients. |
+| `tasty_fonts_sync_block_editor_font_library` | `( bool $should_sync, array $result, string $provider )` | Controls whether Block Editor Font Library sync runs after an import. |
+| `tasty_fonts_bricks_integration_available` | `( bool $available )` | Overrides whether the Bricks integration considers itself available. |
+| `tasty_fonts_oxygen_integration_available` | `( bool $available )` | Overrides whether the Oxygen integration considers itself available. |
+| `tasty_fonts_acss_integration_available` | `( bool $available )` | Overrides whether the ACSS integration considers itself available. |
+| `tasty_fonts_etch_integration_available` | `( bool $available )` | Overrides whether the Etch integration considers itself available. |
+
+**Example — appending a custom rule to the generated stylesheet:**
+
+```php
+add_filter( 'tasty_fonts_generated_css', function ( string $css, array $catalog, array $roles, array $settings ): string {
+    return $css . ':root { --my-brand-font: var(--font-heading); }';
+}, 10, 4 );
+```
+
+If you need behavior that is not covered by the existing hooks:
 
 - **Custom CSS additions**: add your own stylesheet that loads after the plugin's enqueued stylesheet (`RuntimeService` registers the handle).
 - **Settings access**: use `get_option('tasty_fonts_settings')` to read settings and `update_option()` to modify them (the plugin will react on next request).
