@@ -14,6 +14,17 @@ Import Google Fonts as self-hosted files or keep them on the Google CDN.
 
 Live Google search requires a valid Google Fonts API key saved in the plugin settings path used for Google access.
 
+**How to get a Google Fonts API key (step by step):**
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com).
+2. Create a new project or select an existing one.
+3. In the search bar, search for **Web Fonts Developer API** and enable it.
+4. Go to **Credentials → Create Credentials → API Key**.
+5. Copy the key.
+6. In the plugin, open the add-font flow and select `Google Fonts`. Paste the key into the Google API key field and save.
+
+> **Security tip:** restrict the API key to the Web Fonts API only in the Google Cloud Console to prevent misuse if the key is exposed.
+
 If search is unavailable, open the Google key settings from the add-font workflow and validate the key first.
 
 ### 2. Search For A Family
@@ -70,3 +81,4 @@ The **Google Fonts API key** is required only for live catalog search in the add
 - [Settings](../settings.md)
 - [Imports And Deliveries](../troubleshooting/imports-and-deliveries.md)
 - [Concepts](../concepts.md)
+- [FAQ](../faq.md)

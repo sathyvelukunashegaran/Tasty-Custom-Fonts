@@ -4,6 +4,8 @@ Inspect the generated stylesheet, review system details, and use built-in diagno
 
 In the current `1.7.0` beta line, this page works alongside the new `Settings -> Developer` tab. Advanced Tools is primarily for inspection and review. Developer is where you intentionally reset or rebuild state.
 
+> **Beginner context:** you do not need to use Advanced Tools during normal day-to-day font management. Come here when the site is not behaving as expected and you need to understand what the plugin is actually serving.
+
 ## Use This Page When
 
 - you need to inspect what the plugin is actually serving
@@ -72,3 +74,4 @@ That tab is now the home for:
 - [Settings](settings.md)
 - [Generated CSS](troubleshooting/generated-css.md)
 - [Imports And Deliveries](troubleshooting/imports-and-deliveries.md)
+- [FAQ](faq.md)

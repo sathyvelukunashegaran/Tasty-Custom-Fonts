@@ -14,6 +14,17 @@ Use an Adobe Fonts web project as a hosted family source inside the same role an
 
 Use the Adobe add-font workflow to save the project ID from your Adobe Fonts web project.
 
+**Where to find your web project ID:**
+
+1. Sign in at [fonts.adobe.com](https://fonts.adobe.com).
+2. Go to **Web Projects** in the navigation.
+3. Select an existing web project or create a new one and add the fonts you want.
+4. Publish the project.
+5. Copy the project ID from the project detail page. It looks like an 8-character alphanumeric string (e.g., `abc12def`).
+6. Paste the project ID into the Adobe add-font flow in the plugin.
+
+> **Note:** only fonts from **published** web projects are detected. Draft or paused projects do not expose a usable stylesheet.
+
 ### 2. Sync Detected Families
 
 After validation, the plugin reads the project stylesheet and exposes the detected families in the shared library and selector workflow.
@@ -62,3 +73,4 @@ To change which variants are available, update your Adobe Fonts web project in t
 - [Font Library](../font-library.md)
 - [Imports And Deliveries](../troubleshooting/imports-and-deliveries.md)
 - [Concepts](../concepts.md)
+- [FAQ](../faq.md)
