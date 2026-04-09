@@ -718,6 +718,40 @@ CSS,
     assertSameValue(0, count($fontFileCalls), 'CDN importFamily should not make any requests to fonts.gstatic.com.');
 };
 
+$tests['google_import_service_preserves_variable_font_metadata_for_cdn_profiles'] = static function (): void {
+    resetTestState();
+
+    global $remoteGetResponses;
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings(['variable_fonts_enabled' => '1']);
+    $cssUrl = $services['google']->buildCssUrl('Inter Variable', ['regular']);
+    $remoteGetResponses[$cssUrl] = [
+        'response' => ['code' => 200],
+        'headers'  => ['content-type' => 'text/css'],
+        'body'     => <<<'CSS'
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-weight: 100 900;
+  font-stretch: 75% 125%;
+  font-variation-settings: "opsz" 14;
+  src: url(https://fonts.gstatic.com/s/inter/v18/inter-variable.woff2) format('woff2-variations');
+}
+CSS,
+    ];
+
+    $result = $services['google_import']->importFamily('Inter Variable', ['regular'], 'cdn');
+    $family = $services['imports']->getFamily('inter-variable');
+    $profile = (array) (($family['delivery_profiles']['google-cdn'] ?? null) ?: []);
+    $face = (array) (($profile['faces'][0] ?? null) ?: []);
+
+    assertSameValue('saved', (string) ($result['status'] ?? ''), 'Variable CDN imports should still complete successfully.');
+    assertSameValue(true, !empty($face['is_variable']), 'Variable CDN imports should preserve the variable-face marker.');
+    assertSameValue('100', (string) ($face['axes']['WGHT']['min'] ?? ''), 'Variable CDN imports should preserve parsed weight axis ranges.');
+    assertSameValue('14', (string) ($face['variation_defaults']['OPSZ'] ?? ''), 'Variable CDN imports should preserve parsed variation defaults.');
+};
+
 // ---------------------------------------------------------------------------
 // GoogleImportService – no CSS faces returned
 // ---------------------------------------------------------------------------

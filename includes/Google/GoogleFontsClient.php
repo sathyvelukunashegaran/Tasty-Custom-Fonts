@@ -153,9 +153,9 @@ final class GoogleFontsClient
         return null;
     }
 
-    public function fetchCss(string $familyName, array $variants, string $display = 'swap'): string|WP_Error
+    public function fetchCss(string $familyName, array $variants, string $display = 'swap', array $familyMetadata = []): string|WP_Error
     {
-        $url = $this->buildCssUrl($familyName, $variants, $display);
+        $url = $this->buildCssUrl($familyName, $variants, $display, $familyMetadata);
 
         $response = $this->remoteGet(
             $url,
@@ -193,14 +193,20 @@ final class GoogleFontsClient
         return $body;
     }
 
-    public function buildCssUrl(string $familyName, array $variants, string $display = 'swap'): string
+    public function buildCssUrl(string $familyName, array $variants, string $display = 'swap', array $familyMetadata = []): string
     {
         $familyQuery = str_replace('%20', '+', rawurlencode($familyName));
         $url = 'https://fonts.googleapis.com/css2?family=' . $familyQuery;
-        $axes = $this->buildCssAxes($variants);
+        $variableAxes = $this->buildVariableCssRequest($variants, $familyMetadata);
 
-        if ($axes !== []) {
-            $url .= ':ital,wght@' . implode(';', $axes);
+        if ($variableAxes !== null) {
+            $url .= ':' . $variableAxes['axis_list'] . '@' . implode(';', $variableAxes['rows']);
+        } else {
+            $axes = $this->buildCssAxes($variants);
+
+            if ($axes !== []) {
+                $url .= ':ital,wght@' . implode(';', $axes);
+            }
         }
 
         return $url . '&display=' . rawurlencode($this->sanitizeDisplay($display));
@@ -265,6 +271,8 @@ final class GoogleFontsClient
 
     private function normalizeCatalogItem(array $item): array
     {
+        $axes = $this->normalizeCatalogAxes((array) ($item['axes'] ?? []));
+
         return [
             'family' => (string) ($item['family'] ?? ''),
             'category' => (string) ($item['category'] ?? ''),
@@ -272,6 +280,8 @@ final class GoogleFontsClient
             'subsets' => array_values(array_filter((array) ($item['subsets'] ?? []), 'is_string')),
             'version' => (string) ($item['version'] ?? ''),
             'lastModified' => (string) ($item['lastModified'] ?? ''),
+            'is_variable' => $axes !== [],
+            'axes' => $axes,
         ];
     }
 
@@ -282,6 +292,9 @@ final class GoogleFontsClient
             'slug' => $slug,
             'category' => (string) ($item['category'] ?? ''),
             'variants_count' => max(0, (int) ($item['variants_count'] ?? 0)),
+            'variants' => FontUtils::normalizeVariantTokens((array) ($item['variants'] ?? [])),
+            'is_variable' => !empty($item['is_variable']),
+            'axes' => FontUtils::normalizeAxesMap((array) ($item['axes'] ?? [])),
         ];
     }
 
@@ -372,6 +385,9 @@ final class GoogleFontsClient
                 'family' => $family,
                 'category' => (string) ($item['category'] ?? ''),
                 'variants_count' => count(FontUtils::normalizeVariantTokens((array) ($item['variants'] ?? []))),
+                'variants' => FontUtils::normalizeVariantTokens((array) ($item['variants'] ?? [])),
+                'is_variable' => $this->normalizeCatalogAxes((array) ($item['axes'] ?? [])) !== [],
+                'axes' => $this->normalizeCatalogAxes((array) ($item['axes'] ?? [])),
             ];
         }
 
@@ -391,6 +407,9 @@ final class GoogleFontsClient
                 || !array_key_exists('family', $item)
                 || !array_key_exists('category', $item)
                 || !array_key_exists('variants_count', $item)
+                || !array_key_exists('variants', $item)
+                || !array_key_exists('is_variable', $item)
+                || !array_key_exists('axes', $item)
             ) {
                 return false;
             }
@@ -401,18 +420,139 @@ final class GoogleFontsClient
 
     private function isLegacyCatalogItemsCache(mixed $cached): bool
     {
-        if (!is_array($cached) || $cached === []) {
-            return false;
-        }
-
-        $first = reset($cached);
-
-        return is_array($first) && array_key_exists('family', $first) && array_key_exists('variants', $first);
+        return false;
     }
 
     private function buildCatalogRequestUrl(string $apiKey): string
     {
-        return 'https://www.googleapis.com/webfonts/v1/webfonts?sort=popularity&key=' . rawurlencode($apiKey);
+        return 'https://www.googleapis.com/webfonts/v1/webfonts?sort=popularity&capability=VF&key=' . rawurlencode($apiKey);
+    }
+
+    private function normalizeCatalogAxes(array $axes): array
+    {
+        return FontUtils::normalizeHostedAxisList($axes);
+    }
+
+    private function buildVariableCssRequest(array $variants, array $familyMetadata): ?array
+    {
+        $familyAxes = FontUtils::normalizeAxesMap((array) ($familyMetadata['axes'] ?? []));
+        $faces = is_array($familyMetadata['faces'] ?? null) ? (array) $familyMetadata['faces'] : [];
+        $hasVariableFaces = array_filter(
+            $faces,
+            static fn (mixed $face): bool => is_array($face) && !empty($face['is_variable'])
+        ) !== [];
+
+        if ($familyAxes === [] && !$hasVariableFaces) {
+            return null;
+        }
+
+        $requestedStyles = [];
+
+        foreach (FontUtils::normalizeVariantTokens($variants) as $variant) {
+            $axis = FontUtils::googleVariantToAxis($variant);
+
+            if ($axis === null) {
+                continue;
+            }
+
+            $requestedStyles[FontUtils::normalizeStyle((string) ($axis['style'] ?? 'normal'))] = true;
+        }
+
+        if ($requestedStyles === []) {
+            $requestedStyles['normal'] = true;
+        }
+
+        $rows = [];
+
+        foreach ($faces as $face) {
+            if (!is_array($face) || empty($face['is_variable'])) {
+                continue;
+            }
+
+            $style = FontUtils::normalizeStyle((string) ($face['style'] ?? 'normal'));
+
+            if (!isset($requestedStyles[$style])) {
+                continue;
+            }
+
+            $rowAxes = FontUtils::normalizeAxesMap((array) ($face['axes'] ?? []));
+            $rows[$style] = [
+                'style' => $style,
+                'axes' => $rowAxes !== [] ? $rowAxes : $familyAxes,
+            ];
+        }
+
+        if ($rows === []) {
+            foreach (array_keys($requestedStyles) as $style) {
+                $rows[$style] = [
+                    'style' => $style,
+                    'axes' => $familyAxes,
+                ];
+            }
+        }
+
+        $axesByTag = [];
+
+        foreach ($rows as $row) {
+            foreach ((array) ($row['axes'] ?? []) as $tag => $definition) {
+                $axesByTag[$tag] = FontUtils::normalizeAxesMap([$tag => $definition])[$tag] ?? null;
+            }
+        }
+
+        $axesByTag = array_filter($axesByTag, 'is_array');
+
+        if ($axesByTag === []) {
+            return null;
+        }
+
+        $axisTags = array_keys($axesByTag);
+        sort($axisTags, SORT_STRING);
+        $includeItal = count($rows) > 1 || isset($rows['italic']);
+        $axisList = $includeItal
+            ? array_merge(['ital'], array_map('strtolower', $axisTags))
+            : array_map('strtolower', $axisTags);
+        $serializedRows = [];
+
+        foreach ($rows as $row) {
+            $values = [];
+
+            if ($includeItal) {
+                $values[] = $row['style'] === 'italic' ? '1' : '0';
+            }
+
+            foreach ($axisTags as $tag) {
+                $definition = (array) (($row['axes'] ?? [])[$tag] ?? $axesByTag[$tag] ?? []);
+                $values[] = $this->buildVariableAxisValue($definition);
+            }
+
+            $serializedRows[] = implode(',', $values);
+        }
+
+        $serializedRows = array_values(array_unique(array_filter($serializedRows, 'strlen')));
+
+        return $serializedRows === []
+            ? null
+            : [
+                'axis_list' => implode(',', $axisList),
+                'rows' => $serializedRows,
+            ];
+    }
+
+    private function buildVariableAxisValue(array $definition): string
+    {
+        $min = FontUtils::normalizeAxisValue($definition['min'] ?? '');
+        $default = FontUtils::normalizeAxisValue($definition['default'] ?? '');
+        $max = FontUtils::normalizeAxisValue($definition['max'] ?? '');
+
+        if ($min !== '' && $max !== '' && $min !== $max) {
+            return $min . '..' . $max;
+        }
+
+        if ($default !== '') {
+            return $default;
+        }
+
+        return $min !== '' ? $min : $max;
     }
 
     private function isMatchingFamilyName(string $candidate, string $familyName): bool

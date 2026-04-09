@@ -263,9 +263,14 @@ final class BlockEditorFontLibraryService
         $payloads = [];
         $fontDisplay = $this->resolveFontDisplay($familyName);
         $quotedFamily = '"' . FontUtils::escapeFontFamily($familyName) . '"';
+        $variableFontsEnabled = !empty($this->settings->getSettings()['variable_fonts_enabled']);
 
         foreach ((array) ($profile['faces'] ?? []) as $face) {
             if (!is_array($face)) {
+                continue;
+            }
+
+            if (!$variableFontsEnabled && FontUtils::faceIsVariable($face)) {
                 continue;
             }
 
@@ -278,7 +283,7 @@ final class BlockEditorFontLibraryService
             $payload = [
                 'fontFamily' => $quotedFamily,
                 'src' => $src,
-                'fontWeight' => FontUtils::normalizeWeight((string) ($face['weight'] ?? '400')),
+                'fontWeight' => $this->blockEditorFontWeight((string) ($face['weight'] ?? '400'), (array) ($face['axes'] ?? [])),
                 'fontStyle' => FontUtils::normalizeStyle((string) ($face['style'] ?? 'normal')),
                 'fontDisplay' => $fontDisplay,
             ];
@@ -289,10 +294,37 @@ final class BlockEditorFontLibraryService
                 $payload['unicodeRange'] = $unicodeRange;
             }
 
+            if ($variableFontsEnabled) {
+                $variationSettings = FontUtils::buildFontVariationSettings(
+                    FontUtils::normalizeVariationDefaults($face['variation_defaults'] ?? [], $face['axes'] ?? [])
+                );
+
+                if ($variationSettings !== 'normal') {
+                    $payload['fontVariationSettings'] = $variationSettings;
+                }
+            }
+
             $payloads[] = $payload;
         }
 
         return $payloads;
+    }
+
+    private function blockEditorFontWeight(string $weight, array $axes = []): string
+    {
+        $normalizedAxes = FontUtils::normalizeAxesMap($axes);
+
+        if (isset($normalizedAxes['WGHT']['min'], $normalizedAxes['WGHT']['max'])) {
+            return (string) $normalizedAxes['WGHT']['min'] . ' ' . (string) $normalizedAxes['WGHT']['max'];
+        }
+
+        $normalizedWeight = FontUtils::normalizeWeight($weight);
+
+        if (preg_match('/^(\d{1,4})\.\.(\d{1,4})$/', $normalizedWeight, $matches) === 1) {
+            return $matches[1] . ' ' . $matches[2];
+        }
+
+        return $normalizedWeight;
     }
 
     private function buildFaceSources(array $face): array

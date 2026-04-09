@@ -28,6 +28,8 @@ final class FontFilenameParser
             'weight' => '400',
             'style' => 'normal',
             'is_variable' => false,
+            'axes' => [],
+            'variation_defaults' => [],
         ];
 
         if (preg_match('/[ \-]?(italic|oblique)/i', $result['family'], $matches) === 1) {
@@ -44,6 +46,15 @@ final class FontFilenameParser
 
             if ($weight === 'var') {
                 $result['is_variable'] = true;
+                $result['weight'] = '100..900';
+                $result['axes'] = [
+                    'WGHT' => [
+                        'min' => '100',
+                        'default' => '400',
+                        'max' => '900',
+                    ],
+                ];
+                $result['variation_defaults'] = ['WGHT' => '400'];
             } else {
                 $result['weight'] = (string) $weight;
             }

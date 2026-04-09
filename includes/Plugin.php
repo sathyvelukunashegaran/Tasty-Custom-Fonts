@@ -130,6 +130,7 @@ final class Plugin
         $this->localUpload = new LocalUploadService(
             $this->storage,
             $this->catalog,
+            $this->imports,
             $this->assets,
             $this->settings,
             $this->log,

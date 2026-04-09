@@ -1161,6 +1161,128 @@ $tests['rest_controller_roles_draft_accepts_and_returns_monospace_fields'] = sta
     assertContainsValue('Monospace: fallback only (monospace).', (string) ($data['role_deployment']['copy'] ?? ''), 'Role deployment payloads should include monospace copy when the feature is enabled.');
 };
 
+$tests['rest_controller_roles_draft_accepts_variable_axis_maps_when_the_feature_flag_is_enabled'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings(['variable_fonts_enabled' => '1']);
+    $services['imports']->saveProfile(
+        'Inter Variable',
+        'inter-variable',
+        [
+            'id' => 'local-self_hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'label' => 'Self-hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                [
+                    'family' => 'Inter Variable',
+                    'weight' => '100..900',
+                    'style' => 'normal',
+                    'is_variable' => true,
+                    'axes' => [
+                        'WGHT' => ['min' => '100', 'default' => '400', 'max' => '900'],
+                        'OPSZ' => ['min' => '8', 'default' => '14', 'max' => '32'],
+                    ],
+                    'files' => ['woff2' => 'inter-variable/Inter-VariableFont.woff2'],
+                ],
+            ],
+            'meta' => [],
+        ],
+        'published',
+        true
+    );
+
+    $request = new WP_REST_Request('PATCH', '/' . RestController::API_NAMESPACE . '/roles/draft');
+    $request->set_body_params([
+        'heading' => 'Inter Variable',
+        'body' => 'Inter Variable',
+        'heading_fallback' => 'sans-serif',
+        'body_fallback' => 'sans-serif',
+        'heading_axes' => ['WGHT' => '720', 'OPSZ' => '18'],
+        'body_axes' => ['WGHT' => '420'],
+    ]);
+
+    $response = $services['rest']->saveRoleDraft($request);
+    $data = $response instanceof WP_REST_Response ? $response->get_data() : [];
+
+    assertSameValue(true, $response instanceof WP_REST_Response, 'The roles/draft route should return a native REST response for variable axis payloads.');
+    assertSameValue(['OPSZ' => '18', 'WGHT' => '720'], (array) ($data['roles']['heading_axes'] ?? []), 'The roles/draft route should preserve normalized heading axis values.');
+    assertSameValue(['WGHT' => '420'], (array) ($data['roles']['body_axes'] ?? []), 'The roles/draft route should preserve normalized body axis values.');
+};
+
+$tests['rest_controller_roles_draft_accepts_saved_static_role_weights'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-600.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('jetbrains-mono/JetBrains Mono-400.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('jetbrains-mono/JetBrains Mono-500.woff2'), 'font-data');
+    $services['settings']->saveSettings(['monospace_role_enabled' => '1']);
+
+    $request = new WP_REST_Request('PATCH', '/' . RestController::API_NAMESPACE . '/roles/draft');
+    $request->set_body_params([
+        'heading' => 'Inter',
+        'body' => 'Inter',
+        'monospace' => 'JetBrains Mono',
+        'heading_fallback' => 'sans-serif',
+        'body_fallback' => 'sans-serif',
+        'monospace_fallback' => 'monospace',
+        'heading_weight' => '600',
+        'body_weight' => '400',
+        'monospace_weight' => '500',
+    ]);
+
+    $response = $services['rest']->saveRoleDraft($request);
+    $data = $response instanceof WP_REST_Response ? $response->get_data() : [];
+
+    assertSameValue(true, $response instanceof WP_REST_Response, 'The roles/draft route should return a native REST response for static role weight payloads.');
+    assertSameValue('600', (string) ($data['roles']['heading_weight'] ?? ''), 'The roles/draft route should preserve saved heading weight overrides.');
+    assertSameValue('400', (string) ($data['roles']['body_weight'] ?? ''), 'The roles/draft route should preserve saved body weight overrides.');
+    assertSameValue('500', (string) ($data['roles']['monospace_weight'] ?? ''), 'The roles/draft route should preserve saved monospace weight overrides.');
+};
+
+$tests['rest_controller_settings_accepts_variable_font_feature_flag'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $request = new WP_REST_Request('PATCH', '/' . RestController::API_NAMESPACE . '/settings');
+    $request->set_body_params([
+        'variable_fonts_enabled' => '1',
+    ]);
+
+    $response = $services['rest']->saveSettings($request);
+    $data = $response instanceof WP_REST_Response ? $response->get_data() : [];
+
+    assertSameValue(true, $response instanceof WP_REST_Response, 'The settings autosave route should return a native REST response when saving the variable font flag.');
+    assertSameValue(true, !empty($data['settings']['variable_fonts_enabled']), 'The settings autosave route should persist the variable font feature flag.');
+    assertSameValue(true, !empty($data['reload_required']), 'Changing the variable font feature flag should request a reload so the admin UI can rerender the opt-in controls.');
+};
+
+$tests['rest_controller_settings_invalidates_the_cached_catalog_when_variable_font_support_changes'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter-variable/Inter-VariableFont.woff2'), 'font-data');
+
+    assertSameValue([], array_values(array_keys($services['catalog']->getCatalog())), 'The cached catalog should start without local variable fonts while the feature flag is disabled.');
+
+    $request = new WP_REST_Request('PATCH', '/' . RestController::API_NAMESPACE . '/settings');
+    $request->set_body_params([
+        'variable_fonts_enabled' => '1',
+    ]);
+
+    $response = $services['rest']->saveSettings($request);
+    $catalog = $services['catalog']->getCatalog();
+
+    assertSameValue(true, $response instanceof WP_REST_Response, 'The settings autosave route should return a native REST response when variable support is enabled with a cached catalog already loaded.');
+    assertSameValue(true, isset($catalog['Inter']), 'Enabling variable support through the REST settings route should invalidate the cached catalog so local variable fonts appear immediately.');
+};
+
 $tests['rest_controller_wraps_missing_family_errors_with_http_status'] = static function (): void {
     resetTestState();
 
@@ -1227,6 +1349,9 @@ $tests['google_search_cooldown_cache_is_shared_between_repeated_rest_requests'] 
                 'family' => 'Inter',
                 'category' => 'sans-serif',
                 'variants_count' => 4,
+                'variants' => ['regular', '700', 'italic', '700italic'],
+                'is_variable' => false,
+                'axes' => [],
             ],
         ],
         HOUR_IN_SECONDS
@@ -1244,6 +1369,9 @@ $tests['google_search_cooldown_cache_is_shared_between_repeated_rest_requests'] 
                 'family' => 'Inter',
                 'category' => 'sans-serif',
                 'variants_count' => 8,
+                'variants' => ['100', '200', '300', 'regular', '500', '600', '700', '800'],
+                'is_variable' => false,
+                'axes' => [],
             ],
         ],
         HOUR_IN_SECONDS

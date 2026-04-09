@@ -460,8 +460,10 @@ trait FamilyCardRendererSupport
         $items = [];
 
         foreach ($faces as $face) {
-            $weight = preg_replace('/[^0-9]/', '', (string) ($face['weight'] ?? '400'));
-            $weight = $weight !== '' ? $weight : '400';
+            $normalizedWeight = FontUtils::normalizeWeight((string) ($face['weight'] ?? '400'));
+            $weight = preg_match('/^\d{1,4}\.\.\d{1,4}$/', $normalizedWeight) === 1
+                ? $normalizedWeight
+                : (preg_replace('/[^0-9]/', '', $normalizedWeight) ?: '400');
             $style = FontUtils::normalizeStyle((string) ($face['style'] ?? 'normal'));
             $key = FontUtils::faceAxisKey($weight, $style);
 
@@ -470,7 +472,7 @@ trait FamilyCardRendererSupport
             }
 
             $items[$key] = [
-                'weight' => (int) $weight,
+                'weight_sort' => FontUtils::weightSortValue($normalizedWeight),
                 'style' => $style,
                 'label' => sprintf(
                     '%1$s%2$s',
@@ -483,7 +485,7 @@ trait FamilyCardRendererSupport
         usort(
             $items,
             static function (array $left, array $right): int {
-                $weightComparison = ($left['weight'] ?? 0) <=> ($right['weight'] ?? 0);
+                $weightComparison = ($left['weight_sort'] ?? 0) <=> ($right['weight_sort'] ?? 0);
 
                 if ($weightComparison !== 0) {
                     return $weightComparison;
@@ -498,6 +500,36 @@ trait FamilyCardRendererSupport
         );
 
         return array_values(array_map(static fn (array $item): string => (string) ($item['label'] ?? ''), $items));
+    }
+
+    protected function buildVariationAxisSummaryLabels(array $faces): array
+    {
+        $labels = [];
+
+        foreach ($faces as $face) {
+            if (!is_array($face)) {
+                continue;
+            }
+
+            foreach (FontUtils::normalizeAxesMap($face['axes'] ?? []) as $tag => $definition) {
+                $min = (string) ($definition['min'] ?? '');
+                $max = (string) ($definition['max'] ?? '');
+                $default = (string) ($definition['default'] ?? '');
+                $range = $min !== '' && $max !== '' && $min !== $max
+                    ? $min . '..' . $max
+                    : ($default !== '' ? $default : ($min !== '' ? $min : $max));
+
+                if ($range === '') {
+                    continue;
+                }
+
+                $labels[$tag] = strtolower($tag) . ' ' . $range;
+            }
+        }
+
+        ksort($labels, SORT_STRING);
+
+        return array_values($labels);
     }
 
     protected function buildFaceTitle(string $weight, string $style): string

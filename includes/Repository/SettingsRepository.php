@@ -66,6 +66,7 @@ final class SettingsRepository
         'oxygen_integration_enabled' => null,
         'training_wheels_off' => false,
         'monospace_role_enabled' => false,
+        'variable_fonts_enabled' => false,
         'acss_font_role_sync_enabled' => null,
         'acss_font_role_sync_applied' => false,
         'acss_font_role_sync_previous_heading_font_family' => '',
@@ -96,6 +97,8 @@ final class SettingsRepository
         'body_fallback' => 'sans-serif',
         'monospace_fallback' => 'monospace',
     ];
+    private const ROLE_WEIGHT_KEYS = ['heading_weight', 'body_weight', 'monospace_weight'];
+    private const ROLE_AXIS_KEYS = ['heading_axes', 'body_axes', 'monospace_axes'];
     private ?array $settingsCache = null;
 
     public function getSettings(): array
@@ -132,6 +135,7 @@ final class SettingsRepository
         $settings['oxygen_integration_enabled'] = $this->normalizeOptionalBoolean($settings['oxygen_integration_enabled'] ?? null);
         $settings['training_wheels_off'] = !empty($settings['training_wheels_off']);
         $settings['monospace_role_enabled'] = !empty($settings['monospace_role_enabled']);
+        $settings['variable_fonts_enabled'] = !empty($settings['variable_fonts_enabled']);
         $settings['acss_font_role_sync_enabled'] = $this->normalizeOptionalBoolean($settings['acss_font_role_sync_enabled'] ?? null);
         $settings['acss_font_role_sync_applied'] = !empty($settings['acss_font_role_sync_applied']);
         $settings['acss_font_role_sync_previous_heading_font_family'] = $this->sanitizeTextValue($settings['acss_font_role_sync_previous_heading_font_family'] ?? '');
@@ -211,6 +215,11 @@ final class SettingsRepository
 
         if (array_key_exists('per_variant_font_variables_enabled', $input)) {
             $settings['per_variant_font_variables_enabled'] = !empty($input['per_variant_font_variables_enabled']);
+            $settingsChanged = true;
+        }
+
+        if (array_key_exists('variable_fonts_enabled', $input)) {
+            $settings['variable_fonts_enabled'] = !empty($input['variable_fonts_enabled']);
             $settingsChanged = true;
         }
 
@@ -349,6 +358,22 @@ final class SettingsRepository
             }
 
             $roles[$roleKey] = $this->normalizeRoleFallback($input[$roleKey], $defaultFallback);
+        }
+
+        foreach (self::ROLE_WEIGHT_KEYS as $roleKey) {
+            if (!array_key_exists($roleKey, $input)) {
+                continue;
+            }
+
+            $roles[$roleKey] = $this->normalizeRoleWeight($input[$roleKey]);
+        }
+
+        foreach (self::ROLE_AXIS_KEYS as $roleKey) {
+            if (!array_key_exists($roleKey, $input)) {
+                continue;
+            }
+
+            $roles[$roleKey] = $this->normalizeRoleAxes($input[$roleKey]);
         }
 
         $roles = $this->normalizeRoleSet(
@@ -652,6 +677,12 @@ final class SettingsRepository
             'heading' => '',
             'body' => '',
             'monospace' => '',
+            'heading_weight' => '',
+            'body_weight' => '',
+            'monospace_weight' => '',
+            'heading_axes' => [],
+            'body_axes' => [],
+            'monospace_axes' => [],
         ];
     }
 
@@ -684,8 +715,44 @@ final class SettingsRepository
         $normalizedRoles['heading_fallback'] = $this->normalizeRoleFallback($normalizedRoles['heading_fallback'] ?? '', 'sans-serif');
         $normalizedRoles['body_fallback'] = $this->normalizeRoleFallback($normalizedRoles['body_fallback'] ?? '', 'sans-serif');
         $normalizedRoles['monospace_fallback'] = $this->normalizeRoleFallback($normalizedRoles['monospace_fallback'] ?? '', 'monospace');
+        $normalizedRoles['heading_weight'] = $this->normalizeRoleWeight($normalizedRoles['heading_weight'] ?? '');
+        $normalizedRoles['body_weight'] = $this->normalizeRoleWeight($normalizedRoles['body_weight'] ?? '');
+        $normalizedRoles['monospace_weight'] = $this->normalizeRoleWeight($normalizedRoles['monospace_weight'] ?? '');
+        $normalizedRoles['heading_axes'] = $this->normalizeRoleAxes($normalizedRoles['heading_axes'] ?? []);
+        $normalizedRoles['body_axes'] = $this->normalizeRoleAxes($normalizedRoles['body_axes'] ?? []);
+        $normalizedRoles['monospace_axes'] = $this->normalizeRoleAxes($normalizedRoles['monospace_axes'] ?? []);
 
         return $normalizedRoles;
+    }
+
+    private function normalizeRoleAxes(mixed $axes): array
+    {
+        if (is_string($axes) && trim($axes) !== '') {
+            $decoded = json_decode($axes, true);
+
+            if (is_array($decoded)) {
+                $axes = $decoded;
+            }
+        }
+
+        return FontUtils::normalizeVariationDefaults(is_array($axes) ? $axes : []);
+    }
+
+    private function normalizeRoleWeight(mixed $weight): string
+    {
+        $rawWeight = trim(wp_unslash((string) $weight));
+
+        if ($rawWeight === '') {
+            return '';
+        }
+
+        $property = FontUtils::weightVariableName($rawWeight);
+
+        if ($property === '') {
+            return '';
+        }
+
+        return substr($property, strlen('--weight-'));
     }
 
     private function normalizeBlockEditorFontLibrarySyncSetting(mixed $value): bool

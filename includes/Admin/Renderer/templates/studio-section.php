@@ -263,8 +263,11 @@
                                                 <span class="tasty-fonts-select-field tasty-fonts-select-field--clearable">
                                                     <select name="tasty_fonts_heading_font" id="tasty_fonts_heading_font" form="<?php echo esc_attr($roleFormId); ?>">
                                                         <option value="" <?php selected($roles['heading'] ?? '', ''); ?>><?php esc_html_e('Use Fallback Only', 'tasty-fonts'); ?></option>
-                                                        <?php foreach ($availableFamilies as $familyName): ?>
-                                                            <option value="<?php echo esc_attr((string) $familyName); ?>" <?php selected($roles['heading'] ?? '', $familyName); ?>><?php echo esc_html((string) $familyName); ?></option>
+                                                        <?php foreach ($availableFamilyOptions as $option): ?>
+                                                            <?php if (!is_array($option)) { continue; } ?>
+                                                            <?php $familyName = (string) ($option['value'] ?? ''); ?>
+                                                            <?php $familyLabel = (string) ($option['label'] ?? $familyName); ?>
+                                                            <option value="<?php echo esc_attr($familyName); ?>" <?php selected($roles['heading'] ?? '', $familyName); ?>><?php echo esc_html($familyLabel); ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                     <button
@@ -294,6 +297,30 @@
                                                 );
                                                 ?>
                                             </label>
+                                        </div>
+                                        <div class="tasty-fonts-role-weight-editor" data-role-weight-editor="heading" hidden>
+                                            <div class="tasty-fonts-role-axis-head">
+                                                <span class="tasty-fonts-field-label-text"><?php esc_html_e('Role Weight', 'tasty-fonts'); ?></span>
+                                                <span class="tasty-fonts-muted" data-role-weight-summary="heading"><?php esc_html_e('Choose a saved static weight when the selected family offers more than one.', 'tasty-fonts'); ?></span>
+                                            </div>
+                                            <label class="tasty-fonts-stack-field tasty-fonts-role-weight-field">
+                                                <span class="screen-reader-text"><?php esc_html_e('Heading weight', 'tasty-fonts'); ?></span>
+                                                <span class="tasty-fonts-select-field">
+                                                    <select
+                                                        name="tasty_fonts_heading_weight"
+                                                        id="tasty_fonts_heading_weight"
+                                                        data-role-weight-select="heading"
+                                                        form="<?php echo esc_attr($roleFormId); ?>"
+                                                    ></select>
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <div class="tasty-fonts-role-axis-editor" data-role-axis-editor="heading" hidden>
+                                            <div class="tasty-fonts-role-axis-head">
+                                                <span class="tasty-fonts-field-label-text"><?php esc_html_e('Variable Axes', 'tasty-fonts'); ?></span>
+                                                <span class="tasty-fonts-muted" data-role-axis-summary="heading"><?php esc_html_e('Assign axis values when the selected family supports variable fonts.', 'tasty-fonts'); ?></span>
+                                            </div>
+                                            <div class="tasty-fonts-role-axis-fields" data-role-axis-fields="heading"></div>
                                         </div>
                                     </section>
 
@@ -326,8 +353,11 @@
                                                 <span class="tasty-fonts-select-field tasty-fonts-select-field--clearable">
                                                     <select name="tasty_fonts_body_font" id="tasty_fonts_body_font" form="<?php echo esc_attr($roleFormId); ?>">
                                                         <option value="" <?php selected($roles['body'] ?? '', ''); ?>><?php esc_html_e('Use Fallback Only', 'tasty-fonts'); ?></option>
-                                                        <?php foreach ($availableFamilies as $familyName): ?>
-                                                            <option value="<?php echo esc_attr((string) $familyName); ?>" <?php selected($roles['body'] ?? '', $familyName); ?>><?php echo esc_html((string) $familyName); ?></option>
+                                                        <?php foreach ($availableFamilyOptions as $option): ?>
+                                                            <?php if (!is_array($option)) { continue; } ?>
+                                                            <?php $familyName = (string) ($option['value'] ?? ''); ?>
+                                                            <?php $familyLabel = (string) ($option['label'] ?? $familyName); ?>
+                                                            <option value="<?php echo esc_attr($familyName); ?>" <?php selected($roles['body'] ?? '', $familyName); ?>><?php echo esc_html($familyLabel); ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                     <button
@@ -357,6 +387,30 @@
                                                 );
                                                 ?>
                                             </label>
+                                        </div>
+                                        <div class="tasty-fonts-role-weight-editor" data-role-weight-editor="body" hidden>
+                                            <div class="tasty-fonts-role-axis-head">
+                                                <span class="tasty-fonts-field-label-text"><?php esc_html_e('Role Weight', 'tasty-fonts'); ?></span>
+                                                <span class="tasty-fonts-muted" data-role-weight-summary="body"><?php esc_html_e('Choose a saved static weight when the selected family offers more than one.', 'tasty-fonts'); ?></span>
+                                            </div>
+                                            <label class="tasty-fonts-stack-field tasty-fonts-role-weight-field">
+                                                <span class="screen-reader-text"><?php esc_html_e('Body weight', 'tasty-fonts'); ?></span>
+                                                <span class="tasty-fonts-select-field">
+                                                    <select
+                                                        name="tasty_fonts_body_weight"
+                                                        id="tasty_fonts_body_weight"
+                                                        data-role-weight-select="body"
+                                                        form="<?php echo esc_attr($roleFormId); ?>"
+                                                    ></select>
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <div class="tasty-fonts-role-axis-editor" data-role-axis-editor="body" hidden>
+                                            <div class="tasty-fonts-role-axis-head">
+                                                <span class="tasty-fonts-field-label-text"><?php esc_html_e('Variable Axes', 'tasty-fonts'); ?></span>
+                                                <span class="tasty-fonts-muted" data-role-axis-summary="body"><?php esc_html_e('Assign axis values when the selected family supports variable fonts.', 'tasty-fonts'); ?></span>
+                                            </div>
+                                            <div class="tasty-fonts-role-axis-fields" data-role-axis-fields="body"></div>
                                         </div>
                                     </section>
 
@@ -390,8 +444,11 @@
                                                 <span class="tasty-fonts-select-field tasty-fonts-select-field--clearable">
                                                     <select name="tasty_fonts_monospace_font" id="tasty_fonts_monospace_font" form="<?php echo esc_attr($roleFormId); ?>">
                                                         <option value="" <?php selected($roles['monospace'] ?? '', ''); ?>><?php esc_html_e('Use Fallback Only', 'tasty-fonts'); ?></option>
-                                                        <?php foreach ($availableFamilies as $familyName): ?>
-                                                            <option value="<?php echo esc_attr((string) $familyName); ?>" <?php selected($roles['monospace'] ?? '', $familyName); ?>><?php echo esc_html((string) $familyName); ?></option>
+                                                        <?php foreach ($availableFamilyOptions as $option): ?>
+                                                            <?php if (!is_array($option)) { continue; } ?>
+                                                            <?php $familyName = (string) ($option['value'] ?? ''); ?>
+                                                            <?php $familyLabel = (string) ($option['label'] ?? $familyName); ?>
+                                                            <option value="<?php echo esc_attr($familyName); ?>" <?php selected($roles['monospace'] ?? '', $familyName); ?>><?php echo esc_html($familyLabel); ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                     <button
@@ -421,6 +478,30 @@
                                                 );
                                                 ?>
                                             </label>
+                                        </div>
+                                        <div class="tasty-fonts-role-weight-editor" data-role-weight-editor="monospace" hidden>
+                                            <div class="tasty-fonts-role-axis-head">
+                                                <span class="tasty-fonts-field-label-text"><?php esc_html_e('Role Weight', 'tasty-fonts'); ?></span>
+                                                <span class="tasty-fonts-muted" data-role-weight-summary="monospace"><?php esc_html_e('Choose a saved static weight when the selected family offers more than one.', 'tasty-fonts'); ?></span>
+                                            </div>
+                                            <label class="tasty-fonts-stack-field tasty-fonts-role-weight-field">
+                                                <span class="screen-reader-text"><?php esc_html_e('Monospace weight', 'tasty-fonts'); ?></span>
+                                                <span class="tasty-fonts-select-field">
+                                                    <select
+                                                        name="tasty_fonts_monospace_weight"
+                                                        id="tasty_fonts_monospace_weight"
+                                                        data-role-weight-select="monospace"
+                                                        form="<?php echo esc_attr($roleFormId); ?>"
+                                                    ></select>
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <div class="tasty-fonts-role-axis-editor" data-role-axis-editor="monospace" hidden>
+                                            <div class="tasty-fonts-role-axis-head">
+                                                <span class="tasty-fonts-field-label-text"><?php esc_html_e('Variable Axes', 'tasty-fonts'); ?></span>
+                                                <span class="tasty-fonts-muted" data-role-axis-summary="monospace"><?php esc_html_e('Assign axis values when the selected family supports variable fonts.', 'tasty-fonts'); ?></span>
+                                            </div>
+                                            <div class="tasty-fonts-role-axis-fields" data-role-axis-fields="monospace"></div>
                                         </div>
                                     </section>
                                 <?php endif; ?>

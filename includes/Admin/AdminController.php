@@ -147,6 +147,7 @@ final class AdminController
         $applyEverywhere = !empty($settings['auto_apply_roles']);
         $googleApiStatus = $this->googleClient->getApiKeyStatus();
         $googleSearchEnabled = $this->googleClient->canSearch();
+        $variableFontsEnabled = !empty($settings['variable_fonts_enabled']);
 
         wp_enqueue_style(
             'tasty-fonts-admin-tokens',
@@ -198,6 +199,9 @@ final class AdminController
                 'currentPage' => $this->resolveRequestedPageType(),
                 'trainingWheelsOff' => !empty($settings['training_wheels_off']),
                 'monospaceRoleEnabled' => !empty($settings['monospace_role_enabled']),
+                'variableFontsEnabled' => $variableFontsEnabled,
+                'roleAxisCatalog' => $this->buildRoleAxisCatalog($catalog),
+                'roleWeightCatalog' => $this->buildRoleWeightCatalog($catalog),
                 'previewBootstrap' => [
                     'roles' => $roles,
                     'appliedRoles' => $appliedRoles,
@@ -398,11 +402,16 @@ final class AdminController
         $rows = [];
 
         foreach ($postedRows as $index => $row) {
+            $axes = $this->normalizeUploadAxesInput($row['axes'] ?? []);
+
             $rows[] = [
                 'family' => sanitize_text_field((string) ($row['family'] ?? '')),
                 'weight' => sanitize_text_field((string) ($row['weight'] ?? '400')),
                 'style' => sanitize_text_field((string) ($row['style'] ?? 'normal')),
                 'fallback' => sanitize_text_field((string) ($row['fallback'] ?? 'sans-serif')),
+                'is_variable' => !empty($row['is_variable']),
+                'axes' => $axes,
+                'variation_defaults' => FontUtils::normalizeVariationDefaults($row['variation_defaults'] ?? [], $axes),
                 'file' => $uploadedFiles[$index] ?? [],
             ];
         }
@@ -470,7 +479,8 @@ final class AdminController
 
     public function saveRoleDraftValues(array $roleValues): array
     {
-        $availableFamilies = $this->buildSelectableFamilyNames($this->catalog->getCatalog());
+        $catalog = $this->catalog->getCatalog();
+        $availableFamilies = $this->buildSelectableFamilyNames($catalog);
         $settings = $this->settings->getSettings();
 
         if (!empty($settings['auto_apply_roles'])) {
@@ -478,7 +488,7 @@ final class AdminController
         }
 
         $roles = $this->settings->saveRoles(
-            $this->sanitizeRoleValues($roleValues),
+            $this->sanitizeRoleValues($roleValues, $catalog),
             $availableFamilies
         );
 
@@ -507,8 +517,13 @@ final class AdminController
         $settingsInput = $this->buildSettingsSaveInput($submittedValues);
         $settingsInput = $this->preserveUnavailableIntegrationSettings($settingsInput);
         $savedSettings = $this->settings->saveSettings($settingsInput);
+        $variableFontsToggled = !empty($previousSettings['variable_fonts_enabled']) !== !empty($savedSettings['variable_fonts_enabled']);
 
         $this->googleClient->clearCatalogCache();
+
+        if ($variableFontsToggled) {
+            $this->catalog->invalidate();
+        }
 
         if (($previousSettings['monospace_role_enabled'] ?? false) !== ($savedSettings['monospace_role_enabled'] ?? false)) {
             $availableFamilies = $this->buildSelectableFamilyNames($this->catalog->getCatalog());
@@ -1009,15 +1024,22 @@ final class AdminController
                         'body' => $this->getPostedText('tasty_fonts_body_font'),
                         'heading_fallback' => $this->getPostedFallback('tasty_fonts_heading_fallback'),
                         'body_fallback' => $this->getPostedFallback('tasty_fonts_body_fallback'),
+                        'heading_weight' => isset($_POST['tasty_fonts_heading_weight']) ? $this->getPostedText('tasty_fonts_heading_weight') : null,
+                        'body_weight' => isset($_POST['tasty_fonts_body_weight']) ? $this->getPostedText('tasty_fonts_body_weight') : null,
+                        'heading_axes' => isset($_POST['tasty_fonts_heading_axes']) ? $this->getPostedArray('tasty_fonts_heading_axes') : null,
+                        'body_axes' => isset($_POST['tasty_fonts_body_axes']) ? $this->getPostedArray('tasty_fonts_body_axes') : null,
                         'monospace' => isset($_POST['tasty_fonts_monospace_font'])
                             ? $this->getPostedText('tasty_fonts_monospace_font')
                             : null,
                         'monospace_fallback' => isset($_POST['tasty_fonts_monospace_fallback'])
                             ? $this->getPostedFallback('tasty_fonts_monospace_fallback', 'monospace')
                             : null,
+                        'monospace_weight' => isset($_POST['tasty_fonts_monospace_weight']) ? $this->getPostedText('tasty_fonts_monospace_weight') : null,
+                        'monospace_axes' => isset($_POST['tasty_fonts_monospace_axes']) ? $this->getPostedArray('tasty_fonts_monospace_axes') : null,
                     ],
                     static fn (mixed $value): bool => $value !== null
-                )
+                ),
+                $catalog
             ),
             $availableFamilies
         );
@@ -1288,6 +1310,12 @@ final class AdminController
                 : __('monospace role disabled', 'tasty-fonts');
         }
 
+        if (!empty($before['variable_fonts_enabled']) !== !empty($after['variable_fonts_enabled'])) {
+            $changes[] = !empty($after['variable_fonts_enabled'])
+                ? __('variable font support enabled', 'tasty-fonts')
+                : __('variable font support disabled', 'tasty-fonts');
+        }
+
         if (($before['acss_font_role_sync_enabled'] ?? null) !== ($after['acss_font_role_sync_enabled'] ?? null)) {
             $changes[] = ($after['acss_font_role_sync_enabled'] ?? null) === true
                 ? __('Automatic.css font sync enabled', 'tasty-fonts')
@@ -1329,13 +1357,15 @@ final class AdminController
             || !empty($before['minimal_output_preset_enabled']) !== !empty($after['minimal_output_preset_enabled'])
             || !empty($before['per_variant_font_variables_enabled']) !== !empty($after['per_variant_font_variables_enabled'])
             || $this->extendedVariableSubsettingsDiffer($before, $after)
-            || !empty($before['monospace_role_enabled']) !== !empty($after['monospace_role_enabled']);
+            || !empty($before['monospace_role_enabled']) !== !empty($after['monospace_role_enabled'])
+            || !empty($before['variable_fonts_enabled']) !== !empty($after['variable_fonts_enabled']);
     }
 
     private function settingsChangeRequiresReload(array $before, array $after): bool
     {
         return !empty($before['training_wheels_off']) !== !empty($after['training_wheels_off'])
             || !empty($before['monospace_role_enabled']) !== !empty($after['monospace_role_enabled'])
+            || !empty($before['variable_fonts_enabled']) !== !empty($after['variable_fonts_enabled'])
             || ($before['update_channel'] ?? SettingsRepository::UPDATE_CHANNEL_STABLE) !== ($after['update_channel'] ?? SettingsRepository::UPDATE_CHANNEL_STABLE)
             || !empty($before['block_editor_font_library_sync_enabled']) !== !empty($after['block_editor_font_library_sync_enabled'])
             || ($before['bricks_integration_enabled'] ?? null) !== ($after['bricks_integration_enabled'] ?? null)
@@ -1661,9 +1691,10 @@ final class AdminController
         return $this->pageContextBuilder->buildRoleTextSummary($roles, $settings);
     }
 
-    private function sanitizeRoleValues(array $roleValues): array
+    private function sanitizeRoleValues(array $roleValues, ?array $catalog = null): array
     {
         $sanitized = [];
+        $catalog = $catalog ?? $this->catalog->getCatalog();
 
         foreach (['heading', 'body', 'monospace'] as $roleKey) {
             if (!array_key_exists($roleKey, $roleValues)) {
@@ -1685,6 +1716,36 @@ final class AdminController
             }
 
             $sanitized[$roleKey] = FontUtils::sanitizeFallback((string) $roleValues[$roleKey] ?: $defaultFallback);
+        }
+
+        foreach (['heading', 'body', 'monospace'] as $roleKey) {
+            $weightKey = $roleKey . '_weight';
+
+            if (!array_key_exists($weightKey, $roleValues)) {
+                continue;
+            }
+
+            $sanitized[$weightKey] = $this->sanitizeRoleWeightValue(
+                $roleValues[$weightKey],
+                (string) ($sanitized[$roleKey] ?? $roleValues[$roleKey] ?? ''),
+                $catalog
+            );
+        }
+
+        if (!empty($this->settings->getSettings()['variable_fonts_enabled'])) {
+            foreach (['heading', 'body', 'monospace'] as $roleKey) {
+                $axisKey = $roleKey . '_axes';
+
+                if (!array_key_exists($axisKey, $roleValues)) {
+                    continue;
+                }
+
+                $sanitized[$axisKey] = $this->sanitizeRoleAxisValues(
+                    $roleValues[$axisKey],
+                    (string) ($sanitized[$roleKey] ?? $roleValues[$roleKey] ?? ''),
+                    $catalog
+                );
+            }
         }
 
         return $sanitized;
@@ -1919,6 +1980,7 @@ final class AdminController
                 'acss_font_role_sync_enabled',
                 'delete_uploaded_files_on_uninstall',
                 'training_wheels_off',
+                'variable_fonts_enabled',
             ] as $field
         ) {
             if (array_key_exists($field, $submittedValues)) {
@@ -1973,6 +2035,203 @@ final class AdminController
         }
 
         return $normalized;
+    }
+
+    private function getPostedArray(string $key): array
+    {
+        if (!isset($_POST[$key]) || !is_array($_POST[$key])) {
+            return [];
+        }
+
+        return wp_unslash($_POST[$key]);
+    }
+
+    private function normalizeUploadAxesInput(mixed $rawAxes): array
+    {
+        if (!is_array($rawAxes)) {
+            return [];
+        }
+
+        $axes = [];
+
+        foreach ($rawAxes as $key => $definition) {
+            if (!is_array($definition)) {
+                continue;
+            }
+
+            $tag = array_key_exists('tag', $definition)
+                ? sanitize_text_field((string) $definition['tag'])
+                : (string) $key;
+
+            $axes[$tag] = [
+                'min' => sanitize_text_field((string) ($definition['min'] ?? '')),
+                'default' => sanitize_text_field((string) ($definition['default'] ?? '')),
+                'max' => sanitize_text_field((string) ($definition['max'] ?? '')),
+            ];
+        }
+
+        return FontUtils::normalizeAxesMap($axes);
+    }
+
+    private function sanitizeRoleAxisValues(mixed $rawValues, string $familyName, array $catalog): array
+    {
+        if (!is_array($rawValues) || trim($familyName) === '') {
+            return [];
+        }
+
+        $family = $catalog[$familyName] ?? null;
+        $availableAxes = is_array($family) ? FontUtils::normalizeAxesMap($family['variation_axes'] ?? []) : [];
+
+        if ($availableAxes === []) {
+            return [];
+        }
+
+        $normalized = FontUtils::normalizeVariationDefaults($rawValues);
+        $filtered = [];
+
+        foreach ($normalized as $tag => $value) {
+            if (!isset($availableAxes[$tag])) {
+                continue;
+            }
+
+            $axis = $availableAxes[$tag];
+            $numericValue = (float) $value;
+
+            if ($numericValue < (float) $axis['min'] || $numericValue > (float) $axis['max']) {
+                continue;
+            }
+
+            $filtered[$tag] = $value;
+        }
+
+        return $filtered;
+    }
+
+    private function buildRoleAxisCatalog(array $catalog): array
+    {
+        $map = [];
+
+        foreach ($catalog as $familyName => $family) {
+            if (!is_array($family)) {
+                continue;
+            }
+
+            $axes = FontUtils::normalizeAxesMap($family['variation_axes'] ?? []);
+
+            if ($axes === []) {
+                continue;
+            }
+
+            $map[(string) $familyName] = [
+                'axes' => $axes,
+                'has_variable_faces' => !empty($family['has_variable_faces']),
+            ];
+        }
+
+        return $map;
+    }
+
+    private function buildRoleWeightCatalog(array $catalog): array
+    {
+        $map = [];
+
+        foreach ($catalog as $familyName => $family) {
+            if (!is_array($family)) {
+                continue;
+            }
+
+            $weights = [];
+
+            foreach ((array) ($family['faces'] ?? []) as $face) {
+                if (
+                    !is_array($face)
+                    || FontUtils::normalizeStyle((string) ($face['style'] ?? 'normal')) !== 'normal'
+                ) {
+                    continue;
+                }
+
+                $weight = $this->resolveConcreteRoleWeight((string) ($face['weight'] ?? ''));
+
+                if ($weight === '') {
+                    continue;
+                }
+
+                $weights[$weight] = [
+                    'value' => $weight,
+                    'label' => trim($weight . ' ' . $this->buildRoleWeightLabel($weight)),
+                ];
+            }
+
+            if ($weights === []) {
+                continue;
+            }
+
+            uksort($weights, static fn (string $left, string $right): int => ((int) $left) <=> ((int) $right));
+
+            $variationAxes = FontUtils::normalizeAxesMap($family['variation_axes'] ?? []);
+            $map[(string) $familyName] = [
+                'weights' => array_values($weights),
+                'has_weight_axis' => isset($variationAxes['WGHT']),
+            ];
+        }
+
+        return $map;
+    }
+
+    private function sanitizeRoleWeightValue(mixed $weightValue, string $familyName, array $catalog): string
+    {
+        $weight = $this->resolveConcreteRoleWeight((string) $weightValue);
+
+        if ($weight === '' || trim($familyName) === '') {
+            return '';
+        }
+
+        $catalogEntry = $this->buildRoleWeightCatalog($catalog)[trim($familyName)] ?? null;
+
+        if (!is_array($catalogEntry) || !empty($catalogEntry['has_weight_axis'])) {
+            return '';
+        }
+
+        foreach ((array) ($catalogEntry['weights'] ?? []) as $option) {
+            if (is_array($option) && (string) ($option['value'] ?? '') === $weight) {
+                return $weight;
+            }
+        }
+
+        return '';
+    }
+
+    private function resolveConcreteRoleWeight(string $weight): string
+    {
+        if (trim($weight) === '') {
+            return '';
+        }
+
+        $property = FontUtils::weightVariableName($weight);
+
+        if ($property === '') {
+            return '';
+        }
+
+        return substr($property, strlen('--weight-'));
+    }
+
+    private function buildRoleWeightLabel(string $weight): string
+    {
+        return match ($weight) {
+            '100' => __('Thin', 'tasty-fonts'),
+            '200' => __('Extra Light', 'tasty-fonts'),
+            '300' => __('Light', 'tasty-fonts'),
+            '400' => __('Regular', 'tasty-fonts'),
+            '500' => __('Medium', 'tasty-fonts'),
+            '600' => __('Semi Bold', 'tasty-fonts'),
+            '700' => __('Bold', 'tasty-fonts'),
+            '800' => __('Extra Bold', 'tasty-fonts'),
+            '900' => __('Black', 'tasty-fonts'),
+            '950' => __('Extra Black', 'tasty-fonts'),
+            '1000' => __('Ultra Black', 'tasty-fonts'),
+            default => '',
+        };
     }
 
     private function initializeDetectedIntegrations(): void

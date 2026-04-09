@@ -55,7 +55,7 @@ final class HostedCssParser
                 $url = $this->trimCssString($match[1]);
                 $format = strtolower($this->trimCssString($match[2]));
 
-                if ($url === '' || $format !== 'woff2') {
+                if ($url === '' || !in_array($format, ['woff2', 'woff2-variations'], true)) {
                     continue;
                 }
 
@@ -88,15 +88,73 @@ final class HostedCssParser
             return null;
         }
 
+        $fontWeight = $this->propertyValue($block, 'font-weight');
+        $weight = FontUtils::normalizeWeight($fontWeight ?: '400');
+        $style = FontUtils::normalizeStyle($this->propertyValue($block, 'font-style') ?: 'normal');
+        $axes = [];
+        $variationDefaults = [];
+
+        if (preg_match('/^(\d{1,4})\s+(\d{1,4})$/', $fontWeight, $matches) === 1) {
+            $weight = $matches[1] . '..' . $matches[2];
+            $defaultWeight = $this->inferDefaultWeightFromRange($matches[1], $matches[2]);
+            $axes['WGHT'] = [
+                'min' => $matches[1],
+                'default' => $defaultWeight,
+                'max' => $matches[2],
+            ];
+            $variationDefaults['WGHT'] = $defaultWeight;
+        }
+
+        if (preg_match('/^(\d{1,3})%\s+(\d{1,3})%$/', $this->propertyValue($block, 'font-stretch'), $matches) === 1) {
+            $axes['WDTH'] = [
+                'min' => $matches[1],
+                'default' => $matches[1],
+                'max' => $matches[2],
+            ];
+            $variationDefaults['WDTH'] = $matches[1];
+        }
+
+        $fontVariationSettings = $this->propertyValue($block, 'font-variation-settings');
+
+        if ($fontVariationSettings !== '') {
+            foreach (explode(',', $fontVariationSettings) as $setting) {
+                if (preg_match('/["\']?([A-Za-z0-9]{4})["\']?\s+(-?\d+(?:\.\d+)?)/', trim($setting), $matches) !== 1) {
+                    continue;
+                }
+
+                $tag = FontUtils::normalizeAxisTag($matches[1]);
+                $value = FontUtils::normalizeAxisValue($matches[2]);
+
+                if ($tag === '' || $value === '') {
+                    continue;
+                }
+
+                if (!isset($axes[$tag])) {
+                    $axes[$tag] = [
+                        'min' => $value,
+                        'default' => $value,
+                        'max' => $value,
+                    ];
+                } else {
+                    $axes[$tag]['default'] = $value;
+                }
+
+                $variationDefaults[$tag] = $value;
+            }
+        }
+
         return [
             'family' => $family,
             'slug' => FontUtils::slugify($family),
             'source' => $this->source,
-            'weight' => FontUtils::normalizeWeight($this->propertyValue($block, 'font-weight') ?: '400'),
-            'style' => FontUtils::normalizeStyle($this->propertyValue($block, 'font-style') ?: 'normal'),
+            'weight' => $weight,
+            'style' => $style,
             'unicode_range' => trim((string) ($this->propertyValue($block, 'unicode-range') ?: '')),
             'files' => $files,
             'provider' => ['type' => $this->source],
+            'is_variable' => $axes !== [],
+            'axes' => FontUtils::normalizeAxesMap($axes),
+            'variation_defaults' => FontUtils::normalizeVariationDefaults($variationDefaults, $axes),
         ];
     }
 
@@ -105,5 +163,22 @@ final class HostedCssParser
         $value = trim($value);
 
         return trim($value, "\"'");
+    }
+
+    private function inferDefaultWeightFromRange(string $min, string $max): string
+    {
+        $minimum = (int) $min;
+        $maximum = (int) $max;
+        $normalWeight = 400;
+
+        if ($normalWeight < $minimum) {
+            return (string) $minimum;
+        }
+
+        if ($normalWeight > $maximum) {
+            return (string) $maximum;
+        }
+
+        return (string) $normalWeight;
     }
 }

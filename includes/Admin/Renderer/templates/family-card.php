@@ -35,6 +35,9 @@
                                                 title="<?php echo esc_attr((string) ($badge['copy'] ?? '')); ?>"
                                             ><?php echo esc_html((string) ($badge['label'] ?? '')); ?></span>
                                         <?php endforeach; ?>
+                                        <span class="tasty-fonts-badge <?php echo esc_attr((string) ($fontTypeDescriptor['badge_class'] ?? '')); ?>">
+                                            <?php echo esc_html((string) ($fontTypeDescriptor['label'] ?? '')); ?>
+                                        </span>
                                         <?php if ($fontCategoryLabel !== ''): ?>
                                             <span class="tasty-fonts-badge"><?php echo esc_html($fontCategoryLabel); ?></span>
                                         <?php endif; ?>

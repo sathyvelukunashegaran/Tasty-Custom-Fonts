@@ -855,6 +855,39 @@ $tests['settings_repository_defaults_and_persists_optional_monospace_role_settin
     assertSameValue('monospace', $savedRoles['monospace_fallback'], 'Blank monospace fallback input should normalize back to the generic monospace fallback.');
 };
 
+$tests['settings_repository_defaults_and_persists_variable_font_feature_settings'] = static function (): void {
+    resetTestState();
+
+    $settings = new SettingsRepository();
+    $catalog = ['Inter Variable', 'Inter'];
+    $defaults = $settings->getSettings();
+    $defaultRoles = $settings->getRoles($catalog);
+
+    assertSameValue(false, $defaults['variable_fonts_enabled'], 'Variable font support should default to disabled.');
+    assertSameValue('', $defaultRoles['heading_weight'], 'Draft roles should default heading weight overrides to empty.');
+    assertSameValue('', $defaultRoles['body_weight'], 'Draft roles should default body weight overrides to empty.');
+    assertSameValue([], $defaultRoles['heading_axes'], 'Draft roles should default heading axis settings to an empty map.');
+    assertSameValue([], $defaultRoles['body_axes'], 'Draft roles should default body axis settings to an empty map.');
+
+    $savedSettings = $settings->saveSettings(['variable_fonts_enabled' => '1']);
+    $savedRoles = $settings->saveRoles(
+        [
+            'heading' => 'Inter Variable',
+            'body' => 'Inter',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'sans-serif',
+            'heading_axes' => ['WGHT' => '720', 'OPSZ' => '18'],
+            'body_axes' => ['WGHT' => '400'],
+        ],
+        $catalog
+    );
+
+    assertSameValue(true, $savedSettings['variable_fonts_enabled'], 'Variable font support should persist through settings saves.');
+    assertSameValue(['OPSZ' => '18', 'WGHT' => '720'], $savedRoles['heading_axes'], 'Role saves should persist normalized heading axis values.');
+    assertSameValue(['WGHT' => '400'], $savedRoles['body_axes'], 'Role saves should persist normalized body axis values.');
+    assertSameValue(true, $settings->saveSettings(['preview_sentence' => 'Still enabled'])['variable_fonts_enabled'], 'Saving unrelated settings should preserve the variable font feature flag.');
+};
+
 $tests['settings_repository_bootstraps_applied_roles_before_draft_changes'] = static function (): void {
     resetTestState();
 
@@ -1689,6 +1722,95 @@ $tests['runtime_service_outputs_primary_font_preloads_for_live_sitewide_roles'] 
     assertContainsValue('href="/wp-content/uploads/fonts/lora/Lora-400.woff2"', $output, 'Frontend preload output should include the primary body WOFF2 file.');
     assertContainsValue('type="font/woff2"', $output, 'Frontend preload output should declare the WOFF2 mime type.');
     assertContainsValue('crossorigin', $output, 'Frontend preload output should include crossorigin so the hint matches the font request mode.');
+};
+
+$tests['runtime_service_uses_saved_role_weight_overrides_for_primary_preloads'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-600.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-700.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('lora/Lora-400.woff2'), 'font-data');
+    $services['settings']->saveAppliedRoles(
+        [
+            'heading' => 'Inter',
+            'body' => 'Lora',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'serif',
+            'heading_weight' => '600',
+        ],
+        ['Inter', 'Lora']
+    );
+    $services['settings']->setAutoApplyRoles(true);
+    $services['settings']->saveSettings(['preload_primary_fonts' => '1']);
+
+    ob_start();
+    $services['runtime']->outputPreloadHints();
+    $output = (string) ob_get_clean();
+
+    assertContainsValue('href="/wp-content/uploads/fonts/inter/Inter-600.woff2"', $output, 'Frontend preload output should honor saved heading role weight overrides.');
+    assertNotContainsValue('href="/wp-content/uploads/fonts/inter/Inter-700.woff2"', $output, 'Frontend preload output should stop assuming the default bold heading face when a saved weight override exists.');
+};
+
+$tests['runtime_service_preloads_variable_faces_when_their_weight_axis_covers_role_targets'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('upload/inter-variable/Inter Variable-VariableFont.woff2'), 'font-data');
+    $services['imports']->saveProfile(
+        'Inter Variable',
+        'inter-variable',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [[
+                'family' => 'Inter Variable',
+                'slug' => 'inter-variable',
+                'source' => 'local',
+                'weight' => '450',
+                'style' => 'normal',
+                'is_variable' => true,
+                'axes' => [
+                    'WGHT' => ['min' => '300', 'default' => '450', 'max' => '700'],
+                ],
+                'variation_defaults' => ['WGHT' => '450'],
+                'files' => ['woff2' => 'upload/inter-variable/Inter Variable-VariableFont.woff2'],
+                'paths' => ['woff2' => 'upload/inter-variable/Inter Variable-VariableFont.woff2'],
+            ]],
+        ],
+        'published',
+        true
+    );
+    $services['settings']->saveAppliedRoles(
+        [
+            'heading' => 'Inter Variable',
+            'body' => 'Inter Variable',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'sans-serif',
+        ],
+        ['Inter Variable']
+    );
+    $services['settings']->setAutoApplyRoles(true);
+    $services['settings']->saveSettings([
+        'preload_primary_fonts' => '1',
+        'variable_fonts_enabled' => '1',
+    ]);
+
+    ob_start();
+    $services['runtime']->outputPreloadHints();
+    $output = (string) ob_get_clean();
+
+    assertContainsValue(
+        'href="/wp-content/uploads/fonts/upload/inter-variable/Inter%20Variable-VariableFont.woff2"',
+        $output,
+        'Frontend preload output should treat variable faces as valid matches when their WGHT axis covers the requested role weights.'
+    );
 };
 
 $tests['runtime_asset_planner_uses_category_aware_fallbacks_for_editor_font_families'] = static function (): void {

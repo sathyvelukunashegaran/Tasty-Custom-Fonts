@@ -101,7 +101,12 @@ final class GoogleImportService
         }
 
         $metadata = $this->client->getFamily($familyName);
-        $css = $this->client->fetchCss($familyName, $variantPlan['import']);
+        $css = $this->client->fetchCss(
+            $familyName,
+            $variantPlan['import'],
+            'swap',
+            is_array($metadata) ? $metadata : []
+        );
 
         if (is_wp_error($css)) {
             return $this->error($css->get_error_code(), $css->get_error_message());
@@ -274,6 +279,9 @@ final class GoogleImportService
                 'unicode_range' => (string) ($face['unicode_range'] ?? ''),
                 'files' => (array) ($face['files'] ?? []),
                 'provider' => $provider,
+                'is_variable' => !empty($face['is_variable']),
+                'axes' => (array) ($face['axes'] ?? []),
+                'variation_defaults' => (array) ($face['variation_defaults'] ?? []),
             ];
         }
 
@@ -433,6 +441,9 @@ final class GoogleImportService
             'unicode_range' => (string) ($face['unicode_range'] ?? ''),
             'files' => $relativeFiles,
             'provider' => $provider,
+            'is_variable' => !empty($face['is_variable']),
+            'axes' => (array) ($face['axes'] ?? []),
+            'variation_defaults' => (array) ($face['variation_defaults'] ?? []),
         ];
     }
 

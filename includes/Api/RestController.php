@@ -260,6 +260,9 @@ final class RestController
                 'heading_fallback' => 'sans-serif',
                 'body_fallback' => 'sans-serif',
                 'monospace_fallback' => 'monospace',
+                'heading_weight' => '',
+                'body_weight' => '',
+                'monospace_weight' => '',
             ] as $key => $default
         ) {
             if (!array_key_exists($key, $params)) {
@@ -267,6 +270,14 @@ final class RestController
             }
 
             $input[$key] = $this->getTextParam($request, $key, $default);
+        }
+
+        foreach (['heading_axes', 'body_axes', 'monospace_axes'] as $key) {
+            if (!array_key_exists($key, $params) || !is_array($params[$key])) {
+                continue;
+            }
+
+            $input[$key] = $params[$key];
         }
 
         return $input;

@@ -273,6 +273,9 @@ final class BunnyImportService
                 'unicode_range' => (string) ($face['unicode_range'] ?? ''),
                 'files' => (array) ($face['files'] ?? []),
                 'provider' => $provider,
+                'is_variable' => !empty($face['is_variable']),
+                'axes' => (array) ($face['axes'] ?? []),
+                'variation_defaults' => (array) ($face['variation_defaults'] ?? []),
             ];
         }
 
@@ -430,6 +433,9 @@ final class BunnyImportService
             'unicode_range' => (string) ($face['unicode_range'] ?? ''),
             'files' => $relativeFiles,
             'provider' => $provider,
+            'is_variable' => !empty($face['is_variable']),
+            'axes' => (array) ($face['axes'] ?? []),
+            'variation_defaults' => (array) ($face['variation_defaults'] ?? []),
         ];
     }
 

@@ -26,16 +26,28 @@ final class FamilyCardRenderer extends AbstractSectionRenderer
         }
 
         $faceSummaryLabels = $this->buildFamilyFaceSummaryLabels((array) ($family['faces'] ?? []));
+        $axisSummaryLabels = $this->buildVariationAxisSummaryLabels((array) ($family['faces'] ?? []));
+        $fontTypeDescriptor = $this->buildFontTypeDescriptor($family);
         ?>
         <article class="tasty-fonts-adobe-family-card">
             <div class="tasty-fonts-adobe-family-head">
                 <strong><?php echo esc_html($familyName); ?></strong>
                 <span class="tasty-fonts-badge"><?php esc_html_e('Adobe', 'tasty-fonts'); ?></span>
+                <span class="tasty-fonts-badge <?php echo esc_attr((string) ($fontTypeDescriptor['badge_class'] ?? '')); ?>">
+                    <?php echo esc_html((string) ($fontTypeDescriptor['label'] ?? '')); ?>
+                </span>
             </div>
             <?php if ($faceSummaryLabels !== []): ?>
                 <div class="tasty-fonts-face-pills">
                     <?php foreach ($faceSummaryLabels as $label): ?>
                         <span class="tasty-fonts-face-pill"><?php echo esc_html($label); ?></span>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+            <?php if ($axisSummaryLabels !== []): ?>
+                <div class="tasty-fonts-face-pills">
+                    <?php foreach ($axisSummaryLabels as $label): ?>
+                        <span class="tasty-fonts-face-pill is-muted"><?php echo esc_html($label); ?></span>
                     <?php endforeach; ?>
                 </div>
             <?php endif; ?>
@@ -73,6 +85,7 @@ final class FamilyCardRenderer extends AbstractSectionRenderer
         $sourceTokens = array_values(array_unique(array_filter((array) ($family['delivery_filter_tokens'] ?? []), 'strlen')));
         $categoryTokens = array_values(array_unique(array_filter((array) ($family['font_category_tokens'] ?? []), 'strlen')));
         $fontCategoryLabel = $this->formatLibraryCategoryLabel((string) ($family['font_category'] ?? ''));
+        $fontTypeDescriptor = $this->buildFontTypeDescriptor($family);
         $deleteBlockedMessage = $this->buildDeleteBlockedMessage($familyName, $assignedRoleKeys);
         $deleteBlockedMessages = [];
         $deleteBlockedSelections = [
@@ -188,6 +201,7 @@ final class FamilyCardRenderer extends AbstractSectionRenderer
         $profileDeleteBlocked = $profileIsActive && $publishState === 'role_active'
             ? __('Switch the live delivery or remove this family from the active roles before deleting this delivery profile.', 'tasty-fonts')
             : '';
+        $fontTypeDescriptor = $this->buildFontTypeDescriptor($profile);
         ?>
         <article class="tasty-fonts-detail-card tasty-fonts-detail-card--delivery">
             <div class="tasty-fonts-detail-card-head">
@@ -199,6 +213,9 @@ final class FamilyCardRenderer extends AbstractSectionRenderer
                         <?php else: ?>
                             <span class="tasty-fonts-badge"><?php esc_html_e('Saved', 'tasty-fonts'); ?></span>
                         <?php endif; ?>
+                        <span class="tasty-fonts-badge <?php echo esc_attr((string) ($fontTypeDescriptor['badge_class'] ?? '')); ?>">
+                            <?php echo esc_html((string) ($fontTypeDescriptor['label'] ?? '')); ?>
+                        </span>
                     </div>
                     <p class="tasty-fonts-detail-card-summary"><?php echo esc_html($this->buildProfileRequestSummary($profile)); ?></p>
                 </div>
@@ -262,6 +279,7 @@ final class FamilyCardRenderer extends AbstractSectionRenderer
         $faceSource = (string) ($face['source'] ?? 'local');
         $faceUnicodeRange = (string) ($face['unicode_range'] ?? '');
         $faceStorageSummary = $this->buildFaceStorageSummary($face);
+        $fontTypeDescriptor = $this->buildFontTypeDescriptor($face);
         $canDeleteVariant = $this->canDeleteFaceVariant($activeDelivery);
         $deleteVariantBlockedMessage = ($faceCount <= 1 && $assignedRoleKeys !== [])
             ? $this->buildDeleteLastVariantBlockedMessage($familyName, $assignedRoleKeys)
@@ -277,6 +295,9 @@ final class FamilyCardRenderer extends AbstractSectionRenderer
                     <div class="tasty-fonts-detail-card-title-row">
                         <h5 class="tasty-fonts-detail-card-title"><?php echo esc_html($faceTitle); ?></h5>
                         <span class="tasty-fonts-badge"><?php echo esc_html($this->buildFamilySourceLabel($faceSource)); ?></span>
+                        <span class="tasty-fonts-badge <?php echo esc_attr((string) ($fontTypeDescriptor['badge_class'] ?? '')); ?>">
+                            <?php echo esc_html((string) ($fontTypeDescriptor['label'] ?? '')); ?>
+                        </span>
                     </div>
                     <p class="tasty-fonts-detail-card-summary"><?php echo esc_html($faceStorageSummary); ?></p>
                 </div>

@@ -66,6 +66,8 @@ final class RuntimeAssetPlanner
     public function getEditorFontFamilies(): array
     {
         $fontFamilies = [];
+        $settings = $this->settings->getSettings();
+        $variableFontsEnabled = !empty($settings['variable_fonts_enabled']);
 
         foreach ($this->getRuntimeFamilies() as $family) {
             $familyName = (string) ($family['family'] ?? '');
@@ -82,6 +84,12 @@ final class RuntimeAssetPlanner
                     $this->resolveFamilyFallback($family)
                 ),
             ];
+
+            $fontFace = $this->buildEditorFontFaceList($family, $variableFontsEnabled);
+
+            if ($fontFace !== []) {
+                $fontFamilies[$familyName]['fontFace'] = $fontFace;
+            }
         }
 
         return array_values($fontFamilies);
@@ -101,8 +109,8 @@ final class RuntimeAssetPlanner
 
         foreach (
             [
-                ['family' => (string) ($roles['heading'] ?? ''), 'weight' => 700],
-                ['family' => (string) ($roles['body'] ?? ''), 'weight' => 400],
+                ['family' => (string) ($roles['heading'] ?? ''), 'weight' => $this->resolvePrimaryRoleWeight($roles, 'heading', 700)],
+                ['family' => (string) ($roles['body'] ?? ''), 'weight' => $this->resolvePrimaryRoleWeight($roles, 'body', 400)],
             ] as $target
         ) {
             $face = $this->findBestPreloadFace($catalog, $target['family'], (int) $target['weight']);
@@ -265,7 +273,12 @@ final class RuntimeAssetPlanner
         }
 
         $url = match ($provider . ':' . $type) {
-            'google:cdn' => $this->google->buildCssUrl($familyName, (array) ($delivery['variants'] ?? []), $this->effectiveFontDisplay($familyName, $displayOverride)),
+            'google:cdn' => $this->google->buildCssUrl(
+                $familyName,
+                (array) ($delivery['variants'] ?? []),
+                $this->effectiveFontDisplay($familyName, $displayOverride),
+                ['faces' => (array) ($delivery['faces'] ?? [])]
+            ),
             'bunny:cdn' => $this->bunny->buildCssUrl($familyName, (array) ($delivery['variants'] ?? []), $this->effectiveFontDisplay($familyName, $displayOverride)),
             'adobe:adobe_hosted' => $this->adobeStylesheetUrl($delivery),
             default => '',
@@ -305,6 +318,95 @@ final class RuntimeAssetPlanner
     private function isSelfHostedDelivery(array $delivery): bool
     {
         return strtolower(trim((string) ($delivery['type'] ?? ''))) === 'self_hosted';
+    }
+
+    private function buildEditorFontFaceList(array $family, bool $variableFontsEnabled): array
+    {
+        $delivery = is_array($family['active_delivery'] ?? null) ? $family['active_delivery'] : [];
+
+        if (!$this->isSelfHostedDelivery($delivery)) {
+            return [];
+        }
+
+        $faces = [];
+
+        foreach ((array) ($delivery['faces'] ?? []) as $face) {
+            if (!is_array($face)) {
+                continue;
+            }
+
+            if (!$variableFontsEnabled && FontUtils::faceIsVariable($face)) {
+                continue;
+            }
+
+            $src = $this->editorFontFaceSources($face);
+
+            if ($src === []) {
+                continue;
+            }
+
+            $entry = [
+                'fontFamily' => '"' . FontUtils::escapeFontFamily((string) ($family['family'] ?? '')) . '"',
+                'fontStyle' => FontUtils::normalizeStyle((string) ($face['style'] ?? 'normal')),
+                'fontWeight' => $this->editorFontFaceWeight((string) ($face['weight'] ?? '400'), (array) ($face['axes'] ?? [])),
+                'src' => $src,
+            ];
+
+            $unicodeRange = trim((string) ($face['unicode_range'] ?? ''));
+
+            if ($unicodeRange !== '') {
+                $entry['unicodeRange'] = $unicodeRange;
+            }
+
+            if ($variableFontsEnabled) {
+                $variationSettings = FontUtils::buildFontVariationSettings(
+                    FontUtils::normalizeVariationDefaults($face['variation_defaults'] ?? [], $face['axes'] ?? [])
+                );
+
+                if ($variationSettings !== 'normal') {
+                    $entry['fontVariationSettings'] = $variationSettings;
+                }
+            }
+
+            $faces[] = $entry;
+        }
+
+        return $faces;
+    }
+
+    private function editorFontFaceSources(array $face): array
+    {
+        $sources = [];
+        $files = is_array($face['files'] ?? null) ? $face['files'] : [];
+
+        foreach (['woff2', 'woff', 'ttf', 'otf'] as $format) {
+            $value = $files[$format] ?? null;
+
+            if (!is_string($value) || trim($value) === '') {
+                continue;
+            }
+
+            $sources[] = $value;
+        }
+
+        return $sources;
+    }
+
+    private function editorFontFaceWeight(string $weight, array $axes = []): string
+    {
+        $normalizedAxes = FontUtils::normalizeAxesMap($axes);
+
+        if (isset($normalizedAxes['WGHT']['min'], $normalizedAxes['WGHT']['max'])) {
+            return (string) $normalizedAxes['WGHT']['min'] . ' ' . (string) $normalizedAxes['WGHT']['max'];
+        }
+
+        $normalizedWeight = FontUtils::normalizeWeight($weight);
+
+        if (preg_match('/^(\d{1,4})\.\.(\d{1,4})$/', $normalizedWeight, $matches) === 1) {
+            return $matches[1] . ' ' . $matches[2];
+        }
+
+        return $normalizedWeight;
     }
 
     private function findBestPreloadFace(array $catalog, string $familyName, int $targetWeight): ?array
@@ -373,6 +475,28 @@ final class RuntimeAssetPlanner
         return $url;
     }
 
+    private function resolvePrimaryRoleWeight(array $roles, string $roleKey, int $default): int
+    {
+        $axes = FontUtils::normalizeVariationDefaults($roles[$roleKey . '_axes'] ?? []);
+        $axisWeight = trim((string) ($axes['WGHT'] ?? ''));
+
+        if (preg_match('/^\d{1,4}$/', $axisWeight) === 1) {
+            return (int) $axisWeight;
+        }
+
+        $weight = trim((string) ($roles[$roleKey . '_weight'] ?? ''));
+
+        if ($weight === 'normal') {
+            return 400;
+        }
+
+        if ($weight === 'bold') {
+            return 700;
+        }
+
+        return preg_match('/^\d{1,4}$/', $weight) === 1 ? (int) $weight : $default;
+    }
+
     private function isSameOriginFontUrl(string $url): bool
     {
         $host = (string) (parse_url($url, PHP_URL_HOST) ?: '');
@@ -394,9 +518,14 @@ final class RuntimeAssetPlanner
     private function preloadFaceScore(array $face, int $targetWeight): array
     {
         $weight = FontUtils::normalizeWeight((string) ($face['weight'] ?? '400'));
-        $isVariable = str_contains($weight, '..');
-        $distance = $this->weightDistanceFromTarget($weight, $targetWeight);
-        $referenceWeight = $this->weightReferenceValue($weight, $targetWeight);
+        $weightRange = $this->weightRangeForFace($face);
+        $isVariable = $weightRange !== null;
+        $distance = $weightRange !== null
+            ? $this->weightDistanceFromRange($weightRange[0], $weightRange[1], $targetWeight)
+            : $this->weightDistanceFromTarget($weight, $targetWeight);
+        $referenceWeight = $weightRange !== null
+            ? max($weightRange[0], min($targetWeight, $weightRange[1]))
+            : $this->weightReferenceValue($weight, $targetWeight);
 
         return [$distance, $isVariable ? 1 : 0, $referenceWeight];
     }
@@ -444,5 +573,35 @@ final class RuntimeAssetPlanner
         }
 
         return FontUtils::weightSortValue($weight);
+    }
+
+    private function weightRangeForFace(array $face): ?array
+    {
+        $axes = FontUtils::normalizeAxesMap($face['axes'] ?? []);
+
+        if (isset($axes['WGHT']['min'], $axes['WGHT']['max'])) {
+            return [(int) $axes['WGHT']['min'], (int) $axes['WGHT']['max']];
+        }
+
+        $weight = FontUtils::normalizeWeight((string) ($face['weight'] ?? '400'));
+
+        if (preg_match('/^(\d{1,4})\.\.(\d{1,4})$/', $weight, $matches) === 1) {
+            return [(int) $matches[1], (int) $matches[2]];
+        }
+
+        return null;
+    }
+
+    private function weightDistanceFromRange(int $start, int $end, int $targetWeight): int
+    {
+        if ($targetWeight < $start) {
+            return $start - $targetWeight;
+        }
+
+        if ($targetWeight > $end) {
+            return $targetWeight - $end;
+        }
+
+        return 0;
     }
 }

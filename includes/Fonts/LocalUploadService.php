@@ -6,6 +6,7 @@ namespace TastyFonts\Fonts;
 
 defined('ABSPATH') || exit;
 
+use TastyFonts\Repository\ImportRepository;
 use TastyFonts\Repository\LogRepository;
 use TastyFonts\Repository\SettingsRepository;
 use TastyFonts\Support\FontUtils;
@@ -33,6 +34,7 @@ final class LocalUploadService
     public function __construct(
         private readonly Storage $storage,
         private readonly CatalogService $catalog,
+        private readonly ImportRepository $imports,
         private readonly AssetService $assets,
         private readonly SettingsRepository $settings,
         private readonly LogRepository $log,
@@ -66,6 +68,7 @@ final class LocalUploadService
         $existingKeys = $this->buildExistingVariantFormatKeys();
         $normalizedRows = [];
         $results = [];
+        $uploadedFacesByFamily = [];
 
         foreach ($rows as $index => $row) {
             $normalizedRows[] = $this->normalizeRow($row, is_int($index) ? $index : count($normalizedRows), $familyLookup);
@@ -91,7 +94,10 @@ final class LocalUploadService
             $familyName = (string) ($row['family'] ?? '');
             $weight = (string) ($row['weight'] ?? '400');
             $style = (string) ($row['style'] ?? 'normal');
+            $isVariable = !empty($row['is_variable']);
             $fallback = (string) ($row['fallback'] ?? 'sans-serif');
+            $axes = is_array($row['axes'] ?? null) ? (array) $row['axes'] : [];
+            $variationDefaults = is_array($row['variation_defaults'] ?? null) ? (array) $row['variation_defaults'] : [];
             $file = is_array($row['file'] ?? null) ? (array) $row['file'] : [];
 
             if (isset($conflictedFamilySlugs[$familySlug])) {
@@ -113,7 +119,7 @@ final class LocalUploadService
             }
 
             $extension = (string) $validatedFile['extension'];
-            $duplicateKey = $this->buildDuplicateKey($familySlug, $weight, $style, $extension);
+            $duplicateKey = $this->buildDuplicateKey($familySlug, $weight, $style, $extension, $isVariable);
 
             if (isset($existingKeys[$duplicateKey]) || isset($batchKeys[$duplicateKey])) {
                 $results[] = $this->buildRowResult(
@@ -131,7 +137,7 @@ final class LocalUploadService
                 continue;
             }
 
-            $write = $this->writeUploadedFontFile($familyName, $familySlug, $weight, $style, $validatedFile);
+            $write = $this->writeUploadedFontFile($familyName, $familySlug, $weight, $style, $validatedFile, $isVariable);
 
             if (is_wp_error($write)) {
                 $results[] = $this->buildRowResult($index, 'error', $write->get_error_message());
@@ -141,6 +147,24 @@ final class LocalUploadService
 
             $batchKeys[$duplicateKey] = true;
             $importedFamilies[$familyName] = $fallback;
+            $uploadedFacesByFamily[$familyName][] = [
+                'family' => $familyName,
+                'slug' => $familySlug,
+                'source' => 'local',
+                'weight' => $weight,
+                'style' => $style,
+                'unicode_range' => '',
+                'files' => [
+                    $extension => (string) ($write['relative_path'] ?? ''),
+                ],
+                'paths' => [
+                    $extension => (string) ($write['relative_path'] ?? ''),
+                ],
+                'provider' => ['type' => 'local'],
+                'is_variable' => $isVariable,
+                'axes' => $axes,
+                'variation_defaults' => $variationDefaults,
+            ];
             $results[] = $this->buildRowResult(
                 $index,
                 'imported',
@@ -158,6 +182,11 @@ final class LocalUploadService
         if ($importedFamilies !== []) {
             foreach ($importedFamilies as $familyName => $fallback) {
                 $this->settings->saveFamilyFallback((string) $familyName, (string) $fallback);
+                $this->saveLocalProfile(
+                    (string) $familyName,
+                    FontUtils::slugify((string) $familyName),
+                    $uploadedFacesByFamily[$familyName] ?? []
+                );
             }
 
             $this->assets->refreshGeneratedAssets();
@@ -186,26 +215,35 @@ final class LocalUploadService
         $familyInput = preg_replace('/\s+/', ' ', trim(wp_strip_all_tags((string) ($row['family'] ?? '')))) ?? '';
         $familySlug = FontUtils::slugify($familyInput);
         $familyName = $familyLookup[$familySlug] ?? $familyInput;
-        $weight = trim((string) ($row['weight'] ?? '400'));
+        $rawWeight = trim((string) ($row['weight'] ?? '400'));
+        $weight = FontUtils::normalizeWeight($rawWeight);
         $style = FontUtils::normalizeStyle((string) ($row['style'] ?? 'normal'));
+        $isVariable = !empty($row['is_variable']);
         $fallback = FontUtils::sanitizeFallback((string) ($row['fallback'] ?? 'sans-serif'));
+        $axes = FontUtils::normalizeAxesMap($row['axes'] ?? []);
+        $variationDefaults = FontUtils::normalizeVariationDefaults($row['variation_defaults'] ?? [], $axes);
         $file = is_array($row['file'] ?? null) ? (array) $row['file'] : [];
         $error = '';
 
         if ($familyInput === '') {
             $error = __('Enter a font family name for each uploaded row.', 'tasty-fonts');
-        } elseif (!in_array($weight, self::ALLOWED_WEIGHTS, true)) {
+        } elseif (!$isVariable && !in_array($rawWeight, self::ALLOWED_WEIGHTS, true)) {
             $error = __('Choose a valid font weight before uploading.', 'tasty-fonts');
         } elseif (!in_array($style, self::ALLOWED_STYLES, true)) {
             $error = __('Choose a valid font style before uploading.', 'tasty-fonts');
+        } elseif ($isVariable && $axes === []) {
+            $error = __('Add at least one axis for each variable font upload.', 'tasty-fonts');
         }
 
         return [
             'index' => $index,
             'family' => $familyName,
             'family_slug' => $familySlug,
-            'weight' => $weight,
+            'weight' => $isVariable ? $this->variableWeightFromAxes($weight, $axes) : $weight,
             'style' => $style,
+            'is_variable' => $isVariable,
+            'axes' => $axes,
+            'variation_defaults' => $variationDefaults,
             'fallback' => $fallback,
             'file' => $file,
             'error' => $error,
@@ -358,8 +396,9 @@ final class LocalUploadService
         string $familySlug,
         string $weight,
         string $style,
-        array $validatedFile
-    ): bool|WP_Error {
+        array $validatedFile,
+        bool $isVariable = false
+    ): array|WP_Error {
         $root = $this->storage->getUploadRoot();
 
         if (!$root) {
@@ -380,7 +419,9 @@ final class LocalUploadService
 
         $extension = (string) ($validatedFile['extension'] ?? '');
         $tmpName = (string) ($validatedFile['tmp_name'] ?? '');
-        $filename = FontUtils::buildStaticFontFilename($familyName, $weight, $style, $extension);
+        $filename = $isVariable
+            ? FontUtils::buildVariableFontFilename($familyName, $style, $extension)
+            : FontUtils::buildStaticFontFilename($familyName, $weight, $style, $extension);
         $targetPath = wp_normalize_path(trailingslashit($familyDirectory) . $filename);
 
         if (file_exists($targetPath)) {
@@ -397,7 +438,33 @@ final class LocalUploadService
             );
         }
 
-        return true;
+        return [
+            'path' => $targetPath,
+            'relative_path' => $this->storage->relativePath($targetPath),
+        ];
+    }
+
+    private function variableWeightFromAxes(string $fallbackWeight, array $axes): string
+    {
+        $normalizedAxes = FontUtils::normalizeAxesMap($axes);
+        $weightAxis = is_array($normalizedAxes['WGHT'] ?? null) ? $normalizedAxes['WGHT'] : null;
+
+        if (!is_array($weightAxis)) {
+            return $fallbackWeight !== '' ? $fallbackWeight : '400';
+        }
+
+        $min = (string) ($weightAxis['min'] ?? '');
+        $max = (string) ($weightAxis['max'] ?? '');
+
+        if ($min === '' || $max === '') {
+            return $fallbackWeight !== '' ? $fallbackWeight : '400';
+        }
+
+        if ($min === $max) {
+            return FontUtils::normalizeWeight($min);
+        }
+
+        return FontUtils::normalizeWeight($min . '..' . $max);
     }
 
     private function storageErrorMessage(string $fallback): string
@@ -437,11 +504,12 @@ final class LocalUploadService
             }
 
             foreach ((array) ($family['faces'] ?? []) as $face) {
-                $weight = (string) ($face['weight'] ?? '400');
+                    $weight = (string) ($face['weight'] ?? '400');
                 $style = (string) ($face['style'] ?? 'normal');
+                $isVariable = !empty($face['is_variable']);
 
                 foreach (array_keys((array) ($face['files'] ?? [])) as $format) {
-                    $keys[$this->buildDuplicateKey($familySlug, $weight, $style, strtolower((string) $format))] = true;
+                    $keys[$this->buildDuplicateKey($familySlug, $weight, $style, strtolower((string) $format), $isVariable)] = true;
                 }
             }
         }
@@ -449,12 +517,13 @@ final class LocalUploadService
         return $keys;
     }
 
-    private function buildDuplicateKey(string $familySlug, string $weight, string $style, string $extension): string
+    private function buildDuplicateKey(string $familySlug, string $weight, string $style, string $extension, bool $isVariable = false): string
     {
         return implode(
             '|',
             [
                 $familySlug,
+                $isVariable ? 'variable' : 'static',
                 FontUtils::normalizeWeight($weight),
                 FontUtils::normalizeStyle($style),
                 strtolower($extension),
@@ -493,5 +562,39 @@ final class LocalUploadService
     private function error(string $code, string $message): WP_Error
     {
         return new WP_Error($code, $message);
+    }
+
+    private function saveLocalProfile(string $familyName, string $familySlug, array $newFaces): void
+    {
+        if ($newFaces === []) {
+            return;
+        }
+
+        $existingFamily = $this->imports->getFamily($familySlug);
+        $profileId = FontUtils::slugify('local-self_hosted');
+        $existingProfile = is_array($existingFamily['delivery_profiles'][$profileId] ?? null)
+            ? (array) $existingFamily['delivery_profiles'][$profileId]
+            : [];
+        $existingFaces = is_array($existingProfile['faces'] ?? null) ? (array) $existingProfile['faces'] : [];
+        $mergedFaces = HostedImportSupport::mergeManifestFaces($existingFaces, $newFaces);
+
+        $this->imports->saveProfile(
+            $familyName,
+            $familySlug,
+            [
+                'id' => $profileId,
+                'provider' => 'local',
+                'type' => 'self_hosted',
+                'label' => __('Self-hosted', 'tasty-fonts'),
+                'variants' => HostedImportSupport::variantsFromFaces($mergedFaces),
+                'faces' => $mergedFaces,
+                'meta' => [
+                    'origin' => 'local_upload',
+                    'imported_at' => current_time('mysql'),
+                ],
+            ],
+            $existingFamily === null ? 'published' : (string) ($existingFamily['publish_state'] ?? 'published'),
+            $existingFamily === null
+        );
     }
 }

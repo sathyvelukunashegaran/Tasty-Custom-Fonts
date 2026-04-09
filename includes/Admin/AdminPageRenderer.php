@@ -224,10 +224,10 @@ final class AdminPageRenderer extends AbstractSectionRenderer
         );
     }
 
-    protected function renderCodePreviewScene(string $previewText, array $roles, bool $monospaceRoleEnabled): void
+    protected function renderCodePreviewScene(string $previewText, array $roles, bool $monospaceRoleEnabled, array $familyLabels = []): void
     {
         $this->syncRendererState($this->previewRenderer);
-        $this->previewRenderer->renderCodePreviewScene($previewText, $roles, $monospaceRoleEnabled);
+        $this->previewRenderer->renderCodePreviewScene($previewText, $roles, $monospaceRoleEnabled, $familyLabels);
     }
 
     protected function renderCodeEditor(array $panel, array $options = []): void

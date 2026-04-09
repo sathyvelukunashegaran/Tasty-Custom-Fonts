@@ -6,6 +6,7 @@ namespace TastyFonts\Admin\Renderer;
 
 defined('ABSPATH') || exit;
 
+use TastyFonts\Admin\FontTypeHelper;
 use TastyFonts\Support\FontUtils;
 
 trait SharedRenderHelpers
@@ -187,6 +188,16 @@ trait SharedRenderHelpers
             'uncategorized' => __('Uncategorized', 'tasty-fonts'),
             default => '',
         };
+    }
+
+    public function buildFontTypeDescriptor(array $entry, string $context = 'library'): array
+    {
+        return FontTypeHelper::describeEntry($entry, $context);
+    }
+
+    public function buildFontTypeOptionLabel(string $familyName, ?array $entry = null, string $context = 'library'): string
+    {
+        return FontTypeHelper::buildSelectorOptionLabel($familyName, $entry, $context);
     }
 
     public function renderPassiveHelpAttributes(string $copy): void

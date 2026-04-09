@@ -64,7 +64,7 @@
                                             aria-labelledby="<?php echo esc_attr($buttonId); ?>"
                                             <?php echo !empty($panel['active']) ? '' : 'hidden'; ?>
                                         >
-                                            <?php $this->renderPreviewScene((string) $panel['key'], $previewText, $previewRoles, $monospaceRoleEnabled); ?>
+                                            <?php $this->renderPreviewScene((string) $panel['key'], $previewText, $previewRoles, $monospaceRoleEnabled, $availableFamilyLabels); ?>
                                         </section>
                                     <?php endforeach; ?>
 
@@ -112,10 +112,10 @@
                                             </div>
                                         </div>
                                         <div class="tasty-fonts-preview-tray-grid">
-                                            <?php $this->renderPreviewRolePicker('heading', __('Heading preview font', 'tasty-fonts'), $availableFamilies, $previewRoles, $roles, true); ?>
-                                            <?php $this->renderPreviewRolePicker('body', __('Body preview font', 'tasty-fonts'), $availableFamilies, $previewRoles, $roles, true); ?>
+                                            <?php $this->renderPreviewRolePicker('heading', __('Heading preview font', 'tasty-fonts'), $availableFamilyOptions, $previewRoles, $roles, true); ?>
+                                            <?php $this->renderPreviewRolePicker('body', __('Body preview font', 'tasty-fonts'), $availableFamilyOptions, $previewRoles, $roles, true); ?>
                                             <?php if ($monospaceRoleEnabled): ?>
-                                                <?php $this->renderPreviewRolePicker('monospace', __('Monospace preview font', 'tasty-fonts'), $availableFamilies, $previewRoles, $roles, true); ?>
+                                                <?php $this->renderPreviewRolePicker('monospace', __('Monospace preview font', 'tasty-fonts'), $availableFamilyOptions, $previewRoles, $roles, true); ?>
                                             <?php endif; ?>
                                         </div>
                                     </div>

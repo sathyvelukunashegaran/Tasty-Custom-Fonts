@@ -176,6 +176,159 @@ final class FontUtils
         return '400';
     }
 
+    public static function normalizeAxisTag(string $tag): string
+    {
+        $tag = strtoupper(trim($tag));
+
+        if (preg_match('/^[A-Z0-9]{4}$/', $tag) === 1) {
+            return $tag;
+        }
+
+        return '';
+    }
+
+    public static function normalizeAxisValue(mixed $value): string
+    {
+        if (!is_scalar($value) && $value !== null) {
+            return '';
+        }
+
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        return preg_match('/^-?\d+(?:\.\d+)?$/', $value) === 1 ? $value : '';
+    }
+
+    public static function normalizeAxesMap(mixed $axes): array
+    {
+        if (!is_array($axes)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($axes as $tag => $definition) {
+            $normalizedTag = self::normalizeAxisTag((string) $tag);
+
+            if ($normalizedTag === '' || !is_array($definition)) {
+                continue;
+            }
+
+            $min = self::normalizeAxisValue($definition['min'] ?? '');
+            $default = self::normalizeAxisValue($definition['default'] ?? '');
+            $max = self::normalizeAxisValue($definition['max'] ?? '');
+
+            if ($min === '' && $default === '' && $max === '') {
+                continue;
+            }
+
+            if ($default === '') {
+                $default = $min !== '' ? $min : $max;
+            }
+
+            if ($min === '') {
+                $min = $default;
+            }
+
+            if ($max === '') {
+                $max = $default;
+            }
+
+            if ($min === '' || $default === '' || $max === '') {
+                continue;
+            }
+
+            $minValue = (float) $min;
+            $defaultValue = (float) $default;
+            $maxValue = (float) $max;
+
+            if ($minValue > $maxValue || $defaultValue < $minValue || $defaultValue > $maxValue) {
+                continue;
+            }
+
+            $normalized[$normalizedTag] = [
+                'min' => $min,
+                'default' => $default,
+                'max' => $max,
+            ];
+        }
+
+        ksort($normalized, SORT_STRING);
+
+        return $normalized;
+    }
+
+    public static function normalizeVariationDefaults(mixed $defaults, array $axes = []): array
+    {
+        if (!is_array($defaults)) {
+            $defaults = [];
+        }
+
+        $normalized = [];
+
+        foreach ($defaults as $tag => $value) {
+            $normalizedTag = self::normalizeAxisTag((string) $tag);
+            $normalizedValue = self::normalizeAxisValue($value);
+
+            if ($normalizedTag === '' || $normalizedValue === '') {
+                continue;
+            }
+
+            $normalized[$normalizedTag] = $normalizedValue;
+        }
+
+        foreach (self::normalizeAxesMap($axes) as $tag => $definition) {
+            if (!isset($normalized[$tag]) && isset($definition['default'])) {
+                $normalized[$tag] = (string) $definition['default'];
+            }
+        }
+
+        ksort($normalized, SORT_STRING);
+
+        return $normalized;
+    }
+
+    public static function buildFontVariationSettings(array $settings): string
+    {
+        $normalized = self::normalizeVariationDefaults($settings);
+
+        if ($normalized === []) {
+            return 'normal';
+        }
+
+        $parts = [];
+
+        foreach ($normalized as $tag => $value) {
+            $parts[] = '"' . self::cssAxisTag($tag) . '" ' . $value;
+        }
+
+        return implode(', ', $parts);
+    }
+
+    public static function cssAxisTag(string $tag): string
+    {
+        return match (self::normalizeAxisTag($tag)) {
+            'WGHT' => 'wght',
+            'WDTH' => 'wdth',
+            'SLNT' => 'slnt',
+            'ITAL' => 'ital',
+            'OPSZ' => 'opsz',
+            default => self::normalizeAxisTag($tag),
+        };
+    }
+
+    public static function faceIsVariable(array $face): bool
+    {
+        if (!empty($face['is_variable'])) {
+            return true;
+        }
+
+        return self::normalizeAxesMap($face['axes'] ?? []) !== [];
+    }
+
     public static function weightNameSlug(string|int $weight): string
     {
         return match (self::normalizeWeight($weight)) {
@@ -286,6 +439,23 @@ final class FontUtils
         return implode('-', $segments) . '.' . $safeExtension;
     }
 
+    public static function buildVariableFontFilename(string $family, string $style, string $extension): string
+    {
+        $family = preg_replace('/\s+/', ' ', trim($family)) ?? '';
+        $family = preg_replace('/[\/\\\\:\*\?"<>\|]+/', ' ', $family) ?? '';
+        $family = trim($family, " .-\t\n\r\0\x0B");
+        $family = $family !== '' ? $family : 'Font';
+
+        $segments = [$family, 'VariableFont'];
+        $normalizedStyle = self::normalizeStyle($style);
+
+        if ($normalizedStyle !== 'normal') {
+            $segments[] = $normalizedStyle;
+        }
+
+        return implode('-', $segments) . '.' . strtolower(trim($extension));
+    }
+
     public static function googleVariantToAxis(string $variant): ?array
     {
         $variant = strtolower(trim($variant));
@@ -310,7 +480,69 @@ final class FontUtils
             return ['style' => 'normal', 'weight' => $matches[1] . '..' . $matches[2]];
         }
 
+        if (preg_match('/^([1-9]00)\.\.([1-9]00)italic$/', $variant, $matches) === 1) {
+            return ['style' => 'italic', 'weight' => $matches[1] . '..' . $matches[2]];
+        }
+
         return null;
+    }
+
+    public static function normalizeHostedAxisList(array $axes): array
+    {
+        $normalized = [];
+
+        foreach ($axes as $axis) {
+            if (!is_array($axis)) {
+                continue;
+            }
+
+            $tag = self::normalizeAxisTag((string) ($axis['tag'] ?? ''));
+            $min = self::normalizeAxisValue($axis['start'] ?? $axis['min'] ?? '');
+            $max = self::normalizeAxisValue($axis['end'] ?? $axis['max'] ?? '');
+            $default = self::normalizeAxisValue($axis['default'] ?? '');
+
+            if ($tag === '') {
+                continue;
+            }
+
+            if ($default === '') {
+                if ($tag === 'WGHT') {
+                    $default = self::inferDefaultAxisValue($min, $max, '400');
+                } elseif ($tag === 'WDTH') {
+                    $default = self::inferDefaultAxisValue($min, $max, '100');
+                } else {
+                    $default = $min !== '' ? $min : $max;
+                }
+            }
+
+            $normalized[$tag] = [
+                'min' => $min !== '' ? $min : $default,
+                'default' => $default,
+                'max' => $max !== '' ? $max : $default,
+            ];
+        }
+
+        return self::normalizeAxesMap($normalized);
+    }
+
+    private static function inferDefaultAxisValue(string $min, string $max, string $preferred): string
+    {
+        if ($preferred !== '') {
+            $preferredValue = (float) $preferred;
+
+            if (
+                ($min === '' || $preferredValue >= (float) $min)
+                && ($max === '' || $preferredValue <= (float) $max)
+            ) {
+                return $preferred;
+            }
+        }
+
+        if ($min !== '') {
+            return $min;
+        }
+
+        return $max;
     }
 
     public static function normalizeVariantTokens(array $variants): array

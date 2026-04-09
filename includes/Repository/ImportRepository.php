@@ -438,6 +438,12 @@ final class ImportRepository
                 'files' => $this->normalizeStringMap($files),
                 'paths' => $this->normalizeStringMap($paths),
                 'provider' => is_array($face['provider'] ?? null) ? $face['provider'] : [],
+                'is_variable' => !empty($face['is_variable']) || FontUtils::normalizeAxesMap($face['axes'] ?? []) !== [],
+                'axes' => FontUtils::normalizeAxesMap($face['axes'] ?? []),
+                'variation_defaults' => FontUtils::normalizeVariationDefaults(
+                    $face['variation_defaults'] ?? [],
+                    $face['axes'] ?? []
+                ),
             ];
         }
 

@@ -50,9 +50,62 @@
         }
     }
 
+    function normalizeAxisTag(tag) {
+        const normalized = String(tag || '').trim().toUpperCase();
+
+        return /^[A-Z0-9]{4}$/.test(normalized) ? normalized : '';
+    }
+
+    function hasVariableFontMetadata(entry) {
+        if (!entry || typeof entry !== 'object') {
+            return false;
+        }
+
+        if (entry.has_variable_faces || entry.is_variable) {
+            return true;
+        }
+
+        const variationAxes = entry.variation_axes && typeof entry.variation_axes === 'object'
+            ? entry.variation_axes
+            : {};
+
+        if (Object.keys(variationAxes).some((tag) => normalizeAxisTag(tag) !== '')) {
+            return true;
+        }
+
+        const axes = entry.axes && typeof entry.axes === 'object' ? entry.axes : {};
+
+        if (Object.keys(axes).some((tag) => normalizeAxisTag(tag) !== '')) {
+            return true;
+        }
+
+        const axisTags = Array.isArray(entry.axis_tags) ? entry.axis_tags : [];
+
+        if (axisTags.some((tag) => normalizeAxisTag(tag) !== '')) {
+            return true;
+        }
+
+        const faces = Array.isArray(entry.faces) ? entry.faces : [];
+
+        return faces.some((face) => hasVariableFontMetadata(face));
+    }
+
+    function describeFontType(entry, provider = 'library') {
+        const hasVariable = hasVariableFontMetadata(entry);
+        const normalizedProvider = String(provider || '').trim().toLowerCase();
+
+        return {
+            type: hasVariable ? 'variable' : 'static',
+            hasVariable,
+            isSourceOnly: hasVariable && normalizedProvider === 'bunny',
+        };
+    }
+
     return {
+        describeFontType,
         escapeFontFamily,
         getTabNavigationTargetIndex,
+        hasVariableFontMetadata,
         sanitizeFallback,
         slugify,
     };

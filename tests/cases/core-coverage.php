@@ -83,6 +83,30 @@ namespace {
         assertSameValue([], $rejectedFaces, 'Hosted CSS parsing should ignore font-face blocks that do not expose any WOFF2 source.');
     };
 
+    $tests['hosted_css_parser_extracts_variable_axis_ranges_and_defaults'] = static function (): void {
+        $parser = new HostedCssParser('google');
+        $faces = $parser->parse(
+            <<<'CSS'
+            @font-face {
+                font-family: "Inter Variable";
+                font-style: normal;
+                font-weight: 100 900;
+                font-stretch: 75% 125%;
+                font-variation-settings: "opsz" 14;
+                src: url("https://fonts.example/inter-variable.woff2") format("woff2-variations");
+            }
+            CSS
+        );
+
+        assertSameValue(1, count($faces), 'Hosted CSS parsing should keep variable faces when a WOFF2 variations source is present.');
+        assertSameValue(true, !empty($faces[0]['is_variable']), 'Hosted CSS parsing should mark range-based faces as variable.');
+        assertSameValue('100..900', (string) ($faces[0]['weight'] ?? ''), 'Hosted CSS parsing should normalize variable weight ranges using the internal range token.');
+        assertSameValue('100', (string) ($faces[0]['axes']['WGHT']['min'] ?? ''), 'Hosted CSS parsing should derive the weight-axis minimum.');
+        assertSameValue('900', (string) ($faces[0]['axes']['WGHT']['max'] ?? ''), 'Hosted CSS parsing should derive the weight-axis maximum.');
+        assertSameValue('75', (string) ($faces[0]['axes']['WDTH']['min'] ?? ''), 'Hosted CSS parsing should derive width-axis minimum values from font-stretch.');
+        assertSameValue('14', (string) ($faces[0]['variation_defaults']['OPSZ'] ?? ''), 'Hosted CSS parsing should keep explicit variation-setting defaults.');
+    };
+
     $tests['site_environment_detects_local_hosts_from_suffixes_and_private_ranges'] = static function (): void {
         $localCases = [
             ['url' => 'https://studio.local', 'environment' => ''],

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use TastyFonts\Admin\AdminPageRenderer;
 use TastyFonts\Admin\AdminPageViewBuilder;
+use TastyFonts\Admin\Renderer\FamilyCardRenderer;
 use TastyFonts\Admin\Renderer\PreviewSectionRenderer;
 use TastyFonts\Plugin;
 use TastyFonts\Support\Storage;
@@ -178,6 +179,7 @@ $tests['admin_page_renderer_renders_library_type_filter_and_category_tokens'] = 
 
     assertContainsValue('data-library-category-filter', $output, 'The Font Library toolbar should render a dedicated type filter control.');
     assertContainsValue('All Types', $output, 'The library type filter should include the All Types option.');
+    assertContainsValue('>Variable<', $output, 'The library type filter should expose the Variable option.');
     assertContainsValue('Cursive / Script', $output, 'The library type filter should expose the combined cursive/script option.');
     assertContainsValue('data-font-categories="monospace"', $output, 'Library rows should expose normalized font category tokens for client-side filtering.');
     assertContainsValue('>Monospace<', $output, 'Library rows should display the normalized font category badge.');
@@ -670,6 +672,39 @@ $tests['admin_page_view_builder_derives_output_quick_modes_from_explicit_flag_se
     assertSameValue('custom', $customMode, 'Quick mode should resolve to custom when both outputs are enabled but one granular subgroup is disabled.');
 };
 
+$tests['admin_page_view_builder_builds_typed_family_selector_options'] = static function (): void {
+    resetTestState();
+
+    $builder = new AdminPageViewBuilder(new Storage());
+    $view = $builder->build([
+        'storage' => ['root' => '/tmp/uploads/fonts'],
+        'catalog' => [
+            'Inter' => [
+                'family' => 'Inter',
+                'has_variable_faces' => true,
+            ],
+            'Lora' => [
+                'family' => 'Lora',
+                'faces' => [
+                    [
+                        'weight' => '400',
+                        'style' => 'normal',
+                    ],
+                ],
+            ],
+        ],
+        'available_families' => ['Inter', 'Lora', 'Legacy Stack'],
+    ]);
+
+    assertSameValue('Inter · Variable', $view['availableFamilyOptions'][0]['label'] ?? '', 'Known variable families should receive a typed selector label.');
+    assertSameValue('variable', $view['availableFamilyOptions'][0]['type'] ?? '', 'Variable selector options should expose their type token.');
+    assertSameValue('Lora · Static', $view['availableFamilyOptions'][1]['label'] ?? '', 'Known static families should receive a typed selector label.');
+    assertSameValue('static', $view['availableFamilyOptions'][1]['type'] ?? '', 'Static selector options should expose their type token.');
+    assertSameValue('Legacy Stack', $view['availableFamilyOptions'][2]['label'] ?? '', 'Families missing from the current catalog should keep their plain selector label.');
+    assertSameValue('Inter · Variable', $view['availableFamilyLabels']['Inter'] ?? '', 'The preview label lookup should reuse the typed selector label.');
+    assertSameValue('Legacy Stack', $view['availableFamilyLabels']['Legacy Stack'] ?? '', 'Missing catalog families should stay selectable without a type suffix.');
+};
+
 $tests['admin_page_renderer_balances_div_wrappers'] = static function (): void {
     resetTestState();
 
@@ -901,6 +936,81 @@ $tests['admin_page_renderer_outputs_migrate_shortcuts_for_cdn_deliveries'] = sta
     assertContainsValue('data-migrate-variants="regular,700"', $output, 'The migration shortcut should preserve the saved variant tokens for self-hosting prefill.');
     assertNotContainsValue('tasty-fonts-font-actions-secondary', $output, 'Library cards should no longer render a dedicated migration action row above the detailed delivery profile actions.');
     assertNotContainsValue('Remote variants are managed by their delivery profile instead of being deleted individually.', $output, 'CDN-backed active faces should no longer be hard-disabled from individual deletion in the detail cards.');
+};
+
+$tests['admin_page_renderer_marks_variable_library_families_with_type_badges'] = static function (): void {
+    resetTestState();
+
+    $renderer = new AdminPageRenderer(new Storage());
+    $family = [
+        'family' => 'Inter Variable',
+        'slug' => 'inter-variable',
+        'delivery_filter_tokens' => ['google'],
+        'publish_state' => 'published',
+        'has_variable_faces' => true,
+        'variation_axes' => [
+            'WGHT' => ['min' => 100, 'max' => 900],
+        ],
+        'active_delivery_id' => 'google-cdn',
+        'active_delivery' => [
+            'id' => 'google-cdn',
+            'label' => 'Google CDN',
+            'provider' => 'google',
+            'type' => 'cdn',
+            'variants' => ['regular'],
+            'has_variable_faces' => true,
+            'variation_axes' => [
+                'WGHT' => ['min' => 100, 'max' => 900],
+            ],
+        ],
+        'available_deliveries' => [
+            [
+                'id' => 'google-cdn',
+                'label' => 'Google CDN',
+                'provider' => 'google',
+                'type' => 'cdn',
+                'variants' => ['regular'],
+                'has_variable_faces' => true,
+                'variation_axes' => [
+                    'WGHT' => ['min' => 100, 'max' => 900],
+                ],
+            ],
+        ],
+        'faces' => [
+            [
+                'weight' => '400',
+                'style' => 'normal',
+                'source' => 'google',
+                'is_variable' => true,
+                'axes' => [
+                    'WGHT' => ['min' => 100, 'max' => 900],
+                ],
+                'files' => [],
+                'paths' => [],
+            ],
+        ],
+    ];
+
+    ob_start();
+    invokePrivateMethod(
+        $renderer,
+        'renderFamilyRow',
+        [
+            $family,
+            ['heading' => '', 'body' => ''],
+            [],
+            [],
+            [
+                ['value' => 'inherit', 'label' => 'Use plugin default'],
+            ],
+            'The quick brown fox jumps over the lazy dog.',
+            [],
+            ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
+        ]
+    );
+    $output = (string) ob_get_clean();
+
+    assertSameValue(1, preg_match('/class="tasty-fonts-badge is-role"[\s\S]*?Variable/', $output), 'Variable library family rows should expose a Variable badge in the saved library card.');
 };
 
 $tests['admin_page_renderer_renders_copy_ready_face_variant_variables'] = static function (): void {
@@ -1429,6 +1539,77 @@ $tests['admin_page_renderer_translates_stored_delivery_profile_labels_at_output'
     assertNotContainsValue('Adobe-hosted', $output, 'The family card should not render the raw stored English Adobe label once translated.');
 };
 
+$tests['admin_page_renderer_renders_type_badges_for_adobe_delivery_and_face_cards'] = static function (): void {
+    resetTestState();
+
+    $renderer = new FamilyCardRenderer(new Storage());
+
+    ob_start();
+    $renderer->renderAdobeFamilyCard([
+        'family' => 'Source Sans 3',
+        'has_variable_faces' => true,
+        'faces' => [
+            [
+                'is_variable' => true,
+                'axes' => [
+                    'WGHT' => ['min' => 200, 'max' => 900],
+                ],
+            ],
+        ],
+    ]);
+    $renderer->renderAdobeFamilyCard([
+        'family' => 'Merriweather',
+        'faces' => [
+            [
+                'weight' => '400',
+                'style' => 'normal',
+            ],
+        ],
+    ]);
+    $renderer->renderDeliveryProfileCard(
+        'Inter Variable',
+        'inter-variable',
+        'google-cdn',
+        'published',
+        [
+            'id' => 'google-cdn',
+            'label' => 'Google CDN',
+            'provider' => 'google',
+            'type' => 'cdn',
+            'variants' => ['regular'],
+            'has_variable_faces' => true,
+        ]
+    );
+    $renderer->renderFaceDetailCard(
+        'Lora',
+        'lora',
+        '"Lora", serif',
+        'The quick brown fox jumps over the lazy dog.',
+        1,
+        [],
+        'serif',
+        [],
+        ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
+        ['provider' => 'local', 'type' => 'self_hosted'],
+        [
+            'weight' => '400',
+            'style' => 'normal',
+            'source' => 'local',
+            'files' => ['woff2' => 'lora/Lora-400-normal.woff2'],
+            'paths' => ['woff2' => 'lora/Lora-400-normal.woff2'],
+        ],
+        false
+    );
+    $output = (string) ob_get_clean();
+
+    assertSameValue(1, preg_match('/Source Sans 3[\s\S]*?Variable/', $output), 'Adobe family cards should render Variable badges when their metadata indicates variable support.');
+    assertSameValue(1, preg_match('/tasty-fonts-detail-card--delivery[\s\S]*?Variable/', $output), 'Delivery profile cards should render Variable badges when their metadata indicates variable support.');
+    assertSameValue(1, preg_match('/Merriweather[\s\S]*?Static/', $output), 'Adobe family cards should render Static badges when their metadata indicates fixed styles only.');
+    assertSameValue(1, preg_match('/tasty-fonts-detail-card--face[\s\S]*?Static/', $output), 'Face detail cards should render Static badges when their metadata indicates fixed styles only.');
+    assertContainsValue('tasty-fonts-detail-card--delivery', $output, 'Delivery profile detail cards should be included in the type badge coverage.');
+    assertContainsValue('tasty-fonts-detail-card--face', $output, 'Face detail cards should be included in the type badge coverage.');
+};
+
 $tests['admin_page_renderer_exposes_behavior_tab_and_can_hide_help_ui'] = static function (): void {
     resetTestState();
 
@@ -1470,6 +1651,7 @@ $tests['admin_page_renderer_exposes_behavior_tab_and_can_hide_help_ui'] = static
         ],
         'block_editor_font_library_sync_enabled' => false,
         'training_wheels_off' => true,
+        'variable_fonts_enabled' => true,
         'delete_uploaded_files_on_uninstall' => false,
         'diagnostic_items' => [],
         'overview_metrics' => [],
@@ -1506,6 +1688,7 @@ $tests['admin_page_renderer_exposes_behavior_tab_and_can_hide_help_ui'] = static
     assertNotContainsValue('Rollback Reinstall', $output, 'The Behavior tab should no longer render a separate rollback subsection title.');
     assertNotContainsValue('Enable Block Editor Font Library Sync', $output, 'The Behavior panel should no longer render the Gutenberg sync toggle after it moves into Integrations.');
     assertContainsValue('Enable Monospace Role', $output, 'The Behavior panel should still render the monospace toggle.');
+    assertContainsValue('Enable Variable Fonts', $output, 'The Behavior panel should render the opt-in variable font toggle.');
     assertContainsValue('Delete Uploaded Fonts on Uninstall', $output, 'The Behavior panel should still render the uninstall cleanup toggle.');
     assertContainsValue('Reset Plugin Settings', $output, 'The Developer tab should expose the reset-settings action.');
     assertContainsValue('Wipe Managed Font Library', $output, 'The Developer tab should expose the library-wipe action.');
@@ -3041,9 +3224,13 @@ $tests['admin_page_renderer_allows_fallback_only_heading_and_body_roles'] = stat
 
     assertContainsValue('name="tasty_fonts_heading_font"', $output, 'The role form should render the heading family selector.');
     assertContainsValue('name="tasty_fonts_body_font"', $output, 'The role form should render the body family selector.');
+    assertContainsValue('name="tasty_fonts_heading_weight"', $output, 'The role form should render the heading weight selector shell.');
+    assertContainsValue('name="tasty_fonts_body_weight"', $output, 'The role form should render the body weight selector shell.');
     assertContainsValue('name="tasty_fonts_heading_font" id="tasty_fonts_heading_font"', $output, 'The heading family selector should keep its expected id.');
     assertContainsValue('name="tasty_fonts_body_font" id="tasty_fonts_body_font"', $output, 'The body family selector should keep its expected id.');
     assertContainsValue('data-clear-target="tasty_fonts_heading_font"', $output, 'The heading family selector should render a clear button.');
+    assertContainsValue('data-role-weight-editor="heading"', $output, 'The role form should render the heading weight editor shell.');
+    assertContainsValue('data-role-weight-editor="body"', $output, 'The role form should render the body weight editor shell.');
     assertSameValue(true, substr_count($output, 'Use Fallback Only') >= 3, 'Heading, body, and preview selectors should all expose fallback-only choices.');
     assertContainsValue('Fallback only (sans-serif)', $output, 'Fallback-only heading selections should render a readable preview label.');
     assertContainsValue('Fallback only (serif)', $output, 'Fallback-only body selections should render a readable preview label.');
@@ -3108,6 +3295,10 @@ $tests['admin_page_renderer_preview_workspace_defaults_to_live_sitewide_baseline
     assertContainsValue('data-preview-role-select="heading"', $output, 'The preview tray should expose a heading picker.');
     assertContainsValue('data-preview-role-select="body"', $output, 'The preview tray should expose a body picker.');
     assertContainsValue('data-preview-role-select="monospace"', $output, 'The preview tray should expose a monospace picker when the role is enabled.');
+    assertContainsValue('data-preview-weight-editor="heading"', $output, 'The preview tray should render a heading weight editor shell.');
+    assertContainsValue('data-preview-axis-editor="heading"', $output, 'The preview tray should render a heading variable-axis editor shell.');
+    assertContainsValue('data-preview-weight-select="body"', $output, 'The preview tray should expose a body weight selector for dynamic preview control.');
+    assertContainsValue('data-preview-axis-fields="monospace"', $output, 'The preview tray should expose a monospace axis container when the role is enabled.');
     assertSameValue(true, substr_count($output, 'data-clear-select-button') >= 3, 'The preview tray should render clear buttons for its role pickers.');
     assertContainsValue('Use current draft selections', $output, 'The live baseline preview should offer a quick way to compare against the current draft roles.');
     assertContainsValue('value="Lora" selected', $output, 'The preview tray should seed its live baseline selector values from the applied sitewide roles.');
@@ -3169,6 +3360,82 @@ $tests['admin_page_renderer_preview_workspace_defaults_to_draft_baseline'] = sta
     assertNotContainsValue('data-preview-role-select="monospace"', $output, 'The preview tray should omit the monospace picker when the role is disabled.');
     assertSameValue(1, preg_match('/data-preview-save-draft[\s\S]*aria-disabled="true"/', $output), 'The preview save-draft action should stay disabled when the preview already matches the current draft.');
     assertSameValue(1, preg_match('/data-preview-apply-live[\s\S]*aria-disabled="true"/', $output), 'The preview publish action should stay disabled when sitewide delivery is off.');
+};
+
+$tests['admin_page_renderer_renders_typed_family_labels_in_role_and_preview_selectors'] = static function (): void {
+    resetTestState();
+
+    $renderer = new AdminPageRenderer(new Storage());
+
+    ob_start();
+    $renderer->renderPage([
+        'storage' => ['root' => '/tmp/uploads/fonts'],
+        'catalog' => [
+            'Inter' => [
+                'family' => 'Inter',
+                'has_variable_faces' => true,
+            ],
+            'Lora' => [
+                'family' => 'Lora',
+                'faces' => [
+                    [
+                        'weight' => '400',
+                        'style' => 'normal',
+                    ],
+                ],
+            ],
+            'JetBrains Mono' => [
+                'family' => 'JetBrains Mono',
+                'faces' => [
+                    [
+                        'weight' => '400',
+                        'style' => 'normal',
+                    ],
+                ],
+            ],
+        ],
+        'available_families' => ['Inter', 'Lora', 'JetBrains Mono', 'Legacy Stack'],
+        'roles' => [
+            'heading' => 'Inter',
+            'body' => 'Lora',
+            'monospace' => 'JetBrains Mono',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'serif',
+            'monospace_fallback' => 'monospace',
+        ],
+        'logs' => [],
+        'activity_actor_options' => [],
+        'family_fallbacks' => [],
+        'family_font_displays' => [],
+        'family_font_display_options' => [],
+        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+        'preview_size' => 32,
+        'font_display' => 'optional',
+        'font_display_options' => [],
+        'minify_css_output' => true,
+        'preload_primary_fonts' => true,
+        'remote_connection_hints' => true,
+        'training_wheels_off' => false,
+        'monospace_role_enabled' => true,
+        'delete_uploaded_files_on_uninstall' => false,
+        'diagnostic_items' => [],
+        'overview_metrics' => [],
+        'output_panels' => [],
+        'generated_css_panel' => [],
+        'preview_panels' => [['key' => 'editorial', 'label' => 'Specimen', 'active' => true]],
+        'toasts' => [],
+        'apply_everywhere' => false,
+        'role_deployment' => [],
+    ]);
+    $output = (string) ob_get_clean();
+
+    assertContainsValue('>Inter · Variable<', $output, 'Role and preview selectors should suffix variable families with a Variable label.');
+    assertContainsValue('>Lora · Static<', $output, 'Role and preview selectors should suffix static families with a Static label.');
+    assertContainsValue('>JetBrains Mono · Static<', $output, 'Monospace role selectors should reuse the typed family labels.');
+    assertContainsValue('>Legacy Stack<', $output, 'Families that are not in the saved catalog should remain available without a type suffix.');
+    assertSameValue(1, preg_match('/data-role-preview-name="heading">Inter · Variable</', $output), 'Inline preview family names should reuse the typed selector label for heading.');
+    assertSameValue(1, preg_match('/data-role-preview-name="body">Lora · Static</', $output), 'Inline preview family names should reuse the typed selector label for body.');
+    assertSameValue(1, preg_match('/data-role-preview-name="monospace">JetBrains Mono · Static</', $output), 'Inline preview family names should reuse the typed selector label for monospace.');
 };
 
 $tests['admin_page_renderer_uses_a_dedicated_code_preview_scene'] = static function (): void {
@@ -3292,6 +3559,7 @@ $tests['admin_page_renderer_family_cards_expose_monospace_assignments_and_varian
 
     assertContainsValue('data-role-assign="monospace"', $output, 'Enabled family cards should expose the monospace quick-assign control.');
     assertContainsValue('>Monospace<', $output, 'Enabled family cards should render a Monospace badge for the selected monospace family.');
+    assertSameValue(1, preg_match('/data-font-family="JetBrains Mono"[\s\S]*?Static/', $output), 'Static library family rows should expose a Static badge in the saved library card.');
     assertContainsValue('Code Preview', $output, 'Monospace family cards should switch their specimen label to a code-oriented preview.');
     assertContainsValue('tasty-fonts-font-inline-preview is-monospace', $output, 'Monospace library cards should render the inline preview with the monospace modifier class.');
     assertContainsValue('tasty-fonts-face-preview is-monospace', $output, 'Monospace face detail cards should render the preview with the monospace modifier class.');

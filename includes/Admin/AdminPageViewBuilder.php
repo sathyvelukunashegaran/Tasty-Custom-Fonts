@@ -6,6 +6,7 @@ namespace TastyFonts\Admin;
 
 defined('ABSPATH') || exit;
 
+use TastyFonts\Admin\FontTypeHelper;
 use TastyFonts\Admin\Renderer\SharedRenderHelpers;
 use TastyFonts\Admin\Renderer\LibraryRenderValueHelpers;
 use TastyFonts\Support\FontUtils;
@@ -29,6 +30,35 @@ final class AdminPageViewBuilder
         $catalog = is_array($context['catalog'] ?? null) ? $context['catalog'] : [];
         $libraryCategoryOptions = $this->buildLibraryCategoryOptions();
         $availableFamilies = is_array($context['available_families'] ?? null) ? $context['available_families'] : array_keys($catalog);
+        $availableFamilyOptions = is_array($context['available_family_options'] ?? null) ? $context['available_family_options'] : array_map(
+            static function ($familyName) use ($catalog): array {
+                $name = trim((string) $familyName);
+                $catalogEntry = is_array($catalog[$name] ?? null) ? $catalog[$name] : null;
+                $descriptor = $catalogEntry !== null ? FontTypeHelper::describeEntry($catalogEntry) : null;
+
+                return [
+                    'value' => $name,
+                    'label' => FontTypeHelper::buildSelectorOptionLabel($name, $catalogEntry),
+                    'type' => is_array($descriptor) ? (string) ($descriptor['type'] ?? '') : '',
+                ];
+            },
+            $availableFamilies
+        );
+        $availableFamilyLabels = [];
+
+        foreach ($availableFamilyOptions as $option) {
+            if (!is_array($option)) {
+                continue;
+            }
+
+            $optionValue = trim((string) ($option['value'] ?? ''));
+
+            if ($optionValue === '') {
+                continue;
+            }
+
+            $availableFamilyLabels[$optionValue] = (string) ($option['label'] ?? $optionValue);
+        }
         $roles = is_array($context['roles'] ?? null) ? $context['roles'] : [];
         $appliedRoles = is_array($context['applied_roles'] ?? null) ? $context['applied_roles'] : [];
         $logs = is_array($context['logs'] ?? null) ? $context['logs'] : [];
@@ -106,6 +136,7 @@ final class AdminPageViewBuilder
         $updateChannelStatus = is_array($context['update_channel_status'] ?? null) ? $context['update_channel_status'] : [];
         $blockEditorFontLibrarySyncEnabled = !empty($context['block_editor_font_library_sync_enabled']);
         $trainingWheelsOff = !empty($context['training_wheels_off']);
+        $variableFontsEnabled = !empty($context['variable_fonts_enabled']);
         $deleteUploadedFilesOnUninstall = !empty($context['delete_uploaded_files_on_uninstall']);
         $diagnosticItems = is_array($context['diagnostic_items'] ?? null) ? $context['diagnostic_items'] : [];
         $overviewMetrics = is_array($context['overview_metrics'] ?? null) ? $context['overview_metrics'] : [];

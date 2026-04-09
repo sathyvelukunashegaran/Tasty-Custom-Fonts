@@ -12,8 +12,13 @@ final class HostedImportSupport
 {
     public static function buildLocalFilename(string $familyName, array $face): string
     {
-        $weight = preg_replace('/[^0-9]+/', '-', (string) ($face['weight'] ?? '400')) ?: '400';
         $style = FontUtils::normalizeStyle((string) ($face['style'] ?? 'normal'));
+
+        if (FontUtils::faceIsVariable($face)) {
+            return FontUtils::buildVariableFontFilename($familyName, $style, 'woff2');
+        }
+
+        $weight = preg_replace('/[^0-9]+/', '-', (string) ($face['weight'] ?? '400')) ?: '400';
 
         return implode(
             '-',
@@ -27,13 +32,13 @@ final class HostedImportSupport
 
     public static function selectPreferredFaces(array $faces, array $requestedVariants): array
     {
-        $allowedKeys = [];
+        $requestedAxes = [];
 
         foreach ($requestedVariants as $variant) {
-            $faceKey = self::faceKeyFromVariant((string) $variant);
+            $axis = FontUtils::googleVariantToAxis((string) $variant);
 
-            if ($faceKey !== null) {
-                $allowedKeys[$faceKey] = true;
+            if ($axis !== null) {
+                $requestedAxes[] = $axis;
             }
         }
 
@@ -44,11 +49,11 @@ final class HostedImportSupport
                 continue;
             }
 
-            $faceKey = self::faceKeyFromFace($face);
-
-            if ($allowedKeys !== [] && !isset($allowedKeys[$faceKey])) {
+            if ($requestedAxes !== [] && !self::faceMatchesRequestedAxes($face, $requestedAxes)) {
                 continue;
             }
+
+            $faceKey = self::faceKeyFromFace($face);
 
             if (!isset($selected[$faceKey]) || self::preferredFaceScore($face) >= self::preferredFaceScore($selected[$faceKey])) {
                 $selected[$faceKey] = $face;
@@ -161,5 +166,63 @@ final class HostedImportSupport
         $score -= min(strlen($range), 300);
 
         return $score;
+    }
+
+    private static function faceMatchesRequestedAxes(array $face, array $requestedAxes): bool
+    {
+        foreach ($requestedAxes as $requestedAxis) {
+            if (self::faceMatchesRequestedAxis($face, $requestedAxis)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function faceMatchesRequestedAxis(array $face, array $requestedAxis): bool
+    {
+        $requestedStyle = FontUtils::normalizeStyle((string) ($requestedAxis['style'] ?? 'normal'));
+        $requestedWeight = FontUtils::normalizeWeight((string) ($requestedAxis['weight'] ?? '400'));
+        $faceStyle = FontUtils::normalizeStyle((string) ($face['style'] ?? 'normal'));
+
+        if ($faceStyle !== $requestedStyle) {
+            return false;
+        }
+
+        $weightRange = self::weightRangeFromFace($face);
+
+        if ($weightRange !== null) {
+            return self::requestedWeightMatchesRange($requestedWeight, $weightRange[0], $weightRange[1]);
+        }
+
+        return FontUtils::normalizeWeight((string) ($face['weight'] ?? '400')) === $requestedWeight;
+    }
+
+    private static function weightRangeFromFace(array $face): ?array
+    {
+        $axes = FontUtils::normalizeAxesMap($face['axes'] ?? []);
+
+        if (isset($axes['WGHT']['min'], $axes['WGHT']['max'])) {
+            return [(int) $axes['WGHT']['min'], (int) $axes['WGHT']['max']];
+        }
+
+        $weight = FontUtils::normalizeWeight((string) ($face['weight'] ?? '400'));
+
+        if (preg_match('/^(\d{1,4})\.\.(\d{1,4})$/', $weight, $matches) === 1) {
+            return [(int) $matches[1], (int) $matches[2]];
+        }
+
+        return null;
+    }
+
+    private static function requestedWeightMatchesRange(string $requestedWeight, int $start, int $end): bool
+    {
+        if (preg_match('/^(\d{1,4})\.\.(\d{1,4})$/', $requestedWeight, $matches) === 1) {
+            return $start <= (int) $matches[1] && $end >= (int) $matches[2];
+        }
+
+        $requestedValue = FontUtils::weightSortValue($requestedWeight);
+
+        return $requestedValue >= $start && $requestedValue <= $end;
     }
 }

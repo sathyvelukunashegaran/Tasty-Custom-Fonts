@@ -6,6 +6,7 @@ namespace TastyFonts\Admin;
 
 defined('ABSPATH') || exit;
 
+use TastyFonts\Admin\FontTypeHelper;
 use TastyFonts\Adobe\AdobeProjectClient;
 use TastyFonts\Fonts\AssetService;
 use TastyFonts\Fonts\CatalogService;
@@ -56,6 +57,7 @@ final class AdminPageContextBuilder
         $previewContext = $this->buildPreviewContext($settings);
         $adobeAccessContext = $this->buildAdobeAccessContext();
         $availableFamilies = $this->buildSelectableFamilyNames($catalog);
+        $availableFamilyOptions = $this->buildSelectableFamilyOptions($catalog, $availableFamilies);
         $roles = $this->settings->getRoles($availableFamilies);
         $appliedRoles = $this->settings->getAppliedRoles($availableFamilies);
         $googleAccessContext = $this->buildGoogleAccessContext();
@@ -77,6 +79,7 @@ final class AdminPageContextBuilder
             'storage' => $storage,
             'catalog' => $catalog,
             'available_families' => $availableFamilies,
+            'available_family_options' => $availableFamilyOptions,
             'roles' => $roles,
             'applied_roles' => $appliedRoles,
             'preview_baseline_source' => $previewBaselineSource,
@@ -140,6 +143,7 @@ final class AdminPageContextBuilder
             'block_editor_font_library_sync_enabled' => !empty($settings['block_editor_font_library_sync_enabled']),
             'training_wheels_off' => !empty($settings['training_wheels_off']),
             'monospace_role_enabled' => !empty($settings['monospace_role_enabled']),
+            'variable_fonts_enabled' => !empty($settings['variable_fonts_enabled']),
             'delete_uploaded_files_on_uninstall' => !empty($settings['delete_uploaded_files_on_uninstall']),
             'diagnostic_items' => $this->buildDiagnosticItems($assetStatus, $storage, $settings, $counts),
             'overview_metrics' => $this->buildOverviewMetrics($counts),
@@ -615,7 +619,18 @@ final class AdminPageContextBuilder
     public function roleSetsMatch(array $left, array $right, ?array $settings = null): bool
     {
         foreach ($this->roleComparisonKeys($settings ?? $this->settings->getSettings()) as $key) {
-            if ((string) ($left[$key] ?? '') !== (string) ($right[$key] ?? '')) {
+            $leftValue = $left[$key] ?? '';
+            $rightValue = $right[$key] ?? '';
+
+            if (is_array($leftValue) || is_array($rightValue)) {
+                if (FontUtils::normalizeVariationDefaults($leftValue) !== FontUtils::normalizeVariationDefaults($rightValue)) {
+                    return false;
+                }
+
+                continue;
+            }
+
+            if ((string) $leftValue !== (string) $rightValue) {
                 return false;
             }
         }
@@ -825,6 +840,31 @@ final class AdminPageContextBuilder
         natcasesort($families);
 
         return array_values($families);
+    }
+
+    public function buildSelectableFamilyOptions(array $catalog, ?array $availableFamilies = null): array
+    {
+        $families = is_array($availableFamilies) ? $availableFamilies : $this->buildSelectableFamilyNames($catalog);
+        $options = [];
+
+        foreach ($families as $familyName) {
+            $name = trim((string) $familyName);
+
+            if ($name === '') {
+                continue;
+            }
+
+            $catalogEntry = is_array($catalog[$name] ?? null) ? $catalog[$name] : null;
+            $descriptor = $catalogEntry !== null ? FontTypeHelper::describeEntry($catalogEntry) : null;
+
+            $options[] = [
+                'value' => $name,
+                'label' => FontTypeHelper::buildSelectorOptionLabel($name, $catalogEntry),
+                'type' => is_array($descriptor) ? (string) ($descriptor['type'] ?? '') : '',
+            ];
+        }
+
+        return $options;
     }
 
     public function buildRoleDeliverySummary(array $roles, ?array $settings = null): string
@@ -1126,6 +1166,11 @@ final class AdminPageContextBuilder
         foreach ($this->effectiveRoleKeys($settings) as $roleKey) {
             $keys[] = $roleKey;
             $keys[] = $roleKey . '_fallback';
+            $keys[] = $roleKey . '_weight';
+
+            if (!empty($settings['variable_fonts_enabled'])) {
+                $keys[] = $roleKey . '_axes';
+            }
         }
 
         return $keys;

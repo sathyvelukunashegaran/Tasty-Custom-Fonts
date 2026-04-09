@@ -6,27 +6,22 @@ namespace TastyFonts\Adobe;
 
 defined('ABSPATH') || exit;
 
+use TastyFonts\Fonts\HostedCssParser;
 use TastyFonts\Support\FontUtils;
 
 final class AdobeCssParser
 {
     public function parseFamilies(string $css): array
     {
-        $matchCount = preg_match_all('/@font-face\s*\{(.*?)\}/si', $css, $matches);
+        $faces = (new HostedCssParser('adobe'))->parse($css);
 
-        if ($matchCount === false || empty($matches[1])) {
+        if ($faces === []) {
             return [];
         }
 
         $families = [];
 
-        foreach ($matches[1] as $block) {
-            $face = $this->buildFace($block);
-
-            if ($face === null) {
-                continue;
-            }
-
+        foreach ($faces as $face) {
             $familyName = (string) $face['family'];
             $familyKey = strtolower($familyName);
             $faceKey = FontUtils::faceAxisKey((string) $face['weight'], (string) $face['style']);
@@ -40,10 +35,18 @@ final class AdobeCssParser
                 ];
             }
 
-            $families[$familyKey]['faces'][$faceKey] = [
+            $existingFace = (array) ($families[$familyKey]['faces'][$faceKey] ?? []);
+            $nextFace = [
                 'weight' => (string) $face['weight'],
                 'style' => (string) $face['style'],
+                'is_variable' => !empty($face['is_variable']),
+                'axes' => FontUtils::normalizeAxesMap($face['axes'] ?? []),
+                'variation_defaults' => FontUtils::normalizeVariationDefaults($face['variation_defaults'] ?? [], $face['axes'] ?? []),
             ];
+
+            $families[$familyKey]['faces'][$faceKey] = !empty($existingFace['is_variable']) && empty($nextFace['is_variable'])
+                ? $existingFace
+                : $nextFace;
         }
 
         foreach ($families as &$family) {
@@ -61,42 +64,5 @@ final class AdobeCssParser
         );
 
         return array_values($families);
-    }
-
-    private function buildFace(string $block): ?array
-    {
-        $family = $this->trimCssString($this->propertyValue($block, 'font-family'));
-
-        if ($family === '') {
-            return null;
-        }
-
-        $src = $this->propertyValue($block, 'src');
-
-        if ($src === '' || stripos($src, 'url(') === false) {
-            return null;
-        }
-
-        return [
-            'family' => $family,
-            'weight' => FontUtils::normalizeWeight($this->propertyValue($block, 'font-weight') ?: '400'),
-            'style' => FontUtils::normalizeStyle($this->propertyValue($block, 'font-style') ?: 'normal'),
-        ];
-    }
-
-    private function propertyValue(string $block, string $property): string
-    {
-        if (preg_match('/' . preg_quote($property, '/') . '\s*:\s*([^;]+);/i', $block, $matches) !== 1) {
-            return '';
-        }
-
-        return trim((string) $matches[1]);
-    }
-
-    private function trimCssString(string $value): string
-    {
-        $value = trim($value);
-
-        return trim($value, "\"'");
     }
 }

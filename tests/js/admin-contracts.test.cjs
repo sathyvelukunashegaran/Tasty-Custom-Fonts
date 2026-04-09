@@ -2,8 +2,10 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
+    describeFontType,
     escapeFontFamily,
     getTabNavigationTargetIndex,
+    hasVariableFontMetadata,
     sanitizeFallback,
     slugify,
 } = require('../../assets/js/admin-contracts.js');
@@ -37,4 +39,26 @@ test('admin contracts resolve keyboard tab navigation targets for tablists', () 
     assert.equal(getTabNavigationTargetIndex('End', 1, 5), 4);
     assert.equal(getTabNavigationTargetIndex('Enter', 1, 5), null);
     assert.equal(getTabNavigationTargetIndex('ArrowRight', 0, 1), null);
+});
+
+test('admin contracts detect variable metadata from family and face entries', () => {
+    assert.equal(hasVariableFontMetadata({ has_variable_faces: true }), true);
+    assert.equal(hasVariableFontMetadata({ variation_axes: { WGHT: { min: 100, max: 900 } } }), true);
+    assert.equal(hasVariableFontMetadata({ faces: [{ is_variable: true }] }), true);
+    assert.equal(hasVariableFontMetadata({ faces: [{ weight: '400' }] }), false);
+});
+
+test('admin contracts describe font type with provider-aware nuance', () => {
+    assert.deepEqual(
+        describeFontType({ has_variable_faces: true }, 'library'),
+        { type: 'variable', hasVariable: true, isSourceOnly: false }
+    );
+    assert.deepEqual(
+        describeFontType({ variation_axes: { WGHT: { min: 100, max: 900 } } }, 'bunny'),
+        { type: 'variable', hasVariable: true, isSourceOnly: true }
+    );
+    assert.deepEqual(
+        describeFontType({ faces: [{ weight: '400' }] }, 'google'),
+        { type: 'static', hasVariable: false, isSourceOnly: false }
+    );
 });

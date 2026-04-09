@@ -224,12 +224,12 @@
                                                         <?php checked($roleUsageFontWeightEnabled); ?>
                                                     >
                                                     <span class="tasty-fonts-toggle-switch" aria-hidden="true"></span>
-                                                    <span class="tasty-fonts-toggle-copy">
-                                                        <span class="tasty-fonts-toggle-title"><?php esc_html_e('Emit Role Font Weights', 'tasty-fonts'); ?></span>
-                                                        <?php if ($showSettingsDescriptions): ?>
-                                                            <span class="tasty-fonts-toggle-description"><?php esc_html_e('Adds font-weight declarations to generated body and heading usage rules. Off by default so themes can keep controlling weights.', 'tasty-fonts'); ?></span>
-                                                        <?php endif; ?>
-                                                    </span>
+                                                        <span class="tasty-fonts-toggle-copy">
+                                                            <span class="tasty-fonts-toggle-title"><?php esc_html_e('Emit Role Font Weights', 'tasty-fonts'); ?></span>
+                                                            <?php if ($showSettingsDescriptions): ?>
+                                                            <span class="tasty-fonts-toggle-description"><?php esc_html_e('Adds font-weight declarations to generated body, heading, and monospace usage rules. Off by default so themes can keep controlling weights.', 'tasty-fonts'); ?></span>
+                                                            <?php endif; ?>
+                                                        </span>
                                                 </label>
                                                 </div>
                                                 <div class="tasty-fonts-output-settings-detail-group">
@@ -841,6 +841,17 @@
                                                 <span class="tasty-fonts-toggle-title"><?php esc_html_e('Enable Monospace Role', 'tasty-fonts'); ?></span>
                                                 <?php if ($showSettingsDescriptions): ?>
                                                     <span class="tasty-fonts-toggle-description"><?php esc_html_e('Adds a saved role for code and pre, exposed as --font-monospace.', 'tasty-fonts'); ?></span>
+                                                <?php endif; ?>
+                                            </span>
+                                        </label>
+                                        <input type="hidden" name="variable_fonts_enabled" value="0">
+                                        <label class="tasty-fonts-toggle-field tasty-fonts-toggle-field--output">
+                                            <input type="checkbox" class="tasty-fonts-toggle-input" name="variable_fonts_enabled" value="1" <?php checked(!empty($variableFontsEnabled)); ?>>
+                                            <span class="tasty-fonts-toggle-switch" aria-hidden="true"></span>
+                                            <span class="tasty-fonts-toggle-copy">
+                                                <span class="tasty-fonts-toggle-title"><?php esc_html_e('Enable Variable Fonts', 'tasty-fonts'); ?></span>
+                                                <?php if ($showSettingsDescriptions): ?>
+                                                    <span class="tasty-fonts-toggle-description"><?php esc_html_e('Opt in to variable font uploads, axis controls, and Gutenberg variable metadata. Leave this off to keep static-only behavior.', 'tasty-fonts'); ?></span>
                                                 <?php endif; ?>
                                             </span>
                                         </label>

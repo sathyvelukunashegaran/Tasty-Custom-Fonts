@@ -370,6 +370,87 @@ $tests['local_upload_service_imports_verified_font_uploads'] = static function (
     assertSameValue(true, is_string($savedPath) && file_exists($savedPath), 'Verified HTTP uploads should be written into the dedicated local upload folder.');
 };
 
+$tests['local_upload_service_derives_variable_weight_ranges_from_wght_axes'] = static function (): void {
+    resetTestState();
+
+    global $uploadedFilePaths;
+
+    $services = makeServiceGraph();
+    $tmpName = uniqueTestDirectory('tmp-upload-variable') . '/inter-variable.woff2';
+    mkdir(dirname($tmpName), FS_CHMOD_DIR, true);
+    file_put_contents($tmpName, "wOF2test-font");
+    $uploadedFilePaths[] = $tmpName;
+
+    $result = $services['local_upload']->uploadRows([
+        [
+            'family' => 'Inter Variable',
+            'weight' => '400',
+            'style' => 'normal',
+            'fallback' => 'sans-serif',
+            'is_variable' => true,
+            'axes' => [
+                'WGHT' => ['min' => '300', 'default' => '450', 'max' => '700'],
+                'OPSZ' => ['min' => '8', 'default' => '14', 'max' => '32'],
+            ],
+            'variation_defaults' => [
+                'WGHT' => '450',
+                'OPSZ' => '14',
+            ],
+            'file' => [
+                'name' => 'inter-variable.woff2',
+                'tmp_name' => $tmpName,
+                'error' => UPLOAD_ERR_OK,
+                'size' => filesize($tmpName),
+            ],
+        ],
+    ]);
+
+    $family = $services['imports']->getFamily('inter-variable');
+    $profile = (array) (($family['delivery_profiles']['local-self_hosted'] ?? null) ?: []);
+    $face = (array) (($profile['faces'][0] ?? null) ?: []);
+    $savedPath = $services['storage']->pathForRelativePath('upload/inter-variable/Inter Variable-VariableFont.woff2');
+
+    assertSameValue(1, (int) ($result['summary']['imported'] ?? 0), 'Variable uploads should still import successfully.');
+    assertSameValue('300..700', (string) ($face['weight'] ?? ''), 'Variable uploads should derive their stored weight range from the normalized WGHT axis.');
+    assertSameValue('450', (string) ($face['variation_defaults']['WGHT'] ?? ''), 'Variable uploads should keep the normalized WGHT default alongside the stored range.');
+    assertSameValue(true, is_string($savedPath) && file_exists($savedPath), 'Variable uploads should use the VariableFont filename helper for the stored file.');
+};
+
+$tests['google_import_service_uses_variable_font_filenames_for_self_hosted_variable_faces'] = static function (): void {
+    resetTestState();
+
+    global $remoteGetResponses;
+
+    $services = makeServiceGraph();
+    $cssUrl = $services['google']->buildCssUrl('Inter Variable', ['regular']);
+    $fontUrl = 'https://fonts.gstatic.com/s/inter/v18/inter-variable.woff2';
+    $remoteGetResponses[$cssUrl] = [
+        'response' => ['code' => 200],
+        'headers' => ['content-type' => 'text/css'],
+        'body' => <<<'CSS'
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-weight: 300 700;
+  src: url(https://fonts.gstatic.com/s/inter/v18/inter-variable.woff2) format('woff2-variations');
+}
+CSS,
+    ];
+    $remoteGetResponses[$fontUrl] = [
+        'response' => ['code' => 200],
+        'headers' => ['content-type' => 'font/woff2'],
+        'body' => 'variable-font-data',
+    ];
+
+    $result = $services['google_import']->importFamily('Inter Variable', ['regular']);
+    $savedPath = $services['storage']->pathForRelativePath('google/inter-variable/Inter Variable-VariableFont.woff2');
+    $legacyPath = $services['storage']->pathForRelativePath('google/inter-variable/inter-variable-300-700-normal.woff2');
+
+    assertSameValue('imported', (string) ($result['status'] ?? ''), 'Variable self-hosted Google imports should still succeed.');
+    assertSameValue(true, is_string($savedPath) && file_exists($savedPath), 'Variable self-hosted Google imports should use the VariableFont filename helper for downloaded files.');
+    assertSameValue(false, is_string($legacyPath) && file_exists($legacyPath), 'Variable self-hosted Google imports should not generate malformed range-based filenames.');
+};
+
 $tests['library_service_blocks_deleting_live_applied_family_when_draft_changed'] = static function (): void {
     resetTestState();
 

@@ -9,6 +9,7 @@ defined('ABSPATH') || exit;
 use TastyFonts\Adobe\AdobeProjectClient;
 use TastyFonts\Repository\ImportRepository;
 use TastyFonts\Repository\LogRepository;
+use TastyFonts\Repository\SettingsRepository;
 use TastyFonts\Support\FontUtils;
 use TastyFonts\Support\Storage;
 use RecursiveDirectoryIterator;
@@ -238,6 +239,8 @@ final class CatalogService
             )
         );
 
+        $hasVariableFaces = $this->familyHasVariableFaces($availableDeliveries);
+
         return [
             'family' => (string) ($family['family'] ?? ''),
             'slug' => (string) ($family['slug'] ?? FontUtils::slugify((string) ($family['family'] ?? ''))),
@@ -252,8 +255,11 @@ final class CatalogService
             'delivery_filter_tokens' => $this->buildDeliveryFilterTokens($family, $activeDelivery),
             'font_category' => $this->resolveFamilyCategory($family, $activeDelivery, $availableDeliveries),
             'font_category_tokens' => $this->buildFamilyCategoryTokens(
-                $this->resolveFamilyCategory($family, $activeDelivery, $availableDeliveries)
+                $this->resolveFamilyCategory($family, $activeDelivery, $availableDeliveries),
+                $hasVariableFaces
             ),
+            'has_variable_faces' => $hasVariableFaces,
+            'variation_axes' => $this->collectFamilyVariationAxes($availableDeliveries),
         ];
     }
 
@@ -361,6 +367,12 @@ final class CatalogService
             'files' => $files,
             'paths' => $paths,
             'provider' => is_array($face['provider'] ?? null) ? $face['provider'] : [],
+            'is_variable' => !empty($face['is_variable']) || FontUtils::normalizeAxesMap($face['axes'] ?? []) !== [],
+            'axes' => FontUtils::normalizeAxesMap($face['axes'] ?? []),
+            'variation_defaults' => FontUtils::normalizeVariationDefaults(
+                $face['variation_defaults'] ?? [],
+                $face['axes'] ?? []
+            ),
         ];
     }
 
@@ -394,7 +406,31 @@ final class CatalogService
                 continue;
             }
 
-            $existingProfiles[(string) $profileId] = $profile;
+            $profileId = (string) $profileId;
+
+            if (!isset($existingProfiles[$profileId]) || !is_array($existingProfiles[$profileId])) {
+                $existingProfiles[$profileId] = $profile;
+                continue;
+            }
+
+            $existingFaces = is_array($existingProfiles[$profileId]['faces'] ?? null)
+                ? (array) $existingProfiles[$profileId]['faces']
+                : [];
+            $syntheticFaces = is_array($profile['faces'] ?? null) ? (array) $profile['faces'] : [];
+            $existingProfiles[$profileId] = array_replace($profile, $existingProfiles[$profileId]);
+            $existingProfiles[$profileId]['faces'] = HostedImportSupport::mergeManifestFaces($existingFaces, $syntheticFaces);
+            $existingProfiles[$profileId]['variants'] = array_values(
+                array_unique(
+                    array_merge(
+                        is_array($existingProfiles[$profileId]['variants'] ?? null) ? (array) $existingProfiles[$profileId]['variants'] : [],
+                        is_array($profile['variants'] ?? null) ? (array) $profile['variants'] : []
+                    )
+                )
+            );
+            $existingProfiles[$profileId]['meta'] = array_replace(
+                is_array($profile['meta'] ?? null) ? (array) $profile['meta'] : [],
+                is_array($existingProfiles[$profileId]['meta'] ?? null) ? (array) $existingProfiles[$profileId]['meta'] : []
+            );
         }
 
         $families[$familyName]['delivery_profiles'] = $existingProfiles;
@@ -445,7 +481,7 @@ final class CatalogService
         $extension = strtolower($file->getExtension());
         $meta = $this->parser->parse($file->getBasename('.' . $extension));
 
-        if ($meta['is_variable']) {
+        if ($meta['is_variable'] && !$this->variableFontsEnabled()) {
             return;
         }
 
@@ -503,7 +539,68 @@ final class CatalogService
             'files' => [],
             'paths' => [],
             'provider' => ['type' => 'local'],
+            'is_variable' => !empty($meta['is_variable']),
+            'axes' => FontUtils::normalizeAxesMap($meta['axes'] ?? []),
+            'variation_defaults' => FontUtils::normalizeVariationDefaults(
+                $meta['variation_defaults'] ?? [],
+                $meta['axes'] ?? []
+            ),
         ];
+    }
+
+    private function variableFontsEnabled(): bool
+    {
+        $settings = get_option(SettingsRepository::OPTION_SETTINGS, []);
+
+        return is_array($settings) && !empty($settings['variable_fonts_enabled']);
+    }
+
+    private function familyHasVariableFaces(array $profiles): bool
+    {
+        foreach ($profiles as $profile) {
+            if (!is_array($profile)) {
+                continue;
+            }
+
+            foreach ((array) ($profile['faces'] ?? []) as $face) {
+                if (is_array($face) && FontUtils::faceIsVariable($face)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function collectFamilyVariationAxes(array $profiles): array
+    {
+        $axes = [];
+
+        foreach ($profiles as $profile) {
+            if (!is_array($profile)) {
+                continue;
+            }
+
+            foreach ((array) ($profile['faces'] ?? []) as $face) {
+                if (!is_array($face)) {
+                    continue;
+                }
+
+                foreach (FontUtils::normalizeAxesMap($face['axes'] ?? []) as $tag => $definition) {
+                    if (!isset($axes[$tag])) {
+                        $axes[$tag] = $definition;
+                        continue;
+                    }
+
+                    $axes[$tag]['min'] = (string) min((float) $axes[$tag]['min'], (float) $definition['min']);
+                    $axes[$tag]['max'] = (string) max((float) $axes[$tag]['max'], (float) $definition['max']);
+                }
+            }
+        }
+
+        ksort($axes, SORT_STRING);
+
+        return $axes;
     }
 
     private function loadAdobeFamilies(): array
@@ -547,6 +644,12 @@ final class CatalogService
                     'files' => [],
                     'paths' => [],
                     'provider' => ['type' => 'adobe', 'project_id' => $projectId],
+                    'is_variable' => !empty($face['is_variable']),
+                    'axes' => FontUtils::normalizeAxesMap($face['axes'] ?? []),
+                    'variation_defaults' => FontUtils::normalizeVariationDefaults(
+                        $face['variation_defaults'] ?? [],
+                        $face['axes'] ?? []
+                    ),
                 ];
             }
 
@@ -748,15 +851,11 @@ final class CatalogService
         return $normalized;
     }
 
-    private function buildFamilyCategoryTokens(string $category): array
+    private function buildFamilyCategoryTokens(string $category, bool $hasVariableFaces = false): array
     {
         $normalized = $this->normalizeFamilyCategory($category);
 
-        if ($normalized === '') {
-            return ['uncategorized'];
-        }
-
-        $tokens = [$normalized];
+        $tokens = $normalized === '' ? ['uncategorized'] : [$normalized];
 
         if ($normalized === 'slab-serif') {
             $tokens[] = 'serif';
@@ -770,6 +869,10 @@ final class CatalogService
 
         if ($normalized === 'display') {
             $tokens[] = 'decorative';
+        }
+
+        if ($hasVariableFaces) {
+            $tokens[] = 'variable';
         }
 
         return array_values(array_unique(array_filter($tokens, 'strlen')));

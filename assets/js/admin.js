@@ -42,6 +42,28 @@
     const roleDeploymentPill = document.querySelector('[data-role-deployment-pill]');
     const roleDeploymentAnnouncement = document.querySelector('[data-role-deployment-announcement]');
     let monospaceRoleEnabled = !!config.monospaceRoleEnabled && !!roleMonospace && !!roleMonospaceFallback;
+    const variableFontsEnabled = !!config.variableFontsEnabled;
+    const roleAxisCatalog = config.roleAxisCatalog && typeof config.roleAxisCatalog === 'object'
+        ? config.roleAxisCatalog
+        : {};
+    const roleWeightCatalog = config.roleWeightCatalog && typeof config.roleWeightCatalog === 'object'
+        ? config.roleWeightCatalog
+        : {};
+    const roleWeightEditors = {
+        heading: document.querySelector('[data-role-weight-editor="heading"]'),
+        body: document.querySelector('[data-role-weight-editor="body"]'),
+        monospace: document.querySelector('[data-role-weight-editor="monospace"]'),
+    };
+    const roleWeightSelects = {
+        heading: document.querySelector('[data-role-weight-select="heading"]'),
+        body: document.querySelector('[data-role-weight-select="body"]'),
+        monospace: document.querySelector('[data-role-weight-select="monospace"]'),
+    };
+    const roleAxisEditors = {
+        heading: document.querySelector('[data-role-axis-editor="heading"]'),
+        body: document.querySelector('[data-role-axis-editor="body"]'),
+        monospace: document.querySelector('[data-role-axis-editor="monospace"]'),
+    };
     const headingRoleVariableCopies = Array.from(document.querySelectorAll('[data-role-variable-copy="heading"]'));
     const bodyRoleVariableCopies = Array.from(document.querySelectorAll('[data-role-variable-copy="body"]'));
     const monospaceRoleVariableCopies = Array.from(document.querySelectorAll('[data-role-variable-copy="monospace"]'));
@@ -61,6 +83,21 @@
         heading: document.querySelector('[data-preview-role-select="heading"]'),
         body: document.querySelector('[data-preview-role-select="body"]'),
         monospace: document.querySelector('[data-preview-role-select="monospace"]'),
+    };
+    const previewWeightEditors = {
+        heading: document.querySelector('[data-preview-weight-editor="heading"]'),
+        body: document.querySelector('[data-preview-weight-editor="body"]'),
+        monospace: document.querySelector('[data-preview-weight-editor="monospace"]'),
+    };
+    const previewWeightSelects = {
+        heading: document.querySelector('[data-preview-weight-select="heading"]'),
+        body: document.querySelector('[data-preview-weight-select="body"]'),
+        monospace: document.querySelector('[data-preview-weight-select="monospace"]'),
+    };
+    const previewAxisEditors = {
+        heading: document.querySelector('[data-preview-axis-editor="heading"]'),
+        body: document.querySelector('[data-preview-axis-editor="body"]'),
+        monospace: document.querySelector('[data-preview-axis-editor="monospace"]'),
     };
     const previewTextInput = document.getElementById('tasty-fonts-preview-text');
     const previewSizeInput = document.getElementById('tasty-fonts-preview-size');
@@ -93,11 +130,15 @@
     const manualVariants = document.getElementById('tasty-fonts-manual-variants');
     const googleDeliveryModes = Array.from(document.querySelectorAll('input[name="tasty_fonts_google_delivery_mode"]'));
     const selectedFamily = document.getElementById('tasty-fonts-selected-family');
+    const selectedFamilyMeta = document.getElementById('tasty-fonts-selected-family-meta');
+    const selectedFamilyNote = document.getElementById('tasty-fonts-selected-family-note');
     const selectedFamilyPreview = document.getElementById('tasty-fonts-selected-family-preview');
     const bunnyFamily = document.getElementById('tasty-fonts-bunny-family');
     const bunnyVariants = document.getElementById('tasty-fonts-bunny-variants');
     const bunnyDeliveryModes = Array.from(document.querySelectorAll('input[name="tasty_fonts_bunny_delivery_mode"]'));
     const bunnySelectedFamily = document.getElementById('tasty-fonts-bunny-selected-family');
+    const bunnySelectedFamilyMeta = document.getElementById('tasty-fonts-bunny-selected-family-meta');
+    const bunnySelectedFamilyNote = document.getElementById('tasty-fonts-bunny-selected-family-note');
     const bunnySelectedFamilyPreview = document.getElementById('tasty-fonts-bunny-selected-family-preview');
     const importFilesEstimate = document.getElementById('tasty-fonts-import-files-estimate');
     const importSizeEstimate = document.getElementById('tasty-fonts-import-size-estimate');
@@ -228,6 +269,7 @@
         importEstimateSize: __('Approx. +%1$s WOFF2', 'tasty-fonts'),
         importSelectionSummaryEmpty: __('0 Variants Selected', 'tasty-fonts'),
         importSelectionSummaryAvailable: __('%1$d of %2$d Variants Selected', 'tasty-fonts'),
+        importSelectionSummaryAvailableVariable: __('%1$d of %2$d Styles Selected', 'tasty-fonts'),
         uploadSubmitting: __('Uploading font files…', 'tasty-fonts'),
         uploadProgress: __('Uploading files… %1$d%%', 'tasty-fonts'),
         uploadSuccess: __('Upload complete. Refreshing the library…', 'tasty-fonts'),
@@ -272,6 +314,13 @@
         activityCountFilteredMultiple: __('%1$d of %2$d entries', 'tasty-fonts'),
         variantCountSingle: __('%d variant', 'tasty-fonts'),
         variantCountMultiple: __('%d variants', 'tasty-fonts'),
+        styleCountSingle: __('%d style', 'tasty-fonts'),
+        styleCountMultiple: __('%d styles', 'tasty-fonts'),
+        variableBadge: __('Variable', 'tasty-fonts'),
+        staticBadge: __('Static', 'tasty-fonts'),
+        variableSourceBadge: __('Variable Source', 'tasty-fonts'),
+        googleVariableImportNote: __('Variable import keeps the upstream axis ranges and stores a variable font file when Google serves one.', 'tasty-fonts'),
+        bunnyVariableImportNote: __('Bunny identifies this family as a variable source, but its web API still resolves imports to static style files. Use Upload Files if you need a true variable font file in the library.', 'tasty-fonts'),
         requestFailed: __('Request failed.', 'tasty-fonts'),
         dismissNotification: __('Dismiss notification', 'tasty-fonts'),
         bunnySourceLabel: __('Bunny Fonts', 'tasty-fonts'),
@@ -284,6 +333,10 @@
         bodyFamilyFallbackTitle: __('Body uses the fallback stack directly: %1$s. Role alias: %2$s', 'tasty-fonts'),
         monospaceFamilyVariableTitle: __('Monospace family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s', 'tasty-fonts'),
         monospaceFamilyFallbackTitle: __('Monospace uses the fallback stack directly: %1$s. Role alias: %2$s', 'tasty-fonts'),
+        roleWeightDefault: __('Use Role Default (%1$s)', 'tasty-fonts'),
+        roleWeightSummary: __('Available static weights for %1$s. Choose one to override the default role weight when role font-weight output is enabled.', 'tasty-fonts'),
+        previewWeightSummary: __('Available static weights for %1$s. Choose one to preview a specific role weight.', 'tasty-fonts'),
+        previewAxisSummary: __('Available axes for %1$s. Leave a field empty to preview the family default.', 'tasty-fonts'),
     };
 
     function getHelpTooltipLayer() {
@@ -337,6 +390,29 @@
                     return null;
             }
         };
+    const describeFontType = typeof adminContracts.describeFontType === 'function'
+        ? adminContracts.describeFontType
+        : (entry, provider = 'library') => {
+            const normalizedProvider = String(provider || '').trim().toLowerCase();
+            const hasVariable = !!(
+                entry
+                && typeof entry === 'object'
+                && (
+                    !!entry.has_variable_faces
+                    || !!entry.is_variable
+                    || (entry.variation_axes && typeof entry.variation_axes === 'object' && Object.keys(entry.variation_axes).length > 0)
+                    || (entry.axes && typeof entry.axes === 'object' && Object.keys(entry.axes).length > 0)
+                    || (Array.isArray(entry.axis_tags) && entry.axis_tags.some((tag) => /^[A-Z0-9]{4}$/i.test(String(tag || '').trim())))
+                    || (Array.isArray(entry.faces) && entry.faces.some((face) => face && typeof face === 'object' && (!!face.is_variable || (face.axes && Object.keys(face.axes).length > 0))))
+                )
+            );
+
+            return {
+                type: hasVariable ? 'variable' : 'static',
+                hasVariable,
+                isSourceOnly: hasVariable && normalizedProvider === 'bunny',
+            };
+        };
 
     function buildStack(family, fallback, defaultFallback = 'sans-serif') {
         const sanitizedFallback = sanitizeFallback(fallback, defaultFallback);
@@ -355,6 +431,23 @@
         const trimmedFamily = String(family || '').trim();
 
         if (trimmedFamily) {
+            const familySelects = [
+                previewRoleSelects.heading,
+                previewRoleSelects.body,
+                previewRoleSelects.monospace,
+                roleHeading,
+                roleBody,
+                roleMonospace,
+            ].filter(Boolean);
+
+            for (const select of familySelects) {
+                const match = Array.from(select.options || []).find((option) => String(option.value || '') === trimmedFamily);
+
+                if (match) {
+                    return String(match.textContent || '').trim() || trimmedFamily;
+                }
+            }
+
             return trimmedFamily;
         }
 
@@ -372,6 +465,86 @@
         return ['heading', 'body', 'monospace'].filter((roleKey) => roleKeys.includes(roleKey)).join('-');
     }
 
+    function normalizeAxisTag(tag) {
+        const normalized = String(tag || '').trim().toUpperCase();
+
+        return /^[A-Z0-9]{4}$/.test(normalized) ? normalized : '';
+    }
+
+    function cssAxisTag(tag) {
+        switch (normalizeAxisTag(tag)) {
+            case 'WGHT':
+                return 'wght';
+            case 'WDTH':
+                return 'wdth';
+            case 'SLNT':
+                return 'slnt';
+            case 'ITAL':
+                return 'ital';
+            case 'OPSZ':
+                return 'opsz';
+            default:
+                return normalizeAxisTag(tag);
+        }
+    }
+
+    function normalizeAxisValue(value) {
+        const normalized = String(value ?? '').trim();
+
+        return /^-?\d+(?:\.\d+)?$/.test(normalized) ? normalized : '';
+    }
+
+    function normalizeAxisSettings(input = {}) {
+        if (!input || typeof input !== 'object') {
+            return {};
+        }
+
+        const normalized = {};
+
+        Object.entries(input).forEach(([tag, value]) => {
+            const normalizedTag = normalizeAxisTag(tag);
+            const normalizedValue = normalizeAxisValue(value);
+
+            if (!normalizedTag || !normalizedValue) {
+                return;
+            }
+
+            normalized[normalizedTag] = normalizedValue;
+        });
+
+        return Object.keys(normalized)
+            .sort()
+            .reduce((carry, tag) => {
+                carry[tag] = normalized[tag];
+                return carry;
+            }, {});
+    }
+
+    function normalizeRoleWeightValue(value) {
+        const normalized = String(value || '').trim().toLowerCase();
+
+        if (!normalized) {
+            return '';
+        }
+
+        if (normalized === 'normal') {
+            return '400';
+        }
+
+        if (normalized === 'bold') {
+            return '700';
+        }
+
+        return /^\d{1,4}$/.test(normalized) ? normalized : '';
+    }
+
+    function buildVariationSettings(settings = {}) {
+        const normalized = normalizeAxisSettings(settings);
+        const parts = Object.entries(normalized).map(([tag, value]) => `"${cssAxisTag(tag)}" ${value}`);
+
+        return parts.length ? parts.join(', ') : 'normal';
+    }
+
     function normalizeRoleState(input = {}) {
         return {
             heading: String(input.heading || '').trim(),
@@ -380,7 +553,39 @@
             headingFallback: sanitizeFallback(input.headingFallback || input.heading_fallback, 'sans-serif'),
             bodyFallback: sanitizeFallback(input.bodyFallback || input.body_fallback, 'sans-serif'),
             monospaceFallback: sanitizeFallback(input.monospaceFallback || input.monospace_fallback, 'monospace'),
+            headingWeight: normalizeRoleWeightValue(input.headingWeight || input.heading_weight),
+            bodyWeight: normalizeRoleWeightValue(input.bodyWeight || input.body_weight),
+            monospaceWeight: normalizeRoleWeightValue(input.monospaceWeight || input.monospace_weight),
+            headingAxes: variableFontsEnabled ? normalizeAxisSettings(input.headingAxes || input.heading_axes) : {},
+            bodyAxes: variableFontsEnabled ? normalizeAxisSettings(input.bodyAxes || input.body_axes) : {},
+            monospaceAxes: variableFontsEnabled && monospaceRoleEnabled
+                ? normalizeAxisSettings(input.monospaceAxes || input.monospace_axes)
+                : {},
         };
+    }
+
+    function defaultRoleWeight(roleKey) {
+        return roleKey === 'heading' ? '700' : '400';
+    }
+
+    function resolveRoleWeight(roleKey, state = {}) {
+        const axes = normalizeAxisSettings(state[`${roleKey}Axes`] || state[`${roleKey}_axes`] || {});
+
+        if (axes.WGHT) {
+            return axes.WGHT;
+        }
+
+        return normalizeRoleWeightValue(state[`${roleKey}Weight`] || state[`${roleKey}_weight`]) || defaultRoleWeight(roleKey);
+    }
+
+    function hasExplicitRoleWeight(roleKey, state = {}) {
+        const axes = normalizeAxisSettings(state[`${roleKey}Axes`] || state[`${roleKey}_axes`] || {});
+
+        if (axes.WGHT) {
+            return true;
+        }
+
+        return normalizeRoleWeightValue(state[`${roleKey}Weight`] || state[`${roleKey}_weight`]) !== '';
     }
 
     function buildRoleDataFromValues(values = {}) {
@@ -388,6 +593,16 @@
         const heading = normalized.heading;
         const body = normalized.body;
         const monospace = monospaceRoleEnabled ? normalized.monospace : '';
+        const applyRoleWeights = !!(outputRoleWeightInput && outputRoleWeightInput.checked);
+        const headingPreviewWeight = hasExplicitRoleWeight('heading', normalized)
+            ? resolveRoleWeight('heading', normalized)
+            : '';
+        const bodyPreviewWeight = hasExplicitRoleWeight('body', normalized)
+            ? resolveRoleWeight('body', normalized)
+            : '';
+        const monospacePreviewWeight = hasExplicitRoleWeight('monospace', normalized)
+            ? resolveRoleWeight('monospace', normalized)
+            : '';
 
         return {
             includeMonospace: monospaceRoleEnabled,
@@ -397,6 +612,22 @@
             headingFallback: normalized.headingFallback,
             bodyFallback: normalized.bodyFallback,
             monospaceFallback: normalized.monospaceFallback,
+            headingWeight: normalized.headingWeight,
+            bodyWeight: normalized.bodyWeight,
+            monospaceWeight: normalized.monospaceWeight,
+            headingAxes: normalized.headingAxes,
+            bodyAxes: normalized.bodyAxes,
+            monospaceAxes: normalized.monospaceAxes,
+            headingResolvedWeight: resolveRoleWeight('heading', normalized),
+            bodyResolvedWeight: resolveRoleWeight('body', normalized),
+            monospaceResolvedWeight: resolveRoleWeight('monospace', normalized),
+            headingPreviewWeight,
+            bodyPreviewWeight,
+            monospacePreviewWeight,
+            applyRoleWeights,
+            headingSettings: buildVariationSettings(normalized.headingAxes),
+            bodySettings: buildVariationSettings(normalized.bodyAxes),
+            monospaceSettings: buildVariationSettings(normalized.monospaceAxes),
             headingSlug: heading ? slugify(heading) : '',
             bodySlug: body ? slugify(body) : '',
             monospaceSlug: monospace ? slugify(monospace) : '',
@@ -1809,12 +2040,18 @@
             heading: getElementValue(roleHeading, ''),
             body: getElementValue(roleBody, ''),
             headingFallback: getElementValue(roleHeadingFallback, 'sans-serif'),
-            bodyFallback: getElementValue(roleBodyFallback, 'sans-serif')
+            bodyFallback: getElementValue(roleBodyFallback, 'sans-serif'),
+            headingWeight: getElementValue(roleWeightSelects.heading, ''),
+            bodyWeight: getElementValue(roleWeightSelects.body, ''),
+            headingAxes: roleAxisFieldValues('heading'),
+            bodyAxes: roleAxisFieldValues('body')
         };
 
         if (monospaceRoleEnabled) {
             snapshot.monospace = getElementValue(roleMonospace, '');
             snapshot.monospaceFallback = getElementValue(roleMonospaceFallback, 'monospace');
+            snapshot.monospaceWeight = getElementValue(roleWeightSelects.monospace, '');
+            snapshot.monospaceAxes = roleAxisFieldValues('monospace');
         }
 
         return snapshot;
@@ -1847,6 +2084,387 @@
 
         if (monospaceRoleEnabled && roleMonospaceFallback) {
             roleMonospaceFallback.value = snapshot.monospaceFallback || 'monospace';
+        }
+
+        renderAllRoleWeightEditors(snapshot);
+        renderAllRoleAxisEditors(snapshot);
+    }
+
+    function roleAxisFieldValues(roleKey) {
+        const values = {};
+
+        document.querySelectorAll(`[data-role-axis-input="${roleKey}"]`).forEach((input) => {
+            const tag = normalizeAxisTag(input.getAttribute('data-axis-tag') || '');
+            const value = normalizeAxisValue(input.value);
+
+            if (!tag || !value) {
+                return;
+            }
+
+            values[tag] = value;
+        });
+
+        return normalizeAxisSettings(values);
+    }
+
+    function roleAxisDefinitionsForFamily(familyName) {
+        const family = String(familyName || '').trim();
+        const entry = family ? roleAxisCatalog[family] : null;
+        const axes = entry && typeof entry === 'object' ? entry.axes : null;
+
+        return axes && typeof axes === 'object' ? axes : {};
+    }
+
+    function roleWeightEntryForFamily(familyName) {
+        const family = String(familyName || '').trim();
+        const entry = family ? roleWeightCatalog[family] : null;
+
+        return entry && typeof entry === 'object' ? entry : null;
+    }
+
+    function roleWeightOptionsForFamily(familyName) {
+        const entry = roleWeightEntryForFamily(familyName);
+        const weights = entry && Array.isArray(entry.weights) ? entry.weights : [];
+
+        return weights.filter((option) => option && typeof option === 'object');
+    }
+
+    function familyUsesVariableWeightAxis(familyName) {
+        const entry = roleWeightEntryForFamily(familyName);
+
+        return !!(entry && entry.has_weight_axis);
+    }
+
+    function renderRoleWeightEditor(roleKey, overrideState = null) {
+        const editor = roleWeightEditors[roleKey];
+        const select = roleWeightSelects[roleKey];
+
+        if (!editor || !select) {
+            return;
+        }
+
+        const roleSelect = ({
+            heading: roleHeading,
+            body: roleBody,
+            monospace: roleMonospace,
+        })[roleKey];
+        const summary = editor.querySelector(`[data-role-weight-summary="${roleKey}"]`);
+        const familyName = roleSelect ? String(roleSelect.value || '').trim() : '';
+        const options = roleWeightOptionsForFamily(familyName);
+        const shouldShow = !!familyName && !familyUsesVariableWeightAxis(familyName) && options.length > 1;
+        const state = normalizeRoleState(overrideState || currentDraftRoleState());
+        const currentValue = state[`${roleKey}Weight`] || '';
+
+        if (!shouldShow) {
+            editor.hidden = true;
+            select.innerHTML = '';
+            return;
+        }
+
+        editor.hidden = false;
+        select.innerHTML = '';
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = formatMessage(
+            getString('roleWeightDefault', 'Use Role Default (%1$s)'),
+            [defaultRoleWeight(roleKey)]
+        );
+        select.appendChild(defaultOption);
+
+        const validValues = new Set(['']);
+
+        options.forEach((option) => {
+            const value = normalizeRoleWeightValue(option.value);
+
+            if (!value) {
+                return;
+            }
+
+            const element = document.createElement('option');
+            element.value = value;
+            element.textContent = String(option.label || value);
+            select.appendChild(element);
+            validValues.add(value);
+        });
+
+        select.value = validValues.has(currentValue) ? currentValue : '';
+
+        if (summary) {
+            summary.textContent = formatMessage(
+                getString('roleWeightSummary', 'Available static weights for %1$s. Choose one to override the default role weight when role font-weight output is enabled.'),
+                [familyName]
+            );
+        }
+    }
+
+    function renderAllRoleWeightEditors(overrideState = null) {
+        renderRoleWeightEditor('heading', overrideState);
+        renderRoleWeightEditor('body', overrideState);
+
+        if (monospaceRoleEnabled) {
+            renderRoleWeightEditor('monospace', overrideState);
+        }
+    }
+
+    function defaultRoleAxesForFamily(familyName) {
+        const axes = roleAxisDefinitionsForFamily(familyName);
+        const defaults = {};
+
+        Object.entries(axes).forEach(([tag, definition]) => {
+            const defaultValue = normalizeAxisValue(definition && definition.default);
+
+            if (!defaultValue) {
+                return;
+            }
+
+            defaults[normalizeAxisTag(tag)] = defaultValue;
+        });
+
+        return normalizeAxisSettings(defaults);
+    }
+
+    function renderRoleAxisEditor(roleKey, overrideState = null) {
+        const editor = roleAxisEditors[roleKey];
+
+        if (!editor) {
+            return;
+        }
+
+        const roleSelect = ({
+            heading: roleHeading,
+            body: roleBody,
+            monospace: roleMonospace,
+        })[roleKey];
+        const fields = editor.querySelector(`[data-role-axis-fields="${roleKey}"]`);
+        const summary = editor.querySelector(`[data-role-axis-summary="${roleKey}"]`);
+        const familyName = roleSelect ? String(roleSelect.value || '').trim() : '';
+        const definitions = variableFontsEnabled ? roleAxisDefinitionsForFamily(familyName) : {};
+        const state = normalizeRoleState(overrideState || currentDraftRoleState());
+        const currentValues = state[`${roleKey}Axes`] && Object.keys(state[`${roleKey}Axes`]).length
+            ? state[`${roleKey}Axes`]
+            : defaultRoleAxesForFamily(familyName);
+
+        if (!fields || !familyName || !Object.keys(definitions).length) {
+            editor.hidden = true;
+
+            if (fields) {
+                fields.innerHTML = '';
+            }
+
+            return;
+        }
+
+        editor.hidden = false;
+        fields.innerHTML = '';
+
+        Object.entries(definitions).forEach(([tag, definition]) => {
+            const normalizedTag = normalizeAxisTag(tag);
+
+            if (!normalizedTag) {
+                return;
+            }
+
+            const field = document.createElement('label');
+            field.className = 'tasty-fonts-stack-field tasty-fonts-role-axis-field';
+
+            const title = document.createElement('span');
+            title.className = 'tasty-fonts-field-label-text';
+            title.textContent = `${cssAxisTag(normalizedTag)} (${definition.min} - ${definition.max})`;
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.step = 'any';
+            input.name = `tasty_fonts_${roleKey}_axes[${normalizedTag}]`;
+            input.value = currentValues[normalizedTag] || normalizeAxisValue(definition.default) || '';
+            input.min = normalizeAxisValue(definition.min) || '';
+            input.max = normalizeAxisValue(definition.max) || '';
+            input.setAttribute('data-role-axis-input', roleKey);
+            input.setAttribute('data-axis-tag', normalizedTag);
+
+            if (roleFormId) {
+                input.setAttribute('form', roleFormId);
+            }
+
+            field.appendChild(title);
+            field.appendChild(input);
+            fields.appendChild(field);
+        });
+
+        if (summary) {
+            summary.textContent = formatMessage(
+                getString('roleAxisSummary', 'Available axes for %1$s. Leave a field empty to use the family default.'),
+                [familyName]
+            );
+        }
+    }
+
+    function renderAllRoleAxisEditors(overrideState = null) {
+        renderRoleAxisEditor('heading', overrideState);
+        renderRoleAxisEditor('body', overrideState);
+
+        if (monospaceRoleEnabled) {
+            renderRoleAxisEditor('monospace', overrideState);
+        }
+    }
+
+    function previewAxisFieldValues(roleKey) {
+        const values = {};
+
+        document.querySelectorAll(`[data-preview-axis-input="${roleKey}"]`).forEach((input) => {
+            const tag = normalizeAxisTag(input.getAttribute('data-axis-tag') || '');
+            const value = normalizeAxisValue(input.value);
+
+            if (!tag || !value) {
+                return;
+            }
+
+            values[tag] = value;
+        });
+
+        return normalizeAxisSettings(values);
+    }
+
+    function renderPreviewWeightEditor(roleKey, overrideState = null) {
+        const editor = previewWeightEditors[roleKey];
+        const select = previewWeightSelects[roleKey];
+
+        if (!editor || !select) {
+            return;
+        }
+
+        const familySelect = previewRoleSelects[roleKey];
+        const summary = editor.querySelector(`[data-preview-weight-summary="${roleKey}"]`);
+        const state = normalizeRoleState(overrideState || currentPreviewRoleState());
+        const familyName = String(state[roleKey] || (familySelect ? familySelect.value : '') || '').trim();
+        const options = roleWeightOptionsForFamily(familyName);
+        const shouldShow = !!familyName && !familyUsesVariableWeightAxis(familyName) && options.length > 1;
+        const currentValue = state[`${roleKey}Weight`] || '';
+
+        if (!shouldShow) {
+            editor.hidden = true;
+            select.innerHTML = '';
+            return;
+        }
+
+        editor.hidden = false;
+        select.innerHTML = '';
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = formatMessage(
+            getString('roleWeightDefault', 'Use Role Default (%1$s)'),
+            [defaultRoleWeight(roleKey)]
+        );
+        select.appendChild(defaultOption);
+
+        const validValues = new Set(['']);
+
+        options.forEach((option) => {
+            const value = normalizeRoleWeightValue(option.value);
+
+            if (!value) {
+                return;
+            }
+
+            const element = document.createElement('option');
+            element.value = value;
+            element.textContent = String(option.label || value);
+            select.appendChild(element);
+            validValues.add(value);
+        });
+
+        select.value = validValues.has(currentValue) ? currentValue : '';
+
+        if (summary) {
+            summary.textContent = formatMessage(
+                getString('previewWeightSummary', 'Available static weights for %1$s. Choose one to preview a specific role weight.'),
+                [familyName]
+            );
+        }
+    }
+
+    function renderAllPreviewWeightEditors(overrideState = null) {
+        renderPreviewWeightEditor('heading', overrideState);
+        renderPreviewWeightEditor('body', overrideState);
+
+        if (monospaceRoleEnabled) {
+            renderPreviewWeightEditor('monospace', overrideState);
+        }
+    }
+
+    function renderPreviewAxisEditor(roleKey, overrideState = null) {
+        const editor = previewAxisEditors[roleKey];
+
+        if (!editor) {
+            return;
+        }
+
+        const familySelect = previewRoleSelects[roleKey];
+        const fields = editor.querySelector(`[data-preview-axis-fields="${roleKey}"]`);
+        const summary = editor.querySelector(`[data-preview-axis-summary="${roleKey}"]`);
+        const state = normalizeRoleState(overrideState || currentPreviewRoleState());
+        const familyName = String(state[roleKey] || (familySelect ? familySelect.value : '') || '').trim();
+        const definitions = variableFontsEnabled ? roleAxisDefinitionsForFamily(familyName) : {};
+        const currentValues = state[`${roleKey}Axes`] && Object.keys(state[`${roleKey}Axes`]).length
+            ? state[`${roleKey}Axes`]
+            : defaultRoleAxesForFamily(familyName);
+
+        if (!fields || !familyName || !Object.keys(definitions).length) {
+            editor.hidden = true;
+
+            if (fields) {
+                fields.innerHTML = '';
+            }
+
+            return;
+        }
+
+        editor.hidden = false;
+        fields.innerHTML = '';
+
+        Object.entries(definitions).forEach(([tag, definition]) => {
+            const normalizedTag = normalizeAxisTag(tag);
+
+            if (!normalizedTag) {
+                return;
+            }
+
+            const field = document.createElement('label');
+            field.className = 'tasty-fonts-stack-field tasty-fonts-role-axis-field';
+
+            const title = document.createElement('span');
+            title.className = 'tasty-fonts-field-label-text';
+            title.textContent = `${cssAxisTag(normalizedTag)} (${definition.min} - ${definition.max})`;
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.step = 'any';
+            input.value = currentValues[normalizedTag] || normalizeAxisValue(definition.default) || '';
+            input.min = normalizeAxisValue(definition.min) || '';
+            input.max = normalizeAxisValue(definition.max) || '';
+            input.setAttribute('data-preview-axis-input', roleKey);
+            input.setAttribute('data-axis-tag', normalizedTag);
+
+            field.appendChild(title);
+            field.appendChild(input);
+            fields.appendChild(field);
+        });
+
+        if (summary) {
+            summary.textContent = formatMessage(
+                getString('previewAxisSummary', 'Available axes for %1$s. Leave a field empty to preview the family default.'),
+                [familyName]
+            );
+        }
+    }
+
+    function renderAllPreviewAxisEditors(overrideState = null) {
+        renderPreviewAxisEditor('heading', overrideState);
+        renderPreviewAxisEditor('body', overrideState);
+
+        if (monospaceRoleEnabled) {
+            renderPreviewAxisEditor('monospace', overrideState);
         }
     }
 
@@ -1971,6 +2589,192 @@
 
     function familySlug(value) {
         return normalizeFamilyKey(slugify(String(value || '')));
+    }
+
+    function familyAxisMap(entry) {
+        const axes = entry && typeof entry === 'object' ? entry.axes : null;
+
+        return axes && typeof axes === 'object' ? axes : {};
+    }
+
+    function familyAxisTags(entry) {
+        const tags = entry && typeof entry === 'object' && Array.isArray(entry.axis_tags) ? entry.axis_tags : [];
+
+        return Array.from(
+            new Set(
+                tags
+                    .map((tag) => String(tag || '').trim().toUpperCase())
+                    .filter((tag) => /^[A-Z0-9]{4}$/.test(tag))
+            )
+        );
+    }
+
+    function familyHasVariableMetadata(entry, provider = 'library') {
+        const descriptor = describeFontType(entry, provider);
+
+        return !!descriptor.hasVariable;
+    }
+
+    function fontTypeDescriptor(entry, provider = 'library') {
+        const descriptor = describeFontType(entry, provider);
+
+        if (!descriptor.hasVariable) {
+            return {
+                type: 'static',
+                label: getString('staticBadge', 'Static'),
+                badgeClass: '',
+                hasVariable: false,
+                isSourceOnly: false,
+            };
+        }
+
+        if (descriptor.isSourceOnly) {
+            return {
+                type: 'variable',
+                label: getString('variableSourceBadge', 'Variable Source'),
+                badgeClass: 'is-warning',
+                hasVariable: true,
+                isSourceOnly: true,
+            };
+        }
+
+        return {
+            type: 'variable',
+            label: getString('variableBadge', 'Variable'),
+            badgeClass: 'is-role',
+            hasVariable: true,
+            isSourceOnly: false,
+        };
+    }
+
+    function axisSummaryLabel(tag, definition) {
+        const min = String(definition && definition.min ? definition.min : '').trim();
+        const max = String(definition && definition.max ? definition.max : '').trim();
+        const fallbackValue = String(definition && definition.default ? definition.default : '').trim() || min || max;
+        const value = min && max && min !== max ? `${min}..${max}` : fallbackValue;
+
+        return value ? `${String(tag || '').toLowerCase()} ${value}` : String(tag || '').toLowerCase();
+    }
+
+    function familyAxisSummaryLabels(entry) {
+        const labels = [];
+        const seen = new Set();
+        const axes = familyAxisMap(entry);
+
+        Object.keys(axes)
+            .sort()
+            .forEach((tag) => {
+                const label = axisSummaryLabel(tag, axes[tag]);
+
+                if (!label) {
+                    return;
+                }
+
+                labels.push(label);
+                seen.add(String(tag || '').toUpperCase());
+            });
+
+        familyAxisTags(entry).forEach((tag) => {
+            if (seen.has(tag)) {
+                return;
+            }
+
+            labels.push(tag.toLowerCase());
+        });
+
+        return labels;
+    }
+
+    function familyVariableNote(provider) {
+        if (provider === 'google') {
+            return getString(
+                'googleVariableImportNote',
+                'Variable import keeps the upstream axis ranges and stores a variable font file when Google serves one.'
+            );
+        }
+
+        if (provider === 'bunny') {
+            return getString(
+                'bunnyVariableImportNote',
+                'Bunny identifies this family as a variable source, but its web API still resolves imports to static style files. Use Upload Files if you need a true variable font file in the library.'
+            );
+        }
+
+        return '';
+    }
+
+    function renderSelectedFamilyMeta(container, noteElement, family, provider) {
+        if (container) {
+            container.innerHTML = '';
+            container.hidden = true;
+        }
+
+        if (noteElement) {
+            noteElement.textContent = '';
+            noteElement.hidden = true;
+        }
+
+        if (!container) {
+            return;
+        }
+
+        const descriptor = fontTypeDescriptor(family, provider);
+        const badge = document.createElement('span');
+        badge.className = `tasty-fonts-badge${descriptor.badgeClass ? ` ${descriptor.badgeClass}` : ''}`;
+        badge.textContent = descriptor.label;
+        container.appendChild(badge);
+
+        if (descriptor.hasVariable) {
+            familyAxisSummaryLabels(family).forEach((label) => {
+                const pill = document.createElement('span');
+
+                pill.className = 'tasty-fonts-face-pill is-muted';
+                pill.textContent = label;
+                container.appendChild(pill);
+            });
+        }
+
+        container.hidden = false;
+
+        if (noteElement && descriptor.hasVariable) {
+            const note = familyVariableNote(provider);
+
+            if (note) {
+                noteElement.textContent = note;
+                noteElement.hidden = false;
+            }
+        }
+    }
+
+    function appendSearchResultBadges(head, item, inLibrary, provider) {
+        if (!head) {
+            return;
+        }
+
+        const badges = document.createElement('div');
+
+        badges.className = 'tasty-fonts-badges tasty-fonts-badges--import tasty-fonts-search-card-badges';
+
+        if (inLibrary) {
+            const badge = document.createElement('span');
+
+            badge.className = 'tasty-fonts-badge is-success';
+            badge.textContent = getString('searchResultInLibrary', 'In Library');
+            badges.appendChild(badge);
+        }
+
+        const descriptor = fontTypeDescriptor(item, provider);
+        {
+            const badge = document.createElement('span');
+
+            badge.className = `tasty-fonts-badge${descriptor.badgeClass ? ` ${descriptor.badgeClass}` : ''}`;
+            badge.textContent = descriptor.label;
+            badges.appendChild(badge);
+        }
+
+        if (badges.childElementCount > 0) {
+            head.appendChild(badges);
+        }
     }
 
     function libraryFamilySlugs() {
@@ -2470,6 +3274,7 @@
         }, 0);
 
         updateSelectedFamilyLabel(familyName);
+        renderSelectedFamilyMeta(selectedFamilyMeta, selectedFamilyNote, hasFamily ? matchedFamily : null, 'google');
 
         if (selectedFamilyPreview) {
             const previewFamilyName = matchedFamily ? matchedFamily.family : familyName;
@@ -2505,13 +3310,15 @@
                 );
             } else if (availableCount > 0) {
                 importSelectionSummary.textContent = formatMessage(
-                    getString('importSelectionSummaryAvailable', '%1$d of %2$d Variants Selected'),
+                    familyHasVariableMetadata(matchedFamily)
+                        ? getString('importSelectionSummaryAvailableVariable', '%1$d of %2$d Styles Selected')
+                        : getString('importSelectionSummaryAvailable', '%1$d of %2$d Variants Selected'),
                     [variantCount, availableCount]
                 );
             } else if (variantCount > 0) {
                 importSelectionSummary.textContent = formatPluralMessage(
-                    '%1$d Variant Selected',
-                    '%1$d Variants Selected',
+                    familyHasVariableMetadata(matchedFamily) ? '%1$d Style Selected' : '%1$d Variant Selected',
+                    familyHasVariableMetadata(matchedFamily) ? '%1$d Styles Selected' : '%1$d Variants Selected',
                     variantCount,
                     [variantCount]
                 );
@@ -2549,6 +3356,8 @@
         if (bunnySelectedFamily) {
             bunnySelectedFamily.textContent = familyName || getString('bunnyImportFamilyEmpty', 'Choose a Bunny family or type one manually.');
         }
+
+        renderSelectedFamilyMeta(bunnySelectedFamilyMeta, bunnySelectedFamilyNote, hasFamily ? matchedFamily : null, 'bunny');
 
         if (bunnySelectedFamilyPreview) {
             const previewFamilyName = matchedFamily ? matchedFamily.family : familyName;
@@ -3240,6 +4049,12 @@
             headingFallback: getElementValue(roleHeadingFallback, 'sans-serif'),
             bodyFallback: getElementValue(roleBodyFallback, 'sans-serif'),
             monospaceFallback: monospaceRoleEnabled ? getElementValue(roleMonospaceFallback, 'monospace') : 'monospace',
+            headingWeight: getElementValue(roleWeightSelects.heading, ''),
+            bodyWeight: getElementValue(roleWeightSelects.body, ''),
+            monospaceWeight: monospaceRoleEnabled ? getElementValue(roleWeightSelects.monospace, '') : '',
+            headingAxes: roleAxisFieldValues('heading'),
+            bodyAxes: roleAxisFieldValues('body'),
+            monospaceAxes: monospaceRoleEnabled ? roleAxisFieldValues('monospace') : {},
         });
     }
 
@@ -3251,6 +4066,12 @@
             headingFallback: getElementValue(roleHeadingFallback, 'sans-serif'),
             bodyFallback: getElementValue(roleBodyFallback, 'sans-serif'),
             monospaceFallback: monospaceRoleEnabled ? getElementValue(roleMonospaceFallback, 'monospace') : 'monospace',
+            headingWeight: getElementValue(roleWeightSelects.heading, ''),
+            bodyWeight: getElementValue(roleWeightSelects.body, ''),
+            monospaceWeight: monospaceRoleEnabled ? getElementValue(roleWeightSelects.monospace, '') : '',
+            headingAxes: roleAxisFieldValues('heading'),
+            bodyAxes: roleAxisFieldValues('body'),
+            monospaceAxes: monospaceRoleEnabled ? roleAxisFieldValues('monospace') : {},
         });
     }
 
@@ -3258,16 +4079,27 @@
         return previewBootstrap().appliedRoles;
     }
 
-    const initialDraftRoleState = roleForm ? currentDraftRoleState() : normalizeRoleState({});
+    if (roleForm) {
+        renderAllRoleWeightEditors(previewBootstrap().roles);
+        renderAllRoleAxisEditors(previewBootstrap().roles);
+    }
+
+    let initialDraftRoleState = roleForm ? currentDraftRoleState() : normalizeRoleState({});
 
     function roleStatesMatch(left = {}, right = {}) {
         const leftState = normalizeRoleState(left);
         const rightState = normalizeRoleState(right);
         const keys = monospaceRoleEnabled
-            ? ['heading', 'body', 'monospace', 'headingFallback', 'bodyFallback', 'monospaceFallback']
-            : ['heading', 'body', 'headingFallback', 'bodyFallback'];
+            ? ['heading', 'body', 'monospace', 'headingFallback', 'bodyFallback', 'monospaceFallback', 'headingWeight', 'bodyWeight', 'monospaceWeight', 'headingAxes', 'bodyAxes', 'monospaceAxes']
+            : ['heading', 'body', 'headingFallback', 'bodyFallback', 'headingWeight', 'bodyWeight', 'headingAxes', 'bodyAxes'];
 
-        return keys.every((key) => leftState[key] === rightState[key]);
+        return keys.every((key) => {
+            if (key.endsWith('Axes')) {
+                return JSON.stringify(leftState[key] || {}) === JSON.stringify(rightState[key] || {});
+            }
+
+            return leftState[key] === rightState[key];
+        });
     }
 
     function syncDisabledRoleActionHelp(target, disabled, copy) {
@@ -3387,6 +4219,9 @@
     function buildPreviewCustomCss(data) {
         const lines = [':root {'];
         const variableLines = [];
+        const headingPreviewWeight = data.headingPreviewWeight || (data.applyRoleWeights ? data.headingResolvedWeight : '');
+        const bodyPreviewWeight = data.bodyPreviewWeight || (data.applyRoleWeights ? data.bodyResolvedWeight : '');
+        const monospacePreviewWeight = data.monospacePreviewWeight || (data.applyRoleWeights ? data.monospaceResolvedWeight : '');
 
         if (data.headingSlug) {
             variableLines.push(`  --font-${data.headingSlug}: ${data.headingStack};`);
@@ -3395,12 +4230,22 @@
             variableLines.push(`  --font-heading: ${data.headingStack};`);
         }
 
+        variableLines.push(`  --font-heading-settings: ${data.headingSettings};`);
+        Object.entries(data.headingAxes || {}).forEach(([tag, value]) => {
+            variableLines.push(`  --font-heading-axis-${cssAxisTag(tag)}: ${value};`);
+        });
+
         if (data.bodySlug) {
             variableLines.push(`  --font-${data.bodySlug}: ${data.bodyStack};`);
             variableLines.push(`  --font-body: var(--font-${data.bodySlug});`);
         } else {
             variableLines.push(`  --font-body: ${data.bodyStack};`);
         }
+
+        variableLines.push(`  --font-body-settings: ${data.bodySettings};`);
+        Object.entries(data.bodyAxes || {}).forEach(([tag, value]) => {
+            variableLines.push(`  --font-body-axis-${cssAxisTag(tag)}: ${value};`);
+        });
 
         if (data.includeMonospace) {
             if (data.monospaceSlug) {
@@ -3409,21 +4254,38 @@
             } else {
                 variableLines.push(`  --font-monospace: ${data.monospaceStack};`);
             }
+
+            variableLines.push(`  --font-monospace-settings: ${data.monospaceSettings};`);
+            Object.entries(data.monospaceAxes || {}).forEach(([tag, value]) => {
+                variableLines.push(`  --font-monospace-axis-${cssAxisTag(tag)}: ${value};`);
+            });
         }
 
         lines.push(...variableLines);
         lines.push('}', '');
         lines.push('body {');
         lines.push('  font-family: var(--font-body);');
+        lines.push('  font-variation-settings: var(--font-body-settings);');
+        if (bodyPreviewWeight) {
+            lines.push(`  font-weight: ${bodyPreviewWeight};`);
+        }
         lines.push('}', '');
         lines.push('h1, h2, h3, h4, h5, h6 {');
         lines.push('  font-family: var(--font-heading);');
+        lines.push('  font-variation-settings: var(--font-heading-settings);');
+        if (headingPreviewWeight) {
+            lines.push(`  font-weight: ${headingPreviewWeight};`);
+        }
         lines.push('}');
 
         if (data.includeMonospace) {
             lines.push('');
             lines.push('code, pre, kbd, samp {');
             lines.push('  font-family: var(--font-monospace);');
+            lines.push('  font-variation-settings: var(--font-monospace-settings);');
+            if (monospacePreviewWeight) {
+                lines.push(`  font-weight: ${monospacePreviewWeight};`);
+            }
             lines.push('}');
         }
 
@@ -3440,7 +4302,17 @@
             `--font-${data.bodySlug}: ${data.bodyStack};`,
             `--font-heading: var(--font-${data.headingSlug});`,
             `--font-body: var(--font-${data.bodySlug});`,
+            `--font-heading-settings: ${data.headingSettings};`,
+            `--font-body-settings: ${data.bodySettings};`,
         ];
+
+        Object.entries(data.headingAxes || {}).forEach(([tag, value]) => {
+            variableLines.push(`--font-heading-axis-${cssAxisTag(tag)}: ${value};`);
+        });
+
+        Object.entries(data.bodyAxes || {}).forEach(([tag, value]) => {
+            variableLines.push(`--font-body-axis-${cssAxisTag(tag)}: ${value};`);
+        });
 
         if (data.includeMonospace) {
             if (data.monospaceSlug) {
@@ -3449,6 +4321,11 @@
             } else {
                 variableLines.push(`--font-monospace: ${data.monospaceStack};`);
             }
+
+            variableLines.push(`--font-monospace-settings: ${data.monospaceSettings};`);
+            Object.entries(data.monospaceAxes || {}).forEach(([tag, value]) => {
+                variableLines.push(`--font-monospace-axis-${cssAxisTag(tag)}: ${value};`);
+            });
         }
 
         return variableLines;
@@ -3479,27 +4356,50 @@
 
             element.value = state[roleKey] || '';
         });
+
+        Object.entries(previewWeightSelects).forEach(([roleKey, element]) => {
+            if (!element || element.options.length === 0) {
+                return;
+            }
+
+            const currentValue = state[`${roleKey}Weight`] || '';
+            const validValues = new Set(Array.from(element.options).map((option) => String(option.value || '')));
+
+            element.value = validValues.has(currentValue) ? currentValue : '';
+        });
     }
 
     function applyPreviewOutputs(sourceLabel = '') {
         const data = currentPreviewData();
+        const headingPreviewWeight = data.headingPreviewWeight || (data.applyRoleWeights ? data.headingResolvedWeight : '');
+        const bodyPreviewWeight = data.bodyPreviewWeight || (data.applyRoleWeights ? data.bodyResolvedWeight : '');
+        const monospacePreviewWeight = data.monospacePreviewWeight || (data.applyRoleWeights ? data.monospaceResolvedWeight : '');
 
         if (previewCanvas) {
             previewCanvas.style.setProperty('--tasty-preview-heading-stack', data.headingStack);
             previewCanvas.style.setProperty('--tasty-preview-body-stack', data.bodyStack);
             previewCanvas.style.setProperty('--tasty-preview-monospace-stack', data.monospaceStack);
+            previewCanvas.style.setProperty('--tasty-preview-heading-settings', data.headingSettings);
+            previewCanvas.style.setProperty('--tasty-preview-body-settings', data.bodySettings);
+            previewCanvas.style.setProperty('--tasty-preview-monospace-settings', data.monospaceSettings);
         }
 
         roleHeadingPreviews.forEach((element) => {
             element.style.fontFamily = data.headingStack;
+            element.style.fontVariationSettings = data.headingSettings;
+            element.style.fontWeight = headingPreviewWeight;
         });
 
         roleBodyPreviews.forEach((element) => {
             element.style.fontFamily = data.bodyStack;
+            element.style.fontVariationSettings = data.bodySettings;
+            element.style.fontWeight = bodyPreviewWeight;
         });
 
         roleMonospacePreviews.forEach((element) => {
             element.style.fontFamily = data.monospaceStack;
+            element.style.fontVariationSettings = data.monospaceSettings;
+            element.style.fontWeight = monospacePreviewWeight;
         });
 
         roleHeadingPreviewNames.forEach((element) => {
@@ -3526,6 +4426,8 @@
         previewRoleState = normalizeRoleState(baseline.roles);
         previewDirty = false;
         previewFollowsDraft = baseline.source === 'draft';
+        renderAllPreviewWeightEditors(previewRoleState);
+        renderAllPreviewAxisEditors(previewRoleState);
         applyPreviewOutputs(baseline.label);
     }
 
@@ -3555,12 +4457,17 @@
         if (monospaceRoleEnabled && roleMonospaceFallback) {
             roleMonospaceFallback.value = state.monospaceFallback || 'monospace';
         }
+
+        renderAllRoleWeightEditors(state);
+        renderAllRoleAxisEditors(state);
     }
 
     function syncPreviewWorkspaceToDraft({ markDirty = false } = {}) {
         previewRoleState = currentDraftRoleState();
         previewFollowsDraft = true;
         previewDirty = markDirty;
+        renderAllPreviewWeightEditors(previewRoleState);
+        renderAllPreviewAxisEditors(previewRoleState);
         applyPreviewOutputs(getString('previewCurrentDraft', 'Current draft'));
     }
 
@@ -3768,10 +4675,14 @@
                     '',
                     'body {',
                     '  font-family: var(--font-body);',
+                    '  font-variation-settings: var(--font-body-settings);',
+                    ...(data.applyRoleWeights && data.bodyResolvedWeight ? [`  font-weight: ${data.bodyResolvedWeight};`] : []),
                     '}',
                     '',
                     'h1, h2, h3, h4, h5, h6 {',
                     '  font-family: var(--font-heading);',
+                    '  font-variation-settings: var(--font-heading-settings);',
+                    ...(data.applyRoleWeights && data.headingResolvedWeight ? [`  font-weight: ${data.headingResolvedWeight};`] : []),
                     '}'
                 ];
 
@@ -3780,6 +4691,8 @@
                         '',
                         'code, pre {',
                         '  font-family: var(--font-monospace);',
+                        '  font-variation-settings: var(--font-monospace-settings);',
+                        ...(data.applyRoleWeights && data.monospaceResolvedWeight ? [`  font-weight: ${data.monospaceResolvedWeight};`] : []),
                         '}'
                     );
                 }
@@ -3788,9 +4701,16 @@
             }
         }
 
-        if (previewWorkspaceInitialized && previewFollowsDraft) {
-            previewRoleState = currentDraftRoleState();
-            applyPreviewOutputs(getString('previewCurrentDraft', 'Current draft'));
+        if (previewWorkspaceInitialized) {
+            if (previewFollowsDraft) {
+                previewRoleState = currentDraftRoleState();
+                renderAllPreviewWeightEditors(previewRoleState);
+                renderAllPreviewAxisEditors(previewRoleState);
+                applyPreviewOutputs(getString('previewCurrentDraft', 'Current draft'));
+                return;
+            }
+
+            applyPreviewOutputs(previewSourceLabel ? previewSourceLabel.textContent : '');
         }
     }
 
@@ -4317,12 +5237,18 @@
                 heading: getElementValue(roleHeading, ''),
                 body: getElementValue(roleBody, ''),
                 heading_fallback: getElementValue(roleHeadingFallback, 'sans-serif'),
-                body_fallback: getElementValue(roleBodyFallback, 'sans-serif')
+                body_fallback: getElementValue(roleBodyFallback, 'sans-serif'),
+                heading_weight: getElementValue(roleWeightSelects.heading, ''),
+                body_weight: getElementValue(roleWeightSelects.body, ''),
+                heading_axes: roleAxisFieldValues('heading'),
+                body_axes: roleAxisFieldValues('body')
             };
 
             if (monospaceRoleEnabled) {
                 requestBody.monospace = getElementValue(roleMonospace, '');
                 requestBody.monospace_fallback = getElementValue(roleMonospaceFallback, 'monospace');
+                requestBody.monospace_weight = getElementValue(roleWeightSelects.monospace, '');
+                requestBody.monospace_axes = roleAxisFieldValues('monospace');
             }
 
             const payload = await requestJson(getRoutePath('saveRoleDraft', 'roles/draft'), {
@@ -4356,6 +5282,36 @@
                 roleMonospaceFallback.value = roles.monospace_fallback;
             }
 
+            renderAllRoleWeightEditors({
+                heading: typeof roles.heading === 'string' ? roles.heading : getElementValue(roleHeading, ''),
+                body: typeof roles.body === 'string' ? roles.body : getElementValue(roleBody, ''),
+                monospace: typeof roles.monospace === 'string' ? roles.monospace : getElementValue(roleMonospace, ''),
+                headingFallback: typeof roles.heading_fallback === 'string' ? roles.heading_fallback : getElementValue(roleHeadingFallback, 'sans-serif'),
+                bodyFallback: typeof roles.body_fallback === 'string' ? roles.body_fallback : getElementValue(roleBodyFallback, 'sans-serif'),
+                monospaceFallback: typeof roles.monospace_fallback === 'string' ? roles.monospace_fallback : getElementValue(roleMonospaceFallback, 'monospace'),
+                headingWeight: roles.heading_weight || '',
+                bodyWeight: roles.body_weight || '',
+                monospaceWeight: roles.monospace_weight || '',
+                headingAxes: roles.heading_axes || {},
+                bodyAxes: roles.body_axes || {},
+                monospaceAxes: roles.monospace_axes || {},
+            });
+            renderAllRoleAxisEditors({
+                heading: typeof roles.heading === 'string' ? roles.heading : getElementValue(roleHeading, ''),
+                body: typeof roles.body === 'string' ? roles.body : getElementValue(roleBody, ''),
+                monospace: typeof roles.monospace === 'string' ? roles.monospace : getElementValue(roleMonospace, ''),
+                headingFallback: typeof roles.heading_fallback === 'string' ? roles.heading_fallback : getElementValue(roleHeadingFallback, 'sans-serif'),
+                bodyFallback: typeof roles.body_fallback === 'string' ? roles.body_fallback : getElementValue(roleBodyFallback, 'sans-serif'),
+                monospaceFallback: typeof roles.monospace_fallback === 'string' ? roles.monospace_fallback : getElementValue(roleMonospaceFallback, 'monospace'),
+                headingWeight: roles.heading_weight || '',
+                bodyWeight: roles.body_weight || '',
+                monospaceWeight: roles.monospace_weight || '',
+                headingAxes: roles.heading_axes || {},
+                bodyAxes: roles.body_axes || {},
+                monospaceAxes: roles.monospace_axes || {},
+            });
+
+            initialDraftRoleState = currentDraftRoleState();
             updateRoleOutputs();
             syncRoleDeploymentState(payload.role_deployment || null);
             showToast(payload.message || getString('rolesDraftSaved', 'Roles saved.'), 'success');
@@ -4510,6 +5466,7 @@
             const meta = document.createElement('div');
             const category = document.createElement('span');
             const variants = document.createElement('span');
+            const axes = document.createElement('span');
             const fallback = googlePreviewFallback(item.category);
             const inLibrary = isFamilyInLibrary(item.family || '');
             const variantCount = Number(item.variants_count || (Array.isArray(item.variants) ? item.variants.length : 0));
@@ -4527,17 +5484,7 @@
             title.className = 'tasty-fonts-search-card-title';
             title.textContent = item.family;
             head.appendChild(title);
-
-            if (inLibrary) {
-                const badges = document.createElement('div');
-                const badge = document.createElement('span');
-
-                badges.className = 'tasty-fonts-badges tasty-fonts-badges--import tasty-fonts-search-card-badges';
-                badge.className = 'tasty-fonts-badge is-success';
-                badge.textContent = getString('searchResultInLibrary', 'In Library');
-                badges.appendChild(badge);
-                head.appendChild(badges);
-            }
+            appendSearchResultBadges(head, item, inLibrary, 'google');
 
             preview.className = 'tasty-fonts-search-card-preview';
             preview.textContent = googlePreviewText();
@@ -4546,13 +5493,22 @@
             meta.className = 'tasty-fonts-search-card-meta tasty-fonts-muted';
             category.textContent = item.category || fallback;
             variants.textContent = formatPluralMessage(
-                getString('variantCountSingle', '%d variant'),
-                getString('variantCountMultiple', '%d variants'),
+                familyHasVariableMetadata(item) ? getString('styleCountSingle', '%d style') : getString('variantCountSingle', '%d variant'),
+                familyHasVariableMetadata(item) ? getString('styleCountMultiple', '%d styles') : getString('variantCountMultiple', '%d variants'),
                 variantCount,
                 [variantCount]
             );
 
             meta.append(category, variants);
+
+            if (familyHasVariableMetadata(item)) {
+                axes.textContent = familyAxisSummaryLabels(item).join(' · ');
+
+                if (axes.textContent) {
+                    meta.append(axes);
+                }
+            }
+
             card.append(head, preview, meta);
             googleResults.appendChild(card);
         });
@@ -4701,6 +5657,7 @@
             const meta = document.createElement('div');
             const category = document.createElement('span');
             const variants = document.createElement('span');
+            const axes = document.createElement('span');
             const fallback = googlePreviewFallback(item.category);
             const styleCount = Number(item.style_count || (Array.isArray(item.variants) ? item.variants.length : 0));
             const isActive = !!selectedBunnySearchFamily && matchesBunnyFamilyEntry(selectedBunnySearchFamily, item.family || item.slug || '');
@@ -4719,17 +5676,7 @@
             title.className = 'tasty-fonts-search-card-title';
             title.textContent = item.family || '';
             head.appendChild(title);
-
-            if (inLibrary) {
-                const badges = document.createElement('div');
-                const badge = document.createElement('span');
-
-                badges.className = 'tasty-fonts-badges tasty-fonts-badges--import tasty-fonts-search-card-badges';
-                badge.className = 'tasty-fonts-badge is-success';
-                badge.textContent = getString('searchResultInLibrary', 'In Library');
-                badges.appendChild(badge);
-                head.appendChild(badges);
-            }
+            appendSearchResultBadges(head, item, inLibrary, 'bunny');
 
             preview.className = 'tasty-fonts-search-card-preview';
             preview.textContent = googlePreviewText();
@@ -4739,14 +5686,23 @@
             category.textContent = item.category_label || getString('bunnySourceLabel', 'Bunny Fonts');
             variants.textContent = styleCount > 0
                 ? formatPluralMessage(
-                    getString('variantCountSingle', '%d variant'),
-                    getString('variantCountMultiple', '%d variants'),
+                    getString('styleCountSingle', '%d style'),
+                    getString('styleCountMultiple', '%d styles'),
                     styleCount,
                     [styleCount]
                 )
                 : getString('bunnySourceLabel', 'Bunny Fonts');
 
             meta.append(category, variants);
+
+            if (familyHasVariableMetadata(item)) {
+                axes.textContent = familyAxisSummaryLabels(item).join(' · ');
+
+                if (axes.textContent) {
+                    meta.append(axes);
+                }
+            }
+
             card.append(head, preview, meta);
             bunnyResults.appendChild(card);
         });
@@ -4863,6 +5819,21 @@
             return null;
         }
 
+        const axisTags = [];
+        let isVariable = /variablefont/i.test(baseName);
+        const axisMatch = baseName.match(/\[([a-z0-9,]+)\]/i);
+
+        if (axisMatch && axisMatch[1]) {
+            isVariable = true;
+            axisMatch[1].split(',').forEach((tag) => {
+                const normalizedTag = normalizeAxisTag(tag);
+
+                if (normalizedTag) {
+                    axisTags.push(normalizedTag);
+                }
+            });
+        }
+
         const weightMap = {
             thin: '100',
             extralight: '200',
@@ -4907,7 +5878,23 @@
             return null;
         }
 
-        return { family, weight, style };
+        if (!isVariable) {
+            return { family, weight, style, isVariable: false, axes: [] };
+        }
+
+        if (!axisTags.length) {
+            axisTags.push('WGHT');
+        }
+
+        const axes = axisTags.map((tag) => {
+            if (tag === 'WGHT') {
+                return { tag: 'WGHT', min: '100', default: '400', max: '900' };
+            }
+
+            return { tag, min: '0', default: '0', max: '100' };
+        });
+
+        return { family, weight: '100..900', style, isVariable: true, axes };
     }
 
     function familyInputForGroup(group) {
@@ -4997,6 +5984,7 @@
         const weightField = row.querySelector('[data-upload-field="weight"]');
         const styleField = row.querySelector('[data-upload-field="style"]');
         const fileField = row.querySelector('[data-upload-field="file"]');
+        const variableField = row.querySelector('[data-upload-field="is-variable"]');
         const button = row.querySelector('[data-upload-detected-apply]');
         const file = fileField && fileField.files ? fileField.files[0] : null;
         const detected = file ? detectUploadMetadata(file.name) : null;
@@ -5010,6 +5998,8 @@
             delete button.dataset.detectedFamily;
             delete button.dataset.detectedWeight;
             delete button.dataset.detectedStyle;
+            delete button.dataset.detectedVariable;
+            delete button.dataset.detectedAxes;
             return null;
         }
 
@@ -5028,9 +6018,127 @@
         button.dataset.detectedFamily = detected.family;
         button.dataset.detectedWeight = detected.weight;
         button.dataset.detectedStyle = detected.style;
+        button.dataset.detectedVariable = detected.isVariable ? '1' : '0';
+        button.dataset.detectedAxes = JSON.stringify(detected.axes || []);
         button.textContent = `${getString('uploadUseDetected', 'Use Detected Values')} · ${label}`;
 
         return detected;
+    }
+
+    function uploadAxisRows(row) {
+        return row ? Array.from(row.querySelectorAll('[data-upload-axis-row]')) : [];
+    }
+
+    function buildUploadAxisRow(axis = {}) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'tasty-fonts-upload-axis-row';
+        wrapper.setAttribute('data-upload-axis-row', '');
+
+        const fields = [
+            { key: 'tag', placeholder: 'wght', label: getString('uploadAxisTag', 'Axis') },
+            { key: 'min', placeholder: '100', label: getString('uploadAxisMin', 'Min') },
+            { key: 'default', placeholder: '400', label: getString('uploadAxisDefault', 'Default') },
+            { key: 'max', placeholder: '900', label: getString('uploadAxisMax', 'Max') },
+        ];
+
+        fields.forEach(({ key, placeholder, label }) => {
+            const field = document.createElement('label');
+            field.className = 'tasty-fonts-stack-field tasty-fonts-upload-axis-field';
+
+            const title = document.createElement('span');
+            title.className = 'screen-reader-text';
+            title.textContent = label;
+
+            const input = document.createElement('input');
+            input.type = key === 'tag' ? 'text' : 'number';
+            input.step = key === 'tag' ? '' : 'any';
+            input.placeholder = placeholder;
+            input.value = key === 'tag'
+                ? String(axis[key] || '').toUpperCase()
+                : String(axis[key] || '');
+            input.setAttribute('data-upload-axis-field', key);
+
+            field.appendChild(title);
+            field.appendChild(input);
+            wrapper.appendChild(field);
+        });
+
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'button tasty-fonts-button-danger tasty-fonts-upload-axis-remove';
+        removeButton.setAttribute('data-upload-remove-axis', '');
+        removeButton.textContent = getString('uploadAxisRemove', 'Remove');
+        wrapper.appendChild(removeButton);
+
+        return wrapper;
+    }
+
+    function replaceUploadAxisRows(row, axes = []) {
+        const list = row ? row.querySelector('[data-upload-axis-list]') : null;
+
+        if (!list) {
+            return;
+        }
+
+        list.innerHTML = '';
+
+        axes.forEach((axis) => {
+            list.appendChild(buildUploadAxisRow(axis));
+        });
+    }
+
+    function ensureUploadAxisRow(row) {
+        const list = row ? row.querySelector('[data-upload-axis-list]') : null;
+
+        if (!list || uploadAxisRows(row).length) {
+            return;
+        }
+
+        list.appendChild(buildUploadAxisRow({ tag: 'WGHT', min: '100', default: '400', max: '900' }));
+    }
+
+    function syncUploadVariableState(row) {
+        if (!row) {
+            return;
+        }
+
+        const variableField = row.querySelector('[data-upload-field="is-variable"]');
+        const weightField = row.querySelector('[data-upload-field="weight"]');
+        const axisShell = row.querySelector('[data-upload-axis-shell]');
+        const isVariable = !!variableFontsEnabled && !!(variableField && variableField.checked);
+
+        if (weightField) {
+            weightField.disabled = isVariable;
+        }
+
+        if (axisShell) {
+            axisShell.hidden = !isVariable;
+        }
+
+        if (isVariable) {
+            ensureUploadAxisRow(row);
+        }
+    }
+
+    function readUploadAxes(row) {
+        const axes = [];
+
+        uploadAxisRows(row).forEach((axisRow) => {
+            const axis = {
+                tag: normalizeAxisTag(axisRow.querySelector('[data-upload-axis-field="tag"]')?.value || ''),
+                min: normalizeAxisValue(axisRow.querySelector('[data-upload-axis-field="min"]')?.value || ''),
+                default: normalizeAxisValue(axisRow.querySelector('[data-upload-axis-field="default"]')?.value || ''),
+                max: normalizeAxisValue(axisRow.querySelector('[data-upload-axis-field="max"]')?.value || ''),
+            };
+
+            if (!axis.tag || !axis.min || !axis.default || !axis.max) {
+                return;
+            }
+
+            axes.push(axis);
+        });
+
+        return axes;
     }
 
     function updateUploadFileName(row) {
@@ -5059,6 +6167,7 @@
         setUploadRowStatus(row, '', '');
         updateUploadFileName(row);
         updateUploadDetectedSuggestion(row);
+        syncUploadVariableState(row);
     }
 
     function initializeUploadGroup(group) {
@@ -5099,6 +6208,7 @@
 
         const weightField = row.querySelector('[data-upload-field="weight"]');
         const styleField = row.querySelector('[data-upload-field="style"]');
+        const variableField = row.querySelector('[data-upload-field="is-variable"]');
 
         if (weightField && options.weight) {
             weightField.value = options.weight;
@@ -5108,8 +6218,16 @@
             styleField.value = options.style;
         }
 
+        if (variableField) {
+            variableField.checked = !!options.isVariable;
+        }
+
         faceList.appendChild(fragment);
         const appendedRow = faceList.lastElementChild;
+
+        if (appendedRow && Array.isArray(options.axes) && options.axes.length) {
+            replaceUploadAxisRows(appendedRow, options.axes);
+        }
 
         initializeUploadRow(appendedRow);
         updateUploadRemoveButtons();
@@ -5193,12 +6311,24 @@
                 const weight = row.querySelector('[data-upload-field="weight"]');
                 const style = row.querySelector('[data-upload-field="style"]');
                 const file = row.querySelector('[data-upload-field="file"]');
+                const variableField = row.querySelector('[data-upload-field="is-variable"]');
                 const selectedFile = file && file.files ? file.files[0] : null;
+                const isVariable = !!variableFontsEnabled && !!(variableField && variableField.checked);
+                const axes = isVariable ? readUploadAxes(row) : [];
 
                 formData.append(`rows[${rowIndex}][family]`, family ? family.value.trim() : '');
                 formData.append(`rows[${rowIndex}][weight]`, weight ? weight.value : '400');
                 formData.append(`rows[${rowIndex}][style]`, style ? style.value : 'normal');
                 formData.append(`rows[${rowIndex}][fallback]`, fallback ? fallback.value : 'sans-serif');
+                formData.append(`rows[${rowIndex}][is_variable]`, isVariable ? '1' : '0');
+
+                axes.forEach((axis, axisIndex) => {
+                    formData.append(`rows[${rowIndex}][axes][${axisIndex}][tag]`, axis.tag);
+                    formData.append(`rows[${rowIndex}][axes][${axisIndex}][min]`, axis.min);
+                    formData.append(`rows[${rowIndex}][axes][${axisIndex}][default]`, axis.default);
+                    formData.append(`rows[${rowIndex}][axes][${axisIndex}][max]`, axis.max);
+                    formData.append(`rows[${rowIndex}][variation_defaults][${axis.tag}]`, axis.default);
+                });
 
                 if (selectedFile) {
                     hasAnyFile = true;
@@ -6102,6 +7232,18 @@
             roleMonospace.value = family;
         }
 
+        renderAllRoleWeightEditors({
+            ...snapshotBeforeChange,
+            [role]: family,
+            [`${role}Weight`]: '',
+            [`${role}Axes`]: defaultRoleAxesForFamily(family),
+        });
+        renderAllRoleAxisEditors({
+            ...snapshotBeforeChange,
+            [role]: family,
+            [`${role}Weight`]: '',
+            [`${role}Axes`]: defaultRoleAxesForFamily(family),
+        });
         updateRoleOutputs();
         void saveRoleDraft(snapshotBeforeChange).then((saved) => {
             if (saved) {
@@ -6145,6 +7287,8 @@
                     previewDirty = false;
                     previewFollowsDraft = true;
                     previewRoleState = currentDraftRoleState();
+                    renderAllPreviewWeightEditors(previewRoleState);
+                    renderAllPreviewAxisEditors(previewRoleState);
                     applyPreviewOutputs(getString('previewCurrentDraft', 'Current draft'));
                 }
             });
@@ -6314,6 +7458,28 @@
 
         const uploadAddFaceButton = event.target.closest('[data-upload-add-face]');
 
+        if (event.target.closest('[data-upload-remove-axis]')) {
+            const axisRow = event.target.closest('[data-upload-axis-row]');
+            const row = event.target.closest('[data-upload-row]');
+
+            if (axisRow && row && uploadAxisRows(row).length > 1) {
+                axisRow.remove();
+            }
+
+            return true;
+        }
+
+        if (event.target.closest('[data-upload-add-axis]')) {
+            const row = event.target.closest('[data-upload-row]');
+            const list = row ? row.querySelector('[data-upload-axis-list]') : null;
+
+            if (row && list) {
+                list.appendChild(buildUploadAxisRow());
+            }
+
+            return true;
+        }
+
         if (!uploadAddFaceButton) {
             return false;
         }
@@ -6341,9 +7507,18 @@
         const familyField = familyInputForGroup(group);
         const weightField = row ? row.querySelector('[data-upload-field="weight"]') : null;
         const styleField = row ? row.querySelector('[data-upload-field="style"]') : null;
+        const variableField = row ? row.querySelector('[data-upload-field="is-variable"]') : null;
         const detectedFamily = detectedButton.dataset.detectedFamily || '';
         const detectedWeight = detectedButton.dataset.detectedWeight || '';
         const detectedStyle = detectedButton.dataset.detectedStyle || '';
+        const detectedVariable = detectedButton.dataset.detectedVariable === '1';
+        const detectedAxes = (() => {
+            try {
+                return JSON.parse(detectedButton.dataset.detectedAxes || '[]');
+            } catch (error) {
+                return [];
+            }
+        })();
 
         if (familyField && !familyField.value.trim() && detectedFamily) {
             familyField.value = detectedFamily;
@@ -6356,6 +7531,16 @@
         if (styleField && detectedStyle) {
             styleField.value = detectedStyle;
         }
+
+        if (variableField) {
+            variableField.checked = detectedVariable;
+        }
+
+        if (row && detectedVariable) {
+            replaceUploadAxisRows(row, Array.isArray(detectedAxes) ? detectedAxes : []);
+        }
+
+        syncUploadVariableState(row);
 
         updateUploadDetectedSuggestion(row);
         return true;
@@ -6587,8 +7772,23 @@
     function bindRolePreviewControls() {
         [roleHeading, roleBody, roleMonospace, roleHeadingFallback, roleBodyFallback, roleMonospaceFallback].forEach((element) => {
             if (element) {
+                element.addEventListener('change', () => {
+                    renderAllRoleWeightEditors();
+                    renderAllRoleAxisEditors();
+                    updateRoleOutputs();
+                });
+            }
+        });
+
+        Object.values(roleWeightSelects).forEach((element) => {
+            if (element) {
                 element.addEventListener('change', updateRoleOutputs);
             }
+        });
+
+        document.querySelectorAll('[data-role-axis-fields]').forEach((container) => {
+            container.addEventListener('input', updateRoleOutputs);
+            container.addEventListener('change', updateRoleOutputs);
         });
 
         Object.entries(previewRoleSelects).forEach(([roleKey, element]) => {
@@ -6598,14 +7798,58 @@
 
             element.addEventListener('change', () => {
                 initializePreviewWorkspace();
+                const nextFamily = element.value || '';
                 previewRoleState = normalizeRoleState({
                     ...(previewRoleState || currentDraftRoleState()),
-                    [roleKey]: element.value || '',
+                    [roleKey]: nextFamily,
+                    [`${roleKey}Weight`]: '',
+                    [`${roleKey}Axes`]: defaultRoleAxesForFamily(nextFamily),
+                });
+                previewDirty = true;
+                previewFollowsDraft = false;
+                renderAllPreviewWeightEditors(previewRoleState);
+                renderAllPreviewAxisEditors(previewRoleState);
+                applyPreviewOutputs(previewSourceLabel ? previewSourceLabel.textContent : '');
+            });
+        });
+
+        Object.entries(previewWeightSelects).forEach(([roleKey, element]) => {
+            if (!element) {
+                return;
+            }
+
+            element.addEventListener('change', () => {
+                initializePreviewWorkspace();
+                previewRoleState = normalizeRoleState({
+                    ...(previewRoleState || currentDraftRoleState()),
+                    [`${roleKey}Weight`]: element.value || '',
                 });
                 previewDirty = true;
                 previewFollowsDraft = false;
                 applyPreviewOutputs(previewSourceLabel ? previewSourceLabel.textContent : '');
             });
+        });
+
+        document.querySelectorAll('[data-preview-axis-fields]').forEach((container) => {
+            const roleKey = String(container.getAttribute('data-preview-axis-fields') || '').trim();
+
+            if (!roleKey) {
+                return;
+            }
+
+            const syncPreviewAxisState = () => {
+                initializePreviewWorkspace();
+                previewRoleState = normalizeRoleState({
+                    ...(previewRoleState || currentDraftRoleState()),
+                    [`${roleKey}Axes`]: previewAxisFieldValues(roleKey),
+                });
+                previewDirty = true;
+                previewFollowsDraft = false;
+                applyPreviewOutputs(previewSourceLabel ? previewSourceLabel.textContent : '');
+            };
+
+            container.addEventListener('input', syncPreviewAxisState);
+            container.addEventListener('change', syncPreviewAxisState);
         });
 
         if (roleForm) {
@@ -6886,7 +8130,14 @@
                 return;
             }
 
-            const rowField = event.target.closest('[data-upload-field="weight"], [data-upload-field="style"]');
+            const variableField = event.target.closest('[data-upload-field="is-variable"]');
+
+            if (variableField) {
+                syncUploadVariableState(variableField.closest('[data-upload-row]'));
+                return;
+            }
+
+            const rowField = event.target.closest('[data-upload-field="weight"], [data-upload-field="style"], [data-upload-axis-field]');
 
             if (rowField) {
                 updateUploadDetectedSuggestion(rowField.closest('[data-upload-row]'));
@@ -7041,6 +8292,7 @@
         });
 
         syncOutputQuickModeUi();
+        updateRoleOutputs();
     }
 
     function bindOutputSettingsControls() {
@@ -7067,6 +8319,10 @@
         [...outputClassFlagInputs(), ...outputVariableFlagInputs(), ...Object.values(outputMasterInputs).filter(Boolean)].forEach((input) => {
             input.addEventListener('change', syncOutputSettingsUi);
         });
+
+        if (outputRoleWeightInput) {
+            outputRoleWeightInput.addEventListener('change', updateRoleOutputs);
+        }
 
         syncPillOptionUi();
         syncOutputSettingsUi();
@@ -7151,6 +8407,8 @@
         initUploadRows();
         initLibraryFiltering();
         initActivityFiltering();
+        renderAllRoleWeightEditors();
+        renderAllRoleAxisEditors();
         updatePreviewDynamicText();
         updatePreviewScale();
         updateRoleOutputs();

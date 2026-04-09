@@ -190,7 +190,7 @@ final class BunnyFontsClient
         $transientKey = $this->familyTransientKey($slug);
         $cached = get_transient($transientKey);
 
-        if (is_array($cached)) {
+        if ($this->isCachedFamilyRecord($cached)) {
             return $cached;
         }
 
@@ -293,6 +293,8 @@ final class BunnyFontsClient
         }
 
         $variants = $this->extractFamilyVariants($html, $slug);
+        $axisTags = $this->extractVariableAxisTags($html);
+        $axes = $this->buildVariableAxesFromVariants($variants, $axisTags);
 
         return [
             'family' => $familyName,
@@ -301,6 +303,9 @@ final class BunnyFontsClient
             'category_label' => $categoryLabel !== '' ? $categoryLabel : 'Bunny Fonts',
             'variants' => $variants,
             'style_count' => $styleCount > 0 ? $styleCount : count($variants),
+            'is_variable' => $axisTags !== [],
+            'axes' => $axes,
+            'axis_tags' => $axisTags,
         ];
     }
 
@@ -426,7 +431,91 @@ final class BunnyFontsClient
             'category_label' => 'Bunny Fonts',
             'variants' => ['regular'],
             'style_count' => 1,
+            'is_variable' => false,
+            'axes' => [],
+            'axis_tags' => [],
         ];
+    }
+
+    private function extractVariableAxisTags(string $html): array
+    {
+        preg_match_all('/\[((?:[A-Za-z0-9]{4},?)+)\]\.(?:ttf|otf|woff2?|ttc)/i', $html, $matches);
+
+        if (!isset($matches[1]) || !is_array($matches[1])) {
+            return [];
+        }
+
+        $tags = [];
+
+        foreach ($matches[1] as $group) {
+            foreach (explode(',', (string) $group) as $tag) {
+                $normalizedTag = FontUtils::normalizeAxisTag($tag);
+
+                if ($normalizedTag === '') {
+                    continue;
+                }
+
+                $tags[$normalizedTag] = $normalizedTag;
+            }
+        }
+
+        ksort($tags, SORT_STRING);
+
+        return array_values($tags);
+    }
+
+    private function buildVariableAxesFromVariants(array $variants, array $axisTags): array
+    {
+        if ($axisTags === []) {
+            return [];
+        }
+
+        $weights = [];
+
+        foreach ($variants as $variant) {
+            $axis = FontUtils::googleVariantToAxis((string) $variant);
+
+            if ($axis === null) {
+                continue;
+            }
+
+            $weight = FontUtils::normalizeWeight((string) ($axis['weight'] ?? '400'));
+
+            if (preg_match('/^\d+$/', $weight) === 1) {
+                $weights[] = (int) $weight;
+            }
+        }
+
+        $axes = [];
+
+        foreach ($axisTags as $tag) {
+            if ($tag === 'WGHT' && $weights !== []) {
+                sort($weights, SORT_NUMERIC);
+                $axes[$tag] = [
+                    'min' => (string) $weights[0],
+                    'default' => in_array(400, $weights, true) ? '400' : (string) $weights[0],
+                    'max' => (string) $weights[count($weights) - 1],
+                ];
+            }
+        }
+
+        return FontUtils::normalizeAxesMap($axes);
+    }
+
+    private function isCachedFamilyRecord(mixed $cached): bool
+    {
+        if (!is_array($cached)) {
+            return false;
+        }
+
+        return array_key_exists('family', $cached)
+            && array_key_exists('slug', $cached)
+            && array_key_exists('category', $cached)
+            && array_key_exists('variants', $cached)
+            && array_key_exists('style_count', $cached)
+            && array_key_exists('is_variable', $cached)
+            && array_key_exists('axes', $cached)
+            && array_key_exists('axis_tags', $cached);
     }
 
     private function familyTransientKey(string $slug): string

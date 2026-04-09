@@ -172,6 +172,27 @@ $tests['font_utils_normalize_weight_accepts_numeric_and_keyword_values'] = stati
 };
 
 // ---------------------------------------------------------------------------
+// FontUtils - variable axes and variation settings
+// ---------------------------------------------------------------------------
+
+$tests['font_utils_normalizes_axis_maps_and_builds_variation_settings'] = static function (): void {
+    $axes = FontUtils::normalizeAxesMap([
+        'wght' => ['min' => '100', 'default' => '400', 'max' => '900'],
+        'opsz' => ['min' => '8', 'default' => '14', 'max' => '32'],
+        'bad!' => ['min' => '0', 'default' => '1', 'max' => '2'],
+    ]);
+
+    assertArrayHasKeys(['WGHT', 'OPSZ'], $axes, 'Axis normalization should preserve valid registered axis tags and discard invalid tags.');
+    assertSameValue([], FontUtils::normalizeAxesMap([
+        'wght' => ['min' => '900', 'default' => '400', 'max' => '100'],
+    ]), 'Axis normalization should reject ranges whose default falls outside the declared bounds.');
+    assertSameValue('"opsz" 14, "wght" 400', FontUtils::buildFontVariationSettings([
+        'OPSZ' => '14',
+        'WGHT' => '400',
+    ]), 'Variation settings output should use CSS axis tags in registered lowercase form.');
+};
+
+// ---------------------------------------------------------------------------
 // FontUtils – weightNameSlug
 // ---------------------------------------------------------------------------
 

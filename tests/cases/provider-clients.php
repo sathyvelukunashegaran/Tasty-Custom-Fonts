@@ -8,6 +8,27 @@ use TastyFonts\Bunny\BunnyFontsClient;
 use TastyFonts\Google\GoogleFontsClient;
 use TastyFonts\Repository\SettingsRepository;
 
+$tests['google_fonts_client_builds_variable_css2_urls_when_axes_are_available'] = static function (): void {
+    $settings = new SettingsRepository();
+    $client = new GoogleFontsClient($settings);
+
+    assertSameValue(
+        'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
+        $client->buildCssUrl(
+            'Inter',
+            ['regular', 'italic'],
+            'swap',
+            [
+                'axes' => [
+                    'OPSZ' => ['min' => '14', 'default' => '14', 'max' => '32'],
+                    'WGHT' => ['min' => '100', 'default' => '400', 'max' => '900'],
+                ],
+            ]
+        ),
+        'Google variable CSS URLs should preserve the style axis and available variation ranges.'
+    );
+};
+
 $tests['bunny_fonts_client_builds_css2_urls'] = static function (): void {
     $client = new BunnyFontsClient();
 
@@ -48,6 +69,7 @@ XML,
     <div class="family"><h3>Sans Serif</h3></div>
     <div class="styles">18 styles</div>
     <div class="card-main"><h1>Inter</h1></div>
+    <p class="license-paragraph">Inter-Italic[opsz,wght].ttf</p>
     <link href="https://fonts.bunny.net/css?family=inter:100,400,700,400i,700i," rel="stylesheet" />
 </body>
 </html>
@@ -63,6 +85,8 @@ HTML,
     assertSameValue('sans-serif', (string) ($first['category'] ?? ''), 'Bunny search should normalize public category labels for preview usage.');
     assertSameValue('Sans Serif', (string) ($first['category_label'] ?? ''), 'Bunny search should keep the display category label for the admin cards.');
     assertSameValue(18, (int) ($first['style_count'] ?? 0), 'Bunny search should expose the public style count for the family card.');
+    assertSameValue(true, !empty($first['is_variable']), 'Bunny search should flag variable-source families when the public page exposes variable font filenames.');
+    assertSameValue(['OPSZ', 'WGHT'], $first['axis_tags'] ?? null, 'Bunny search should expose discovered variable axis tags for UI badges and notes.');
     assertSameValue(
         ['100', 'regular', '700', 'italic', '700italic'],
         $first['variants'] ?? [],
@@ -105,6 +129,52 @@ HTML,
     );
 };
 
+$tests['bunny_fonts_client_refetches_legacy_cached_family_records_without_variable_metadata'] = static function (): void {
+    resetTestState();
+
+    global $remoteGetResponses;
+    global $transientStore;
+
+    $client = new BunnyFontsClient();
+    $transientStore[TastyFonts\Bunny\BunnyFontsClient::TRANSIENT_FAMILY_PREFIX . substr(md5('inter'), 0, 12)] = [
+        'family' => 'Inter',
+        'slug' => 'inter',
+        'category' => 'sans-serif',
+        'category_label' => 'Sans Serif',
+        'variants' => ['regular'],
+        'style_count' => 1,
+    ];
+    $remoteGetResponses['https://fonts.bunny.net/family/inter'] = [
+        'response' => ['code' => 200],
+        'headers' => ['content-type' => 'text/html'],
+        'body' => <<<'HTML'
+<!doctype html>
+<html>
+<head>
+    <title>Inter | Bunny Fonts</title>
+</head>
+<body>
+    <div class="family"><h3>Sans Serif</h3></div>
+    <div class="styles">18 styles</div>
+    <div class="card-main"><h1>Inter</h1></div>
+    <p class="license-paragraph">Inter-Italic[opsz,wght].ttf</p>
+    <link href="https://fonts.bunny.net/css?family=inter:100,400,700,400i,700i," rel="stylesheet" />
+</body>
+</html>
+HTML,
+    ];
+
+    $family = $client->getFamily('Inter');
+
+    assertSameValue(true, !empty($family['is_variable']), 'Legacy Bunny family cache entries should be ignored so variable-source metadata can be refreshed.');
+    assertSameValue(['OPSZ', 'WGHT'], $family['axis_tags'] ?? null, 'Refetched Bunny family records should expose current axis tags.');
+    assertSameValue(
+        ['100', 'regular', '700', 'italic', '700italic'],
+        $family['variants'] ?? [],
+        'Refetched Bunny family records should replace stale cached variants with the current normalized variant list.'
+    );
+};
+
 $tests['google_fonts_client_uses_compact_catalog_cache_for_search_and_refetches_full_family_metadata_on_demand'] = static function (): void {
     resetTestState();
 
@@ -116,7 +186,7 @@ $tests['google_fonts_client_uses_compact_catalog_cache_for_search_and_refetches_
     $settings->saveSettings(['google_api_key' => 'api-key']);
     $settings->saveGoogleApiKeyStatus('valid', 'Ready');
     $client = new GoogleFontsClient($settings);
-    $catalogUrl = 'https://www.googleapis.com/webfonts/v1/webfonts?sort=popularity&key=api-key';
+    $catalogUrl = 'https://www.googleapis.com/webfonts/v1/webfonts?sort=popularity&capability=VF&key=api-key';
     $remoteGetResponses[$catalogUrl] = [
         'response' => ['code' => 200],
         'headers' => ['content-type' => 'application/json'],
@@ -126,10 +196,14 @@ $tests['google_fonts_client_uses_compact_catalog_cache_for_search_and_refetches_
                     [
                         'family' => 'Inter',
                         'category' => 'sans-serif',
-                        'variants' => ['regular', '700'],
+                        'variants' => ['regular', 'italic'],
                         'subsets' => ['latin'],
                         'version' => 'v18',
                         'lastModified' => '2024-01-01',
+                        'axes' => [
+                            ['tag' => 'opsz', 'start' => 14, 'end' => 32],
+                            ['tag' => 'wght', 'start' => 100, 'end' => 900],
+                        ],
                     ],
                     [
                         'family' => 'Lora',
@@ -155,6 +229,12 @@ $tests['google_fonts_client_uses_compact_catalog_cache_for_search_and_refetches_
                 'slug' => 'inter',
                 'category' => 'sans-serif',
                 'variants_count' => 2,
+                'variants' => ['regular', 'italic'],
+                'is_variable' => true,
+                'axes' => [
+                    'OPSZ' => ['min' => '14', 'default' => '14', 'max' => '32'],
+                    'WGHT' => ['min' => '100', 'default' => '400', 'max' => '900'],
+                ],
             ],
         ],
         $results,
@@ -167,18 +247,27 @@ $tests['google_fonts_client_uses_compact_catalog_cache_for_search_and_refetches_
                 'family' => 'Inter',
                 'category' => 'sans-serif',
                 'variants_count' => 2,
+                'variants' => ['regular', 'italic'],
+                'is_variable' => true,
+                'axes' => [
+                    'OPSZ' => ['min' => '14', 'default' => '14', 'max' => '32'],
+                    'WGHT' => ['min' => '100', 'default' => '400', 'max' => '900'],
+                ],
             ],
             'lora' => [
                 'family' => 'Lora',
                 'category' => 'serif',
                 'variants_count' => 1,
+                'variants' => ['regular'],
+                'is_variable' => false,
+                'axes' => [],
             ],
         ],
         $transientStore['tasty_fonts_google_catalog_v1'] ?? null,
         'The Google catalog transient should only store the compact search index.'
     );
     assertSameValue(2, count($remoteGetCalls), 'Google family metadata lookups should refetch the full catalog when only the compact search index is cached.');
-    assertSameValue(['regular', '700'], $family['variants'] ?? null, 'Google family lookups should still return full variant metadata on demand.');
+    assertSameValue(['regular', 'italic'], $family['variants'] ?? null, 'Google family lookups should still return full variant metadata on demand.');
     assertSameValue('v18', (string) ($family['version'] ?? ''), 'Google family lookups should still return full catalog metadata on demand.');
 };
 
@@ -222,7 +311,7 @@ $tests['provider_clients_apply_http_request_args_filters'] = static function ():
     $google = new GoogleFontsClient($settings);
     $bunny = new BunnyFontsClient();
     $adobe = new AdobeProjectClient($settings, new AdobeCssParser());
-    $googleCatalogUrl = 'https://www.googleapis.com/webfonts/v1/webfonts?sort=popularity&key=api-key';
+    $googleCatalogUrl = 'https://www.googleapis.com/webfonts/v1/webfonts?sort=popularity&capability=VF&key=api-key';
     $googleCssUrl = $google->buildCssUrl('Inter', ['regular']);
     $bunnyFamilyUrl = 'https://fonts.bunny.net/family/inter';
     $bunnyCssUrl = $bunny->buildCssUrl('Inter', ['regular']);
@@ -251,6 +340,7 @@ $tests['provider_clients_apply_http_request_args_filters'] = static function ():
     <div class="family"><h3>Sans Serif</h3></div>
     <div class="styles">1 style</div>
     <div class="card-main"><h1>Inter</h1></div>
+    <p class="license-paragraph">Inter-Italic[opsz,wght].ttf</p>
     <link href="https://fonts.bunny.net/css?family=inter:400," rel="stylesheet" />
 </body>
 </html>
@@ -268,7 +358,8 @@ HTML,
 @font-face {
   font-family: "ff-tisa-web-pro";
   font-style: normal;
-  font-weight: 400;
+  font-weight: 100 700;
+  font-variation-settings: "opsz" 12;
   src: url("https://use.typekit.net/af/abc123/000000000000000000000000/30/l?primer=1") format("woff2");
 }
 CSS,
@@ -307,7 +398,8 @@ $tests['adobe_project_client_validates_project_and_reuses_cached_families'] = st
 @font-face {
   font-family: "ff-tisa-web-pro";
   font-style: normal;
-  font-weight: 400;
+  font-weight: 100 700;
+  font-variation-settings: "opsz" 12;
   src: url("https://use.typekit.net/af/abc123/000000000000000000000000/30/l?primer=1") format("woff2");
 }
 @font-face {
@@ -327,6 +419,8 @@ CSS,
     assertContainsValue('2 famil', (string) $validation['message'], 'Adobe project validation should report the detected family count.');
     assertSameValue(2, count($families), 'Adobe project metadata should expose parsed family records.');
     assertSameValue('ff-tisa-web-pro', $families[0]['family'], 'Adobe project family metadata should preserve parsed CSS family names.');
+    assertSameValue(true, !empty($families[0]['faces'][0]['is_variable']), 'Adobe project metadata should preserve variable-face markers from the hosted stylesheet.');
+    assertSameValue('100', (string) ($families[0]['faces'][0]['axes']['WGHT']['min'] ?? ''), 'Adobe project metadata should preserve parsed weight-axis ranges.');
     assertSameValue(1, count($remoteGetCalls), 'Adobe project families should come from the cache after a successful validation fetch.');
 };
 

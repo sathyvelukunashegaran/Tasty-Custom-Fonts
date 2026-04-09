@@ -1568,6 +1568,7 @@ function makeServiceGraph(): array
     $localUpload = new LocalUploadService(
         $storage,
         $catalog,
+        $imports,
         $assets,
         $settings,
         $log,

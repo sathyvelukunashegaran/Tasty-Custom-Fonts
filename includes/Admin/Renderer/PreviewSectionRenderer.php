@@ -15,7 +15,7 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
         $this->renderTemplate('preview-section.php', $view);
     }
 
-    public function renderPreviewScene(string $key, string $previewText, array $roles, bool $monospaceRoleEnabled = false): void
+    public function renderPreviewScene(string $key, string $previewText, array $roles, bool $monospaceRoleEnabled = false, array $familyLabels = []): void
     {
         switch ($key) {
             case 'editorial':
@@ -26,16 +26,16 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
                             <div class="tasty-fonts-preview-specimen-glyph" data-role-preview="heading">Aa</div>
                             <div class="tasty-fonts-preview-specimen-key">
                                 <span class="tasty-fonts-preview-specimen-key-label"><?php esc_html_e('Heading Family', 'tasty-fonts'); ?></span>
-                                <strong class="tasty-fonts-preview-specimen-key-value" data-role-preview="heading" data-role-preview-name="heading"><?php echo esc_html($this->previewRoleName('heading', $roles)); ?></strong>
+                                <strong class="tasty-fonts-preview-specimen-key-value" data-role-preview="heading" data-role-preview-name="heading"><?php echo esc_html($this->previewRoleName('heading', $roles, $familyLabels)); ?></strong>
                             </div>
                             <div class="tasty-fonts-preview-specimen-key">
                                 <span class="tasty-fonts-preview-specimen-key-label"><?php esc_html_e('Body Family', 'tasty-fonts'); ?></span>
-                                <strong class="tasty-fonts-preview-specimen-key-value" data-role-preview="body" data-role-preview-name="body"><?php echo esc_html($this->previewRoleName('body', $roles)); ?></strong>
+                                <strong class="tasty-fonts-preview-specimen-key-value" data-role-preview="body" data-role-preview-name="body"><?php echo esc_html($this->previewRoleName('body', $roles, $familyLabels)); ?></strong>
                             </div>
                             <?php if ($monospaceRoleEnabled): ?>
                                 <div class="tasty-fonts-preview-specimen-key">
                                     <span class="tasty-fonts-preview-specimen-key-label"><?php esc_html_e('Monospace', 'tasty-fonts'); ?></span>
-                                    <strong class="tasty-fonts-preview-specimen-key-value" data-role-preview="monospace" data-role-preview-name="monospace"><?php echo esc_html($this->previewRoleName('monospace', $roles)); ?></strong>
+                                    <strong class="tasty-fonts-preview-specimen-key-value" data-role-preview="monospace" data-role-preview-name="monospace"><?php echo esc_html($this->previewRoleName('monospace', $roles, $familyLabels)); ?></strong>
                                 </div>
                             <?php endif; ?>
                         </aside>
@@ -221,7 +221,7 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
                 return;
 
             case 'code':
-                $this->renderCodePreviewScene($previewText, $roles, $monospaceRoleEnabled);
+                $this->renderCodePreviewScene($previewText, $roles, $monospaceRoleEnabled, $familyLabels);
                 return;
 
             case 'interface':
@@ -272,12 +272,12 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
         }
     }
 
-    public function previewRoleName(string $roleKey, array $roles): string
+    public function previewRoleName(string $roleKey, array $roles, array $familyLabels = []): string
     {
         $familyName = trim((string) ($roles[$roleKey] ?? ''));
 
         if ($familyName !== '') {
-            return $familyName;
+            return (string) ($familyLabels[$familyName] ?? $familyName);
         }
 
         return sprintf(
@@ -295,7 +295,7 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
     public function renderPreviewRolePicker(
         string $roleKey,
         string $label,
-        array $availableFamilies,
+        array $availableFamilyOptions,
         array $previewRoles,
         array $draftRoles,
         bool $allowFallbackOnly = false
@@ -308,39 +308,63 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
             default => (string) ($previewRoles['monospace_fallback'] ?? 'monospace'),
         };
         ?>
-        <label class="tasty-fonts-stack-field tasty-fonts-preview-tray-field">
-            <?php $this->renderFieldLabel($label); ?>
-            <span class="tasty-fonts-select-field<?php echo $allowFallbackOnly ? ' tasty-fonts-select-field--clearable' : ''; ?>">
-                <select
-                    data-preview-role-select="<?php echo esc_attr($roleKey); ?>"
-                    data-preview-draft-family="<?php echo esc_attr($draftFamily); ?>"
-                    data-preview-fallback="<?php echo esc_attr($fallbackValue); ?>"
-                >
-                    <?php if ($allowFallbackOnly): ?>
-                        <option value="" <?php selected($selectedFamily, ''); ?>><?php esc_html_e('Use Fallback Only', 'tasty-fonts'); ?></option>
-                    <?php endif; ?>
-                    <?php foreach ($availableFamilies as $familyName): ?>
-                        <option value="<?php echo esc_attr((string) $familyName); ?>" <?php selected($selectedFamily, $familyName); ?>><?php echo esc_html((string) $familyName); ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <?php if ($allowFallbackOnly): ?>
-                    <button
-                        type="button"
-                        class="tasty-fonts-select-clear"
-                        data-clear-select-button
-                        data-clear-value=""
-                        aria-label="<?php echo esc_attr(sprintf(__('Clear %s', 'tasty-fonts'), $label)); ?>"
-                        hidden
+        <div class="tasty-fonts-preview-role-picker" data-preview-role-picker="<?php echo esc_attr($roleKey); ?>">
+            <label class="tasty-fonts-stack-field tasty-fonts-preview-tray-field">
+                <?php $this->renderFieldLabel($label); ?>
+                <span class="tasty-fonts-select-field<?php echo $allowFallbackOnly ? ' tasty-fonts-select-field--clearable' : ''; ?>">
+                    <select
+                        data-preview-role-select="<?php echo esc_attr($roleKey); ?>"
+                        data-preview-draft-family="<?php echo esc_attr($draftFamily); ?>"
+                        data-preview-fallback="<?php echo esc_attr($fallbackValue); ?>"
                     >
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                <?php endif; ?>
-            </span>
-        </label>
+                        <?php if ($allowFallbackOnly): ?>
+                            <option value="" <?php selected($selectedFamily, ''); ?>><?php esc_html_e('Use Fallback Only', 'tasty-fonts'); ?></option>
+                        <?php endif; ?>
+                        <?php foreach ($availableFamilyOptions as $option): ?>
+                            <?php if (!is_array($option)) { continue; } ?>
+                            <?php $familyName = (string) ($option['value'] ?? ''); ?>
+                            <?php $familyLabel = (string) ($option['label'] ?? $familyName); ?>
+                            <option value="<?php echo esc_attr($familyName); ?>" <?php selected($selectedFamily, $familyName); ?>><?php echo esc_html($familyLabel); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if ($allowFallbackOnly): ?>
+                        <button
+                            type="button"
+                            class="tasty-fonts-select-clear"
+                            data-clear-select-button
+                            data-clear-value=""
+                            aria-label="<?php echo esc_attr(sprintf(__('Clear %s', 'tasty-fonts'), $label)); ?>"
+                            hidden
+                        >
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    <?php endif; ?>
+                </span>
+            </label>
+            <div class="tasty-fonts-role-weight-editor tasty-fonts-preview-role-editor" data-preview-weight-editor="<?php echo esc_attr($roleKey); ?>" hidden>
+                <div class="tasty-fonts-role-axis-head">
+                    <span class="tasty-fonts-field-label-text"><?php esc_html_e('Role Weight', 'tasty-fonts'); ?></span>
+                    <span class="tasty-fonts-muted" data-preview-weight-summary="<?php echo esc_attr($roleKey); ?>"><?php esc_html_e('Choose a saved static weight when the selected family offers more than one.', 'tasty-fonts'); ?></span>
+                </div>
+                <label class="tasty-fonts-stack-field tasty-fonts-role-weight-field">
+                    <span class="screen-reader-text"><?php echo esc_html(sprintf(__('%s weight', 'tasty-fonts'), $label)); ?></span>
+                    <span class="tasty-fonts-select-field">
+                        <select data-preview-weight-select="<?php echo esc_attr($roleKey); ?>"></select>
+                    </span>
+                </label>
+            </div>
+            <div class="tasty-fonts-role-axis-editor tasty-fonts-preview-role-editor" data-preview-axis-editor="<?php echo esc_attr($roleKey); ?>" hidden>
+                <div class="tasty-fonts-role-axis-head">
+                    <span class="tasty-fonts-field-label-text"><?php esc_html_e('Variable Axes', 'tasty-fonts'); ?></span>
+                    <span class="tasty-fonts-muted" data-preview-axis-summary="<?php echo esc_attr($roleKey); ?>"><?php esc_html_e('Assign axis values when the selected family supports variable fonts.', 'tasty-fonts'); ?></span>
+                </div>
+                <div class="tasty-fonts-role-axis-fields" data-preview-axis-fields="<?php echo esc_attr($roleKey); ?>"></div>
+            </div>
+        </div>
         <?php
     }
 
-    public function renderCodePreviewScene(string $previewText, array $roles, bool $monospaceRoleEnabled): void
+    public function renderCodePreviewScene(string $previewText, array $roles, bool $monospaceRoleEnabled, array $familyLabels = []): void
     {
         $editorPreviewHeadingId = 'tasty-fonts-preview-code-editor-heading';
         $blockPreviewHeadingId = 'tasty-fonts-preview-code-block-heading';
@@ -353,15 +377,15 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
                 <div class="tasty-fonts-preview-code-meta">
                     <div class="tasty-fonts-preview-code-meta-item">
                         <span class="tasty-fonts-preview-code-meta-label"><?php esc_html_e('Code Face', 'tasty-fonts'); ?></span>
-                        <strong class="tasty-fonts-preview-code-meta-value" data-role-preview="monospace" data-role-preview-name="monospace"><?php echo esc_html($this->previewRoleName('monospace', $roles)); ?></strong>
+                        <strong class="tasty-fonts-preview-code-meta-value" data-role-preview="monospace" data-role-preview-name="monospace"><?php echo esc_html($this->previewRoleName('monospace', $roles, $familyLabels ?? [])); ?></strong>
                     </div>
                     <div class="tasty-fonts-preview-code-meta-item">
                         <span class="tasty-fonts-preview-code-meta-label"><?php esc_html_e('Headings', 'tasty-fonts'); ?></span>
-                        <strong class="tasty-fonts-preview-code-meta-value" data-role-preview="heading" data-role-preview-name="heading"><?php echo esc_html($this->previewRoleName('heading', $roles)); ?></strong>
+                        <strong class="tasty-fonts-preview-code-meta-value" data-role-preview="heading" data-role-preview-name="heading"><?php echo esc_html($this->previewRoleName('heading', $roles, $familyLabels ?? [])); ?></strong>
                     </div>
                     <div class="tasty-fonts-preview-code-meta-item">
                         <span class="tasty-fonts-preview-code-meta-label"><?php esc_html_e('Annotations', 'tasty-fonts'); ?></span>
-                        <strong class="tasty-fonts-preview-code-meta-value" data-role-preview="body" data-role-preview-name="body"><?php echo esc_html($this->previewRoleName('body', $roles)); ?></strong>
+                        <strong class="tasty-fonts-preview-code-meta-value" data-role-preview="body" data-role-preview-name="body"><?php echo esc_html($this->previewRoleName('body', $roles, $familyLabels ?? [])); ?></strong>
                     </div>
                 </div>
                 <div class="tasty-fonts-preview-code-inline">

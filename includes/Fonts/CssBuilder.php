@@ -275,6 +275,8 @@ final class CssBuilder
         $style = FontUtils::normalizeStyle((string) ($face['style'] ?? 'normal'));
         $unicodeRange = trim((string) ($face['unicode_range'] ?? ''));
         $files = is_array($face['files'] ?? null) ? $face['files'] : [];
+        $axes = FontUtils::normalizeAxesMap($face['axes'] ?? []);
+        $variationDefaults = FontUtils::normalizeVariationDefaults($face['variation_defaults'] ?? [], $axes);
 
         if ($family === '' || $files === []) {
             return '';
@@ -282,7 +284,7 @@ final class CssBuilder
 
         $css = "@font-face{\n";
         $css .= '  font-family:"' . FontUtils::escapeFontFamily($family) . "\";\n";
-        $css .= "  font-weight:{$weight};\n";
+        $css .= '  font-weight:' . $this->fontWeightDescriptor($weight, $axes) . ";\n";
         $css .= "  font-style:{$style};\n";
 
         $sources = [];
@@ -301,6 +303,12 @@ final class CssBuilder
 
         if ($unicodeRange !== '') {
             $css .= "  unicode-range:{$unicodeRange};\n";
+        }
+
+        $variationSettings = FontUtils::buildFontVariationSettings($variationDefaults);
+
+        if ($variationSettings !== 'normal') {
+            $css .= '  font-variation-settings:' . $variationSettings . ";\n";
         }
 
         $css .= '  font-display:' . $this->resolveFontDisplay($display) . ";\n";
@@ -415,16 +423,25 @@ final class CssBuilder
         $includeExtendedVariables = $this->extendedVariableOutputEnabled($settings);
         $includeWeightTokens = $this->extendedVariableWeightTokensEnabled($settings);
         $includeRoleFontWeights = $this->roleUsageFontWeightEnabled($settings);
+        $bodyWeight = $this->resolveRoleUsageWeightValue($roles, 'body');
+        $headingWeight = $this->resolveRoleUsageWeightValue($roles, 'heading');
+        $monospaceWeight = $this->resolveRoleUsageWeightValue($roles, 'monospace');
+        $bodyWeightFromAxes = $this->roleUsageWeightComesFromAxis($roles, 'body');
+        $headingWeightFromAxes = $this->roleUsageWeightComesFromAxis($roles, 'heading');
+        $monospaceWeightFromAxes = $this->roleUsageWeightComesFromAxis($roles, 'monospace');
 
         $lines = [
             'body {',
             '  font-family: var(--font-body);',
+            '  font-variation-settings: var(--font-body-settings);',
         ];
 
-        if ($includeRoleFontWeights && $includeWeightTokens) {
-            $lines[] = '  font-weight: var(--weight-regular);';
-        } elseif ($includeRoleFontWeights && $includeExtendedVariables) {
-            $lines[] = '  font-weight: 400;';
+        if ($includeRoleFontWeights) {
+            $bodyWeightDeclaration = $this->buildRoleWeightDeclaration($bodyWeight, $includeWeightTokens, $includeExtendedVariables, $bodyWeightFromAxes);
+
+            if ($bodyWeightDeclaration !== '') {
+                $lines[] = '  font-weight: ' . $bodyWeightDeclaration . ';';
+            }
         }
 
         $lines = [
@@ -433,12 +450,15 @@ final class CssBuilder
             '',
             'h1, h2, h3, h4, h5, h6 {',
             '  font-family: var(--font-heading);',
+            '  font-variation-settings: var(--font-heading-settings);',
         ];
 
-        if ($includeRoleFontWeights && $includeWeightTokens) {
-            $lines[] = '  font-weight: var(--weight-bold);';
-        } elseif ($includeRoleFontWeights && $includeExtendedVariables) {
-            $lines[] = '  font-weight: 700;';
+        if ($includeRoleFontWeights) {
+            $headingWeightDeclaration = $this->buildRoleWeightDeclaration($headingWeight, $includeWeightTokens, $includeExtendedVariables, $headingWeightFromAxes);
+
+            if ($headingWeightDeclaration !== '') {
+                $lines[] = '  font-weight: ' . $headingWeightDeclaration . ';';
+            }
         }
 
         $lines[] = '}';
@@ -449,8 +469,18 @@ final class CssBuilder
                 '',
                 'code, pre {',
                 '  font-family: var(--font-monospace);',
-                '}',
+                '  font-variation-settings: var(--font-monospace-settings);',
             ];
+
+            if ($includeRoleFontWeights) {
+                $monospaceWeightDeclaration = $this->buildRoleWeightDeclaration($monospaceWeight, $includeWeightTokens, $includeExtendedVariables, $monospaceWeightFromAxes);
+
+                if ($monospaceWeightDeclaration !== '') {
+                    $lines[] = '  font-weight: ' . $monospaceWeightDeclaration . ';';
+                }
+            }
+
+            $lines[] = '}';
         }
 
         return implode("\n", $lines);
@@ -462,25 +492,38 @@ final class CssBuilder
         array $variableFamilies = [],
         array $settings = []
     ): array {
+        $headingFamily = trim((string) ($roles['heading'] ?? ''));
+        $bodyFamily = trim((string) ($roles['body'] ?? ''));
+        $monospaceFamily = trim((string) ($roles['monospace'] ?? ''));
+
         if ($this->minimalOutputPresetEnabled($settings)) {
-            return [
-                ':root {',
-                '  --font-heading: ' . FontUtils::buildFontStack(
-                    (string) ($roles['heading'] ?? ''),
+            $declarations = [
+                '--font-heading' => FontUtils::buildFontStack(
+                    $headingFamily,
                     (string) ($roles['heading_fallback'] ?? 'sans-serif')
-                ) . ';',
-                '  --font-body: ' . FontUtils::buildFontStack(
-                    (string) ($roles['body'] ?? ''),
+                ),
+                '--font-body' => FontUtils::buildFontStack(
+                    $bodyFamily,
                     (string) ($roles['body_fallback'] ?? 'sans-serif')
-                ) . ';',
-                '}',
+                ),
             ];
+
+            $this->appendRoleVariationDeclarations($declarations, $roles, 'heading');
+            $this->appendRoleVariationDeclarations($declarations, $roles, 'body');
+
+            $lines = [':root {'];
+
+            foreach ($declarations as $property => $value) {
+                $lines[] = "  {$property}: {$value};";
+            }
+
+            $lines[] = '}';
+
+            return $lines;
         }
 
         $includeExtendedVariables = $this->extendedVariableOutputEnabled($settings);
         $declarations = $this->buildFamilyVariableDeclarations($variableFamilies, $settings);
-        $headingFamily = trim((string) ($roles['heading'] ?? ''));
-        $bodyFamily = trim((string) ($roles['body'] ?? ''));
 
         if ($includeExtendedVariables) {
             $this->appendDeclarations(
@@ -505,9 +548,16 @@ final class CssBuilder
 
         if ($includeMonospace) {
             $declarations['--font-monospace'] = FontUtils::buildFontStack(
-                (string) ($roles['monospace'] ?? ''),
+                $monospaceFamily,
                 (string) ($roles['monospace_fallback'] ?? 'monospace')
             );
+        }
+
+        $this->appendRoleVariationDeclarations($declarations, $roles, 'heading');
+        $this->appendRoleVariationDeclarations($declarations, $roles, 'body');
+
+        if ($includeMonospace) {
+            $this->appendRoleVariationDeclarations($declarations, $roles, 'monospace');
         }
 
         if ($this->extendedVariableRoleAliasesEnabled($settings)) {
@@ -766,6 +816,10 @@ final class CssBuilder
 
     private function resolveConcreteWeightValue(string $weight): string
     {
+        if (trim($weight) === '') {
+            return '';
+        }
+
         $numericProperty = FontUtils::weightVariableName($weight);
 
         if ($numericProperty === '') {
@@ -773,6 +827,44 @@ final class CssBuilder
         }
 
         return substr($numericProperty, strlen('--weight-'));
+    }
+
+    private function resolveRoleUsageWeightValue(array $roles, string $roleKey): string
+    {
+        $axes = FontUtils::normalizeVariationDefaults($roles[$roleKey . '_axes'] ?? []);
+        $weightFromAxes = $this->resolveConcreteWeightValue((string) ($axes['WGHT'] ?? ''));
+
+        if ($weightFromAxes !== '') {
+            return $weightFromAxes;
+        }
+
+        $storedWeight = $this->resolveConcreteWeightValue((string) ($roles[$roleKey . '_weight'] ?? ''));
+
+        if ($storedWeight !== '') {
+            return $storedWeight;
+        }
+
+        return $roleKey === 'heading' ? '700' : '400';
+    }
+
+    private function roleUsageWeightComesFromAxis(array $roles, string $roleKey): bool
+    {
+        $axes = FontUtils::normalizeVariationDefaults($roles[$roleKey . '_axes'] ?? []);
+
+        return $this->resolveConcreteWeightValue((string) ($axes['WGHT'] ?? '')) !== '';
+    }
+
+    private function buildRoleWeightDeclaration(string $weight, bool $includeWeightTokens, bool $includeExtendedVariables, bool $preferRaw = false): string
+    {
+        if ($includeWeightTokens && !$preferRaw) {
+            $reference = FontUtils::weightVariableReference($weight);
+
+            if ($reference !== '') {
+                return $reference;
+            }
+        }
+
+        return $includeExtendedVariables ? $weight : '';
     }
 
     private function buildRoleAliasClassSnippet(array $roles, bool $includeMonospace = false, array $settings = []): string
@@ -939,6 +1031,29 @@ final class CssBuilder
         $escapedUrl = esc_url_raw($url);
 
         return 'url("' . $escapedUrl . '") format("' . $formatName . '")';
+    }
+
+    private function appendRoleVariationDeclarations(array &$declarations, array $roles, string $roleKey): void
+    {
+        $variationDefaults = FontUtils::normalizeVariationDefaults($roles[$roleKey . '_axes'] ?? []);
+        $declarations['--font-' . $roleKey . '-settings'] = FontUtils::buildFontVariationSettings($variationDefaults);
+
+        foreach ($variationDefaults as $tag => $value) {
+            $declarations['--font-' . $roleKey . '-axis-' . strtolower(FontUtils::cssAxisTag($tag))] = $value;
+        }
+    }
+
+    private function fontWeightDescriptor(string $weight, array $axes = []): string
+    {
+        if (isset($axes['WGHT']['min'], $axes['WGHT']['max'])) {
+            return (string) $axes['WGHT']['min'] . ' ' . (string) $axes['WGHT']['max'];
+        }
+
+        if (preg_match('/^(\d{1,4})\.\.(\d{1,4})$/', $weight, $matches) === 1) {
+            return $matches[1] . ' ' . $matches[2];
+        }
+
+        return $weight;
     }
 
     private function resolveFamilyFallback(array $family, array $settings): string

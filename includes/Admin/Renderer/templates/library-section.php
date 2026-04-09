@@ -242,6 +242,8 @@
                                                             <div class="tasty-fonts-import-card-copy">
                                                                 <?php $this->renderFieldLabel(__('Selected Family', 'tasty-fonts')); ?>
                                                                 <div id="tasty-fonts-selected-family" class="tasty-fonts-import-selected-name"><?php esc_html_e('Choose a Google family or type one manually.', 'tasty-fonts'); ?></div>
+                                                                <div id="tasty-fonts-selected-family-meta" class="tasty-fonts-import-selected-meta" hidden></div>
+                                                                <p id="tasty-fonts-selected-family-note" class="tasty-fonts-import-selected-note tasty-fonts-muted" hidden></p>
                                                             </div>
                                                         </div>
                                                         <div class="tasty-fonts-import-preview-shell">
@@ -370,6 +372,8 @@
                                                             <div class="tasty-fonts-import-card-copy">
                                                                 <?php $this->renderFieldLabel(__('Selected Family', 'tasty-fonts')); ?>
                                                                 <div id="tasty-fonts-bunny-selected-family" class="tasty-fonts-import-selected-name"><?php esc_html_e('Choose a Bunny family or type one manually.', 'tasty-fonts'); ?></div>
+                                                                <div id="tasty-fonts-bunny-selected-family-meta" class="tasty-fonts-import-selected-meta" hidden></div>
+                                                                <p id="tasty-fonts-bunny-selected-family-note" class="tasty-fonts-import-selected-note tasty-fonts-muted" hidden></p>
                                                             </div>
                                                         </div>
                                                         <div class="tasty-fonts-import-preview-shell">
@@ -526,6 +530,7 @@
                                                 <aside class="tasty-fonts-access-note tasty-fonts-access-note--external tasty-fonts-access-note--upload">
                                                     <span class="tasty-fonts-access-note-label"><?php esc_html_e('Auto-detect', 'tasty-fonts'); ?></span>
                                                     <p class="tasty-fonts-muted"><?php esc_html_e('Filenames like Abel-400.woff2 or Inter-700-italic.woff2 can suggest the family name, weight, and style automatically.', 'tasty-fonts'); ?></p>
+                                                    <p class="tasty-fonts-muted"><?php echo !empty($variableFontsEnabled) ? esc_html__('Variable fonts are enabled. Upload rows can store axis ranges and defaults alongside the file.', 'tasty-fonts') : esc_html__('Turn on variable fonts in Settings → Behavior to upload and configure variable font files.', 'tasty-fonts'); ?></p>
                                                 </aside>
                                             </div>
                                         </section>
@@ -580,6 +585,7 @@
                                                                 <span><?php esc_html_e('Font File', 'tasty-fonts'); ?></span>
                                                                 <span><?php esc_html_e('Weight', 'tasty-fonts'); ?></span>
                                                                 <span><?php esc_html_e('Style', 'tasty-fonts'); ?></span>
+                                                                <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
                                                                 <span><?php esc_html_e('Action', 'tasty-fonts'); ?></span>
                                                             </div>
 
@@ -622,6 +628,14 @@
                                                                             </span>
                                                                         </label>
 
+                                                                        <label class="tasty-fonts-stack-field tasty-fonts-upload-variable-field">
+                                                                            <span class="screen-reader-text"><?php esc_html_e('Variable Font', 'tasty-fonts'); ?></span>
+                                                                            <span class="tasty-fonts-upload-variable-toggle">
+                                                                                <input type="checkbox" data-upload-field="is-variable" <?php disabled(empty($variableFontsEnabled)); ?>>
+                                                                                <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
+                                                                            </span>
+                                                                        </label>
+
                                                                         <button
                                                                             type="button"
                                                                             class="button tasty-fonts-button-danger tasty-fonts-upload-row-remove"
@@ -635,6 +649,13 @@
                                                                     <div class="tasty-fonts-upload-row-foot">
                                                                         <button type="button" class="button tasty-fonts-upload-detected" data-upload-detected-apply hidden></button>
                                                                         <div class="tasty-fonts-upload-row-status" data-upload-row-status></div>
+                                                                    </div>
+
+                                                                    <div class="tasty-fonts-upload-axis-shell" data-upload-axis-shell hidden>
+                                                                        <div class="tasty-fonts-upload-axis-list" data-upload-axis-list></div>
+                                                                        <div class="tasty-fonts-upload-axis-actions">
+                                                                            <button type="button" class="button button-small" data-upload-add-axis><?php esc_html_e('Add Axis', 'tasty-fonts'); ?></button>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -689,6 +710,7 @@
                                                                 <span><?php esc_html_e('Font File', 'tasty-fonts'); ?></span>
                                                                 <span><?php esc_html_e('Weight', 'tasty-fonts'); ?></span>
                                                                 <span><?php esc_html_e('Style', 'tasty-fonts'); ?></span>
+                                                                <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
                                                                 <span><?php esc_html_e('Action', 'tasty-fonts'); ?></span>
                                                             </div>
 
@@ -731,6 +753,14 @@
                                                                             </span>
                                                                         </label>
 
+                                                                        <label class="tasty-fonts-stack-field tasty-fonts-upload-variable-field">
+                                                                            <span class="screen-reader-text"><?php esc_html_e('Variable Font', 'tasty-fonts'); ?></span>
+                                                                            <span class="tasty-fonts-upload-variable-toggle">
+                                                                                <input type="checkbox" data-upload-field="is-variable" <?php disabled(empty($variableFontsEnabled)); ?>>
+                                                                                <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
+                                                                            </span>
+                                                                        </label>
+
                                                                         <button
                                                                             type="button"
                                                                             class="button tasty-fonts-button-danger tasty-fonts-upload-row-remove"
@@ -744,6 +774,13 @@
                                                                     <div class="tasty-fonts-upload-row-foot">
                                                                         <button type="button" class="button tasty-fonts-upload-detected" data-upload-detected-apply hidden></button>
                                                                         <div class="tasty-fonts-upload-row-status" data-upload-row-status></div>
+                                                                    </div>
+
+                                                                    <div class="tasty-fonts-upload-axis-shell" data-upload-axis-shell hidden>
+                                                                        <div class="tasty-fonts-upload-axis-list" data-upload-axis-list></div>
+                                                                        <div class="tasty-fonts-upload-axis-actions">
+                                                                            <button type="button" class="button button-small" data-upload-add-axis><?php esc_html_e('Add Axis', 'tasty-fonts'); ?></button>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -794,6 +831,14 @@
                                                                 </span>
                                                             </label>
 
+                                                            <label class="tasty-fonts-stack-field tasty-fonts-upload-variable-field">
+                                                                <span class="screen-reader-text"><?php esc_html_e('Variable Font', 'tasty-fonts'); ?></span>
+                                                                <span class="tasty-fonts-upload-variable-toggle">
+                                                                    <input type="checkbox" data-upload-field="is-variable" <?php disabled(empty($variableFontsEnabled)); ?>>
+                                                                    <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
+                                                                </span>
+                                                            </label>
+
                                                             <button
                                                                 type="button"
                                                                 class="button tasty-fonts-button-danger tasty-fonts-upload-row-remove"
@@ -807,6 +852,13 @@
                                                         <div class="tasty-fonts-upload-row-foot">
                                                             <button type="button" class="button tasty-fonts-upload-detected" data-upload-detected-apply hidden></button>
                                                             <div class="tasty-fonts-upload-row-status" data-upload-row-status></div>
+                                                        </div>
+
+                                                        <div class="tasty-fonts-upload-axis-shell" data-upload-axis-shell hidden>
+                                                            <div class="tasty-fonts-upload-axis-list" data-upload-axis-list></div>
+                                                            <div class="tasty-fonts-upload-axis-actions">
+                                                                <button type="button" class="button button-small" data-upload-add-axis><?php esc_html_e('Add Axis', 'tasty-fonts'); ?></button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </template>
