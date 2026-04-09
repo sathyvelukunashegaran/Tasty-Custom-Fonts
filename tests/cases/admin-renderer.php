@@ -89,6 +89,81 @@ $tests['admin_page_renderer_uses_inline_delivery_badge_for_single_delivery_famil
     assertNotContainsValue('widefat striped tasty-fonts-table', $output, 'Family details should no longer use widefat table markup.');
 };
 
+$tests['admin_page_renderer_hides_collapsed_delivery_notes_for_multi_delivery_families'] = static function (): void {
+    resetTestState();
+
+    $renderer = new AdminPageRenderer(new Storage());
+    $family = [
+        'family' => 'Inter',
+        'slug' => 'inter',
+        'delivery_filter_tokens' => ['google', 'published'],
+        'publish_state' => 'published',
+        'active_delivery_id' => 'google-cdn',
+        'active_delivery' => [
+            'id' => 'google-cdn',
+            'label' => 'Google CDN',
+            'provider' => 'google',
+            'type' => 'cdn',
+            'variants' => ['regular', '700'],
+        ],
+        'available_deliveries' => [
+            [
+                'id' => 'local-self-hosted',
+                'label' => 'Self-hosted',
+                'provider' => 'local',
+                'type' => 'self_hosted',
+                'variants' => ['regular', '700'],
+            ],
+            [
+                'id' => 'google-cdn',
+                'label' => 'Google CDN',
+                'provider' => 'google',
+                'type' => 'cdn',
+                'variants' => ['regular', '700'],
+            ],
+        ],
+        'delivery_badges' => [
+            [
+                'label' => 'Google CDN',
+                'class' => '',
+                'copy' => 'Google CDN',
+            ],
+        ],
+        'faces' => [
+            [
+                'weight' => '400',
+                'style' => 'normal',
+                'source' => 'google',
+                'files' => [],
+                'paths' => [],
+            ],
+        ],
+    ];
+
+    ob_start();
+    invokePrivateMethod(
+        $renderer,
+        'renderFamilyRow',
+        [
+            $family,
+            ['heading' => '', 'body' => ''],
+            [],
+            [],
+            [
+                ['value' => 'inherit', 'label' => 'Use plugin default'],
+                ['value' => 'swap', 'label' => 'swap'],
+            ],
+            'The quick brown fox jumps over the lazy dog.',
+            [],
+        ]
+    );
+    $output = (string) ob_get_clean();
+
+    assertNotContainsValue('Available delivery profiles', $output, 'Multi-delivery families should not repeat the saved delivery list in the collapsed card.');
+    assertNotContainsValue('Live delivery', $output, 'Multi-delivery families should not repeat the active delivery summary in the collapsed card.');
+    assertNotContainsValue('Google CDN · External request via Google Fonts', $output, 'Multi-delivery families should keep request-path details inside the expanded delivery cards only.');
+};
+
 $tests['admin_page_renderer_renders_library_type_filter_and_category_tokens'] = static function (): void {
     resetTestState();
 
@@ -402,6 +477,57 @@ $tests['admin_page_renderer_renders_single_page_library_tab_for_empty_and_popula
 
     assertContainsValue('data-font-slug="inter"', $populatedOutput, 'The unified Library tab should still render populated library cards.');
     assertNotContainsValue('Your Library Is Empty', $populatedOutput, 'The populated Library tab should not render the empty state.');
+};
+
+$tests['admin_page_renderer_only_shows_upload_variable_controls_when_variable_fonts_are_enabled'] = static function (): void {
+    resetTestState();
+
+    $renderer = new AdminPageRenderer(new Storage());
+    $baseContext = [
+        'storage' => ['root' => '/tmp/uploads/fonts'],
+        'current_page' => 'library',
+        'catalog' => [],
+        'available_families' => [],
+        'roles' => [],
+        'logs' => [],
+        'activity_actor_options' => [],
+        'family_fallbacks' => [],
+        'family_font_displays' => [],
+        'family_font_display_options' => [],
+        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+        'preview_size' => 32,
+        'font_display' => 'optional',
+        'font_display_options' => [],
+        'minify_css_output' => true,
+        'preload_primary_fonts' => true,
+        'remote_connection_hints' => true,
+        'block_editor_font_library_sync_enabled' => false,
+        'training_wheels_off' => false,
+        'delete_uploaded_files_on_uninstall' => false,
+        'diagnostic_items' => [],
+        'overview_metrics' => [],
+        'output_panels' => [],
+        'generated_css_panel' => [],
+        'preview_panels' => [],
+        'local_environment_notice' => [],
+        'toasts' => [],
+        'apply_everywhere' => false,
+        'role_deployment' => [],
+    ];
+
+    ob_start();
+    $renderer->renderPage($baseContext + ['variable_fonts_enabled' => false]);
+    $disabledOutput = (string) ob_get_clean();
+
+    assertContainsValue('tasty-fonts-upload-face-shell--static-only', $disabledOutput, 'The upload builder should switch to the static-only layout when variable font support is off.');
+    assertNotContainsValue('data-upload-field="is-variable"', $disabledOutput, 'The upload builder should not render variable upload toggles when variable font support is off.');
+
+    ob_start();
+    $renderer->renderPage($baseContext + ['variable_fonts_enabled' => true]);
+    $enabledOutput = (string) ob_get_clean();
+
+    assertNotContainsValue('tasty-fonts-upload-face-shell--static-only', $enabledOutput, 'The upload builder should keep the full upload grid when variable font support is on.');
+    assertContainsValue('data-upload-field="is-variable"', $enabledOutput, 'The upload builder should render variable upload toggles when variable font support is on.');
 };
 
 $tests['admin_page_renderer_renders_extended_variable_submenu_controls'] = static function (): void {

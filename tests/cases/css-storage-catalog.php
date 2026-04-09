@@ -1117,8 +1117,10 @@ $tests['catalog_service_ignores_eot_and_svg_files_during_local_scan'] = static f
     $adobe = new AdobeProjectClient($settings, new AdobeCssParser());
     $catalog = new CatalogService($storage, $imports, new FontFilenameParser(), $log, $adobe);
     $families = $catalog->getCatalog();
+    $family = $families['Inter'] ?? [];
 
     assertSameValue(['Inter'], array_values(array_keys($families)), 'Catalog scanning should ignore local EOT and SVG files so the scanned formats match the upload allowlist.');
+    assertSameValue('library_only', (string) ($family['publish_state'] ?? ''), 'Families discovered by scanning the fonts directory should start in the library instead of being published immediately.');
 };
 
 $tests['catalog_service_only_includes_local_variable_fonts_when_the_feature_flag_is_enabled'] = static function (): void {

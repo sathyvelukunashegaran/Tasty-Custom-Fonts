@@ -392,7 +392,9 @@ final class LibraryService
                 continue;
             }
 
-            $targetState = isset($liveFamilies[$familyName]) ? 'role_active' : 'published';
+            $targetState = isset($liveFamilies[$familyName])
+                ? 'role_active'
+                : $this->manualPublishStateForFamily($storedFamily);
 
             if ((string) ($storedFamily['publish_state'] ?? 'published') !== $targetState) {
                 $this->imports->setPublishState($familySlug, $targetState);
@@ -403,7 +405,7 @@ final class LibraryService
             $storedFamily = $this->imports->getFamily($familySlug);
 
             if ($storedFamily === null) {
-                $this->imports->ensureFamily($familyName, $familySlug, 'role_active');
+                $this->imports->ensureFamily($familyName, $familySlug, 'role_active', null, 'library_only');
                 continue;
             }
 
@@ -413,6 +415,19 @@ final class LibraryService
         }
 
         $this->catalog->invalidate();
+    }
+
+    private function manualPublishStateForFamily(array $family): string
+    {
+        $manualState = strtolower(trim((string) ($family['manual_publish_state'] ?? '')));
+
+        if (in_array($manualState, self::MANUAL_PUBLISH_STATES, true)) {
+            return $manualState;
+        }
+
+        $publishState = strtolower(trim((string) ($family['publish_state'] ?? 'published')));
+
+        return in_array($publishState, self::MANUAL_PUBLISH_STATES, true) ? $publishState : 'published';
     }
 
     /**

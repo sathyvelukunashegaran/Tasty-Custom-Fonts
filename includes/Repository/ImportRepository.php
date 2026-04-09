@@ -16,6 +16,7 @@ final class ImportRepository
     private const SUPPORTED_PUBLISH_STATES = ['library_only', 'published', 'role_active'];
     private const SUPPORTED_DELIVERY_TYPES = ['self_hosted', 'cdn', 'adobe_hosted'];
     private const SUPPORTED_PROVIDERS = ['local', 'google', 'bunny', 'adobe'];
+    private const SUPPORTED_FORMATS = ['static', 'variable'];
 
     public function all(): array
     {
@@ -91,7 +92,8 @@ final class ImportRepository
         string $familyName,
         ?string $familySlug = null,
         string $defaultPublishState = 'published',
-        ?string $activeDeliveryId = null
+        ?string $activeDeliveryId = null,
+        ?string $defaultManualPublishState = null
     ): array {
         $familyName = sanitize_text_field($familyName);
         $familySlug = FontUtils::slugify($familySlug ?? $familyName);
@@ -112,6 +114,7 @@ final class ImportRepository
                 'family' => $familyName,
                 'slug' => $familySlug,
                 'publish_state' => $defaultPublishState,
+                'manual_publish_state' => $defaultManualPublishState,
                 'active_delivery_id' => $activeDeliveryId ?? '',
                 'delivery_profiles' => [],
             ],
@@ -235,6 +238,10 @@ final class ImportRepository
 
         if ($publishState !== null) {
             $family['publish_state'] = $publishState;
+
+            if ($publishState !== 'role_active') {
+                $family['manual_publish_state'] = $publishState;
+            }
         }
 
         $library[$familySlug] = $this->normalizeFamilyRecord($family, $family);
@@ -259,6 +266,11 @@ final class ImportRepository
         }
 
         $family['publish_state'] = $publishState;
+
+        if ($publishState !== 'role_active') {
+            $family['manual_publish_state'] = $publishState;
+        }
+
         $library[$familySlug] = $this->normalizeFamilyRecord($family, $family);
         $this->persistLibrary($library);
 
@@ -382,6 +394,11 @@ final class ImportRepository
             'family' => $familyName,
             'slug' => $familySlug,
             'publish_state' => $this->normalizePublishState((string) ($family['publish_state'] ?? ($existing['publish_state'] ?? 'published'))),
+            'manual_publish_state' => $this->normalizeManualPublishState(
+                (string) ($family['manual_publish_state'] ?? ''),
+                (string) ($family['publish_state'] ?? ''),
+                is_array($existing) ? $existing : null
+            ),
             'active_delivery_id' => $activeDeliveryId,
             'delivery_profiles' => $profiles,
         ];
@@ -405,6 +422,7 @@ final class ImportRepository
             'id' => $id,
             'provider' => $provider,
             'type' => $type,
+            'format' => $this->normalizeFormat((string) ($profile['format'] ?? ''), (array) ($profile['faces'] ?? [])),
             'label' => sanitize_text_field((string) ($profile['label'] ?? $this->defaultProfileLabel($provider, $type))),
             'variants' => FontUtils::normalizeVariantTokens((array) ($profile['variants'] ?? [])),
             'faces' => $this->normalizeFaces((array) ($profile['faces'] ?? [])),
@@ -499,6 +517,29 @@ final class ImportRepository
         return in_array($state, self::SUPPORTED_PUBLISH_STATES, true) ? $state : 'published';
     }
 
+    private function normalizeManualPublishState(string $state, string $publishState = '', ?array $existing = null): string
+    {
+        $state = sanitize_text_field($state);
+
+        if (in_array($state, ['library_only', 'published'], true)) {
+            return $state;
+        }
+
+        $existingState = is_array($existing) ? sanitize_text_field((string) ($existing['manual_publish_state'] ?? '')) : '';
+
+        if (in_array($existingState, ['library_only', 'published'], true)) {
+            return $existingState;
+        }
+
+        $publishState = $this->normalizePublishState($publishState);
+
+        if (in_array($publishState, ['library_only', 'published'], true)) {
+            return $publishState;
+        }
+
+        return 'published';
+    }
+
     private function normalizeProvider(string $provider): string
     {
         $provider = strtolower(trim($provider));
@@ -516,6 +557,17 @@ final class ImportRepository
     private function normalizeDeliveryId(string $deliveryId): string
     {
         return FontUtils::slugify($deliveryId);
+    }
+
+    private function normalizeFormat(string $format, array $faces): string
+    {
+        $normalized = strtolower(trim($format));
+
+        if (in_array($normalized, self::SUPPORTED_FORMATS, true)) {
+            return $normalized;
+        }
+
+        return FontUtils::facesHaveVariableMetadata($faces) ? 'variable' : 'static';
     }
 
     private function defaultProfileId(string $provider, string $type): string

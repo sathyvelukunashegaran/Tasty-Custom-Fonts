@@ -423,8 +423,16 @@ final class LocalUploadService
             ? FontUtils::buildVariableFontFilename($familyName, $style, $extension)
             : FontUtils::buildStaticFontFilename($familyName, $weight, $style, $extension);
         $targetPath = wp_normalize_path(trailingslashit($familyDirectory) . $filename);
+        $relativePath = $this->storage->relativePath($targetPath);
 
         if (file_exists($targetPath)) {
+            if (is_readable($targetPath) && $relativePath !== '') {
+                return [
+                    'path' => $targetPath,
+                    'relative_path' => $relativePath,
+                ];
+            }
+
             return $this->error(
                 'tasty_fonts_upload_duplicate_file',
                 __('That font file already exists in the library.', 'tasty-fonts')
@@ -440,7 +448,7 @@ final class LocalUploadService
 
         return [
             'path' => $targetPath,
-            'relative_path' => $this->storage->relativePath($targetPath),
+            'relative_path' => $relativePath,
         ];
     }
 
@@ -592,7 +600,7 @@ final class LocalUploadService
                     'imported_at' => current_time('mysql'),
                 ],
             ],
-            $existingFamily === null ? 'published' : (string) ($existingFamily['publish_state'] ?? 'published'),
+            $existingFamily === null ? 'library_only' : (string) ($existingFamily['publish_state'] ?? 'published'),
             $existingFamily === null
         );
     }

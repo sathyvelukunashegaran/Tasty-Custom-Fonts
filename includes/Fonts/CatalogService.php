@@ -152,7 +152,7 @@ final class CatalogService
         }
 
         foreach ($this->scanLocalFamilies() as $family) {
-            $this->mergeSyntheticFamily($families, $family, 'published');
+            $this->mergeSyntheticFamily($families, $family, 'library_only');
         }
 
         foreach ($this->loadAdobeFamilies() as $family) {
@@ -240,6 +240,8 @@ final class CatalogService
         );
 
         $hasVariableFaces = $this->familyHasVariableFaces($availableDeliveries);
+        $hasStaticFaces = $this->familyHasStaticFaces($availableDeliveries);
+        $formats = $this->buildFamilyFormats($availableDeliveries);
 
         return [
             'family' => (string) ($family['family'] ?? ''),
@@ -258,6 +260,8 @@ final class CatalogService
                 $this->resolveFamilyCategory($family, $activeDelivery, $availableDeliveries),
                 $hasVariableFaces
             ),
+            'formats' => $formats,
+            'has_static_faces' => $hasStaticFaces,
             'has_variable_faces' => $hasVariableFaces,
             'variation_axes' => $this->collectFamilyVariationAxes($availableDeliveries),
         ];
@@ -300,6 +304,7 @@ final class CatalogService
             'id' => (string) ($profile['id'] ?? ''),
             'provider' => $provider,
             'type' => $type,
+            'format' => FontUtils::resolveProfileFormat($profile),
             'label' => (string) ($profile['label'] ?? ''),
             'variants' => (array) ($profile['variants'] ?? []),
             'faces' => $faces,
@@ -494,7 +499,7 @@ final class CatalogService
             $byFamily[$familyName] = [
                 'family' => $familyName,
                 'slug' => $familySlug,
-                'publish_state' => 'published',
+                'publish_state' => 'library_only',
                 'active_delivery_id' => $profileId,
                 'delivery_profiles' => [
                     $profileId => [
@@ -570,6 +575,53 @@ final class CatalogService
         }
 
         return false;
+    }
+
+    private function familyHasStaticFaces(array $profiles): bool
+    {
+        foreach ($profiles as $profile) {
+            if (!is_array($profile)) {
+                continue;
+            }
+
+            foreach ((array) ($profile['faces'] ?? []) as $face) {
+                if (!is_array($face) || FontUtils::faceIsVariable($face)) {
+                    continue;
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function buildFamilyFormats(array $profiles): array
+    {
+        $formats = [];
+
+        foreach ($profiles as $profile) {
+            if (!is_array($profile)) {
+                continue;
+            }
+
+            $format = FontUtils::resolveProfileFormat($profile);
+            $formats[$format] = [
+                'label' => ucfirst($format),
+                'available' => true,
+                'source_only' => !empty($profile['source_only']),
+            ];
+        }
+
+        if ($formats === []) {
+            $formats['static'] = [
+                'label' => 'Static',
+                'available' => true,
+                'source_only' => false,
+            ];
+        }
+
+        return $formats;
     }
 
     private function collectFamilyVariationAxes(array $profiles): array

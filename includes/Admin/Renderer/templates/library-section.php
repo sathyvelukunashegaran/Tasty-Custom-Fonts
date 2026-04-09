@@ -1,3 +1,4 @@
+                    <?php $showUploadVariableControls = !empty($variableFontsEnabled); ?>
                     <section class="tasty-fonts-card tasty-fonts-library-card" id="tasty-fonts-library">
                         <div class="tasty-fonts-card-head tasty-fonts-card-head--library">
                             <?php
@@ -224,6 +225,11 @@
                                                 </div>
 
                                                 <fieldset class="tasty-fonts-source-delivery-choice" id="tasty-fonts-google-delivery-choice">
+                                                    <legend class="tasty-fonts-field-label"><?php esc_html_e('Format', 'tasty-fonts'); ?></legend>
+                                                    <div id="tasty-fonts-google-format-choice" class="tasty-fonts-output-quick-options tasty-fonts-settings-flat-row-options" hidden></div>
+                                                </fieldset>
+
+                                                <fieldset class="tasty-fonts-source-delivery-choice">
                                                     <legend class="tasty-fonts-field-label"><?php esc_html_e('Delivery', 'tasty-fonts'); ?></legend>
                                                     <label class="tasty-fonts-filter-pill tasty-fonts-filter-pill--choice">
                                                         <input type="radio" name="tasty_fonts_google_delivery_mode" value="self_hosted" checked>
@@ -309,11 +315,16 @@
                                                 </div>
                                             </div>
 
-                                            <aside class="tasty-fonts-access-note tasty-fonts-access-note--external">
-                                                <span class="tasty-fonts-access-note-label"><?php esc_html_e('Browse on Bunny', 'tasty-fonts'); ?></span>
-                                                <p class="tasty-fonts-muted"><?php esc_html_e('Search Bunny’s public catalog in a new tab, then paste the family name here to import and self-host it locally.', 'tasty-fonts'); ?></p>
-                                                <a class="tasty-fonts-access-link" href="<?php echo esc_url($bunnyCatalogLink); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Open Bunny Fonts Catalog', 'tasty-fonts'); ?></a>
-                                            </aside>
+                                            <div class="tasty-fonts-google-access-panel">
+                                                <div class="tasty-fonts-google-access-footer">
+                                                    <div class="tasty-fonts-google-access-meta">
+                                                        <div class="tasty-fonts-access-note tasty-fonts-access-note--compact">
+                                                            <span class="tasty-fonts-access-note-label"><?php esc_html_e('Browse the catalog', 'tasty-fonts'); ?></span>
+                                                            <a class="tasty-fonts-access-link" href="<?php echo esc_url($bunnyCatalogLink); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Open Bunny Fonts Catalog', 'tasty-fonts'); ?></a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </section>
 
                                         <div class="tasty-fonts-google-workflow">
@@ -354,6 +365,11 @@
                                                 </div>
 
                                                 <fieldset class="tasty-fonts-source-delivery-choice" id="tasty-fonts-bunny-delivery-choice">
+                                                    <legend class="tasty-fonts-field-label"><?php esc_html_e('Format', 'tasty-fonts'); ?></legend>
+                                                    <div id="tasty-fonts-bunny-format-choice" class="tasty-fonts-output-quick-options tasty-fonts-settings-flat-row-options" hidden></div>
+                                                </fieldset>
+
+                                                <fieldset class="tasty-fonts-source-delivery-choice">
                                                     <legend class="tasty-fonts-field-label"><?php esc_html_e('Delivery', 'tasty-fonts'); ?></legend>
                                                     <label class="tasty-fonts-filter-pill tasty-fonts-filter-pill--choice">
                                                         <input type="radio" name="tasty_fonts_bunny_delivery_mode" value="self_hosted" checked>
@@ -530,7 +546,7 @@
                                                 <aside class="tasty-fonts-access-note tasty-fonts-access-note--external tasty-fonts-access-note--upload">
                                                     <span class="tasty-fonts-access-note-label"><?php esc_html_e('Auto-detect', 'tasty-fonts'); ?></span>
                                                     <p class="tasty-fonts-muted"><?php esc_html_e('Filenames like Abel-400.woff2 or Inter-700-italic.woff2 can suggest the family name, weight, and style automatically.', 'tasty-fonts'); ?></p>
-                                                    <p class="tasty-fonts-muted"><?php echo !empty($variableFontsEnabled) ? esc_html__('Variable fonts are enabled. Upload rows can store axis ranges and defaults alongside the file.', 'tasty-fonts') : esc_html__('Turn on variable fonts in Settings → Behavior to upload and configure variable font files.', 'tasty-fonts'); ?></p>
+                                                    <p class="tasty-fonts-muted"><?php echo $showUploadVariableControls ? esc_html__('Variable fonts are enabled. Upload rows can store axis ranges and defaults alongside the file.', 'tasty-fonts') : esc_html__('Turn on variable fonts in Settings → Behavior to upload and configure variable font files.', 'tasty-fonts'); ?></p>
                                                 </aside>
                                             </div>
                                         </section>
@@ -580,12 +596,14 @@
                                                             </button>
                                                         </div>
 
-                                                        <div class="tasty-fonts-upload-face-shell">
+                                                        <div class="tasty-fonts-upload-face-shell<?php echo $showUploadVariableControls ? '' : ' tasty-fonts-upload-face-shell--static-only'; ?>">
                                                             <div class="tasty-fonts-upload-face-headings" aria-hidden="true">
                                                                 <span><?php esc_html_e('Font File', 'tasty-fonts'); ?></span>
                                                                 <span><?php esc_html_e('Weight', 'tasty-fonts'); ?></span>
                                                                 <span><?php esc_html_e('Style', 'tasty-fonts'); ?></span>
-                                                                <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
+                                                                <?php if ($showUploadVariableControls): ?>
+                                                                    <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
+                                                                <?php endif; ?>
                                                                 <span><?php esc_html_e('Action', 'tasty-fonts'); ?></span>
                                                             </div>
 
@@ -628,13 +646,15 @@
                                                                             </span>
                                                                         </label>
 
-                                                                        <label class="tasty-fonts-stack-field tasty-fonts-upload-variable-field">
-                                                                            <span class="screen-reader-text"><?php esc_html_e('Variable Font', 'tasty-fonts'); ?></span>
-                                                                            <span class="tasty-fonts-upload-variable-toggle">
-                                                                                <input type="checkbox" data-upload-field="is-variable" <?php disabled(empty($variableFontsEnabled)); ?>>
-                                                                                <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
-                                                                            </span>
-                                                                        </label>
+                                                                        <?php if ($showUploadVariableControls): ?>
+                                                                            <label class="tasty-fonts-stack-field tasty-fonts-upload-variable-field">
+                                                                                <span class="screen-reader-text"><?php esc_html_e('Variable Font', 'tasty-fonts'); ?></span>
+                                                                                <span class="tasty-fonts-upload-variable-toggle">
+                                                                                    <input type="checkbox" data-upload-field="is-variable">
+                                                                                    <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
+                                                                                </span>
+                                                                            </label>
+                                                                        <?php endif; ?>
 
                                                                         <button
                                                                             type="button"
@@ -705,12 +725,14 @@
                                                             </button>
                                                         </div>
 
-                                                        <div class="tasty-fonts-upload-face-shell">
+                                                        <div class="tasty-fonts-upload-face-shell<?php echo $showUploadVariableControls ? '' : ' tasty-fonts-upload-face-shell--static-only'; ?>">
                                                             <div class="tasty-fonts-upload-face-headings" aria-hidden="true">
                                                                 <span><?php esc_html_e('Font File', 'tasty-fonts'); ?></span>
                                                                 <span><?php esc_html_e('Weight', 'tasty-fonts'); ?></span>
                                                                 <span><?php esc_html_e('Style', 'tasty-fonts'); ?></span>
-                                                                <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
+                                                                <?php if ($showUploadVariableControls): ?>
+                                                                    <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
+                                                                <?php endif; ?>
                                                                 <span><?php esc_html_e('Action', 'tasty-fonts'); ?></span>
                                                             </div>
 
@@ -753,13 +775,15 @@
                                                                             </span>
                                                                         </label>
 
-                                                                        <label class="tasty-fonts-stack-field tasty-fonts-upload-variable-field">
-                                                                            <span class="screen-reader-text"><?php esc_html_e('Variable Font', 'tasty-fonts'); ?></span>
-                                                                            <span class="tasty-fonts-upload-variable-toggle">
-                                                                                <input type="checkbox" data-upload-field="is-variable" <?php disabled(empty($variableFontsEnabled)); ?>>
-                                                                                <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
-                                                                            </span>
-                                                                        </label>
+                                                                        <?php if ($showUploadVariableControls): ?>
+                                                                            <label class="tasty-fonts-stack-field tasty-fonts-upload-variable-field">
+                                                                                <span class="screen-reader-text"><?php esc_html_e('Variable Font', 'tasty-fonts'); ?></span>
+                                                                                <span class="tasty-fonts-upload-variable-toggle">
+                                                                                    <input type="checkbox" data-upload-field="is-variable">
+                                                                                    <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
+                                                                                </span>
+                                                                            </label>
+                                                                        <?php endif; ?>
 
                                                                         <button
                                                                             type="button"
@@ -831,13 +855,15 @@
                                                                 </span>
                                                             </label>
 
-                                                            <label class="tasty-fonts-stack-field tasty-fonts-upload-variable-field">
-                                                                <span class="screen-reader-text"><?php esc_html_e('Variable Font', 'tasty-fonts'); ?></span>
-                                                                <span class="tasty-fonts-upload-variable-toggle">
-                                                                    <input type="checkbox" data-upload-field="is-variable" <?php disabled(empty($variableFontsEnabled)); ?>>
-                                                                    <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
-                                                                </span>
-                                                            </label>
+                                                            <?php if ($showUploadVariableControls): ?>
+                                                                <label class="tasty-fonts-stack-field tasty-fonts-upload-variable-field">
+                                                                    <span class="screen-reader-text"><?php esc_html_e('Variable Font', 'tasty-fonts'); ?></span>
+                                                                    <span class="tasty-fonts-upload-variable-toggle">
+                                                                        <input type="checkbox" data-upload-field="is-variable">
+                                                                        <span><?php esc_html_e('Variable', 'tasty-fonts'); ?></span>
+                                                                    </span>
+                                                                </label>
+                                                            <?php endif; ?>
 
                                                             <button
                                                                 type="button"

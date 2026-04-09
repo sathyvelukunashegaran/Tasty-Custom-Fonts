@@ -80,6 +80,7 @@ CSS,
     assertSameValue('imported', (string) ($result['status'] ?? ''), 'Bunny imports should report an imported result.');
     assertSameValue('bunny', (string) ($profile['provider'] ?? ''), 'Bunny imports should persist the bunny provider on the saved delivery profile.');
     assertSameValue('bunny', (string) ($profile['faces'][0]['provider']['type'] ?? ''), 'Bunny imports should persist bunny provider metadata per face.');
+    assertSameValue('library_only', (string) ($import['publish_state'] ?? ''), 'New Bunny imports should start in the library instead of being published immediately.');
     assertSameValue(['bunny'], (array) ($catalogFamily['sources'] ?? []), 'Catalog entries created from Bunny imports should expose the bunny source.');
     assertSameValue('bunny', (string) ($catalogFamily['faces'][0]['source'] ?? ''), 'Catalog faces created from Bunny imports should retain the bunny source.');
     assertSameValue(true, is_string($savedRegularPath) && file_exists($savedRegularPath), 'Bunny regular faces should be written under uploads/fonts/bunny.');
@@ -132,11 +133,13 @@ CSS,
     );
 
     $result = $services['google_import']->importFamily('Inter', ['regular']);
+    $import = $services['imports']->get('inter');
 
     assertSameValue('imported', (string) ($result['status'] ?? ''), 'Google imports should still succeed when the after-import action is registered.');
     assertSameValue(1, did_action('tasty_fonts_after_import'), 'Google imports should fire the tasty_fonts_after_import action.');
     assertSameValue('google', $importProvider, 'Google imports should identify the provider when firing tasty_fonts_after_import.');
     assertSameValue('imported', (string) ($importResult['status'] ?? ''), 'Google imports should pass the import result payload to tasty_fonts_after_import.');
+    assertSameValue('library_only', (string) ($import['publish_state'] ?? ''), 'New Google imports should start in the library instead of being published immediately.');
 };
 
 $tests['bunny_import_service_reports_direct_filesystem_requirement'] = static function (): void {
@@ -364,10 +367,51 @@ $tests['local_upload_service_imports_verified_font_uploads'] = static function (
     ]);
 
     $savedPath = $services['storage']->pathForRelativePath('upload/inter/Inter-400-italic.woff2');
+    $family = $services['imports']->getFamily('inter');
 
     assertSameValue(1, (int) ($result['summary']['imported'] ?? 0), 'Verified HTTP uploads should be imported into the local library.');
     assertSameValue('imported', (string) ($result['rows'][0]['status'] ?? ''), 'Verified HTTP uploads should produce an imported row result.');
     assertSameValue(true, is_string($savedPath) && file_exists($savedPath), 'Verified HTTP uploads should be written into the dedicated local upload folder.');
+    assertSameValue('library_only', (string) ($family['publish_state'] ?? ''), 'New direct uploads should start in the library instead of being published immediately.');
+};
+
+$tests['local_upload_service_reuses_orphaned_existing_upload_files'] = static function (): void {
+    resetTestState();
+
+    global $uploadedFilePaths;
+
+    $services = makeServiceGraph();
+    $tmpName = uniqueTestDirectory('tmp-upload-orphaned') . '/raleway-100.woff';
+    mkdir(dirname($tmpName), FS_CHMOD_DIR, true);
+    file_put_contents($tmpName, "wOFFtest-font");
+    $uploadedFilePaths[] = $tmpName;
+    $services['catalog']->getCatalog();
+
+    $orphanedPath = $services['storage']->pathForRelativePath('upload/raleway/Raleway-100.woff');
+    assertSameValue(true, is_string($orphanedPath), 'The orphaned-upload test should resolve the expected target path.');
+    $services['storage']->writeAbsoluteFile((string) $orphanedPath, "wOFFexisting-font");
+
+    $result = $services['local_upload']->uploadRows([
+        [
+            'family' => 'Raleway',
+            'weight' => '100',
+            'style' => 'normal',
+            'fallback' => 'sans-serif',
+            'file' => [
+                'name' => 'raleway-100.woff',
+                'tmp_name' => $tmpName,
+                'error' => UPLOAD_ERR_OK,
+                'size' => filesize($tmpName),
+            ],
+        ],
+    ]);
+
+    $family = $services['imports']->getFamily('raleway');
+    $profile = (array) (($family['delivery_profiles']['local-self_hosted'] ?? null) ?: []);
+    $face = (array) (($profile['faces'][0] ?? null) ?: []);
+
+    assertSameValue(1, (int) ($result['summary']['imported'] ?? 0), 'A retry should import successfully when a previous failed upload already left the target file on disk.');
+    assertSameValue('upload/raleway/Raleway-100.woff', (string) ($face['paths']['woff'] ?? ''), 'Retrying an orphaned upload should reuse the existing stored file path.');
 };
 
 $tests['local_upload_service_derives_variable_weight_ranges_from_wght_axes'] = static function (): void {
@@ -730,6 +774,48 @@ $tests['library_service_syncs_monospace_publish_state_only_when_feature_is_enabl
         'published',
         (string) ($services['imports']->getFamily('jetbrains-mono')['publish_state'] ?? ''),
         'Disabled monospace support should ignore stored monospace selections when live publish states are synchronized.'
+    );
+};
+
+$tests['library_service_restores_library_only_state_when_a_live_family_is_removed_from_roles'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $profile = [
+        'id' => 'inter-self-hosted',
+        'label' => 'Self-hosted',
+        'provider' => 'local',
+        'type' => 'self_hosted',
+        'variants' => ['regular'],
+        'faces' => [[
+            'family' => 'Inter',
+            'slug' => 'inter',
+            'source' => 'local',
+            'weight' => '400',
+            'style' => 'normal',
+            'unicode_range' => '',
+            'files' => ['woff2' => 'inter/Inter-400-normal.woff2'],
+            'paths' => ['woff2' => 'inter/Inter-400-normal.woff2'],
+        ]],
+    ];
+
+    $services['imports']->saveProfile('Inter', 'inter', $profile, 'library_only', true);
+    $services['library']->syncLiveRolePublishStates(
+        [
+            'heading' => 'Inter',
+            'body' => 'Inter',
+        ],
+        true
+    );
+
+    assertSameValue('role_active', (string) ($services['imports']->getFamily('inter')['publish_state'] ?? ''), 'Live role sync should still promote the active family while it is assigned.');
+
+    $services['library']->syncLiveRolePublishStates([], false);
+
+    assertSameValue(
+        'library_only',
+        (string) ($services['imports']->getFamily('inter')['publish_state'] ?? ''),
+        'Removing a live family from sitewide roles should restore its saved library-only state.'
     );
 };
 

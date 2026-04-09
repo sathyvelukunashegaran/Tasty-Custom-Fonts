@@ -429,6 +429,7 @@ $tests['developer_tools_clear_plugin_caches_and_regenerate_assets'] = static fun
         AssetService::TRANSIENT_HASH => 'hash',
         AssetService::TRANSIENT_REGENERATE_CSS_QUEUED => true,
         GoogleFontsClient::TRANSIENT_CATALOG => ['Inter'],
+        GoogleFontsClient::TRANSIENT_METADATA => ['inter' => ['family' => 'Inter', 'axes' => []]],
         BunnyFontsClient::TRANSIENT_CATALOG => ['Inter'],
         'tasty_fonts_github_release_manifest_v1' => ['latest_for_channel' => ['stable' => ['version' => '1.0.0']]],
         'tasty_fonts_github_release_version_v1' => '1.0.0',
@@ -445,6 +446,7 @@ $tests['developer_tools_clear_plugin_caches_and_regenerate_assets'] = static fun
     assertSameValue(true, in_array(AssetService::TRANSIENT_CSS, $transientDeleted, true), 'Clearing plugin caches should invalidate the CSS transient.');
     assertSameValue(true, in_array(AssetService::TRANSIENT_HASH, $transientDeleted, true), 'Clearing plugin caches should invalidate the CSS hash transient.');
     assertSameValue(true, in_array(GoogleFontsClient::TRANSIENT_CATALOG, $transientDeleted, true), 'Clearing plugin caches should invalidate the Google catalog transient.');
+    assertSameValue(true, in_array(GoogleFontsClient::TRANSIENT_METADATA, $transientDeleted, true), 'Clearing plugin caches should invalidate the Google metadata transient.');
     assertSameValue(true, in_array(BunnyFontsClient::TRANSIENT_CATALOG, $transientDeleted, true), 'Clearing plugin caches should invalidate the Bunny catalog transient.');
     assertSameValue(true, in_array(AdobeProjectClient::TRANSIENT_PREFIX . md5('abc123'), $transientDeleted, true), 'Clearing plugin caches should invalidate the saved Adobe project transient.');
     assertSameValue(true, in_array(AssetService::ACTION_REGENERATE_CSS, $clearedScheduledHooks, true), 'Clearing plugin caches should clear queued CSS regeneration hooks.');
@@ -1702,6 +1704,39 @@ $tests['runtime_service_outputs_primary_font_preloads_for_live_sitewide_roles'] 
     $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400.woff2'), 'font-data');
     $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-700.woff2'), 'font-data');
     $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('lora/Lora-400.woff2'), 'font-data');
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular', '700'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400.woff2'], 'paths' => ['woff2' => 'inter/Inter-400.woff2']],
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '700', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-700.woff2'], 'paths' => ['woff2' => 'inter/Inter-700.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
+    $services['imports']->saveProfile(
+        'Lora',
+        'lora',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Lora', 'slug' => 'lora', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'lora/Lora-400.woff2'], 'paths' => ['woff2' => 'lora/Lora-400.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
     $services['settings']->saveAppliedRoles(
         [
             'heading' => 'Inter',
@@ -1733,6 +1768,40 @@ $tests['runtime_service_uses_saved_role_weight_overrides_for_primary_preloads'] 
     $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-600.woff2'), 'font-data');
     $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-700.woff2'), 'font-data');
     $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('lora/Lora-400.woff2'), 'font-data');
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular', '600', '700'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400.woff2'], 'paths' => ['woff2' => 'inter/Inter-400.woff2']],
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '600', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-600.woff2'], 'paths' => ['woff2' => 'inter/Inter-600.woff2']],
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '700', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-700.woff2'], 'paths' => ['woff2' => 'inter/Inter-700.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
+    $services['imports']->saveProfile(
+        'Lora',
+        'lora',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Lora', 'slug' => 'lora', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'lora/Lora-400.woff2'], 'paths' => ['woff2' => 'lora/Lora-400.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
     $services['settings']->saveAppliedRoles(
         [
             'heading' => 'Inter',
@@ -1752,6 +1821,125 @@ $tests['runtime_service_uses_saved_role_weight_overrides_for_primary_preloads'] 
 
     assertContainsValue('href="/wp-content/uploads/fonts/inter/Inter-600.woff2"', $output, 'Frontend preload output should honor saved heading role weight overrides.');
     assertNotContainsValue('href="/wp-content/uploads/fonts/inter/Inter-700.woff2"', $output, 'Frontend preload output should stop assuming the default bold heading face when a saved weight override exists.');
+};
+
+$tests['runtime_service_prefers_saved_role_delivery_overrides_for_primary_preloads'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400-static.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-700-static.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-Variable.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('lora/Lora-400.woff2'), 'font-data');
+
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted-static',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'format' => 'static',
+            'variants' => ['regular', '700'],
+            'faces' => [
+                [
+                    'family' => 'Inter',
+                    'slug' => 'inter',
+                    'source' => 'local',
+                    'weight' => '400',
+                    'style' => 'normal',
+                    'files' => ['woff2' => 'inter/Inter-400-static.woff2'],
+                    'paths' => ['woff2' => 'inter/Inter-400-static.woff2'],
+                ],
+                [
+                    'family' => 'Inter',
+                    'slug' => 'inter',
+                    'source' => 'local',
+                    'weight' => '700',
+                    'style' => 'normal',
+                    'files' => ['woff2' => 'inter/Inter-700-static.woff2'],
+                    'paths' => ['woff2' => 'inter/Inter-700-static.woff2'],
+                ],
+            ],
+        ],
+        'published',
+        false
+    );
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted-variable',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'format' => 'variable',
+            'variants' => ['regular'],
+            'faces' => [[
+                'family' => 'Inter',
+                'slug' => 'inter',
+                'source' => 'local',
+                'weight' => '400',
+                'style' => 'normal',
+                'is_variable' => true,
+                'axes' => [
+                    'WGHT' => ['min' => '100', 'default' => '400', 'max' => '900'],
+                ],
+                'variation_defaults' => ['WGHT' => '400'],
+                'files' => ['woff2' => 'inter/Inter-Variable.woff2'],
+                'paths' => ['woff2' => 'inter/Inter-Variable.woff2'],
+            ]],
+        ],
+        'published',
+        true
+    );
+    $services['imports']->saveProfile(
+        'Lora',
+        'lora',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'format' => 'static',
+            'variants' => ['regular'],
+            'faces' => [[
+                'family' => 'Lora',
+                'slug' => 'lora',
+                'source' => 'local',
+                'weight' => '400',
+                'style' => 'normal',
+                'files' => ['woff2' => 'lora/Lora-400.woff2'],
+                'paths' => ['woff2' => 'lora/Lora-400.woff2'],
+            ]],
+        ],
+        'published',
+        true
+    );
+    $services['settings']->saveAppliedRoles(
+        [
+            'heading' => 'Inter',
+            'body' => 'Lora',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'serif',
+            'heading_delivery_id' => 'local-self_hosted-static',
+        ],
+        ['Inter', 'Lora']
+    );
+    $services['settings']->setAutoApplyRoles(true);
+    $services['settings']->saveSettings([
+        'preload_primary_fonts' => '1',
+        'variable_fonts_enabled' => '1',
+    ]);
+
+    ob_start();
+    $services['runtime']->outputPreloadHints();
+    $output = (string) ob_get_clean();
+
+    assertContainsValue('href="/wp-content/uploads/fonts/inter/Inter-700-static.woff2"', $output, 'Frontend preload output should honor saved role delivery overrides before the family active delivery.');
+    assertNotContainsValue('href="/wp-content/uploads/fonts/inter/Inter-Variable.woff2"', $output, 'Frontend preload output should avoid the family active delivery when a role-level delivery override points to a different saved profile.');
 };
 
 $tests['runtime_service_preloads_variable_faces_when_their_weight_axis_covers_role_targets'] = static function (): void {

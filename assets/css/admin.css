@@ -467,6 +467,12 @@
     z-index: 1;
 }
 
+.tasty-fonts-toast-body {
+    display: grid;
+    gap: var(--tasty-space-2);
+    min-width: 0;
+}
+
 .tasty-fonts-toast.is-success {
     border-color: var(--tasty-border-success-soft);
     border-left-color: var(--tasty-success);
@@ -489,6 +495,51 @@
     font-size: var(--tasty-type-body-size);
     color: var(--tasty-text);
     line-height: var(--tasty-type-caption-line-height);
+}
+
+.tasty-fonts-toast-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--tasty-space-2);
+}
+
+.tasty-fonts-toast-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--tasty-control-border);
+    border-radius: 999px;
+    background: rgba(var(--tasty-white-rgb), 0.88);
+    color: var(--tasty-text);
+    cursor: pointer;
+    font-size: var(--tasty-type-meta-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    line-height: 1;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.tasty-fonts-toast-action:hover,
+.tasty-fonts-toast-action:focus {
+    border-color: var(--tasty-control-border-active);
+    background: rgba(var(--tasty-white-rgb), 0.98);
+    color: var(--tasty-text);
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.tasty-fonts-toast-action.is-primary {
+    border-color: var(--tasty-danger);
+    background: var(--tasty-danger);
+    color: var(--tasty-white);
+}
+
+.tasty-fonts-toast-action.is-primary:hover,
+.tasty-fonts-toast-action.is-primary:focus {
+    border-color: var(--tasty-danger);
+    background: rgba(var(--tasty-danger-rgb), 0.92);
+    color: var(--tasty-white);
 }
 
 .tasty-fonts-toast-dismiss {
@@ -4356,6 +4407,15 @@ h3.tasty-fonts-section-title {
         minmax(280px, 1.6fr)
         minmax(110px, 0.65fr)
         minmax(120px, 0.7fr)
+        minmax(120px, 0.7fr)
+        auto;
+}
+
+.tasty-fonts-upload-face-shell--static-only .tasty-fonts-upload-face-headings,
+.tasty-fonts-upload-face-shell--static-only .tasty-fonts-upload-face-grid {
+    grid-template-columns:
+        minmax(280px, 1.6fr)
+        minmax(110px, 0.65fr)
         minmax(120px, 0.7fr)
         auto;
 }

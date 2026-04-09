@@ -122,6 +122,7 @@ $tests['import_repository_ensure_family_creates_a_new_stub_record'] = static fun
     assertSameValue('Lora', (string) ($result['family'] ?? ''), 'ensureFamily should set the family name from the provided string.');
     assertSameValue('lora', (string) ($result['slug'] ?? ''), 'ensureFamily should derive a slug from the family name.');
     assertSameValue('published', (string) ($result['publish_state'] ?? ''), 'ensureFamily should use "published" as the default publish state.');
+    assertSameValue('published', (string) ($result['manual_publish_state'] ?? ''), 'ensureFamily should preserve the default manual publish state alongside the effective state.');
 };
 
 $tests['import_repository_ensure_family_returns_existing_record_unchanged'] = static function (): void {
@@ -413,6 +414,7 @@ $tests['import_repository_set_active_delivery_can_update_publish_state_simultane
     $updated = $repo->setActiveDelivery('oswald', 'google-cdn', 'role_active');
 
     assertSameValue('role_active', (string) ($updated['publish_state'] ?? ''), 'setActiveDelivery should update the publish state when a state is provided.');
+    assertSameValue('library_only', (string) ($updated['manual_publish_state'] ?? ''), 'Activating a live delivery should preserve the stored manual publish state.');
 };
 
 $tests['import_repository_set_active_delivery_returns_null_for_missing_family_or_profile'] = static function (): void {
@@ -442,6 +444,26 @@ $tests['import_repository_set_publish_state_updates_the_stored_state'] = static 
     $updated = $repo->setPublishState('raleway', 'role_active');
 
     assertSameValue('role_active', (string) ($updated['publish_state'] ?? ''), 'setPublishState should persist the new publish state.');
+    assertSameValue('library_only', (string) ($updated['manual_publish_state'] ?? ''), 'Role-active state changes should preserve the prior manual publish state.');
+};
+
+$tests['import_repository_set_publish_state_updates_the_manual_state_for_non_live_values'] = static function (): void {
+    resetTestState();
+
+    $repo = new ImportRepository();
+    $repo->saveFamily([
+        'family' => 'Raleway',
+        'slug' => 'raleway',
+        'publish_state' => 'role_active',
+        'manual_publish_state' => 'library_only',
+        'active_delivery_id' => '',
+        'delivery_profiles' => [],
+    ]);
+
+    $updated = $repo->setPublishState('raleway', 'published');
+
+    assertSameValue('published', (string) ($updated['publish_state'] ?? ''), 'Manual publish-state saves should update the effective state.');
+    assertSameValue('published', (string) ($updated['manual_publish_state'] ?? ''), 'Manual publish-state saves should also update the stored manual state.');
 };
 
 $tests['import_repository_set_publish_state_returns_null_for_missing_family'] = static function (): void {
@@ -750,6 +772,118 @@ CSS,
     assertSameValue(true, !empty($face['is_variable']), 'Variable CDN imports should preserve the variable-face marker.');
     assertSameValue('100', (string) ($face['axes']['WGHT']['min'] ?? ''), 'Variable CDN imports should preserve parsed weight axis ranges.');
     assertSameValue('14', (string) ($face['variation_defaults']['OPSZ'] ?? ''), 'Variable CDN imports should preserve parsed variation defaults.');
+};
+
+$tests['google_import_service_saves_static_and_variable_sibling_profiles_for_the_same_delivery_mode'] = static function (): void {
+    resetTestState();
+
+    global $remoteGetResponses;
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings([
+        'google_api_key' => 'api-key',
+        'variable_fonts_enabled' => '1',
+    ]);
+    $services['settings']->saveGoogleApiKeyStatus('valid', 'Ready');
+
+    $catalogUrl = 'https://www.googleapis.com/webfonts/v1/webfonts?sort=popularity&key=api-key';
+    $metadataUrl = 'https://fonts.google.com/metadata/fonts';
+    $remoteGetResponses[$catalogUrl] = [
+        'response' => ['code' => 200],
+        'headers' => ['content-type' => 'application/json'],
+        'body' => json_encode([
+            'items' => [[
+                'family' => 'Inter',
+                'category' => 'sans-serif',
+                'variants' => ['regular', 'italic'],
+                'subsets' => ['latin'],
+                'version' => 'v18',
+                'lastModified' => '2024-01-01',
+            ]],
+        ]),
+    ];
+    $remoteGetResponses[$metadataUrl] = [
+        'response' => ['code' => 200],
+        'headers' => ['content-type' => 'application/json'],
+        'body' => json_encode([
+            'familyMetadataList' => [[
+                'family' => 'Inter',
+                'axes' => [
+                    ['tag' => 'opsz', 'min' => 14, 'max' => 32, 'defaultValue' => 14],
+                    ['tag' => 'wght', 'min' => 100, 'max' => 900, 'defaultValue' => 400],
+                ],
+            ]],
+        ]),
+    ];
+
+    $staticCssUrl = $services['google']->buildCssUrl('Inter', ['regular']);
+    $variableCssUrl = $services['google']->buildCssUrl(
+        'Inter',
+        ['regular'],
+        'swap',
+        [
+            'axes' => [
+                'OPSZ' => ['min' => '14', 'default' => '14', 'max' => '32'],
+                'WGHT' => ['min' => '100', 'default' => '400', 'max' => '900'],
+            ],
+        ],
+        'variable'
+    );
+    $remoteGetResponses[$staticCssUrl] = [
+        'response' => ['code' => 200],
+        'headers' => ['content-type' => 'text/css'],
+        'body' => <<<'CSS'
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  src: url(https://fonts.gstatic.com/s/inter/v18/inter-400-normal.woff2) format('woff2');
+}
+CSS,
+    ];
+    $remoteGetResponses[$variableCssUrl] = [
+        'response' => ['code' => 200],
+        'headers' => ['content-type' => 'text/css'],
+        'body' => <<<'CSS'
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-variation-settings: "opsz" 14;
+  src: url(https://fonts.gstatic.com/s/inter/v18/inter-variable.woff2) format('woff2-variations');
+}
+CSS,
+    ];
+    $remoteGetResponses['https://fonts.gstatic.com/s/inter/v18/inter-400-normal.woff2'] = [
+        'response' => ['code' => 200],
+        'headers' => ['content-type' => 'font/woff2'],
+        'body' => 'static-font-data',
+    ];
+    $remoteGetResponses['https://fonts.gstatic.com/s/inter/v18/inter-variable.woff2'] = [
+        'response' => ['code' => 200],
+        'headers' => ['content-type' => 'font/woff2'],
+        'body' => 'variable-font-data',
+    ];
+
+    $staticResult = $services['google_import']->importFamily('Inter', ['regular'], 'self_hosted', 'static');
+    $variableResult = $services['google_import']->importFamily('Inter', ['regular'], 'self_hosted', 'variable');
+    $family = $services['imports']->getFamily('inter');
+
+    assertSameValue('imported', (string) ($staticResult['status'] ?? ''), 'Static self-hosted imports should still succeed when variable support is enabled.');
+    assertSameValue('imported', (string) ($variableResult['status'] ?? ''), 'Variable self-hosted imports should save alongside an existing static delivery.');
+    assertSameValue(2, count((array) ($family['delivery_profiles'] ?? [])), 'Google self-hosted imports should keep static and variable delivery siblings under the same family.');
+    assertSameValue(true, isset($family['delivery_profiles']['google-self_hosted']), 'Static self-hosted imports should keep their base delivery profile id.');
+    assertSameValue(true, isset($family['delivery_profiles']['google-self_hosted-variable']), 'Variable self-hosted imports should create a format-specific sibling id when the static profile already exists.');
+    assertSameValue(
+        'static',
+        (string) (($family['delivery_profiles']['google-self_hosted']['format'] ?? '')),
+        'Static sibling profiles should persist their normalized format.'
+    );
+    assertSameValue(
+        'variable',
+        (string) (($family['delivery_profiles']['google-self_hosted-variable']['format'] ?? '')),
+        'Variable sibling profiles should persist their normalized format.'
+    );
 };
 
 // ---------------------------------------------------------------------------

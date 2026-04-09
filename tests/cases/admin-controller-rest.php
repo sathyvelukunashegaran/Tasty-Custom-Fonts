@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use TastyFonts\Admin\AdminController;
 use TastyFonts\Api\RestController;
+use TastyFonts\Google\GoogleFontsClient;
 use TastyFonts\Plugin;
 use TastyFonts\Repository\SettingsRepository;
 
@@ -381,13 +382,29 @@ $tests['admin_controller_excludes_generated_css_from_snippet_output_panels'] = s
     $services = makeServiceGraph();
     $services['storage']->ensureRootDirectory();
     $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400.woff2'), 'font-data');
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400.woff2'], 'paths' => ['woff2' => 'inter/Inter-400.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
     $roles = [
         'heading' => 'Inter',
         'body' => 'Inter',
         'heading_fallback' => 'sans-serif',
         'body_fallback' => 'sans-serif',
     ];
-    $services['settings']->saveRoles($roles, ['Inter']);
+    $services['settings']->saveAppliedRoles($roles, ['Inter']);
     $services['settings']->setAutoApplyRoles(true);
 
     $panels = invokePrivateMethod(
@@ -704,14 +721,32 @@ $tests['admin_controller_exposes_generated_css_as_a_top_level_panel'] = static f
     $services = makeServiceGraph();
     $services['storage']->ensureRootDirectory();
     $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400.woff2'), 'font-data');
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400.woff2'], 'paths' => ['woff2' => 'inter/Inter-400.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
     $roles = [
         'heading' => 'Inter',
         'body' => 'Inter',
         'heading_fallback' => 'sans-serif',
         'body_fallback' => 'sans-serif',
     ];
-    $services['settings']->saveRoles($roles, ['Inter']);
+    $services['settings']->saveAppliedRoles($roles, ['Inter']);
     $services['settings']->setAutoApplyRoles(true);
+    $services['catalog']->invalidate();
+    $services['assets']->refreshGeneratedAssets(false, false);
 
     $panel = invokePrivateMethod(
         $services['controller'],
@@ -1250,18 +1285,52 @@ $tests['rest_controller_roles_draft_accepts_saved_static_role_weights'] = static
     resetTestState();
 
     $services = makeServiceGraph();
-    $services['storage']->ensureRootDirectory();
-    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400.woff2'), 'font-data');
-    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-600.woff2'), 'font-data');
-    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('jetbrains-mono/JetBrains Mono-400.woff2'), 'font-data');
-    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('jetbrains-mono/JetBrains Mono-500.woff2'), 'font-data');
     $services['settings']->saveSettings(['monospace_role_enabled' => '1']);
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'format' => 'static',
+            'variants' => ['regular', '600'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400.woff2'], 'paths' => []],
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '600', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-600.woff2'], 'paths' => []],
+            ],
+        ],
+        'published',
+        true
+    );
+    $services['imports']->saveProfile(
+        'JetBrains Mono',
+        'jetbrains-mono',
+        [
+            'id' => 'local-self_hosted-mono',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'format' => 'static',
+            'variants' => ['regular', '500'],
+            'faces' => [
+                ['family' => 'JetBrains Mono', 'slug' => 'jetbrains-mono', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'jetbrains-mono/JetBrains Mono-400.woff2'], 'paths' => []],
+                ['family' => 'JetBrains Mono', 'slug' => 'jetbrains-mono', 'source' => 'local', 'weight' => '500', 'style' => 'normal', 'files' => ['woff2' => 'jetbrains-mono/JetBrains Mono-500.woff2'], 'paths' => []],
+            ],
+        ],
+        'published',
+        true
+    );
 
     $request = new WP_REST_Request('PATCH', '/' . RestController::API_NAMESPACE . '/roles/draft');
     $request->set_body_params([
         'heading' => 'Inter',
         'body' => 'Inter',
         'monospace' => 'JetBrains Mono',
+        'heading_delivery_id' => 'local-self_hosted',
+        'body_delivery_id' => 'local-self_hosted',
+        'monospace_delivery_id' => 'local-self_hosted-mono',
         'heading_fallback' => 'sans-serif',
         'body_fallback' => 'sans-serif',
         'monospace_fallback' => 'monospace',
@@ -1377,7 +1446,7 @@ $tests['google_search_cooldown_cache_is_shared_between_repeated_rest_requests'] 
     $services['settings']->saveSettings(['google_api_key' => 'live-key']);
     $services['settings']->saveGoogleApiKeyStatus('valid');
     set_transient(
-        'tasty_fonts_google_catalog_v1',
+        GoogleFontsClient::TRANSIENT_CATALOG,
         [
             'inter' => [
                 'family' => 'Inter',
@@ -1397,7 +1466,7 @@ $tests['google_search_cooldown_cache_is_shared_between_repeated_rest_requests'] 
     $firstData = $firstResponse instanceof WP_REST_Response ? $firstResponse->get_data() : [];
 
     set_transient(
-        'tasty_fonts_google_catalog_v1',
+        GoogleFontsClient::TRANSIENT_CATALOG,
         [
             'inter' => [
                 'family' => 'Inter',
@@ -1428,6 +1497,22 @@ $tests['admin_controller_family_font_display_changes_refresh_generated_assets'] 
     $services = makeServiceGraph();
     $services['storage']->ensureRootDirectory();
     $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400.woff2'), 'font-data');
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400.woff2'], 'paths' => ['woff2' => 'inter/Inter-400.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
     $services['settings']->saveRoles(
         [
             'heading' => 'Inter',
@@ -1801,7 +1886,8 @@ $tests['admin_controller_clears_plugin_caches_and_logs_the_reset'] = static func
         'tasty_fonts_catalog_v2' => ['cached'],
         'tasty_fonts_css_v2' => 'cached',
         'tasty_fonts_css_hash_v2' => 'hash',
-        'tasty_fonts_google_catalog_v1' => ['google'],
+        GoogleFontsClient::TRANSIENT_CATALOG => ['google'],
+        GoogleFontsClient::TRANSIENT_METADATA => ['google' => ['family' => 'Google', 'axes' => []]],
         'tasty_fonts_bunny_catalog_v1' => ['bunny'],
     ];
 
