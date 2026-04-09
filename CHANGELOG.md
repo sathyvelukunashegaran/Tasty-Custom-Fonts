@@ -11,6 +11,13 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Split release automation into shared quality checks plus dedicated stable, beta, and nightly publishing workflows, and replaced the local release helper with channel-aware branch, beta, and stable commands.
+- Streamlined Settings > Behavior so the update channel control, rollback reinstall action, and status messaging now share a flatter inline layout with improved responsive behavior.
+- Simplified Settings > Developer maintenance actions by replacing typed confirmation phrases with browser confirm dialogs and tightening the related action-row presentation.
+- Updated the quality workflow to use `actions/setup-node@v5` with Node.js 22.
+
+### Fixed
+
+- Improved nightly release notes generation so the workflow can fall back to the latest stable or beta tag when a previous nightly tag is unavailable.
 
 ## [1.7.0] - 2026-04-09
 
