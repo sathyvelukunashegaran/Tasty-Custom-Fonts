@@ -52,17 +52,25 @@ jobs:
       - name: Generate nightly release notes
         shell: bash
         run: |
-          previous_nightly="$(
+          previous_reference="$(
             git tag --list '*-dev.*' --sort=version:refname | tail -n 1
           )"
+
+          if [ -z "${previous_reference}" ]; then
+            previous_reference="$(
+              git tag --list --sort=version:refname \
+                | grep -E '^[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$' \
+                | tail -n 1
+            )"
+          fi
 
           {
             echo "## What's Changed"
             echo
-            if [ -n "${previous_nightly}" ]; then
-              git log --format='- %s (%h)' "${previous_nightly}..${GITHUB_SHA}"
+            if [ -n "${previous_reference}" ]; then
+              git log --format='- %s (%h)' "${previous_reference}..${GITHUB_SHA}"
               echo
-              echo "**Full Changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${previous_nightly}...${GITHUB_SHA}"
+              echo "**Full Changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${previous_reference}...${GITHUB_SHA}"
             else
               git log --format='- %s (%h)' -n 20 "${GITHUB_SHA}"
             fi

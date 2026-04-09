@@ -764,47 +764,75 @@
                                         <p class="tasty-fonts-muted"><?php esc_html_e('Control optional roles, guidance, and uninstall cleanup.', 'tasty-fonts'); ?></p>
                                     <?php endif; ?>
                                 </div>
-                                <form method="post" class="tasty-fonts-output-settings-form" data-settings-autosave="behavior">
-                                    <?php wp_nonce_field('tasty_fonts_save_settings'); ?>
-                                    <input type="hidden" name="tasty_fonts_save_settings" value="1">
-                                    <div class="tasty-fonts-output-settings-list">
-                                        <div class="tasty-fonts-output-settings-detail-group">
-                                            <div class="tasty-fonts-output-settings-submenu-copy">
-                                                <h4><?php esc_html_e('Update Channel', 'tasty-fonts'); ?></h4>
-                                                <?php if ($showSettingsDescriptions): ?>
-                                                    <p><?php esc_html_e('Choose which GitHub release rail this install should follow for plugin updates.', 'tasty-fonts'); ?></p>
-                                                <?php endif; ?>
-                                            </div>
-                                            <div class="tasty-fonts-output-settings-submenu">
-                                                <label for="tasty-fonts-update-channel" class="screen-reader-text"><?php esc_html_e('Update Channel', 'tasty-fonts'); ?></label>
-                                                <select id="tasty-fonts-update-channel" name="update_channel" class="regular-text">
-                                                    <?php foreach ($updateChannelOptions as $option): ?>
-                                                        <?php $optionValue = (string) ($option['value'] ?? 'stable'); ?>
-                                                        <option value="<?php echo esc_attr($optionValue); ?>" <?php selected($updateChannel, $optionValue); ?>>
-                                                            <?php echo esc_html((string) ($option['label'] ?? '')); ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                <div class="tasty-fonts-output-settings-meta">
-                                                    <span class="tasty-fonts-badge <?php echo esc_attr((string) ($updateChannelStatus['state_class'] ?? '')); ?>">
-                                                        <?php echo esc_html((string) ($updateChannelStatus['state_label'] ?? __('Unavailable', 'tasty-fonts'))); ?>
-                                                    </span>
-                                                    <p>
-                                                        <?php
-                                                        echo esc_html(
-                                                            sprintf(
-                                                                __('Installed: %1$s. Latest for %2$s: %3$s.', 'tasty-fonts'),
-                                                                (string) ($updateChannelStatus['installed_version'] ?? __('Unknown', 'tasty-fonts')),
-                                                                (string) ($updateChannelStatus['selected_channel_label'] ?? __('Stable', 'tasty-fonts')),
-                                                                (string) ($updateChannelStatus['latest_version'] ?? __('Unavailable', 'tasty-fonts'))
-                                                            )
-                                                        );
-                                                        ?>
-                                                    </p>
-                                                    <p><?php echo esc_html((string) ($updateChannelStatus['state_copy'] ?? '')); ?></p>
-                                                </div>
-                                            </div>
+                                <div class="tasty-fonts-output-settings-list">
+                                    <div class="tasty-fonts-output-settings-detail-group tasty-fonts-settings-flat-row tasty-fonts-settings-flat-row--channel">
+                                        <div class="tasty-fonts-output-settings-submenu-copy tasty-fonts-settings-flat-row-copy tasty-fonts-settings-flat-row-copy--channel">
+                                            <h4><?php esc_html_e('Update Channel', 'tasty-fonts'); ?></h4>
+                                            <?php if ($showSettingsDescriptions): ?>
+                                                <p><?php esc_html_e('Choose which GitHub release rail this install should follow for plugin updates.', 'tasty-fonts'); ?></p>
+                                            <?php endif; ?>
                                         </div>
+                                        <form method="post" class="tasty-fonts-output-settings-form tasty-fonts-settings-flat-row-form tasty-fonts-settings-flat-row-form--channel-control" data-settings-autosave="behavior">
+                                            <?php wp_nonce_field('tasty_fonts_save_settings'); ?>
+                                            <input type="hidden" name="tasty_fonts_save_settings" value="1">
+                                            <div class="tasty-fonts-output-quick-options tasty-fonts-settings-flat-row-options" role="radiogroup" aria-label="<?php esc_attr_e('Update channel', 'tasty-fonts'); ?>">
+                                                <?php foreach ($updateChannelOptions as $option): ?>
+                                                    <?php $optionValue = (string) ($option['value'] ?? 'stable'); ?>
+                                                    <label class="tasty-fonts-output-quick-option<?php echo $updateChannel === $optionValue ? ' is-active' : ''; ?>" data-pill-option>
+                                                        <input
+                                                            type="radio"
+                                                            name="update_channel"
+                                                            value="<?php echo esc_attr($optionValue); ?>"
+                                                            data-pill-option-input
+                                                            <?php checked($updateChannel, $optionValue); ?>
+                                                        >
+                                                        <span><?php echo esc_html((string) ($option['label'] ?? '')); ?></span>
+                                                    </label>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </form>
+                                        <?php if (!empty($updateChannelStatus['can_reinstall'])): ?>
+                                            <form method="post" class="tasty-fonts-output-settings-form tasty-fonts-settings-flat-row-form tasty-fonts-settings-flat-row-form--channel-action">
+                                                <?php wp_nonce_field('tasty_fonts_reinstall_update_channel', '_tasty_fonts_reinstall_nonce'); ?>
+                                                <div class="tasty-fonts-developer-action-row tasty-fonts-settings-flat-row-actions">
+                                                    <button
+                                                        type="submit"
+                                                        class="button button-small tasty-fonts-developer-action-button"
+                                                        name="tasty_fonts_reinstall_update_channel"
+                                                        value="1"
+                                                        aria-label="<?php esc_attr_e('Reinstall selected channel', 'tasty-fonts'); ?>"
+                                                        <?php $this->renderPassiveHelpAttributes((string) ($updateChannelStatus['state_copy'] ?? '')); ?>
+                                                        aria-controls="tasty-fonts-help-tooltip-layer"
+                                                    ><?php esc_html_e('Reinstall', 'tasty-fonts'); ?></button>
+                                                </div>
+                                            </form>
+                                        <?php endif; ?>
+                                        <div class="tasty-fonts-settings-flat-row-support tasty-fonts-settings-flat-row-support--channel">
+                                            <div class="tasty-fonts-settings-flat-row-status tasty-fonts-settings-flat-row-status--channel">
+                                                <span class="tasty-fonts-badge <?php echo esc_attr((string) ($updateChannelStatus['state_class'] ?? '')); ?>">
+                                                    <?php echo esc_html((string) ($updateChannelStatus['state_label'] ?? __('Unavailable', 'tasty-fonts'))); ?>
+                                                </span>
+                                                <p class="tasty-fonts-settings-flat-row-summary">
+                                                    <?php
+                                                    echo esc_html(
+                                                        sprintf(
+                                                            __('Installed: %1$s. Latest for %2$s: %3$s.', 'tasty-fonts'),
+                                                            (string) ($updateChannelStatus['installed_version'] ?? __('Unknown', 'tasty-fonts')),
+                                                            (string) ($updateChannelStatus['selected_channel_label'] ?? __('Stable', 'tasty-fonts')),
+                                                            (string) ($updateChannelStatus['latest_version'] ?? __('Unavailable', 'tasty-fonts'))
+                                                        )
+                                                    );
+                                                    ?>
+                                                </p>
+                                            </div>
+                                            <?php if (empty($updateChannelStatus['can_reinstall']) && !empty($updateChannelStatus['state_copy'])): ?>
+                                                <p class="tasty-fonts-settings-flat-row-note tasty-fonts-settings-flat-row-note--channel"><?php echo esc_html((string) $updateChannelStatus['state_copy']); ?></p>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <form method="post" class="tasty-fonts-output-settings-form tasty-fonts-settings-flat-row-form tasty-fonts-settings-flat-row-form--stack" data-settings-autosave="behavior">
+                                        <?php wp_nonce_field('tasty_fonts_save_settings'); ?>
+                                        <input type="hidden" name="tasty_fonts_save_settings" value="1">
                                         <input type="hidden" name="monospace_role_enabled" value="0">
                                         <label class="tasty-fonts-toggle-field tasty-fonts-toggle-field--output">
                                             <input type="checkbox" class="tasty-fonts-toggle-input" name="monospace_role_enabled" value="1" <?php checked($monospaceRoleEnabled); ?>>
@@ -838,28 +866,8 @@
                                                 <?php endif; ?>
                                             </span>
                                         </label>
-                                    </div>
-                                </form>
-                                <?php if (!empty($updateChannelStatus['can_reinstall'])): ?>
-                                    <div class="tasty-fonts-output-settings-list">
-                                        <div class="tasty-fonts-output-settings-detail-group">
-                                            <div class="tasty-fonts-output-settings-submenu-copy">
-                                                <h4><?php esc_html_e('Rollback Reinstall', 'tasty-fonts'); ?></h4>
-                                                <?php if ($showSettingsDescriptions): ?>
-                                                    <p><?php esc_html_e('When the selected channel is behind the installed version, use this to reinstall the selected channel immediately instead of waiting for a higher version.', 'tasty-fonts'); ?></p>
-                                                <?php endif; ?>
-                                            </div>
-                                            <form method="post" class="tasty-fonts-output-settings-form tasty-fonts-developer-tool-form">
-                                                <?php wp_nonce_field('tasty_fonts_reinstall_update_channel', '_tasty_fonts_reinstall_nonce'); ?>
-                                                <div class="tasty-fonts-output-settings-submenu">
-                                                    <div class="tasty-fonts-developer-action-row">
-                                                        <button type="submit" class="button" name="tasty_fonts_reinstall_update_channel" value="1"><?php esc_html_e('Reinstall Selected Channel', 'tasty-fonts'); ?></button>
-                                                    </div>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                <?php endif; ?>
+                                    </form>
+                                </div>
                             </div>
                         </section>
 
@@ -880,11 +888,8 @@
                                     <?php endif; ?>
                                 </div>
                                 <div class="tasty-fonts-output-settings-list tasty-fonts-developer-tool-sections">
-                                    <div class="tasty-fonts-output-settings-subsection tasty-fonts-output-settings-subsection--developer">
-                                        <span><?php esc_html_e('Maintenance', 'tasty-fonts'); ?></span>
-                                    </div>
-                                    <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--developer">
-                                        <div class="tasty-fonts-output-settings-submenu-copy">
+                                    <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--developer tasty-fonts-settings-flat-row tasty-fonts-settings-flat-row--developer-inline">
+                                        <div class="tasty-fonts-output-settings-submenu-copy tasty-fonts-settings-flat-row-copy">
                                             <div class="tasty-fonts-developer-tool-title-row">
                                                 <h4><?php esc_html_e('Clear Plugin Caches and Regenerate Assets', 'tasty-fonts'); ?></h4>
                                                 <span class="tasty-fonts-badge is-success"><?php esc_html_e('Maintenance', 'tasty-fonts'); ?></span>
@@ -893,18 +898,18 @@
                                                 <p><?php esc_html_e('Clears plugin-owned catalog, provider, updater, and admin search caches, then rebuilds generated CSS immediately.', 'tasty-fonts'); ?></p>
                                             <?php endif; ?>
                                         </div>
-                                        <form method="post" class="tasty-fonts-output-settings-form tasty-fonts-developer-tool-form">
+                                        <form method="post" class="tasty-fonts-output-settings-form tasty-fonts-developer-tool-form tasty-fonts-settings-flat-row-form tasty-fonts-settings-flat-row-form--developer-inline">
                                             <?php wp_nonce_field('tasty_fonts_clear_plugin_caches'); ?>
-                                            <div class="tasty-fonts-output-settings-submenu tasty-fonts-output-settings-submenu--developer">
-                                                <div class="tasty-fonts-developer-action-row">
-                                                    <button type="submit" class="button" name="tasty_fonts_clear_plugin_caches" value="1"><?php esc_html_e('Clear Caches and Regenerate Assets', 'tasty-fonts'); ?></button>
+                                            <div class="tasty-fonts-settings-flat-row-support tasty-fonts-settings-flat-row-support--developer">
+                                                <div class="tasty-fonts-developer-action-row tasty-fonts-settings-flat-row-actions">
+                                                    <button type="submit" class="button button-small tasty-fonts-developer-action-button" name="tasty_fonts_clear_plugin_caches" value="1"><?php esc_html_e('Clear Caches', 'tasty-fonts'); ?></button>
                                                 </div>
                                             </div>
                                         </form>
                                     </div>
 
-                                    <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--developer">
-                                        <div class="tasty-fonts-output-settings-submenu-copy">
+                                    <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--developer tasty-fonts-settings-flat-row tasty-fonts-settings-flat-row--developer-inline">
+                                        <div class="tasty-fonts-output-settings-submenu-copy tasty-fonts-settings-flat-row-copy">
                                             <div class="tasty-fonts-developer-tool-title-row">
                                                 <h4><?php esc_html_e('Reset Suppressed Notices', 'tasty-fonts'); ?></h4>
                                                 <span class="tasty-fonts-badge"><?php esc_html_e('Safe', 'tasty-fonts'); ?></span>
@@ -913,21 +918,18 @@
                                                 <p><?php esc_html_e('Clears saved snooze and dismissal preferences so hidden developer and environment reminders can appear again for admins.', 'tasty-fonts'); ?></p>
                                             <?php endif; ?>
                                         </div>
-                                        <form method="post" class="tasty-fonts-output-settings-form tasty-fonts-developer-tool-form">
+                                        <form method="post" class="tasty-fonts-output-settings-form tasty-fonts-developer-tool-form tasty-fonts-settings-flat-row-form tasty-fonts-settings-flat-row-form--developer-inline">
                                             <?php wp_nonce_field('tasty_fonts_reset_suppressed_notices'); ?>
-                                            <div class="tasty-fonts-output-settings-submenu tasty-fonts-output-settings-submenu--developer">
-                                                <div class="tasty-fonts-developer-action-row">
-                                                    <button type="submit" class="button" name="tasty_fonts_reset_suppressed_notices" value="1"><?php esc_html_e('Reset Suppressed Notices', 'tasty-fonts'); ?></button>
+                                            <div class="tasty-fonts-settings-flat-row-support tasty-fonts-settings-flat-row-support--developer">
+                                                <div class="tasty-fonts-developer-action-row tasty-fonts-settings-flat-row-actions">
+                                                    <button type="submit" class="button button-small tasty-fonts-developer-action-button" name="tasty_fonts_reset_suppressed_notices" value="1"><?php esc_html_e('Reset Notices', 'tasty-fonts'); ?></button>
                                                 </div>
                                             </div>
                                         </form>
                                     </div>
 
-                                    <div class="tasty-fonts-output-settings-subsection tasty-fonts-output-settings-subsection--developer">
-                                        <span><?php esc_html_e('Destructive Actions', 'tasty-fonts'); ?></span>
-                                    </div>
-                                    <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--developer">
-                                        <div class="tasty-fonts-output-settings-submenu-copy">
+                                    <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--developer tasty-fonts-settings-flat-row tasty-fonts-settings-flat-row--developer-danger">
+                                        <div class="tasty-fonts-output-settings-submenu-copy tasty-fonts-settings-flat-row-copy">
                                             <div class="tasty-fonts-developer-tool-title-row">
                                                 <h4><?php esc_html_e('Reset Plugin Settings', 'tasty-fonts'); ?></h4>
                                                 <span class="tasty-fonts-badge is-danger"><?php esc_html_e('Destructive', 'tasty-fonts'); ?></span>
@@ -936,27 +938,19 @@
                                                 <p><?php esc_html_e('Restores plugin settings, roles, API keys, Adobe project state, overrides, and notices to defaults while preserving the saved library and files.', 'tasty-fonts'); ?></p>
                                             <?php endif; ?>
                                         </div>
-                                        <form method="post" class="tasty-fonts-output-settings-form tasty-fonts-developer-tool-form">
+                                        <form method="post" class="tasty-fonts-output-settings-form tasty-fonts-developer-tool-form tasty-fonts-settings-flat-row-form tasty-fonts-settings-flat-row-form--developer-danger" data-developer-confirm-message="<?php echo esc_attr__('Reset plugin settings to defaults while keeping the font library and files?', 'tasty-fonts'); ?>">
                                             <?php wp_nonce_field('tasty_fonts_reset_plugin_settings'); ?>
-                                            <div class="tasty-fonts-output-settings-submenu tasty-fonts-output-settings-submenu--developer">
-                                                <label class="tasty-fonts-developer-confirm-field" for="tasty-fonts-reset-settings-confirm">
-                                                    <span class="tasty-fonts-developer-confirm-title"><?php esc_html_e('Confirmation Phrase', 'tasty-fonts'); ?></span>
-                                                    <span class="tasty-fonts-developer-confirm-copy">
-                                                        <?php esc_html_e('Type', 'tasty-fonts'); ?>
-                                                        <span class="tasty-fonts-kbd">RESET SETTINGS</span>
-                                                        <?php esc_html_e('to enable this action.', 'tasty-fonts'); ?>
-                                                    </span>
-                                                </label>
-                                                <input type="text" class="regular-text tasty-fonts-developer-confirm-input" id="tasty-fonts-reset-settings-confirm" name="tasty_fonts_reset_settings_confirmation" value="" autocomplete="off" spellcheck="false" data-developer-confirm-input="reset-settings" data-confirm-expected="RESET SETTINGS">
-                                                <div class="tasty-fonts-developer-action-row">
-                                                    <button type="submit" class="button tasty-fonts-button-danger" name="tasty_fonts_reset_plugin_settings" value="1" data-developer-confirm-button="reset-settings" disabled><?php esc_html_e('Reset Plugin Settings', 'tasty-fonts'); ?></button>
+                                            <div class="tasty-fonts-settings-flat-row-support tasty-fonts-settings-flat-row-support--developer tasty-fonts-settings-flat-row-support--developer-danger">
+                                                <p class="tasty-fonts-developer-confirm-copy tasty-fonts-developer-confirm-copy--inline"><?php esc_html_e('Shows a browser confirmation before resetting plugin settings.', 'tasty-fonts'); ?></p>
+                                                <div class="tasty-fonts-developer-action-row tasty-fonts-settings-flat-row-actions">
+                                                    <button type="submit" class="button button-small tasty-fonts-button-danger tasty-fonts-developer-action-button" name="tasty_fonts_reset_plugin_settings" value="1"><?php esc_html_e('Reset Settings', 'tasty-fonts'); ?></button>
                                                 </div>
                                             </div>
                                         </form>
                                     </div>
 
-                                    <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--developer">
-                                        <div class="tasty-fonts-output-settings-submenu-copy">
+                                    <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--developer tasty-fonts-settings-flat-row tasty-fonts-settings-flat-row--developer-danger">
+                                        <div class="tasty-fonts-output-settings-submenu-copy tasty-fonts-settings-flat-row-copy">
                                             <div class="tasty-fonts-developer-tool-title-row">
                                                 <h4><?php esc_html_e('Wipe Managed Font Library', 'tasty-fonts'); ?></h4>
                                                 <span class="tasty-fonts-badge is-danger"><?php esc_html_e('Irreversible', 'tasty-fonts'); ?></span>
@@ -965,27 +959,19 @@
                                                 <p><?php esc_html_e('Deletes all managed font files, clears the saved library, removes Adobe-managed catalog state, clears role references, and rebuilds an empty uploads/fonts scaffold.', 'tasty-fonts'); ?></p>
                                             <?php endif; ?>
                                         </div>
-                                        <form method="post" class="tasty-fonts-output-settings-form tasty-fonts-developer-tool-form">
+                                        <form method="post" class="tasty-fonts-output-settings-form tasty-fonts-developer-tool-form tasty-fonts-settings-flat-row-form tasty-fonts-settings-flat-row-form--developer-danger" data-developer-confirm-message="<?php echo esc_attr__('Wipe the managed font library, remove managed files, and rebuild empty storage?', 'tasty-fonts'); ?>">
                                             <?php wp_nonce_field('tasty_fonts_wipe_managed_font_library'); ?>
-                                            <div class="tasty-fonts-output-settings-submenu tasty-fonts-output-settings-submenu--developer">
-                                                <label class="tasty-fonts-developer-confirm-field" for="tasty-fonts-wipe-library-confirm">
-                                                    <span class="tasty-fonts-developer-confirm-title"><?php esc_html_e('Confirmation Phrase', 'tasty-fonts'); ?></span>
-                                                    <span class="tasty-fonts-developer-confirm-copy">
-                                                        <?php esc_html_e('Type', 'tasty-fonts'); ?>
-                                                        <span class="tasty-fonts-kbd">WIPE FONT LIBRARY</span>
-                                                        <?php esc_html_e('to enable this action.', 'tasty-fonts'); ?>
-                                                    </span>
-                                                </label>
-                                                <input type="text" class="regular-text tasty-fonts-developer-confirm-input" id="tasty-fonts-wipe-library-confirm" name="tasty_fonts_wipe_font_library_confirmation" value="" autocomplete="off" spellcheck="false" data-developer-confirm-input="wipe-library" data-confirm-expected="WIPE FONT LIBRARY">
-                                                <div class="tasty-fonts-developer-action-row">
-                                                    <button type="submit" class="button tasty-fonts-button-danger" name="tasty_fonts_wipe_managed_font_library" value="1" data-developer-confirm-button="wipe-library" disabled><?php esc_html_e('Wipe Managed Font Library', 'tasty-fonts'); ?></button>
+                                            <div class="tasty-fonts-settings-flat-row-support tasty-fonts-settings-flat-row-support--developer tasty-fonts-settings-flat-row-support--developer-danger">
+                                                <p class="tasty-fonts-developer-confirm-copy tasty-fonts-developer-confirm-copy--inline"><?php esc_html_e('Shows a browser confirmation before wiping the managed library and files.', 'tasty-fonts'); ?></p>
+                                                <div class="tasty-fonts-developer-action-row tasty-fonts-settings-flat-row-actions">
+                                                    <button type="submit" class="button button-small tasty-fonts-button-danger tasty-fonts-developer-action-button" name="tasty_fonts_wipe_managed_font_library" value="1"><?php esc_html_e('Wipe Library', 'tasty-fonts'); ?></button>
                                                 </div>
                                             </div>
                                         </form>
                                     </div>
 
-                                    <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--developer">
-                                        <div class="tasty-fonts-output-settings-submenu-copy">
+                                    <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--developer tasty-fonts-settings-flat-row tasty-fonts-settings-flat-row--developer-danger">
+                                        <div class="tasty-fonts-output-settings-submenu-copy tasty-fonts-settings-flat-row-copy">
                                             <div class="tasty-fonts-developer-tool-title-row">
                                                 <h4><?php esc_html_e('Reset Integration Detection State', 'tasty-fonts'); ?></h4>
                                                 <span class="tasty-fonts-badge is-warning"><?php esc_html_e('Re-bootstrap', 'tasty-fonts'); ?></span>
@@ -994,20 +980,12 @@
                                                 <p><?php esc_html_e('Clears stored integration detection and ACSS sync bookkeeping so Tasty Fonts can re-bootstrap those defaults on the next admin load.', 'tasty-fonts'); ?></p>
                                             <?php endif; ?>
                                         </div>
-                                        <form method="post" class="tasty-fonts-output-settings-form tasty-fonts-developer-tool-form">
+                                        <form method="post" class="tasty-fonts-output-settings-form tasty-fonts-developer-tool-form tasty-fonts-settings-flat-row-form tasty-fonts-settings-flat-row-form--developer-danger" data-developer-confirm-message="<?php echo esc_attr__('Reset stored integration detection and ACSS bookkeeping?', 'tasty-fonts'); ?>">
                                             <?php wp_nonce_field('tasty_fonts_reset_integration_detection_state'); ?>
-                                            <div class="tasty-fonts-output-settings-submenu tasty-fonts-output-settings-submenu--developer">
-                                                <label class="tasty-fonts-developer-confirm-field" for="tasty-fonts-reset-integrations-confirm">
-                                                    <span class="tasty-fonts-developer-confirm-title"><?php esc_html_e('Confirmation Phrase', 'tasty-fonts'); ?></span>
-                                                    <span class="tasty-fonts-developer-confirm-copy">
-                                                        <?php esc_html_e('Type', 'tasty-fonts'); ?>
-                                                        <span class="tasty-fonts-kbd">RESET INTEGRATIONS</span>
-                                                        <?php esc_html_e('to enable this action.', 'tasty-fonts'); ?>
-                                                    </span>
-                                                </label>
-                                                <input type="text" class="regular-text tasty-fonts-developer-confirm-input" id="tasty-fonts-reset-integrations-confirm" name="tasty_fonts_reset_integrations_confirmation" value="" autocomplete="off" spellcheck="false" data-developer-confirm-input="reset-integrations" data-confirm-expected="RESET INTEGRATIONS">
-                                                <div class="tasty-fonts-developer-action-row">
-                                                    <button type="submit" class="button tasty-fonts-button-danger" name="tasty_fonts_reset_integration_detection_state" value="1" data-developer-confirm-button="reset-integrations" disabled><?php esc_html_e('Reset Integration Detection State', 'tasty-fonts'); ?></button>
+                                            <div class="tasty-fonts-settings-flat-row-support tasty-fonts-settings-flat-row-support--developer tasty-fonts-settings-flat-row-support--developer-danger">
+                                                <p class="tasty-fonts-developer-confirm-copy tasty-fonts-developer-confirm-copy--inline"><?php esc_html_e('Shows a browser confirmation before resetting integration detection state.', 'tasty-fonts'); ?></p>
+                                                <div class="tasty-fonts-developer-action-row tasty-fonts-settings-flat-row-actions">
+                                                    <button type="submit" class="button button-small tasty-fonts-button-danger tasty-fonts-developer-action-button" name="tasty_fonts_reset_integration_detection_state" value="1"><?php esc_html_e('Reset Integrations', 'tasty-fonts'); ?></button>
                                                 </div>
                                             </div>
                                         </form>

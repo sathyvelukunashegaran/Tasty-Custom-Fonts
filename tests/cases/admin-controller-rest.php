@@ -1629,33 +1629,6 @@ $tests['admin_controller_builds_local_environment_notice_again_when_snooze_expir
     assertContainsValue('tf_studio=integrations', (string) ($notice['settings_url'] ?? ''), 'The reminder deep link should activate the Integrations panel.');
 };
 
-$tests['admin_controller_rejects_invalid_developer_confirmation_phrases'] = static function (): void {
-    resetTestState();
-
-    $services = makeServiceGraph();
-
-    $error = assertWpErrorCode(
-        'tasty_fonts_confirmation_required',
-        $services['controller']->resetPluginSettingsToDefaults('wrong phrase'),
-        'Reset settings should require the exact confirmation phrase.'
-    );
-    assertContainsValue('RESET SETTINGS', $error->get_error_message(), 'Reset settings errors should mention the expected phrase.');
-
-    $error = assertWpErrorCode(
-        'tasty_fonts_confirmation_required',
-        $services['controller']->wipeManagedFontLibrary('wrong phrase'),
-        'Wipe library should require the exact confirmation phrase.'
-    );
-    assertContainsValue('WIPE FONT LIBRARY', $error->get_error_message(), 'Wipe library errors should mention the expected phrase.');
-
-    $error = assertWpErrorCode(
-        'tasty_fonts_confirmation_required',
-        $services['controller']->resetIntegrationDetectionState('wrong phrase'),
-        'Reset integrations should require the exact confirmation phrase.'
-    );
-    assertContainsValue('RESET INTEGRATIONS', $error->get_error_message(), 'Reset integrations errors should mention the expected phrase.');
-};
-
 $tests['admin_controller_clears_plugin_caches_and_logs_the_reset'] = static function (): void {
     resetTestState();
 

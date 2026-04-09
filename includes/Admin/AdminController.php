@@ -50,9 +50,6 @@ final class AdminController
     public const SEARCH_COOLDOWN_TRANSIENT_PREFIX = 'tasty_fonts_search_cooldown_';
     private const SEARCH_COOLDOWN_WINDOW_SECONDS = 0.5;
     private const SEARCH_COOLDOWN_TRANSIENT_TTL = 1;
-    private const CONFIRM_RESET_SETTINGS = 'RESET SETTINGS';
-    private const CONFIRM_WIPE_FONT_LIBRARY = 'WIPE FONT LIBRARY';
-    private const CONFIRM_RESET_INTEGRATIONS = 'RESET INTEGRATIONS';
     private const SETTINGS_STUDIO_TABS = ['output-settings', 'integrations', 'plugin-behavior', 'developer'];
     private readonly AdminPageRenderer $renderer;
     private readonly AdminPageContextBuilder $pageContextBuilder;
@@ -590,18 +587,8 @@ final class AdminController
         ];
     }
 
-    public function resetPluginSettingsToDefaults(string $confirmation): array|WP_Error
+    public function resetPluginSettingsToDefaults(): array|WP_Error
     {
-        $validation = $this->validateDeveloperConfirmation(
-            $confirmation,
-            self::CONFIRM_RESET_SETTINGS,
-            __('Reset Plugin Settings', 'tasty-fonts')
-        );
-
-        if (is_wp_error($validation)) {
-            return $validation;
-        }
-
         $settings = $this->developerTools->resetPluginSettings();
 
         if (is_wp_error($settings)) {
@@ -617,18 +604,8 @@ final class AdminController
         ];
     }
 
-    public function wipeManagedFontLibrary(string $confirmation): array|WP_Error
+    public function wipeManagedFontLibrary(): array|WP_Error
     {
-        $validation = $this->validateDeveloperConfirmation(
-            $confirmation,
-            self::CONFIRM_WIPE_FONT_LIBRARY,
-            __('Wipe Managed Font Library', 'tasty-fonts')
-        );
-
-        if (is_wp_error($validation)) {
-            return $validation;
-        }
-
         $settings = $this->developerTools->wipeManagedFontLibrary();
 
         if (is_wp_error($settings)) {
@@ -659,18 +636,8 @@ final class AdminController
         return ['message' => $message];
     }
 
-    public function resetIntegrationDetectionState(string $confirmation): array|WP_Error
+    public function resetIntegrationDetectionState(): array|WP_Error
     {
-        $validation = $this->validateDeveloperConfirmation(
-            $confirmation,
-            self::CONFIRM_RESET_INTEGRATIONS,
-            __('Reset Integration Detection State', 'tasty-fonts')
-        );
-
-        if (is_wp_error($validation)) {
-            return $validation;
-        }
-
         $settings = $this->developerTools->resetIntegrationDetectionState();
         $message = __('Integration detection state reset.', 'tasty-fonts');
         $this->log->add($message);
@@ -814,7 +781,7 @@ final class AdminController
 
         check_admin_referer('tasty_fonts_reset_plugin_settings');
 
-        $result = $this->resetPluginSettingsToDefaults($this->getPostedText('tasty_fonts_reset_settings_confirmation'));
+        $result = $this->resetPluginSettingsToDefaults();
 
         if (is_wp_error($result)) {
             $this->redirectWithError($result->get_error_message());
@@ -831,7 +798,7 @@ final class AdminController
 
         check_admin_referer('tasty_fonts_wipe_managed_font_library');
 
-        $result = $this->wipeManagedFontLibrary($this->getPostedText('tasty_fonts_wipe_font_library_confirmation'));
+        $result = $this->wipeManagedFontLibrary();
 
         if (is_wp_error($result)) {
             $this->redirectWithError($result->get_error_message());
@@ -865,7 +832,7 @@ final class AdminController
 
         check_admin_referer('tasty_fonts_reset_integration_detection_state');
 
-        $result = $this->resetIntegrationDetectionState($this->getPostedText('tasty_fonts_reset_integrations_confirmation'));
+        $result = $this->resetIntegrationDetectionState();
 
         if (is_wp_error($result)) {
             $this->redirectWithError($result->get_error_message());
@@ -2347,22 +2314,6 @@ final class AdminController
             'variant_deleted' => __('Font variant deleted.', 'tasty-fonts'),
             default => '',
         };
-    }
-
-    private function validateDeveloperConfirmation(string $confirmation, string $expectedPhrase, string $label): WP_Error|null
-    {
-        if (strtoupper(trim($confirmation)) === strtoupper(trim($expectedPhrase))) {
-            return null;
-        }
-
-        return new WP_Error(
-            'tasty_fonts_confirmation_required',
-            sprintf(
-                __('Type "%1$s" to confirm %2$s.', 'tasty-fonts'),
-                $expectedPhrase,
-                $label
-            )
-        );
     }
 
     private function redirectWithNoticeKey(string $key): never

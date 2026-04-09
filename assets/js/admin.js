@@ -134,7 +134,7 @@
     const outputQuickModeInputs = Array.from(document.querySelectorAll('[data-output-quick-mode]'));
     const outputAdvancedPanel = document.getElementById('tasty-fonts-advanced-output-controls');
     const outputMinimalPresetInput = document.querySelector('[data-output-minimal-preset]');
-    const developerConfirmInputs = Array.from(document.querySelectorAll('[data-developer-confirm-input]'));
+    const developerConfirmForms = Array.from(document.querySelectorAll('[data-developer-confirm-message]'));
     const outputMasterInputs = {
         classes: document.querySelector('[data-output-master="classes"]'),
         variables: document.querySelector('[data-output-master="variables"]'),
@@ -7102,36 +7102,19 @@
         });
     }
 
-    function syncDeveloperConfirmButtonState(key) {
-        if (!key) {
-            return;
-        }
-
-        const input = document.querySelector('[data-developer-confirm-input="' + key + '"]');
-        const button = document.querySelector('[data-developer-confirm-button="' + key + '"]');
-
-        if (!button) {
-            return;
-        }
-
-        const expected = String((input && input.getAttribute('data-confirm-expected')) || '').trim().toUpperCase();
-        const actual = String((input && input.value) || '').trim().toUpperCase();
-
-        button.disabled = expected === '' || actual !== expected;
-    }
-
     function bindDeveloperToolsControls() {
-        developerConfirmInputs.forEach((input) => {
-            const key = String(input.getAttribute('data-developer-confirm-input') || '').trim();
+        developerConfirmForms.forEach((form) => {
+            const confirmMessage = String(form.getAttribute('data-developer-confirm-message') || '').trim();
 
-            if (!key) {
+            if (!confirmMessage) {
                 return;
             }
 
-            const sync = () => syncDeveloperConfirmButtonState(key);
-            input.addEventListener('input', sync);
-            input.addEventListener('change', sync);
-            sync();
+            form.addEventListener('submit', (event) => {
+                if (!window.confirm(confirmMessage)) {
+                    event.preventDefault();
+                }
+            });
         });
     }
 

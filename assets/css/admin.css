@@ -7060,10 +7060,156 @@ h3.tasty-fonts-section-title {
 }
 
 /* ===================================================
+   Settings — Flat rows
+   =================================================== */
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row {
+    display: grid;
+    gap: var(--tasty-space-3);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-copy {
+    gap: var(--tasty-space-1);
+    padding: 0;
+    margin: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-copy h4 {
+    font-size: var(--tasty-type-body-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--tasty-text);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-copy p {
+    margin: 0;
+    color: rgba(var(--tasty-ctrl-text-muted-rgb), 0.9);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-form {
+    display: grid;
+    gap: var(--tasty-space-3);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-form--stack {
+    gap: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-options {
+    grid-column: auto;
+    justify-self: start;
+    max-width: 100%;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-support {
+    display: grid;
+    gap: var(--tasty-space-2);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-status {
+    display: flex;
+    align-items: center;
+    gap: var(--tasty-space-2);
+    flex-wrap: wrap;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-summary,
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-note {
+    margin: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-summary {
+    color: var(--tasty-text);
+    white-space: nowrap;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-note {
+    color: rgba(var(--tasty-ctrl-text-muted-rgb), 0.92);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-actions {
+    padding-top: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row--channel {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-areas:
+        "copy copy copy"
+        "control action support";
+    gap: var(--tasty-space-2) var(--tasty-space-3);
+    align-items: center;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-copy--channel {
+    grid-area: copy;
+    display: flex;
+    align-items: baseline;
+    gap: var(--tasty-space-3);
+    flex-wrap: nowrap;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-copy--channel p {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-form--channel-control {
+    grid-area: control;
+    gap: 0;
+    align-self: center;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-status--channel {
+    gap: var(--tasty-space-2);
+    flex-wrap: nowrap;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-status--channel .tasty-fonts-settings-flat-row-summary {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-form--channel-action {
+    grid-area: action;
+    justify-self: start;
+    align-self: center;
+    gap: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-support--channel {
+    grid-area: support;
+    display: flex;
+    align-items: center;
+    gap: var(--tasty-space-2) var(--tasty-space-3);
+    flex-wrap: nowrap;
+    min-width: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-note--channel {
+    line-height: var(--tasty-type-caption-line-height);
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-form--channel-action .tasty-fonts-settings-flat-row-actions {
+    padding-top: 0;
+    justify-content: flex-start;
+}
+
+/* ===================================================
    Settings — Developer
    =================================================== */
 
 #tasty-fonts-settings-page .tasty-fonts-developer-panel {
+    --tasty-developer-action-width: calc(var(--tasty-control-height-regular) * 3.7);
     gap: var(--tasty-space-3);
 }
 
@@ -7080,10 +7226,44 @@ h3.tasty-fonts-section-title {
 
 #tasty-fonts-settings-page .tasty-fonts-developer-tool-title-row {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    align-items: center;
+    justify-content: flex-start;
     gap: var(--tasty-space-2);
     flex-wrap: wrap;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-detail-group--developer .tasty-fonts-badge {
+    min-height: var(--tasty-pill-height-regular);
+    padding: 0 var(--tasty-pill-padding-x-compact);
+    border-radius: var(--tasty-radius-pill);
+    font-size: var(--tasty-type-label-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    letter-spacing: 0.01em;
+    box-shadow: none;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-detail-group--developer .tasty-fonts-badge.is-success,
+#tasty-fonts-settings-page .tasty-fonts-output-settings-detail-group--developer .tasty-fonts-badge.is-warning,
+#tasty-fonts-settings-page .tasty-fonts-output-settings-detail-group--developer .tasty-fonts-badge.is-danger,
+#tasty-fonts-settings-page .tasty-fonts-output-settings-detail-group--developer .tasty-fonts-badge:not(.is-success):not(.is-warning):not(.is-danger):not(.is-role) {
+    background: rgba(var(--tasty-white-rgb), 0.72);
+    border-color: var(--tasty-border-subtle);
+    color: rgba(var(--tasty-gray-900-rgb), 0.76);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-detail-group--developer .tasty-fonts-badge.is-success {
+    border-color: var(--tasty-border-success-soft);
+    color: var(--tasty-success);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-detail-group--developer .tasty-fonts-badge.is-warning {
+    border-color: var(--tasty-border-warning-soft);
+    color: var(--tasty-warning);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-output-settings-detail-group--developer .tasty-fonts-badge.is-danger {
+    border-color: var(--tasty-border-danger-soft);
+    color: var(--tasty-danger);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-developer-tool-form {
@@ -7091,42 +7271,86 @@ h3.tasty-fonts-section-title {
     gap: 0;
 }
 
-#tasty-fonts-settings-page .tasty-fonts-output-settings-submenu--developer {
-    gap: var(--tasty-space-3);
-    margin: 0 0 0 calc(var(--tasty-space-4) + 2px);
-    padding: 0 0 0 var(--tasty-space-4);
-    border: 0;
-    border-left: 1px solid var(--tasty-border-subtle);
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-inline {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "copy action";
+    gap: var(--tasty-space-2) var(--tasty-space-3);
+    align-items: start;
 }
 
-#tasty-fonts-settings-page .tasty-fonts-developer-confirm-field {
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-inline > .tasty-fonts-settings-flat-row-copy {
+    grid-area: copy;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-form--developer-inline {
+    grid-area: action;
+    align-self: center;
+    gap: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-form--developer-inline .tasty-fonts-settings-flat-row-support--developer {
+    gap: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-form--developer-inline .tasty-fonts-settings-flat-row-actions {
+    padding-top: 0;
+    justify-content: flex-end;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-danger {
+    gap: var(--tasty-space-2);
+    grid-template-columns: 1fr;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-danger > .tasty-fonts-settings-flat-row-copy {
     display: grid;
-    gap: 6px;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--tasty-space-3) var(--tasty-space-4);
 }
 
-#tasty-fonts-settings-page .tasty-fonts-developer-confirm-title {
-    font-size: 10px;
-    font-weight: var(--tasty-font-weight-bold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--tasty-text-muted);
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-danger > .tasty-fonts-settings-flat-row-copy .tasty-fonts-developer-tool-title-row {
+    grid-column: 1;
+    white-space: nowrap;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-danger > .tasty-fonts-settings-flat-row-copy > p {
+    grid-column: 2;
+    margin: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-form--developer-danger {
+    gap: 0;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-support--developer-danger {
+    grid-template-columns: minmax(0, 1fr) var(--tasty-developer-action-width);
+    grid-template-areas: "copy action";
+    column-gap: var(--tasty-space-3);
+    row-gap: 0;
+    align-items: center;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-flat-row-support--developer-danger .tasty-fonts-settings-flat-row-actions {
+    grid-area: action;
+    padding-top: 0;
+    justify-content: flex-end;
 }
 
 #tasty-fonts-settings-page .tasty-fonts-developer-confirm-copy {
     display: inline-flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-    color: var(--tasty-text-muted);
+    flex-wrap: nowrap;
+    gap: var(--tasty-pill-gap);
+    color: rgba(var(--tasty-ctrl-text-muted-rgb), 0.94);
     font-size: var(--tasty-type-caption-size);
-    line-height: 1.45;
+    line-height: var(--tasty-type-caption-line-height);
+    white-space: nowrap;
 }
 
-#tasty-fonts-settings-page .tasty-fonts-developer-confirm-input {
-    width: min(100%, 360px);
+#tasty-fonts-settings-page .tasty-fonts-developer-confirm-copy--inline {
+    grid-area: copy;
+    min-width: 0;
 }
 
 #tasty-fonts-settings-page .tasty-fonts-developer-action-row {
@@ -7134,6 +7358,34 @@ h3.tasty-fonts-section-title {
     align-items: center;
     gap: var(--tasty-space-2);
     flex-wrap: wrap;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-developer-action-button {
+    min-height: var(--tasty-control-height-compact);
+    padding: 0 var(--tasty-control-padding-inline-roomy);
+    border-radius: var(--tasty-radius-pill);
+    font-size: var(--tasty-type-control-size);
+    font-weight: var(--tasty-font-weight-semibold);
+    min-width: var(--tasty-developer-action-width);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-developer-action-button:not(.tasty-fonts-button-danger) {
+    background: rgba(var(--tasty-white-rgb), 0.9);
+    border-color: var(--tasty-border-subtle);
+    color: rgba(var(--tasty-gray-900-rgb), 0.78);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.94), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-developer-action-button:not(.tasty-fonts-button-danger):hover,
+#tasty-fonts-settings-page .tasty-fonts-developer-action-button:not(.tasty-fonts-button-danger):focus {
+    background: rgba(var(--tasty-white-rgb), 0.98);
+    border-color: var(--tasty-border-subtle-strong);
+    color: rgba(var(--tasty-gray-900-rgb), 0.92);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-developer-action-button.tasty-fonts-button-danger:not(:disabled):not([aria-disabled="true"]) {
+    min-width: var(--tasty-developer-action-width);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 2px rgba(127, 29, 29, 0.06);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-output-settings-meta {
@@ -7179,6 +7431,83 @@ h3.tasty-fonts-section-title {
 
     #tasty-fonts-settings-page .tasty-fonts-output-settings-submenu-list--integration {
         grid-template-columns: 1fr;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row--channel {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "copy"
+            "control"
+            "action"
+            "support";
+        align-items: start;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row-copy--channel {
+        display: grid;
+        gap: 4px;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row-copy--channel p {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row-form--channel-action {
+        justify-self: start;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row-support--channel {
+        display: grid;
+        gap: 8px;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row-form--channel-action .tasty-fonts-settings-flat-row-actions {
+        justify-content: flex-start;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row-status--channel,
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row-summary,
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row-note--channel {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-inline {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "copy"
+            "action";
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row-form--developer-inline {
+        justify-self: start;
+        align-self: start;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row-support--developer-danger {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "copy"
+            "action";
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-danger > .tasty-fonts-settings-flat-row-copy {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-danger > .tasty-fonts-settings-flat-row-copy .tasty-fonts-developer-tool-title-row,
+    #tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-danger > .tasty-fonts-settings-flat-row-copy > p {
+        grid-column: auto;
+        white-space: normal;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-developer-confirm-copy {
+        white-space: normal;
+        flex-wrap: wrap;
     }
 }
 

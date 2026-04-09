@@ -1497,7 +1497,13 @@ $tests['admin_page_renderer_exposes_behavior_tab_and_can_hide_help_ui'] = static
     assertNotContainsValue('Sync heading/body roles to Automatic.css', $output, 'The Integrations tab should no longer render a duplicate Automatic.css sync row title.');
     assertContainsValue('Hide Onboarding Hints', $output, 'The Behavior tab should expose the onboarding-hints toggle.');
     assertContainsValue('Update Channel', $output, 'The Behavior tab should expose the update channel selector.');
+    assertContainsValue('Stable', $output, 'The Behavior tab should render the stable update channel option inline.');
+    assertContainsValue('Beta', $output, 'The Behavior tab should render the beta update channel option inline.');
+    assertContainsValue('Nightly', $output, 'The Behavior tab should render the nightly update channel option inline.');
     assertContainsValue('Upgrade Available', $output, 'The Behavior tab should render the current update channel status badge.');
+    assertContainsValue('Installed: 1.7.0. Latest for Beta: 1.7.1-beta.2.', $output, 'The Behavior tab should render the update channel version summary inline with the field.');
+    assertContainsValue('A newer package is available for the selected channel through the normal WordPress updates flow.', $output, 'The Behavior tab should render the update channel status copy.');
+    assertNotContainsValue('Rollback Reinstall', $output, 'The Behavior tab should no longer render a separate rollback subsection title.');
     assertNotContainsValue('Enable Block Editor Font Library Sync', $output, 'The Behavior panel should no longer render the Gutenberg sync toggle after it moves into Integrations.');
     assertContainsValue('Enable Monospace Role', $output, 'The Behavior panel should still render the monospace toggle.');
     assertContainsValue('Delete Uploaded Fonts on Uninstall', $output, 'The Behavior panel should still render the uninstall cleanup toggle.');
@@ -1506,7 +1512,8 @@ $tests['admin_page_renderer_exposes_behavior_tab_and_can_hide_help_ui'] = static
     assertContainsValue('Clear Plugin Caches and Regenerate Assets', $output, 'The Developer tab should expose the cache-reset action.');
     assertContainsValue('Reset Integration Detection State', $output, 'The Developer tab should expose the integration-reset action.');
     assertContainsValue('Reset Suppressed Notices', $output, 'The Developer tab should expose the suppressed-notices reset action.');
-    assertContainsValue('data-developer-confirm-input="reset-settings"', $output, 'Destructive developer actions should render typed-confirmation inputs.');
+    assertContainsValue('data-developer-confirm-message=', $output, 'Destructive developer actions should use browser-level confirm messages.');
+    assertNotContainsValue('data-developer-confirm-input=', $output, 'Destructive developer actions should no longer render typed-confirmation inputs.');
     assertNotContainsValue('Editor Integrations', $output, 'The Behavior panel should no longer render the editor integrations subsection title.');
     assertNotContainsValue('Role Options', $output, 'The Behavior panel should no longer render the role options subsection title.');
     assertNotContainsValue('Uninstall Settings', $output, 'The Behavior panel should no longer render the uninstall settings subsection title.');
@@ -1522,6 +1529,74 @@ $tests['admin_page_renderer_exposes_behavior_tab_and_can_hide_help_ui'] = static
     assertNotContainsValue('tasty-fonts-toggle-description', $output, 'Hide Onboarding Hints should omit settings toggle description elements from the rendered HTML.');
     assertNotContainsValue('tasty-fonts-help-button', $output, 'Hide Onboarding Hints should remove inline help buttons from the rendered admin UI.');
     assertNotContainsValue('data-help-tooltip=', $output, 'Hide Onboarding Hints should omit passive hover help attributes from the rendered admin UI.');
+};
+
+$tests['admin_page_renderer_attaches_update_channel_rollback_action_to_the_field'] = static function (): void {
+    resetTestState();
+
+    $renderer = new AdminPageRenderer(new Storage());
+
+    ob_start();
+    $renderer->renderPage([
+        'storage' => ['root' => '/tmp/uploads/fonts'],
+        'catalog' => [],
+        'available_families' => [],
+        'roles' => [],
+        'logs' => [],
+        'activity_actor_options' => [],
+        'family_fallbacks' => [],
+        'family_font_displays' => [],
+        'family_font_display_options' => [],
+        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+        'preview_size' => 32,
+        'font_display' => 'optional',
+        'font_display_options' => [],
+        'minify_css_output' => true,
+        'preload_primary_fonts' => true,
+        'remote_connection_hints' => true,
+        'update_channel' => 'stable',
+        'update_channel_options' => [
+            ['value' => 'stable', 'label' => 'Stable'],
+            ['value' => 'beta', 'label' => 'Beta'],
+            ['value' => 'nightly', 'label' => 'Nightly'],
+        ],
+        'update_channel_status' => [
+            'selected_channel' => 'stable',
+            'selected_channel_label' => 'Stable',
+            'installed_version' => '1.8.0-dev',
+            'latest_version' => '1.7.0',
+            'state_label' => 'Rollback Available',
+            'state_class' => 'is-warning',
+            'state_copy' => 'The selected channel points to an older package than the one installed now. Use the reinstall action below to switch immediately.',
+            'can_reinstall' => true,
+        ],
+        'block_editor_font_library_sync_enabled' => false,
+        'training_wheels_off' => false,
+        'delete_uploaded_files_on_uninstall' => false,
+        'diagnostic_items' => [],
+        'overview_metrics' => [],
+        'output_panels' => [],
+        'generated_css_panel' => [],
+        'preview_panels' => [],
+        'local_environment_notice' => [],
+        'toasts' => [],
+        'apply_everywhere' => false,
+        'role_deployment' => [
+            'badge' => 'Live',
+            'badge_class' => 'is-success',
+            'title' => 'Live',
+            'copy' => 'Current selections are being served sitewide.',
+        ],
+    ]);
+    $output = (string) ob_get_clean();
+
+    assertContainsValue('Rollback Available', $output, 'The Behavior tab should render rollback state copy inline with the update channel field.');
+    assertContainsValue('Installed: 1.8.0-dev. Latest for Stable: 1.7.0.', $output, 'The Behavior tab should render rollback version context inline.');
+    assertContainsValue('data-help-tooltip="The selected channel points to an older package than the one installed now. Use the reinstall action below to switch immediately."', $output, 'The Behavior tab should expose rollback guidance through the shared passive help tooltip system.');
+    assertContainsValue('aria-controls="tasty-fonts-help-tooltip-layer"', $output, 'The Behavior tab should wire rollback help to the shared tooltip layer.');
+    assertNotContainsValue('<p class="tasty-fonts-settings-flat-row-note tasty-fonts-settings-flat-row-note--channel">The selected channel points to an older package than the one installed now. Use the reinstall action below to switch immediately.</p>', $output, 'Rollback guidance should no longer render as an inline sentence when the reinstall action is available.');
+    assertContainsValue('Reinstall', $output, 'The Behavior tab should attach the rollback action directly to the update channel field.');
+    assertNotContainsValue('Rollback Reinstall', $output, 'Rollback should no longer render as a separate nested section heading.');
 };
 
 $tests['admin_page_renderer_keeps_integration_toggle_copy_single_line'] = static function (): void {
