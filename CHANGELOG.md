@@ -6,9 +6,39 @@ All notable changes to this project will be documented in this file.
 
 ## [1.8.0] - 2026-04-11
 
+### Added
+
+- Added a global Unicode Range Output control in Settings so emitted `@font-face`, editor font-face payloads, and Block Editor sync can preserve provider subsets, force Latin presets, omit unicode-range entirely, or use a validated custom override without rewriting stored face metadata.
+- Added opt-in variable font support across local uploads, Google imports, and runtime delivery, including stored axis metadata/defaults, role-specific axis controls, and static weight overrides for heading, body, and monospace roles.
+- Added variable-font awareness throughout the library and import workflows, including family type badges/filtering, variable metadata in Google and Bunny search results, upload axis editors, and clearer source-only messaging for Bunny variable families.
+- Added PHP and JavaScript coverage for variable font contracts, provider metadata, library rendering, runtime asset planning, and role/settings persistence.
+- Added a three-rail GitHub release workflow with stable, beta, and nightly channels, including a Behavior-tab update-channel selector and rollback reinstall path for channel downgrades.
+- Added bundled JavaScript translation assets and an RTL admin stylesheet so WordPress can load admin translations and directional overrides through the standard core mechanisms.
+
 ### Changed
 
+- Updated catalog records, generated CSS, editor font presets, Block Editor sync payloads, and runtime planning to carry font-variation settings and range-based weights when variable fonts are enabled, while keeping static-only behavior as the default.
+- Improved hosted CSS parsing and import merging so Google, Bunny, and Adobe faces share normalized axis metadata and imported profiles retain variable/static face details consistently.
+- Split release automation into shared quality checks plus dedicated stable, beta, and nightly publishing workflows, and replaced the local release helper with channel-aware branch, beta, and stable commands.
+- Streamlined Settings > Behavior so the update channel control, rollback reinstall action, and status messaging now share a flatter inline layout with improved responsive behavior.
+- Simplified Settings > Developer maintenance actions by tightening the related action-row presentation and switching destructive actions to a two-step in-place confirmation pattern.
+- Updated the quality workflow to use `actions/setup-node@v5` with Node.js 22.
+- Bumped the plugin minimum supported WordPress version to 6.5 to align the header with the APIs used by the Font Library and editor integrations.
+- Updated the local release helper and release-process documentation so beta promotion can start from the current `main` dev state without auto-advancing `main` to the next dev line.
 - Promoted the validated `1.8.0` beta line to the stable release rail after the final beta verification pass.
+
+### Fixed
+
+- New font families now start in the library across Google imports, Bunny imports, direct uploads, and raw uploads-folder scans, and families that were library-only return to that state after they stop being used by live roles.
+- Hid the Upload Files variable column and toggle unless variable font support is enabled, so static-only installs no longer show inactive variable controls in the upload builder.
+- Fixed preload and preview weight selection so saved role overrides and variable `WGHT` axis values choose the intended face instead of assuming hard-coded defaults.
+- Fixed local upload duplicate detection and filename handling for variable fonts so self-hosted variable files can coexist cleanly with static faces in the same family.
+- Fixed Google and Bunny CDN frontend requests so a saved `font-display: optional` no longer leaves live first-visit renders stuck on fallback fonts.
+- Fixed Gutenberg editor typography on Automatic.css sites by mirroring the managed heading/body role variables into the editor canvas when ACSS sync is active.
+- Improved nightly release notes generation so the workflow can fall back to the latest stable or beta tag when a previous nightly tag is unavailable.
+- Fixed admin accessibility and plugin-compliance gaps across the dashboard, including REST route argument schemas, roving-tabindex behavior, real disabled states for blocked destructive actions, tooltip `aria-describedby` wiring, and translation-safe plural handling in both PHP and JavaScript.
+- Fixed generated CSS downloads and Adobe project validation by sending byte-accurate `Content-Length` headers and rejecting invalid Adobe project IDs before remote validation requests run.
+- Fixed the Settings > Developer panel so destructive action rows keep their descriptions and buttons aligned without the oversized gaps shown in the previous layout.
 
 ## [1.8.0-beta.2] - 2026-04-11
 
