@@ -85,3 +85,12 @@ function assertNotContainsValue(string $needle, string $haystack, string $messag
 
     throw new RuntimeException($message . "\nUnexpected: " . $needle . "\nHaystack: " . $haystack);
 }
+
+function assertMatchesPattern(string $pattern, string $subject, string $message): void
+{
+    if (preg_match($pattern, $subject) === 1) {
+        return;
+    }
+
+    throw new RuntimeException($message . "\nPattern: " . $pattern . "\nSubject: " . $subject);
+}

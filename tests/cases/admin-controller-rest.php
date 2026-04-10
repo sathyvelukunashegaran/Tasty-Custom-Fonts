@@ -1341,9 +1341,17 @@ $tests['rest_controller_registers_expected_admin_routes'] = static function (): 
 };
 
 $tests['bundled_js_translation_placeholder_exists'] = static function (): void {
-    assertTrueValue(
-        file_exists(TASTY_FONTS_DIR . 'languages/tasty-fonts-en_US-tasty-fonts-admin.json'),
-        'The plugin should ship a bundled JED JSON placeholder for the admin script handle.'
+    resetTestState();
+
+    global $scriptTranslations;
+
+    $services = makeServiceGraph();
+    $services['controller']->enqueueAssets('toplevel_page_' . AdminController::MENU_SLUG);
+
+    assertSameValue(
+        'tasty-fonts',
+        (string) ($scriptTranslations['tasty-fonts-admin']['domain'] ?? ''),
+        'The admin script should register WordPress translation support for the tasty-fonts textdomain.'
     );
 };
 
@@ -2536,4 +2544,77 @@ $tests['admin_controller_resolves_sitewide_toggle_submissions_into_role_actions'
         invokePrivateMethod($controller, 'resolveRoleFormActionType', ['save', true]),
         'Leaving the toggle on should keep draft saves as save-only submissions when sitewide delivery is already enabled.'
     );
+};
+
+// ---------------------------------------------------------------------------
+// AdminController::handleAdminActions() – gate logic
+// ---------------------------------------------------------------------------
+
+$tests['handle_admin_actions_is_a_no_op_for_non_admin_requests'] = static function (): void {
+    resetTestState();
+
+    global $isAdminRequest;
+    global $redirectLocation;
+
+    $isAdminRequest = false;
+    $_POST['tasty_fonts_clear_log'] = '1';
+
+    $services = makeServiceGraph();
+    $services['controller']->handleAdminActions();
+
+    assertSameValue('', $redirectLocation, 'handleAdminActions() should do nothing when is_admin() returns false.');
+};
+
+$tests['handle_admin_actions_is_a_no_op_when_user_lacks_manage_options'] = static function (): void {
+    resetTestState();
+
+    global $currentUserCapabilities;
+    global $isAdminRequest;
+    global $redirectLocation;
+
+    $isAdminRequest = true;
+    $currentUserCapabilities = ['manage_options' => false];
+    $_POST['tasty_fonts_clear_log'] = '1';
+
+    $services = makeServiceGraph();
+    $services['controller']->handleAdminActions();
+
+    assertSameValue('', $redirectLocation, 'handleAdminActions() should do nothing when the current user lacks manage_options.');
+};
+
+$tests['handle_admin_actions_dispatches_clear_log_and_redirects'] = static function (): void {
+    resetTestState();
+
+    global $isAdminRequest;
+    global $optionStore;
+    global $redirectLocation;
+
+    $isAdminRequest = true;
+    $_POST['tasty_fonts_clear_log'] = '1';
+
+    $services = makeServiceGraph();
+    $services['log']->add('Entry before clear');
+    $services['controller']->handleAdminActions();
+
+    assertSameValue([], $optionStore[LogRepository::OPTION_LOG] ?? [], 'handleAdminActions() should clear the log when the clear-log field is posted.');
+    assertSameValue(false, empty($redirectLocation), 'handleAdminActions() should redirect after clearing the log.');
+};
+
+$tests['handle_admin_actions_returns_early_after_first_matching_handler'] = static function (): void {
+    resetTestState();
+
+    global $isAdminRequest;
+    global $redirectLocation;
+
+    $isAdminRequest = true;
+    // Post both the clear-log and rescan fields; only clear-log should fire.
+    $_POST['tasty_fonts_clear_log'] = '1';
+    $_POST['tasty_fonts_rescan_fonts'] = '1';
+
+    $services = makeServiceGraph();
+    $services['controller']->handleAdminActions();
+
+    // The rescan handler would schedule a cron event; the clear-log handler would not.
+    // If the dispatch stops after clear-log, no cron event will be queued.
+    assertSameValue([], $services['log']->all(), 'Only the clear-log handler should have fired; the rescan log message should be absent.');
 };

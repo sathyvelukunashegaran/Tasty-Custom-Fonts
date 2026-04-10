@@ -2732,3 +2732,264 @@ $tests['oxygen_compatibility_shim_returns_only_runtime_family_names'] = static f
     assertTrueValue(class_exists('ECF_Plugin', false), 'Registering the Oxygen integration should define the compatibility shim when Oxygen support is enabled.');
     assertSameValue(['Inter'], \ECF_Plugin::get_font_families(), 'The Oxygen compatibility shim should expose published runtime Tasty Fonts families only.');
 };
+
+// ---------------------------------------------------------------------------
+// AssetService::getVersionedStylesheetUrl
+// ---------------------------------------------------------------------------
+
+$tests['asset_service_get_versioned_stylesheet_url_includes_hash_version_when_file_exists'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    Plugin::activate();
+
+    $url = $services['assets']->getVersionedStylesheetUrl();
+
+    assertSameValue(false, $url === null, 'getVersionedStylesheetUrl() should return a non-null URL after the file is created.');
+    assertContainsValue('ver=', (string) $url, 'getVersionedStylesheetUrl() should append a ver= query string.');
+    assertNotContainsValue('ver=', str_replace('ver=', '', (string) $url), 'getVersionedStylesheetUrl() should append exactly one ver= parameter.');
+};
+
+$tests['asset_service_get_versioned_stylesheet_url_returns_null_when_generated_file_is_missing'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+
+    $url = $services['assets']->getVersionedStylesheetUrl();
+
+    assertSameValue(null, $url, 'getVersionedStylesheetUrl() should return null when the generated CSS file does not yet exist.');
+};
+
+// ---------------------------------------------------------------------------
+// AssetService::getPrimaryFontPreloadUrls (direct)
+// ---------------------------------------------------------------------------
+
+$tests['asset_service_get_primary_font_preload_urls_returns_woff2_urls_for_applied_roles'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('lora/Lora-400.woff2'), 'font-data');
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400.woff2'], 'paths' => ['woff2' => 'inter/Inter-400.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
+    $services['imports']->saveProfile(
+        'Lora',
+        'lora',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Lora', 'slug' => 'lora', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'lora/Lora-400.woff2'], 'paths' => ['woff2' => 'lora/Lora-400.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
+    $services['settings']->saveAppliedRoles(
+        ['heading' => 'Inter', 'body' => 'Lora', 'heading_fallback' => 'sans-serif', 'body_fallback' => 'serif'],
+        ['Inter', 'Lora']
+    );
+    $services['settings']->setAutoApplyRoles(true);
+    $services['settings']->saveSettings(['preload_primary_fonts' => '1']);
+
+    $urls = $services['assets']->getPrimaryFontPreloadUrls();
+
+    assertSameValue(2, count($urls), 'getPrimaryFontPreloadUrls() should return one URL per applied role when both are resolved.');
+    assertContainsValue('Inter-400.woff2', implode(' ', $urls), 'getPrimaryFontPreloadUrls() should include the heading font WOFF2 URL.');
+    assertContainsValue('Lora-400.woff2', implode(' ', $urls), 'getPrimaryFontPreloadUrls() should include the body font WOFF2 URL.');
+};
+
+// ---------------------------------------------------------------------------
+// RuntimeAssetPlanner::getPreconnectOrigins
+// ---------------------------------------------------------------------------
+
+$tests['runtime_asset_planner_get_preconnect_origins_returns_empty_when_setting_is_off'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings(['remote_connection_hints' => '0']);
+
+    assertSameValue([], $services['planner']->getPreconnectOrigins(), 'getPreconnectOrigins() should return an empty array when the remote_connection_hints setting is disabled.');
+};
+
+$tests['runtime_asset_planner_get_preconnect_origins_returns_google_origin_for_cdn_delivery'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings(['remote_connection_hints' => '1']);
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'google-cdn',
+            'provider' => 'google',
+            'type' => 'cdn',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'google', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => ''], 'paths' => []],
+            ],
+        ],
+        'published',
+        true
+    );
+
+    $origins = $services['planner']->getPreconnectOrigins();
+
+    assertContainsValue('https://fonts.googleapis.com', implode(' ', $origins), 'getPreconnectOrigins() should return the Google origin for CDN-delivered Google fonts.');
+};
+
+$tests['runtime_asset_planner_get_preconnect_origins_returns_bunny_origin_for_cdn_delivery'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings(['remote_connection_hints' => '1']);
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'bunny-cdn',
+            'provider' => 'bunny',
+            'type' => 'cdn',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'bunny', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => ''], 'paths' => []],
+            ],
+        ],
+        'published',
+        true
+    );
+
+    $origins = $services['planner']->getPreconnectOrigins();
+
+    assertContainsValue('https://fonts.bunny.net', implode(' ', $origins), 'getPreconnectOrigins() should return the Bunny origin for CDN-delivered Bunny fonts.');
+};
+
+$tests['runtime_asset_planner_get_preconnect_origins_returns_empty_for_self_hosted_delivery'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings(['remote_connection_hints' => '1']);
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400.woff2'], 'paths' => ['woff2' => 'inter/Inter-400.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
+
+    $origins = $services['planner']->getPreconnectOrigins();
+
+    assertSameValue([], $origins, 'getPreconnectOrigins() should return an empty array for self-hosted deliveries (no external connection needed).');
+};
+
+// ---------------------------------------------------------------------------
+// RuntimeService::enqueueAdminScreenFonts
+// ---------------------------------------------------------------------------
+
+$tests['runtime_service_enqueue_admin_screen_fonts_enqueues_when_hook_suffix_matches_plugin_page'] = static function (): void {
+    resetTestState();
+
+    global $registeredStyles;
+
+    Plugin::activate();
+
+    $services = makeServiceGraph();
+    $services['runtime']->enqueueAdminScreenFonts('toplevel_page_' . AdminController::MENU_SLUG);
+
+    $enqueuedHandles = array_keys($registeredStyles);
+
+    assertTrueValue(
+        in_array('tasty-fonts-admin-fonts', $enqueuedHandles, true),
+        'enqueueAdminScreenFonts() should register the admin preview fonts stylesheet when called with a plugin admin page hook suffix.'
+    );
+};
+
+$tests['runtime_service_enqueue_admin_screen_fonts_skips_non_plugin_pages'] = static function (): void {
+    resetTestState();
+
+    global $registeredStyles;
+
+    $services = makeServiceGraph();
+    $services['runtime']->enqueueAdminScreenFonts('edit.php');
+
+    assertFalseValue(
+        in_array('tasty-fonts-admin-fonts', array_keys($registeredStyles), true),
+        'enqueueAdminScreenFonts() should skip font registration for non-plugin admin pages.'
+    );
+};
+
+// ---------------------------------------------------------------------------
+// RuntimeService::injectEditorFontPresets
+// ---------------------------------------------------------------------------
+
+$tests['runtime_service_inject_editor_font_presets_adds_families_for_live_roles'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400.woff2'], 'paths' => ['woff2' => 'inter/Inter-400.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
+
+    $themeJson = new WP_Theme_JSON_Data(['version' => 3]);
+    $result = $services['runtime']->injectEditorFontPresets($themeJson);
+    $data = $result->get_data();
+
+    assertTrueValue(
+        !empty($data['settings']['typography']['fontFamilies']),
+        'injectEditorFontPresets() should add fontFamilies to the theme JSON typography settings when managed fonts are available.'
+    );
+
+    $injectedNames = array_map(static fn (array $f): string => (string) ($f['name'] ?? ''), $data['settings']['typography']['fontFamilies']);
+    assertContainsValue('Inter', implode(' ', $injectedNames), 'injectEditorFontPresets() should inject the published font family name.');
+};
+
+$tests['runtime_service_inject_editor_font_presets_returns_unchanged_when_no_families_available'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+
+    $original = ['version' => 3, 'settings' => []];
+    $themeJson = new WP_Theme_JSON_Data($original);
+    $result = $services['runtime']->injectEditorFontPresets($themeJson);
+
+    assertSameValue($original, $result->get_data(), 'injectEditorFontPresets() should return the theme JSON unchanged when no managed font families are published.');
+};

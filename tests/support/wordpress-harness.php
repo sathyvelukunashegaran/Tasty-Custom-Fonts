@@ -256,6 +256,30 @@ if (!class_exists('Plugin_Upgrader')) {
     }
 }
 
+if (!class_exists('WP_Theme_JSON_Data')) {
+    class WP_Theme_JSON_Data
+    {
+        private array $data;
+
+        public function __construct(array $data = [])
+        {
+            $this->data = $data;
+        }
+
+        public function get_data(): array
+        {
+            return $this->data;
+        }
+
+        public function update_with(array $theme_json): static
+        {
+            $this->data = array_replace_recursive($this->data, $theme_json);
+
+            return $this;
+        }
+    }
+}
+
 if (!function_exists('__')) {
     function __(string $text, string $domain = ''): string
     {

@@ -1495,3 +1495,72 @@ $tests['storage_can_copy_absolute_files_without_buffering_contents'] = static fu
     assertSameValue(true, $copied, 'Storage should copy uploaded files into the target directory without reading the whole file into PHP memory first.');
     assertSameValue('font-data', (string) file_get_contents($targetPath), 'Copied files should preserve the original contents.');
 };
+
+// ---------------------------------------------------------------------------
+// CatalogService::maybeInvalidateFromAttachment – edge cases
+// ---------------------------------------------------------------------------
+
+$tests['catalog_service_maybe_invalidate_from_attachment_is_safe_when_catalog_transient_is_absent'] = static function (): void {
+    resetTestState();
+
+    global $attachedFilePaths;
+    global $transientDeleted;
+    global $transientStore;
+
+    $services = makeServiceGraph();
+    $storage = new Storage();
+    $root = $storage->getRoot();
+
+    // No catalog transient in the store.
+    $attachedFilePaths[50] = $root . '/google/inter/inter-400-normal.woff2';
+    $services['catalog']->maybeInvalidateFromAttachment(50);
+
+    // Should attempt to delete the transient without throwing.
+    assertSameValue(true, in_array('tasty_fonts_catalog_v2', $transientDeleted, true), 'maybeInvalidateFromAttachment() should still call delete_transient even when no cached catalog transient is present.');
+};
+
+$tests['catalog_service_maybe_invalidate_from_attachment_ignores_paths_outside_font_storage'] = static function (): void {
+    resetTestState();
+
+    global $attachedFilePaths;
+    global $transientDeleted;
+    global $transientStore;
+
+    $services = makeServiceGraph();
+
+    $outsideRoot = uniqueTestDirectory('outside-root') . '/image.jpg';
+    $attachedFilePaths[60] = $outsideRoot;
+    $transientStore['tasty_fonts_catalog_v2'] = ['cached' => true];
+
+    $services['catalog']->maybeInvalidateFromAttachment(60);
+
+    assertFalseValue(
+        in_array('tasty_fonts_catalog_v2', $transientDeleted, true),
+        'maybeInvalidateFromAttachment() should leave the catalog cache intact when the attachment path is outside the font storage root.'
+    );
+};
+
+$tests['catalog_service_maybe_invalidate_from_attachment_normalises_windows_style_paths'] = static function (): void {
+    resetTestState();
+
+    global $attachedFilePaths;
+    global $transientDeleted;
+    global $transientStore;
+
+    $services = makeServiceGraph();
+    $storage = new Storage();
+    $root = $storage->getRoot();
+
+    // Simulate an attachment path that uses backslashes (Windows ABSPATH separators).
+    $windowsStylePath = str_replace('/', '\\', $root . '/google/inter/inter-400-normal.woff2');
+    $attachedFilePaths[70] = $windowsStylePath;
+    $transientStore['tasty_fonts_catalog_v2'] = ['cached' => true];
+
+    $services['catalog']->maybeInvalidateFromAttachment(70);
+
+    assertSameValue(
+        true,
+        in_array('tasty_fonts_catalog_v2', $transientDeleted, true),
+        'maybeInvalidateFromAttachment() should treat backslash-separated paths as equivalent to their forward-slash counterparts.'
+    );
+};
