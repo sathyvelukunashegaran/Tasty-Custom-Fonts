@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-04-11
+
+### Changed
+
+- Promoted the validated `1.8.0` beta line to the stable release rail after the final beta verification pass.
+
+## [1.8.0-beta.2] - 2026-04-11
+
+### Changed
+
+- Updated the local release helper and release-process documentation so beta promotion can start from the current `main` dev state without auto-advancing `main` to the next dev line.
+
+### Fixed
+
+- Fixed the Settings > Developer panel so destructive action rows keep their descriptions and buttons aligned without the oversized gaps shown in the previous layout.
+
+## [1.8.0-beta.1] - 2026-04-11
+
 ### Added
 
 - Added a global Unicode Range Output control in Settings so emitted `@font-face`, editor font-face payloads, and Block Editor sync can preserve provider subsets, force Latin presets, omit unicode-range entirely, or use a validated custom override without rewriting stored face metadata.
