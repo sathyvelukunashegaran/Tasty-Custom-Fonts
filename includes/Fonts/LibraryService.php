@@ -329,7 +329,8 @@ final class LibraryService
             $this->imports->ensureFamily(
                 $familyName,
                 $familySlug,
-                (string) ($family['publish_state'] ?? 'published')
+                (string) ($family['publish_state'] ?? 'published'),
+                (string) ($family['active_delivery_id'] ?? '')
             );
         }
 
@@ -405,7 +406,14 @@ final class LibraryService
             $storedFamily = $this->imports->getFamily($familySlug);
 
             if ($storedFamily === null) {
-                $this->imports->ensureFamily($familyName, $familySlug, 'role_active', null, 'library_only');
+                $catalogFamily = $this->findFamilyBySlug($familySlug);
+                $this->imports->ensureFamily(
+                    $familyName,
+                    $familySlug,
+                    'role_active',
+                    (string) ($catalogFamily['active_delivery_id'] ?? ''),
+                    'library_only'
+                );
                 continue;
             }
 

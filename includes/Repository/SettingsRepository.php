@@ -42,6 +42,11 @@ final class SettingsRepository
         'class_output_category_mono_enabled',
         'class_output_families_enabled',
     ];
+    private const MONOSPACE_CLASS_OUTPUT_FIELDS = [
+        'class_output_role_monospace_enabled',
+        'class_output_role_alias_code_enabled',
+        'class_output_category_mono_enabled',
+    ];
     private const DEFAULT_SETTINGS = [
         'auto_apply_roles' => false,
         'applied_roles' => [],
@@ -110,7 +115,6 @@ final class SettingsRepository
         'body_fallback' => 'sans-serif',
         'monospace_fallback' => 'monospace',
     ];
-    private const ROLE_DELIVERY_KEYS = ['heading_delivery_id', 'body_delivery_id', 'monospace_delivery_id'];
     private const ROLE_WEIGHT_KEYS = ['heading_weight', 'body_weight', 'monospace_weight'];
     private const ROLE_AXIS_KEYS = ['heading_axes', 'body_axes', 'monospace_axes'];
     private ?array $settingsCache = null;
@@ -182,6 +186,7 @@ final class SettingsRepository
     public function saveSettings(array $input): array
     {
         $settings = $this->getSettings();
+        $monospaceRoleWasEnabled = !empty($settings['monospace_role_enabled']);
         $googleApiKeyData = $this->getGoogleApiKeyDataFromOptions($settings);
         $clearGoogleKey = !empty($input['tasty_fonts_clear_google_api_key']);
         $submittedGoogleKey = isset($input['google_api_key'])
@@ -322,6 +327,8 @@ final class SettingsRepository
             $settingsChanged = true;
         }
 
+        $settings = $this->restoreMonospaceClassOutputsOnFirstEnable($settings, $input, $monospaceRoleWasEnabled);
+
         if (array_key_exists('acss_font_role_sync_enabled', $input)) {
             $settings['acss_font_role_sync_enabled'] = $this->normalizeOptionalBoolean($input['acss_font_role_sync_enabled']);
             $settingsChanged = true;
@@ -401,14 +408,6 @@ final class SettingsRepository
             }
 
             $roles[$roleKey] = $this->normalizeRoleFallback($input[$roleKey], $defaultFallback);
-        }
-
-        foreach (self::ROLE_DELIVERY_KEYS as $roleKey) {
-            if (!array_key_exists($roleKey, $input)) {
-                continue;
-            }
-
-            $roles[$roleKey] = $this->sanitizeTextValue($input[$roleKey]);
         }
 
         foreach (self::ROLE_WEIGHT_KEYS as $roleKey) {
@@ -766,9 +765,9 @@ final class SettingsRepository
         $normalizedRoles['heading'] = $this->sanitizeTextValue($normalizedRoles['heading'] ?? '');
         $normalizedRoles['body'] = $this->sanitizeTextValue($normalizedRoles['body'] ?? '');
         $normalizedRoles['monospace'] = $this->sanitizeTextValue($normalizedRoles['monospace'] ?? '');
-        $normalizedRoles['heading_delivery_id'] = $this->sanitizeTextValue($normalizedRoles['heading_delivery_id'] ?? '');
-        $normalizedRoles['body_delivery_id'] = $this->sanitizeTextValue($normalizedRoles['body_delivery_id'] ?? '');
-        $normalizedRoles['monospace_delivery_id'] = $this->sanitizeTextValue($normalizedRoles['monospace_delivery_id'] ?? '');
+        $normalizedRoles['heading_delivery_id'] = '';
+        $normalizedRoles['body_delivery_id'] = '';
+        $normalizedRoles['monospace_delivery_id'] = '';
         $normalizedRoles['heading_fallback'] = $this->normalizeRoleFallback($normalizedRoles['heading_fallback'] ?? '', 'sans-serif');
         $normalizedRoles['body_fallback'] = $this->normalizeRoleFallback($normalizedRoles['body_fallback'] ?? '', 'sans-serif');
         $normalizedRoles['monospace_fallback'] = $this->normalizeRoleFallback($normalizedRoles['monospace_fallback'] ?? '', 'monospace');
@@ -1250,6 +1249,23 @@ final class SettingsRepository
         }
 
         return $normalized;
+    }
+
+    private function restoreMonospaceClassOutputsOnFirstEnable(array $settings, array $input, bool $monospaceRoleWasEnabled): array
+    {
+        if ($monospaceRoleWasEnabled || empty($settings['monospace_role_enabled'])) {
+            return $settings;
+        }
+
+        foreach (self::MONOSPACE_CLASS_OUTPUT_FIELDS as $field) {
+            if (array_key_exists($field, $input)) {
+                continue;
+            }
+
+            $settings[$field] = true;
+        }
+
+        return $settings;
     }
 
     private function classOutputSettingsFromLegacyMode(string $mode): array

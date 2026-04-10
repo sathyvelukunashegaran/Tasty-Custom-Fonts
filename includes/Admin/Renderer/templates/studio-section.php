@@ -253,7 +253,7 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <p class="tasty-fonts-studio-card-copy tasty-fonts-role-box-description"><?php esc_html_e('Choose the saved family and fallback stack used for headings.', 'tasty-fonts'); ?></p>
+                                        <p class="tasty-fonts-studio-card-copy tasty-fonts-role-box-description"><?php esc_html_e('Choose the saved family used for headings. Configure its fallback in the Font Library.', 'tasty-fonts'); ?></p>
                                         <div class="tasty-fonts-role-fields">
                                             <label class="tasty-fonts-stack-field">
                                                 <?php $this->renderFieldLabel(__('Family', 'tasty-fonts')); ?>
@@ -274,45 +274,6 @@
                                                         data-clear-target="tasty_fonts_heading_font"
                                                         data-clear-value=""
                                                         aria-label="<?php esc_attr_e('Clear Heading Family', 'tasty-fonts'); ?>"
-                                                        hidden
-                                                    >
-                                                        <span aria-hidden="true">&times;</span>
-                                                    </button>
-                                                </span>
-                                            </label>
-                                            <label class="tasty-fonts-stack-field">
-                                                <?php $this->renderFieldLabel(__('Fallback', 'tasty-fonts')); ?>
-                                                <?php
-                                                $this->renderFallbackInput(
-                                                    'tasty_fonts_heading_fallback',
-                                                    (string) ($roles['heading_fallback'] ?? 'sans-serif'),
-                                                    [
-                                                        'id' => 'tasty_fonts_heading_fallback',
-                                                        'form' => $roleFormId,
-                                                        'placeholder' => __('Example: system-ui, sans-serif', 'tasty-fonts'),
-                                                        'clear_value' => 'sans-serif',
-                                                        'clear_label' => __('Reset Heading Fallback', 'tasty-fonts'),
-                                                    ]
-                                                );
-                                                ?>
-                                            </label>
-                                        </div>
-                                        <div class="tasty-fonts-role-weight-editor" data-role-delivery-editor="heading" hidden>
-                                            <div class="tasty-fonts-role-axis-head">
-                                                <span class="tasty-fonts-field-label-text"><?php esc_html_e('Delivery', 'tasty-fonts'); ?></span>
-                                                <span class="tasty-fonts-muted" data-role-delivery-summary="heading"><?php esc_html_e('Choose which saved static or variable delivery this role should use.', 'tasty-fonts'); ?></span>
-                                            </div>
-                                            <label class="tasty-fonts-stack-field tasty-fonts-role-weight-field">
-                                                <span class="screen-reader-text"><?php esc_html_e('Heading delivery', 'tasty-fonts'); ?></span>
-                                                <span class="tasty-fonts-select-field tasty-fonts-select-field--clearable">
-                                                    <select name="tasty_fonts_heading_delivery_id" id="tasty_fonts_heading_delivery_id" data-role-delivery-select="heading" form="<?php echo esc_attr($roleFormId); ?>"></select>
-                                                    <button
-                                                        type="button"
-                                                        class="tasty-fonts-select-clear"
-                                                        data-clear-select-button
-                                                        data-clear-target="tasty_fonts_heading_delivery_id"
-                                                        data-clear-value=""
-                                                        aria-label="<?php esc_attr_e('Reset Heading Delivery', 'tasty-fonts'); ?>"
                                                         hidden
                                                     >
                                                         <span aria-hidden="true">&times;</span>
@@ -379,7 +340,7 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <p class="tasty-fonts-studio-card-copy tasty-fonts-role-box-description"><?php esc_html_e('Choose the saved family and fallback stack used for body copy.', 'tasty-fonts'); ?></p>
+                                        <p class="tasty-fonts-studio-card-copy tasty-fonts-role-box-description"><?php esc_html_e('Choose the saved family used for body copy. Configure its fallback in the Font Library.', 'tasty-fonts'); ?></p>
                                         <div class="tasty-fonts-role-fields">
                                             <label class="tasty-fonts-stack-field">
                                                 <?php $this->renderFieldLabel(__('Family', 'tasty-fonts')); ?>
@@ -400,45 +361,6 @@
                                                         data-clear-target="tasty_fonts_body_font"
                                                         data-clear-value=""
                                                         aria-label="<?php esc_attr_e('Clear Body Family', 'tasty-fonts'); ?>"
-                                                        hidden
-                                                    >
-                                                        <span aria-hidden="true">&times;</span>
-                                                    </button>
-                                                </span>
-                                            </label>
-                                            <label class="tasty-fonts-stack-field">
-                                                <?php $this->renderFieldLabel(__('Fallback', 'tasty-fonts')); ?>
-                                                <?php
-                                                $this->renderFallbackInput(
-                                                    'tasty_fonts_body_fallback',
-                                                    (string) ($roles['body_fallback'] ?? 'sans-serif'),
-                                                    [
-                                                        'id' => 'tasty_fonts_body_fallback',
-                                                        'form' => $roleFormId,
-                                                        'placeholder' => __('Example: system-ui, sans-serif', 'tasty-fonts'),
-                                                        'clear_value' => 'sans-serif',
-                                                        'clear_label' => __('Reset Body Fallback', 'tasty-fonts'),
-                                                    ]
-                                                );
-                                                ?>
-                                            </label>
-                                        </div>
-                                        <div class="tasty-fonts-role-weight-editor" data-role-delivery-editor="body" hidden>
-                                            <div class="tasty-fonts-role-axis-head">
-                                                <span class="tasty-fonts-field-label-text"><?php esc_html_e('Delivery', 'tasty-fonts'); ?></span>
-                                                <span class="tasty-fonts-muted" data-role-delivery-summary="body"><?php esc_html_e('Choose which saved static or variable delivery this role should use.', 'tasty-fonts'); ?></span>
-                                            </div>
-                                            <label class="tasty-fonts-stack-field tasty-fonts-role-weight-field">
-                                                <span class="screen-reader-text"><?php esc_html_e('Body delivery', 'tasty-fonts'); ?></span>
-                                                <span class="tasty-fonts-select-field tasty-fonts-select-field--clearable">
-                                                    <select name="tasty_fonts_body_delivery_id" id="tasty_fonts_body_delivery_id" data-role-delivery-select="body" form="<?php echo esc_attr($roleFormId); ?>"></select>
-                                                    <button
-                                                        type="button"
-                                                        class="tasty-fonts-select-clear"
-                                                        data-clear-select-button
-                                                        data-clear-target="tasty_fonts_body_delivery_id"
-                                                        data-clear-value=""
-                                                        aria-label="<?php esc_attr_e('Reset Body Delivery', 'tasty-fonts'); ?>"
                                                         hidden
                                                     >
                                                         <span aria-hidden="true">&times;</span>
@@ -506,7 +428,7 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <p class="tasty-fonts-studio-card-copy tasty-fonts-role-box-description"><?php esc_html_e('Choose the saved family and fallback stack used for monospace text.', 'tasty-fonts'); ?></p>
+                                        <p class="tasty-fonts-studio-card-copy tasty-fonts-role-box-description"><?php esc_html_e('Choose the saved family used for monospace text. Configure its fallback in the Font Library.', 'tasty-fonts'); ?></p>
                                         <div class="tasty-fonts-role-fields">
                                             <label class="tasty-fonts-stack-field">
                                                 <?php $this->renderFieldLabel(__('Family', 'tasty-fonts')); ?>
@@ -527,45 +449,6 @@
                                                         data-clear-target="tasty_fonts_monospace_font"
                                                         data-clear-value=""
                                                         aria-label="<?php esc_attr_e('Clear Monospace Family', 'tasty-fonts'); ?>"
-                                                        hidden
-                                                    >
-                                                        <span aria-hidden="true">&times;</span>
-                                                    </button>
-                                                </span>
-                                            </label>
-                                            <label class="tasty-fonts-stack-field">
-                                                <?php $this->renderFieldLabel(__('Fallback', 'tasty-fonts')); ?>
-                                                <?php
-                                                $this->renderFallbackInput(
-                                                    'tasty_fonts_monospace_fallback',
-                                                    (string) ($roles['monospace_fallback'] ?? 'monospace'),
-                                                    [
-                                                        'id' => 'tasty_fonts_monospace_fallback',
-                                                        'form' => $roleFormId,
-                                                        'placeholder' => __('Example: ui-monospace, monospace', 'tasty-fonts'),
-                                                        'clear_value' => 'monospace',
-                                                        'clear_label' => __('Reset Monospace Fallback', 'tasty-fonts'),
-                                                    ]
-                                                );
-                                                ?>
-                                            </label>
-                                        </div>
-                                        <div class="tasty-fonts-role-weight-editor" data-role-delivery-editor="monospace" hidden>
-                                            <div class="tasty-fonts-role-axis-head">
-                                                <span class="tasty-fonts-field-label-text"><?php esc_html_e('Delivery', 'tasty-fonts'); ?></span>
-                                                <span class="tasty-fonts-muted" data-role-delivery-summary="monospace"><?php esc_html_e('Choose which saved static or variable delivery this role should use.', 'tasty-fonts'); ?></span>
-                                            </div>
-                                            <label class="tasty-fonts-stack-field tasty-fonts-role-weight-field">
-                                                <span class="screen-reader-text"><?php esc_html_e('Monospace delivery', 'tasty-fonts'); ?></span>
-                                                <span class="tasty-fonts-select-field tasty-fonts-select-field--clearable">
-                                                    <select name="tasty_fonts_monospace_delivery_id" id="tasty_fonts_monospace_delivery_id" data-role-delivery-select="monospace" form="<?php echo esc_attr($roleFormId); ?>"></select>
-                                                    <button
-                                                        type="button"
-                                                        class="tasty-fonts-select-clear"
-                                                        data-clear-select-button
-                                                        data-clear-target="tasty_fonts_monospace_delivery_id"
-                                                        data-clear-value=""
-                                                        aria-label="<?php esc_attr_e('Reset Monospace Delivery', 'tasty-fonts'); ?>"
                                                         hidden
                                                     >
                                                         <span aria-hidden="true">&times;</span>

@@ -220,6 +220,33 @@ $tests['import_repository_save_profile_adds_second_profile_alongside_first'] = s
     assertSameValue(2, count($result['delivery_profiles'] ?? []), 'saveProfile should add a second delivery profile without removing the first.');
     assertTrueValue(isset($result['delivery_profiles']['google-cdn']), 'saveProfile should preserve the first delivery profile when a second profile is added.');
     assertTrueValue(isset($result['delivery_profiles']['google-self-hosted']), 'saveProfile should include the newly added profile in the delivery profiles.');
+    assertSameValue('google-cdn', (string) ($result['active_delivery_id'] ?? ''), 'saveProfile should keep the current active delivery when a second profile is added without activation.');
+};
+
+$tests['import_repository_save_profile_preserves_unstored_active_delivery_when_adding_a_new_profile'] = static function (): void {
+    resetTestState();
+
+    $repo = new ImportRepository();
+    $repo->ensureFamily('Inter', 'inter', 'published', 'local-self_hosted');
+
+    $result = $repo->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'google-cdn',
+            'provider' => 'google',
+            'type' => 'cdn',
+            'variants' => ['regular'],
+            'faces' => [],
+            'meta' => [],
+        ],
+        'published',
+        false
+    );
+
+    assertSameValue('published', (string) ($result['publish_state'] ?? ''), 'saveProfile should preserve the existing publish state when appending a delivery profile.');
+    assertSameValue('local-self_hosted', (string) ($result['active_delivery_id'] ?? ''), 'saveProfile should preserve the active delivery selection when it points to a catalog-backed profile.');
+    assertTrueValue(isset($result['delivery_profiles']['google-cdn']), 'saveProfile should still store the newly added delivery profile.');
 };
 
 $tests['import_repository_save_profile_returns_empty_array_for_unsupported_provider'] = static function (): void {

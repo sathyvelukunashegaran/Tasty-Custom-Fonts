@@ -10,7 +10,9 @@ const {
     hasStaticFontMetadata,
     hasVariableFontMetadata,
     normalizeOutputQuickModePreference,
+    resolveAssignedRoleState,
     roleStatesMatch,
+    settingsStatesMatch,
     sanitizeFallback,
     sanitizeOutputQuickModePreference,
     slugify,
@@ -71,7 +73,7 @@ test('admin contracts describe font type with provider-aware nuance', () => {
     );
 });
 
-test('admin contracts treat implicit and explicit active role deliveries as the same live state', () => {
+test('admin contracts ignore legacy role delivery ids when comparing role state', () => {
     assert.equal(
         roleStatesMatch(
             {
@@ -86,20 +88,77 @@ test('admin contracts treat implicit and explicit active role deliveries as the 
                 body: 'Inter',
                 heading_fallback: 'sans-serif',
                 body_fallback: 'sans-serif',
-                heading_delivery_id: '',
+                heading_delivery_id: 'self-hosted-static',
+            }
+        ),
+        true
+    );
+});
+
+test('admin contracts detect pending live changes when saved role weights differ', () => {
+    assert.equal(
+        roleStatesMatch(
+            {
+                heading: 'Lora',
+                body: 'Inter',
+                heading_fallback: 'sans-serif',
+                body_fallback: 'sans-serif',
+                heading_weight: '600',
             },
             {
-                roleDeliveryCatalog: {
-                    Lora: {
-                        active_delivery_id: 'bunny-cdn-static',
-                        deliveries: [
-                            { id: 'bunny-cdn-static' },
-                            { id: 'self-hosted-static' },
-                        ],
-                    },
+                heading: 'Lora',
+                body: 'Inter',
+                heading_fallback: 'sans-serif',
+                body_fallback: 'sans-serif',
+                heading_weight: '700',
+            }
+        ),
+        false
+    );
+});
+
+test('admin contracts detect pending live changes when saved role axes differ', () => {
+    assert.equal(
+        roleStatesMatch(
+            {
+                heading: 'Inter Variable',
+                body: 'Inter Variable',
+                heading_fallback: 'sans-serif',
+                body_fallback: 'sans-serif',
+                heading_axes: { WGHT: '650' },
+            },
+            {
+                heading: 'Inter Variable',
+                body: 'Inter Variable',
+                heading_fallback: 'sans-serif',
+                body_fallback: 'sans-serif',
+                heading_axes: { WGHT: '700' },
+            },
+            {
+                variableFontsEnabled: true,
+            }
+        ),
+        false
+    );
+});
+
+test('admin contracts prefer family catalog fallbacks over legacy role fallback values', () => {
+    assert.equal(
+        roleStatesMatch(
+            {
+                heading: 'Inter',
+                body: '',
+                heading_fallback: 'serif',
+            },
+            {
+                heading: 'Inter',
+                body: '',
+                heading_fallback: 'sans-serif',
+            },
+            {
+                roleFamilyCatalog: {
                     Inter: {
-                        active_delivery_id: 'inter-static',
-                        deliveries: [{ id: 'inter-static' }],
+                        fallback: 'system-ui, sans-serif',
                     },
                 },
             }
@@ -108,40 +167,43 @@ test('admin contracts treat implicit and explicit active role deliveries as the 
     );
 });
 
-test('admin contracts detect pending live changes when a role delivery really differs', () => {
-    assert.equal(
-        roleStatesMatch(
+test('admin contracts restore live weight and axes when a role is reassigned back to its live family', () => {
+    assert.deepEqual(
+        resolveAssignedRoleState(
+            'heading',
+            'Raleway',
             {
-                heading: 'Lora',
+                heading: 'Inter',
                 body: 'Inter',
-                heading_fallback: 'sans-serif',
-                body_fallback: 'sans-serif',
-                heading_delivery_id: 'self-hosted-static',
+                heading_weight: '',
+                heading_axes: {},
             },
             {
-                heading: 'Lora',
-                body: 'Inter',
-                heading_fallback: 'sans-serif',
-                body_fallback: 'sans-serif',
-                heading_delivery_id: 'bunny-cdn-static',
-            },
-            {
-                roleDeliveryCatalog: {
-                    Lora: {
-                        active_delivery_id: 'bunny-cdn-static',
-                        deliveries: [
-                            { id: 'bunny-cdn-static' },
-                            { id: 'self-hosted-static' },
-                        ],
+                variableFontsEnabled: true,
+                preserveStates: [
+                    {
+                        heading: 'Raleway',
+                        body: 'Inter',
+                        heading_weight: '700',
+                        heading_axes: { WGHT: '700', opsz: '32' },
                     },
-                    Inter: {
-                        active_delivery_id: 'inter-static',
-                        deliveries: [{ id: 'inter-static' }],
-                    },
-                },
+                ],
             }
         ),
-        false
+        {
+            heading: 'Raleway',
+            body: 'Inter',
+            monospace: '',
+            headingFallback: 'sans-serif',
+            bodyFallback: 'sans-serif',
+            monospaceFallback: 'monospace',
+            headingWeight: '700',
+            bodyWeight: '',
+            monospaceWeight: '',
+            headingAxes: { OPSZ: '32', WGHT: '700' },
+            bodyAxes: {},
+            monospaceAxes: {},
+        }
     );
 });
 
@@ -220,4 +282,21 @@ test('admin contracts sanitize output quick mode preferences', () => {
     assert.equal(sanitizeOutputQuickModePreference(' Custom '), 'custom');
     assert.equal(sanitizeOutputQuickModePreference('variables'), 'variables');
     assert.equal(sanitizeOutputQuickModePreference('unsupported'), '');
+});
+
+test('admin contracts compare serialized settings states deterministically', () => {
+    assert.equal(
+        settingsStatesMatch(
+            { font_display: 'swap', remote_connection_hints: '1' },
+            { font_display: 'swap', remote_connection_hints: '1' }
+        ),
+        true
+    );
+    assert.equal(
+        settingsStatesMatch(
+            { font_display: 'swap', remote_connection_hints: '1' },
+            { font_display: 'optional', remote_connection_hints: '1' }
+        ),
+        false
+    );
 });

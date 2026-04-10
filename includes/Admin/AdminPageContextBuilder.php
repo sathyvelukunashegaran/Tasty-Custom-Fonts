@@ -403,7 +403,7 @@ final class AdminPageContextBuilder
                 'key' => 'stacks',
                 'label' => __('Font Stacks', 'tasty-fonts'),
                 'target' => 'tasty-fonts-output-stacks',
-                'value' => $this->cssBuilder->buildRoleStackSnippet($snippetRoles, $includeMonospace),
+                'value' => $this->cssBuilder->buildRoleStackSnippet($snippetRoles, $includeMonospace, $settings, $catalog),
                 'active' => false,
             ],
             [
@@ -662,17 +662,7 @@ final class AdminPageContextBuilder
                 return false;
             }
 
-            if (
-                $this->normalizeRoleFallbackForComparison($roleKey, $left)
-                !== $this->normalizeRoleFallbackForComparison($roleKey, $right)
-            ) {
-                return false;
-            }
-
-            if (
-                $this->resolveRoleDeliveryIdForComparison($roleKey, $left, $catalog)
-                !== $this->resolveRoleDeliveryIdForComparison($roleKey, $right, $catalog)
-            ) {
+            if ($this->resolveEffectiveRoleFallback($roleKey, $left, $catalog, $settings) !== $this->resolveEffectiveRoleFallback($roleKey, $right, $catalog, $settings)) {
                 return false;
             }
 
@@ -931,7 +921,7 @@ final class AdminPageContextBuilder
 
         foreach ($this->effectiveRoleKeys($settings) as $roleKey) {
             $familyName = trim((string) ($roles[$roleKey] ?? ''));
-            $fallback = FontUtils::sanitizeFallback((string) ($roles[$roleKey . '_fallback'] ?? $this->defaultRoleFallback($roleKey)));
+            $fallback = $this->resolveEffectiveRoleFallback($roleKey, $roles, $this->catalog->getCatalog(), $settings);
 
             if ($familyName === '' && $roleKey !== 'monospace') {
                 continue;
@@ -963,7 +953,7 @@ final class AdminPageContextBuilder
 
         foreach ($this->effectiveRoleKeys($settings) as $roleKey) {
             $familyName = trim((string) ($roles[$roleKey] ?? ''));
-            $fallback = FontUtils::sanitizeFallback((string) ($roles[$roleKey . '_fallback'] ?? $this->defaultRoleFallback($roleKey)));
+            $fallback = $this->resolveEffectiveRoleFallback($roleKey, $roles, $this->catalog->getCatalog(), $settings);
 
             $parts[] = sprintf(
                 __('%1$s: %2$s', 'tasty-fonts'),
@@ -1219,54 +1209,32 @@ final class AdminPageContextBuilder
         return sprintf(__('%1$s via %2$s', 'tasty-fonts'), $familyName, $label);
     }
 
-    private function normalizeRoleFallbackForComparison(string $roleKey, array $roles): string
+    private function resolveEffectiveRoleFallback(string $roleKey, array $roles, array $catalog, array $settings): string
     {
         $default = $this->defaultRoleFallback($roleKey);
+        $familyName = trim((string) ($roles[$roleKey] ?? ''));
+
+        if ($familyName !== '') {
+            $familyFallbacks = is_array($settings['family_fallbacks'] ?? null) ? $settings['family_fallbacks'] : [];
+
+            if (array_key_exists($familyName, $familyFallbacks)) {
+                $configuredFallback = trim((string) $familyFallbacks[$familyName]);
+
+                if ($configuredFallback !== '') {
+                    return FontUtils::sanitizeFallback($configuredFallback);
+                }
+            }
+
+            $family = $this->findCatalogFamilyByName($familyName, $catalog);
+
+            if (is_array($family)) {
+                return FontUtils::defaultFallbackForCategory($this->resolveFamilyCategory($family));
+            }
+        }
+
         $fallback = trim((string) ($roles[$roleKey . '_fallback'] ?? ''));
 
         return $fallback !== '' ? FontUtils::sanitizeFallback($fallback) : $default;
-    }
-
-    private function resolveRoleDeliveryIdForComparison(string $roleKey, array $roles, array $catalog): string
-    {
-        $familyName = trim((string) ($roles[$roleKey] ?? ''));
-        $savedDeliveryId = trim((string) ($roles[$roleKey . '_delivery_id'] ?? ''));
-
-        if ($familyName === '') {
-            return '';
-        }
-
-        $family = $this->findCatalogFamilyByName($familyName, $catalog);
-
-        if (!is_array($family)) {
-            return $savedDeliveryId;
-        }
-
-        $deliveryIds = [];
-
-        foreach ((array) ($family['available_deliveries'] ?? []) as $profile) {
-            if (!is_array($profile)) {
-                continue;
-            }
-
-            $deliveryId = trim((string) ($profile['id'] ?? ''));
-
-            if ($deliveryId !== '') {
-                $deliveryIds[] = $deliveryId;
-            }
-        }
-
-        if ($savedDeliveryId !== '' && in_array($savedDeliveryId, $deliveryIds, true)) {
-            return $savedDeliveryId;
-        }
-
-        $activeDeliveryId = trim((string) ($family['active_delivery_id'] ?? ''));
-
-        if ($activeDeliveryId !== '' && in_array($activeDeliveryId, $deliveryIds, true)) {
-            return $activeDeliveryId;
-        }
-
-        return $deliveryIds[0] ?? $savedDeliveryId;
     }
 
     private function findCatalogFamilyByName(string $familyName, array $catalog): ?array
@@ -1286,6 +1254,17 @@ final class AdminPageContextBuilder
         }
 
         return null;
+    }
+
+    private function resolveFamilyCategory(array $family): string
+    {
+        $category = trim((string) ($family['font_category'] ?? ''));
+
+        if ($category === '' && is_array($family['active_delivery'] ?? null) && is_array($family['active_delivery']['meta'] ?? null)) {
+            $category = trim((string) ($family['active_delivery']['meta']['category'] ?? ''));
+        }
+
+        return $category;
     }
 
     private function roleComparisonKeys(array $settings): array

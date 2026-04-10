@@ -142,6 +142,24 @@ final class DeveloperToolsService
         return $success;
     }
 
+    public function regenerateCss(): bool
+    {
+        $settings = $this->settings->getSettings();
+
+        do_action('tasty_fonts_before_regenerate_css', $settings);
+
+        if (function_exists('wp_clear_scheduled_hook')) {
+            wp_clear_scheduled_hook(AssetService::ACTION_REGENERATE_CSS);
+        }
+
+        $this->assets->refreshGeneratedAssets(true, false);
+        $success = $this->assets->ensureGeneratedCssFile(false);
+
+        do_action('tasty_fonts_after_regenerate_css', $this->settings->getSettings(), $success);
+
+        return $success;
+    }
+
     public function resetIntegrationDetectionState(): array
     {
         $previousSettings = $this->settings->getSettings();

@@ -302,7 +302,6 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
     ): void {
         $selectedFamily = trim((string) ($previewRoles[$roleKey] ?? ''));
         $draftFamily = trim((string) ($draftRoles[$roleKey] ?? ''));
-        $selectedDeliveryId = trim((string) ($previewRoles[$roleKey . '_delivery_id'] ?? ''));
         $fallbackValue = match ($roleKey) {
             'heading' => (string) ($previewRoles['heading_fallback'] ?? 'sans-serif'),
             'body' => (string) ($previewRoles['body_fallback'] ?? 'sans-serif'),
@@ -342,28 +341,6 @@ final class PreviewSectionRenderer extends AbstractSectionRenderer
                     <?php endif; ?>
                 </span>
             </label>
-            <div class="tasty-fonts-role-weight-editor tasty-fonts-preview-role-editor" data-preview-delivery-editor="<?php echo esc_attr($roleKey); ?>" hidden>
-                <label class="tasty-fonts-stack-field tasty-fonts-preview-tray-field tasty-fonts-role-weight-field">
-                    <?php $this->renderFieldLabel(__('Delivery', 'tasty-fonts')); ?>
-                    <span class="tasty-fonts-select-field tasty-fonts-select-field--clearable">
-                        <select
-                            data-preview-delivery-select="<?php echo esc_attr($roleKey); ?>"
-                            data-preview-selected-delivery="<?php echo esc_attr($selectedDeliveryId); ?>"
-                        ></select>
-                        <button
-                            type="button"
-                            class="tasty-fonts-select-clear"
-                            data-clear-select-button
-                            data-clear-value=""
-                            data-clear-affordance="always"
-                            aria-label="<?php echo esc_attr(sprintf(__('Clear %s delivery', 'tasty-fonts'), $label)); ?>"
-                            hidden
-                        >
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </span>
-                </label>
-            </div>
             <div class="tasty-fonts-role-weight-editor tasty-fonts-preview-role-editor" data-preview-weight-editor="<?php echo esc_attr($roleKey); ?>" hidden>
                 <label class="tasty-fonts-stack-field tasty-fonts-preview-tray-field tasty-fonts-role-weight-field">
                     <?php $this->renderFieldLabel(__('Role Weight', 'tasty-fonts')); ?>

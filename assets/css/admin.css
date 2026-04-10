@@ -452,6 +452,10 @@
     transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
+.tasty-fonts-toast.is-actionable {
+    width: min(380px, calc(100vw - 32px));
+}
+
 .tasty-fonts-toast::before {
     content: "";
     position: absolute;
@@ -491,16 +495,33 @@
     background: rgba(var(--tasty-danger-rgb), 0.06);
 }
 
+.tasty-fonts-toast.is-confirmation {
+    border-color: var(--tasty-border-danger-soft);
+    border-left-color: var(--tasty-danger);
+}
+
+.tasty-fonts-toast.is-confirmation::before {
+    background: rgba(var(--tasty-danger-rgb), 0.06);
+}
+
 .tasty-fonts-toast-message {
     font-size: var(--tasty-type-body-size);
     color: var(--tasty-text);
     line-height: var(--tasty-type-caption-line-height);
 }
 
+.tasty-fonts-toast.is-actionable .tasty-fonts-toast-message {
+    line-height: 1.45;
+}
+
 .tasty-fonts-toast-actions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--tasty-space-2);
+}
+
+.tasty-fonts-toast.is-actionable .tasty-fonts-toast-actions {
+    gap: 10px;
 }
 
 .tasty-fonts-toast-action {
@@ -520,6 +541,15 @@
     transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 }
 
+.tasty-fonts-toast.is-actionable .tasty-fonts-toast-action {
+    min-height: 36px;
+    padding: 0 16px;
+    border-radius: 999px;
+    background: rgba(var(--tasty-white-rgb), 0.92);
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.9);
+    font-size: var(--tasty-type-meta-size);
+}
+
 .tasty-fonts-toast-action:hover,
 .tasty-fonts-toast-action:focus {
     border-color: var(--tasty-control-border-active);
@@ -532,14 +562,46 @@
 .tasty-fonts-toast-action.is-primary {
     border-color: var(--tasty-danger);
     background: var(--tasty-danger);
-    color: var(--tasty-white);
+    color: #fff !important;
+    -webkit-text-fill-color: #fff;
+}
+
+.tasty-fonts-toast.is-confirmation .tasty-fonts-toast-action.is-primary {
+    border-color: var(--tasty-danger);
+    background: var(--tasty-danger);
+    color: #fff !important;
+    -webkit-text-fill-color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 .tasty-fonts-toast-action.is-primary:hover,
 .tasty-fonts-toast-action.is-primary:focus {
     border-color: var(--tasty-danger);
     background: rgba(var(--tasty-danger-rgb), 0.92);
-    color: var(--tasty-white);
+    color: #fff !important;
+    -webkit-text-fill-color: #fff;
+}
+
+.tasty-fonts-toast.is-confirmation .tasty-fonts-toast-action.is-primary:hover,
+.tasty-fonts-toast.is-confirmation .tasty-fonts-toast-action.is-primary:focus {
+    border-color: var(--tasty-danger);
+    background: rgba(var(--tasty-danger-rgb), 0.92);
+    color: #fff !important;
+    -webkit-text-fill-color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.tasty-fonts-toast.is-confirmation .tasty-fonts-toast-action.is-secondary {
+    border-color: rgba(var(--tasty-gray-600-rgb), 0.18);
+    background: rgba(var(--tasty-white-rgb), 0.84);
+    color: var(--tasty-text);
+}
+
+.tasty-fonts-toast.is-confirmation .tasty-fonts-toast-action.is-secondary:hover,
+.tasty-fonts-toast.is-confirmation .tasty-fonts-toast-action.is-secondary:focus {
+    border-color: rgba(var(--tasty-accent-rgb), 0.2);
+    background: rgba(var(--tasty-white-rgb), 0.96);
+    color: var(--tasty-text);
 }
 
 .tasty-fonts-toast-dismiss {
@@ -558,9 +620,23 @@
     line-height: 1;
 }
 
+.tasty-fonts-toast.is-actionable .tasty-fonts-toast-dismiss {
+    width: 28px;
+    height: 28px;
+    border: 1px solid transparent;
+    color: var(--tasty-text-muted);
+}
+
 .tasty-fonts-toast-dismiss:hover,
 .tasty-fonts-toast-dismiss:focus {
     background: var(--tasty-surface-muted);
+}
+
+.tasty-fonts-toast.is-confirmation .tasty-fonts-toast-dismiss:hover,
+.tasty-fonts-toast.is-confirmation .tasty-fonts-toast-dismiss:focus {
+    border-color: rgba(var(--tasty-danger-rgb), 0.12);
+    background: rgba(var(--tasty-danger-rgb), 0.06);
+    color: var(--tasty-danger);
 }
 
 .tasty-fonts-toast.is-leaving {
@@ -4726,6 +4802,118 @@ h3.tasty-fonts-section-title {
     grid-template-columns: minmax(260px, 1fr) minmax(360px, 2fr);
 }
 
+.tasty-fonts-import-choice-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) minmax(360px, 2fr);
+    align-items: start;
+    gap: 10px 16px;
+    padding: 8px 0 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.tasty-fonts-import-choice-fieldset {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    min-width: 0;
+    width: 100%;
+    align-self: start;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    align-content: start;
+}
+
+.tasty-fonts-import-choice-fieldset--format {
+    max-width: 100%;
+}
+
+.tasty-fonts-import-choice-fieldset[hidden] {
+    display: none;
+}
+
+.tasty-fonts-import-choice-label {
+    grid-column: 1 / -1;
+}
+
+.tasty-fonts-import-choice-options {
+    grid-column: 1 / -1;
+    justify-self: start;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+}
+
+.tasty-fonts-import-choice-options--segmented {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 2px;
+    width: auto;
+    padding: 3px;
+    border: 1px solid var(--tasty-border);
+    border-radius: var(--tasty-radius-pill);
+    background: linear-gradient(170deg, var(--tasty-surface-muted) 0%, var(--tasty-gray-150) 100%);
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.tasty-fonts-import-choice-options--segmented .tasty-fonts-output-quick-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    min-width: 0;
+    width: auto;
+    padding: 4px 13px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    box-shadow: none;
+    text-align: center;
+    font-size: 12px;
+    font-weight: var(--tasty-font-weight-semibold);
+    color: var(--tasty-text-muted);
+    line-height: 1;
+    white-space: nowrap;
+    transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.tasty-fonts-import-choice-options--segmented button.tasty-fonts-output-quick-option {
+    appearance: none;
+    font: inherit;
+    color: inherit;
+    margin: 0;
+    cursor: pointer;
+}
+
+.tasty-fonts-import-choice-options--segmented .tasty-fonts-output-quick-option:hover,
+.tasty-fonts-import-choice-options--segmented .tasty-fonts-output-quick-option:focus-within {
+    color: var(--tasty-text);
+}
+
+.tasty-fonts-import-choice-options--segmented .tasty-fonts-output-quick-option.is-active {
+    border-color: var(--tasty-border-subtle-strong);
+    background: var(--tasty-surface);
+    color: var(--tasty-text);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.07);
+}
+
+.tasty-fonts-import-choice-note {
+    grid-column: 1 / -1;
+    margin: 0;
+    max-width: 24rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--tasty-text-muted);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
 .tasty-fonts-import-note {
     margin: 0;
 }
@@ -4843,9 +5031,13 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-selected-wrap--import {
-    gap: var(--tasty-space-3);
-    grid-template-columns: minmax(260px, 1fr) minmax(360px, 2fr);
+    gap: 12px;
+    grid-template-columns: minmax(250px, 0.92fr) minmax(0, 1.08fr);
     align-items: stretch;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
 }
 
 .tasty-fonts-selected-card {
@@ -4861,6 +5053,11 @@ h3.tasty-fonts-section-title {
     align-content: start;
     gap: var(--tasty-space-4);
     min-height: 100%;
+    padding: 16px;
+    border: 1px solid rgba(var(--tasty-gray-600-rgb), 0.12);
+    border-radius: var(--tasty-radius-card);
+    background: var(--tasty-surface);
+    box-shadow: none;
 }
 
 .tasty-fonts-selected-card--import-family {
@@ -4938,11 +5135,11 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-import-selected-preview {
     display: flex;
     align-items: center;
-    min-height: 248px;
-    padding: 22px;
-    border: 1px solid var(--tasty-border-subtle-faint);
+    min-height: 260px;
+    padding: 24px;
+    border: 1px solid rgba(var(--tasty-gray-600-rgb), 0.12);
     border-radius: var(--tasty-radius-large);
-    background: var(--tasty-control-surface-muted);
+    background: linear-gradient(180deg, rgba(var(--tasty-white-rgb), 0.9) 0%, rgba(var(--tasty-accent-rgb), 0.05) 100%);
     color: var(--tasty-text);
     font-size: var(--tasty-library-import-preview-size);
     font-weight: 500;
@@ -4964,7 +5161,14 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-import-selection-summary {
-    color: var(--tasty-text-muted);
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid rgba(var(--tasty-accent-rgb), 0.12);
+    border-radius: 999px;
+    background: rgba(var(--tasty-accent-rgb), 0.06);
+    color: var(--tasty-text);
     font-size: var(--tasty-type-caption-size);
     font-weight: var(--tasty-type-title-weight);
     line-height: 1.3;
@@ -6877,9 +7081,60 @@ h3.tasty-fonts-section-title {
 #tasty-fonts-settings-page .tasty-fonts-settings-head-actions {
     display: flex;
     flex: 0 0 auto;
-    align-items: center;
+    align-items: flex-start;
     justify-content: flex-end;
     margin-left: auto;
+    gap: var(--tasty-space-3);
+    flex-wrap: wrap;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-save-shell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: var(--tasty-masthead-switcher-padding);
+    border: 1px solid rgba(var(--tasty-gray-600-rgb), 0.16);
+    border-radius: var(--tasty-radius-panel);
+    background: linear-gradient(170deg, rgba(var(--tasty-white-rgb), 0.88) 0%, rgba(var(--tasty-white-rgb), 0.72) 100%);
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.9), 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-save-shell[hidden] {
+    display: none;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-save-button {
+    min-width: 176px;
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-save-button:not(:disabled) {
+    background: var(--tasty-accent);
+    border-color: var(--tasty-accent);
+    color: var(--tasty-text-on-accent);
+    box-shadow: 0 2px 8px rgba(var(--tasty-accent-rgb), 0.24), inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.12);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-save-button:not(:disabled):hover,
+#tasty-fonts-settings-page .tasty-fonts-settings-save-button:not(:disabled):focus:not(:focus-visible) {
+    background: var(--tasty-accent-hover);
+    border-color: var(--tasty-accent-hover);
+    color: var(--tasty-text-on-accent);
+    box-shadow: 0 2px 10px rgba(var(--tasty-accent-rgb), 0.3), inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.16);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-save-button:not(:disabled):focus-visible {
+    background: var(--tasty-accent-hover);
+    border-color: var(--tasty-accent-hover);
+    color: var(--tasty-text-on-accent);
+    box-shadow: var(--tasty-shadow-focus), 0 2px 10px rgba(var(--tasty-accent-rgb), 0.3), inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.16);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-settings-save-button:disabled,
+#tasty-fonts-settings-page .tasty-fonts-settings-save-button[aria-disabled="true"] {
+    background: transparent;
+    border-color: transparent;
+    color: var(--tasty-control-text-muted);
+    box-shadow: none;
 }
 
 #tasty-fonts-settings-page .tasty-fonts-output-settings-panel {
@@ -7432,6 +7687,10 @@ h3.tasty-fonts-section-title {
     padding-top: 0;
 }
 
+#tasty-fonts-settings-page .tasty-fonts-settings-hidden-form {
+    display: none;
+}
+
 #tasty-fonts-settings-page .tasty-fonts-settings-flat-row--channel {
     grid-template-columns: auto auto minmax(0, 1fr);
     grid-template-areas:
@@ -7604,18 +7863,18 @@ h3.tasty-fonts-section-title {
 
 #tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-danger > .tasty-fonts-settings-flat-row-copy {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    gap: var(--tasty-space-3) var(--tasty-space-4);
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: var(--tasty-space-2);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-danger > .tasty-fonts-settings-flat-row-copy .tasty-fonts-developer-tool-title-row {
     grid-column: 1;
-    white-space: nowrap;
+    white-space: normal;
 }
 
 #tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-danger > .tasty-fonts-settings-flat-row-copy > p {
-    grid-column: 2;
+    grid-column: 1;
     margin: 0;
 }
 
@@ -7661,12 +7920,22 @@ h3.tasty-fonts-section-title {
 }
 
 #tasty-fonts-settings-page .tasty-fonts-developer-action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 100%;
     min-height: var(--tasty-control-height-compact);
     padding: 0 var(--tasty-control-padding-inline-roomy);
     border-radius: var(--tasty-radius-pill);
     font-size: var(--tasty-type-control-size);
     font-weight: var(--tasty-font-weight-semibold);
     min-width: var(--tasty-developer-action-width);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #tasty-fonts-settings-page .tasty-fonts-developer-action-button:not(.tasty-fonts-button-danger) {
@@ -7685,7 +7954,13 @@ h3.tasty-fonts-section-title {
 
 #tasty-fonts-settings-page .tasty-fonts-developer-action-button.tasty-fonts-button-danger:not(:disabled):not([aria-disabled="true"]) {
     min-width: var(--tasty-developer-action-width);
+    color: var(--tasty-white);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 2px rgba(127, 29, 29, 0.06);
+}
+
+#tasty-fonts-settings-page .tasty-fonts-developer-action-button.is-awaiting-confirmation {
+    width: fit-content;
+    min-width: 0;
 }
 
 #tasty-fonts-settings-page .tasty-fonts-output-settings-meta {
@@ -7773,6 +8048,11 @@ h3.tasty-fonts-section-title {
         white-space: normal;
         overflow: visible;
         text-overflow: clip;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-settings-save-shell {
+        width: 100%;
+        justify-content: center;
     }
 
     #tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-inline {
@@ -8789,6 +9069,15 @@ h3.tasty-fonts-section-title {
         justify-content: flex-start;
     }
 
+    #tasty-fonts-settings-page .tasty-fonts-settings-save-shell {
+        justify-content: flex-start;
+    }
+
+    #tasty-fonts-settings-page .tasty-fonts-settings-save-button {
+        width: 100%;
+        min-width: 0;
+    }
+
     #tasty-fonts-settings-page .tasty-fonts-output-settings-choice {
         grid-template-columns: 1fr;
         gap: var(--tasty-space-2);
@@ -8945,9 +9234,14 @@ h3.tasty-fonts-section-title {
         width: 100%;
     }
 
+    .tasty-fonts-import-choice-grid,
     .tasty-fonts-empty-state-actions .button {
         width: 100%;
         max-width: none;
+    }
+
+    .tasty-fonts-import-choice-grid {
+        grid-template-columns: 1fr;
     }
 
     .tasty-fonts-import-footer {

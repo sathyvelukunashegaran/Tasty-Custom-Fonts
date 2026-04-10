@@ -145,17 +145,11 @@ trait FamilyCardRendererSupport
         }
 
         if (in_array('heading', $assignedRoleKeys, true)) {
-            $snippets['Heading Variable'] = '--font-heading: ' . FontUtils::buildFontStack(
-                $familyName,
-                (string) ($roles['heading_fallback'] ?? 'sans-serif')
-            ) . ';';
+            $snippets['Heading Variable'] = '--font-heading: ' . $defaultStack . ';';
         }
 
         if (in_array('body', $assignedRoleKeys, true)) {
-            $snippets['Body Variable'] = '--font-body: ' . FontUtils::buildFontStack(
-                $familyName,
-                (string) ($roles['body_fallback'] ?? 'sans-serif')
-            ) . ';';
+            $snippets['Body Variable'] = '--font-body: ' . $defaultStack . ';';
 
             if ($this->extendedVariableRoleAliasesEnabled($extendedVariableOptions)) {
                 $snippets['Interface Alias'] = '--font-interface: var(--font-body);';
@@ -164,10 +158,7 @@ trait FamilyCardRendererSupport
         }
 
         if (in_array('monospace', $assignedRoleKeys, true)) {
-            $snippets['Monospace Variable'] = '--font-monospace: ' . FontUtils::buildFontStack(
-                $familyName,
-                (string) ($roles['monospace_fallback'] ?? 'monospace')
-            ) . ';';
+            $snippets['Monospace Variable'] = '--font-monospace: ' . $defaultStack . ';';
 
             if ($this->extendedVariableRoleAliasesEnabled($extendedVariableOptions)) {
                 $snippets['Code Alias'] = '--font-code: var(--font-monospace);';

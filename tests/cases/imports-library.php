@@ -819,6 +819,54 @@ $tests['library_service_restores_library_only_state_when_a_live_family_is_remove
     );
 };
 
+$tests['library_service_preserves_the_active_local_delivery_when_a_managed_delivery_is_added'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400-normal.woff2'), 'font-data');
+
+    $published = $services['library']->saveFamilyPublishState('inter', 'published');
+    assertSameValue(true, !is_wp_error($published), 'Publishing a scanned family should succeed before adding another delivery.');
+    assertSameValue(
+        'local-self_hosted',
+        (string) ($services['imports']->getFamily('inter')['active_delivery_id'] ?? ''),
+        'Persisting a scanned family should keep its current local delivery as the active selection.'
+    );
+
+    $saved = $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'google-cdn',
+            'label' => 'Google CDN',
+            'provider' => 'google',
+            'type' => 'cdn',
+            'variants' => ['regular'],
+            'faces' => [],
+            'meta' => [],
+        ],
+        'published',
+        false
+    );
+    $catalogFamily = $services['catalog']->getCatalog()['Inter'] ?? [];
+
+    assertSameValue(
+        'local-self_hosted',
+        (string) ($saved['active_delivery_id'] ?? ''),
+        'Adding a managed delivery should not switch the stored active delivery away from the existing local profile.'
+    );
+    assertSameValue(
+        'local-self_hosted',
+        (string) ($catalogFamily['active_delivery_id'] ?? ''),
+        'Adding a managed delivery should not switch the live catalog delivery away from the existing local profile.'
+    );
+    assertTrueValue(
+        isset($catalogFamily['delivery_profiles']['google-cdn']),
+        'Adding a managed delivery should append the new profile alongside the existing local delivery.'
+    );
+};
+
 $tests['library_service_blocks_deleting_live_monospace_family_when_enabled'] = static function (): void {
     resetTestState();
 

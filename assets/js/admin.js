@@ -41,31 +41,15 @@
     const roleDeploymentBadge = document.querySelector('[data-role-deployment-badge]');
     const roleDeploymentPill = document.querySelector('[data-role-deployment-pill]');
     const roleDeploymentAnnouncement = document.querySelector('[data-role-deployment-announcement]');
-    let monospaceRoleEnabled = !!config.monospaceRoleEnabled && !!roleMonospace && !!roleMonospaceFallback;
+    let monospaceRoleEnabled = !!config.monospaceRoleEnabled && !!roleMonospace;
     const variableFontsEnabled = !!config.variableFontsEnabled;
-    const roleDeliveryCatalog = config.roleDeliveryCatalog && typeof config.roleDeliveryCatalog === 'object'
-        ? config.roleDeliveryCatalog
-        : {};
-    const roleAxisCatalog = config.roleAxisCatalog && typeof config.roleAxisCatalog === 'object'
-        ? config.roleAxisCatalog
-        : {};
-    const roleWeightCatalog = config.roleWeightCatalog && typeof config.roleWeightCatalog === 'object'
-        ? config.roleWeightCatalog
+    const roleFamilyCatalog = config.roleFamilyCatalog && typeof config.roleFamilyCatalog === 'object'
+        ? config.roleFamilyCatalog
         : {};
     const roleWeightEditors = {
         heading: document.querySelector('[data-role-weight-editor="heading"]'),
         body: document.querySelector('[data-role-weight-editor="body"]'),
         monospace: document.querySelector('[data-role-weight-editor="monospace"]'),
-    };
-    const roleDeliveryEditors = {
-        heading: document.querySelector('[data-role-delivery-editor="heading"]'),
-        body: document.querySelector('[data-role-delivery-editor="body"]'),
-        monospace: document.querySelector('[data-role-delivery-editor="monospace"]'),
-    };
-    const roleDeliverySelects = {
-        heading: document.querySelector('[data-role-delivery-select="heading"]'),
-        body: document.querySelector('[data-role-delivery-select="body"]'),
-        monospace: document.querySelector('[data-role-delivery-select="monospace"]'),
     };
     const roleWeightSelects = {
         heading: document.querySelector('[data-role-weight-select="heading"]'),
@@ -102,16 +86,6 @@
         body: document.querySelector('[data-preview-weight-editor="body"]'),
         monospace: document.querySelector('[data-preview-weight-editor="monospace"]'),
     };
-    const previewDeliveryEditors = {
-        heading: document.querySelector('[data-preview-delivery-editor="heading"]'),
-        body: document.querySelector('[data-preview-delivery-editor="body"]'),
-        monospace: document.querySelector('[data-preview-delivery-editor="monospace"]'),
-    };
-    const previewDeliverySelects = {
-        heading: document.querySelector('[data-preview-delivery-select="heading"]'),
-        body: document.querySelector('[data-preview-delivery-select="body"]'),
-        monospace: document.querySelector('[data-preview-delivery-select="monospace"]'),
-    };
     const previewWeightSelects = {
         heading: document.querySelector('[data-preview-weight-select="heading"]'),
         body: document.querySelector('[data-preview-weight-select="body"]'),
@@ -133,14 +107,11 @@
     const roleBodyPreviewNames = Array.from(document.querySelectorAll('[data-role-preview-name="body"]'));
     const roleMonospacePreviewNames = Array.from(document.querySelectorAll('[data-role-preview-name="monospace"]'));
     const previewDynamicText = Array.from(document.querySelectorAll('[data-preview-dynamic-text], .tasty-fonts-preview-dynamic-text'));
-    const tabButtons = Array.from(document.querySelectorAll('[data-tab-group][data-tab-target]'));
-    const tabPanels = Array.from(document.querySelectorAll('[data-tab-group][data-tab-panel]'));
     const outputNames = document.getElementById('tasty-fonts-output-names');
     const outputStacks = document.getElementById('tasty-fonts-output-stacks');
     const outputVars = document.getElementById('tasty-fonts-output-vars');
     const outputUsage = document.getElementById('tasty-fonts-output-usage');
     const outputClasses = document.getElementById('tasty-fonts-output-classes');
-    const disclosureToggles = Array.from(document.querySelectorAll('[data-disclosure-toggle]'));
     const librarySearch = document.getElementById('tasty-fonts-library-search');
     const librarySourceFilter = document.querySelector('[data-library-source-filter]');
     const libraryCategoryFilter = document.querySelector('[data-library-category-filter]');
@@ -202,6 +173,9 @@
     const outputAdvancedPanel = document.getElementById('tasty-fonts-advanced-output-controls');
     const outputMinimalPresetInput = document.querySelector('[data-output-minimal-preset]');
     const outputQuickModePreferenceInput = document.querySelector('[data-output-quick-mode-preference]');
+    const initialOutputQuickModePreference = outputQuickModePreferenceInput
+        ? (outputQuickModePreferenceInput.getAttribute('data-output-quick-mode-saved-preference') || '')
+        : '';
     const outputQuickModeNotice = document.querySelector('[data-output-quick-mode-notice]');
     const developerConfirmForms = Array.from(document.querySelectorAll('[data-developer-confirm-message]'));
     const outputMasterInputs = {
@@ -213,11 +187,13 @@
         variables: document.querySelector('[data-output-panel="variables"]'),
     };
     const outputMonoDependentInputs = Array.from(document.querySelectorAll('[data-output-mono-dependent]'));
-    const outputRoleWeightInput = document.querySelector('input[name="role_usage_font_weight_enabled"]');
+    const monospaceRoleSettingInputs = Array.from(document.querySelectorAll('input[type="checkbox"][name="monospace_role_enabled"]'));
+    const outputRoleWeightInput = document.querySelector('input[type="checkbox"][name="role_usage_font_weight_enabled"]');
     const unicodeRangeModeInputs = Array.from(document.querySelectorAll('[data-unicode-range-mode]'));
     const unicodeRangeCustomWrap = document.querySelector('[data-unicode-range-custom-wrap]');
     const unicodeRangeCustomInput = document.querySelector('[data-unicode-range-custom]');
-    const settingsAutosaveForms = Array.from(document.querySelectorAll('[data-settings-autosave]'));
+    const settingsForms = Array.from(document.querySelectorAll('[data-settings-form]'));
+    const settingsSaveShell = document.querySelector('[data-settings-save-shell]');
 
     let selectedSearchFamily = null;
     let searchResults = [];
@@ -238,6 +214,7 @@
     let activeLibraryCategoryFilter = 'all';
     let syncingGoogleVariants = false;
     let renderedGoogleVariantFamily = '';
+    let outputQuickModeBootstrapped = false;
     let selectedGoogleFormatMode = 'static';
     let syncingBunnyVariants = false;
     let renderedBunnyVariantFamily = '';
@@ -249,7 +226,7 @@
     let previewFollowsDraft = false;
     let defaultTrackedUiState = null;
     let pageReloadScheduled = false;
-    const settingsAutosaveDelay = 450;
+    let settingsNavigationInFlight = false;
     const pendingUiStateKey = 'tastyFontsPendingUiState';
     const reloadQueryKey = 'tf_reload';
     const trackedUiQueryKeys = [
@@ -344,6 +321,7 @@
         confirmActionLabel: __('Confirm %s', 'tasty-fonts'),
         continueAction: __('Continue', 'tasty-fonts'),
         cancelAction: __('Cancel', 'tasty-fonts'),
+        confirmActionShort: __('Confirm?', 'tasty-fonts'),
         copied: __('Copied', 'tasty-fonts'),
         activityCountSingle: __('%1$d entry', 'tasty-fonts'),
         activityCountMultiple: __('%1$d entries', 'tasty-fonts'),
@@ -370,10 +348,10 @@
         bodyFamilyFallbackTitle: __('Body uses the fallback stack directly: %1$s. Role alias: %2$s', 'tasty-fonts'),
         monospaceFamilyVariableTitle: __('Monospace family variable: %1$s. Role alias: %2$s. Resolved stack: %3$s', 'tasty-fonts'),
         monospaceFamilyFallbackTitle: __('Monospace uses the fallback stack directly: %1$s. Role alias: %2$s', 'tasty-fonts'),
-        roleDeliveryDefault: __('Use Family Default', 'tasty-fonts'),
         roleWeightDefault: __('Use Role Default (%1$s)', 'tasty-fonts'),
         roleWeightSummary: __('Available static weights for %1$s. Choose one to override the default role weight when role font-weight output is enabled.', 'tasty-fonts'),
-        previewDeliveryDefault: __('Use Family Default (%1$s)', 'tasty-fonts'),
+        settingsUnsaved: __('Unsaved changes', 'tasty-fonts'),
+        settingsLeaveWarning: __('You have unsaved settings changes.', 'tasty-fonts'),
     };
 
     function getHelpTooltipLayer() {
@@ -405,6 +383,9 @@
     const escapeFontFamily = typeof adminContracts.escapeFontFamily === 'function'
         ? adminContracts.escapeFontFamily
         : (family) => String(family || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const settingsStatesMatch = typeof adminContracts.settingsStatesMatch === 'function'
+        ? adminContracts.settingsStatesMatch
+        : (left, right) => JSON.stringify(left || {}) === JSON.stringify(right || {});
     const getTabNavigationTargetIndex = typeof adminContracts.getTabNavigationTargetIndex === 'function'
         ? adminContracts.getTabNavigationTargetIndex
         : (key, currentIndex, count) => {
@@ -597,6 +578,29 @@
         );
     }
 
+    function defaultRoleFallback(roleKey) {
+        return roleKey === 'monospace' ? 'monospace' : 'sans-serif';
+    }
+
+    function resolveRoleFallbackValue(roleKey, input = {}) {
+        const defaultFallback = defaultRoleFallback(roleKey);
+        const familyName = String(input[roleKey] || '').trim();
+
+        if (familyName) {
+            const entry = roleFamilyEntryForFamily(familyName);
+            const entryFallback = entry && typeof entry.fallback === 'string' ? entry.fallback : '';
+
+            if (entryFallback.trim() !== '') {
+                return sanitizeFallback(entryFallback, defaultFallback);
+            }
+        }
+
+        return sanitizeFallback(
+            input[`${roleKey}Fallback`] || input[`${roleKey}_fallback`],
+            defaultFallback
+        );
+    }
+
     function buildRoleSelectionKey(roleKeys) {
         return ['heading', 'body', 'monospace'].filter((roleKey) => roleKeys.includes(roleKey)).join('-');
     }
@@ -686,12 +690,9 @@
             heading: String(input.heading || '').trim(),
             body: String(input.body || '').trim(),
             monospace: monospaceRoleEnabled ? String(input.monospace || '').trim() : '',
-            headingDeliveryId: String(input.headingDeliveryId || input.heading_delivery_id || '').trim(),
-            bodyDeliveryId: String(input.bodyDeliveryId || input.body_delivery_id || '').trim(),
-            monospaceDeliveryId: monospaceRoleEnabled ? String(input.monospaceDeliveryId || input.monospace_delivery_id || '').trim() : '',
-            headingFallback: sanitizeFallback(input.headingFallback || input.heading_fallback, 'sans-serif'),
-            bodyFallback: sanitizeFallback(input.bodyFallback || input.body_fallback, 'sans-serif'),
-            monospaceFallback: sanitizeFallback(input.monospaceFallback || input.monospace_fallback, 'monospace'),
+            headingFallback: resolveRoleFallbackValue('heading', input),
+            bodyFallback: resolveRoleFallbackValue('body', input),
+            monospaceFallback: resolveRoleFallbackValue('monospace', input),
             headingWeight: normalizeRoleWeightValue(input.headingWeight || input.heading_weight),
             bodyWeight: normalizeRoleWeightValue(input.bodyWeight || input.body_weight),
             monospaceWeight: normalizeRoleWeightValue(input.monospaceWeight || input.monospace_weight),
@@ -800,6 +801,30 @@
                     : getString('previewCurrentDraft', 'Current draft'))
             ),
         };
+    }
+
+    function syncPreviewBootstrapState(nextState = {}) {
+        const bootstrapConfig = config.previewBootstrap && typeof config.previewBootstrap === 'object'
+            ? config.previewBootstrap
+            : {};
+
+        config.previewBootstrap = bootstrapConfig;
+
+        if (nextState.roles && typeof nextState.roles === 'object' && !Array.isArray(nextState.roles)) {
+            bootstrapConfig.roles = normalizeRoleState(nextState.roles);
+        }
+
+        if (nextState.appliedRoles && typeof nextState.appliedRoles === 'object' && !Array.isArray(nextState.appliedRoles)) {
+            bootstrapConfig.appliedRoles = normalizeRoleState(nextState.appliedRoles);
+        }
+
+        if (typeof nextState.baselineSource === 'string') {
+            bootstrapConfig.baselineSource = nextState.baselineSource === 'live_sitewide' ? 'live_sitewide' : 'draft';
+        }
+
+        if (typeof nextState.baselineLabel === 'string') {
+            bootstrapConfig.baselineLabel = nextState.baselineLabel;
+        }
     }
 
     function selectedRoleKeysForFamily(family, data) {
@@ -941,21 +966,19 @@
         return payload && typeof payload === 'object' ? payload : {};
     }
 
-    function getSettingsAutosaveState(form) {
+    function getSettingsFormState(form) {
         if (!form) {
             return null;
         }
 
-        if (!form._tastyFontsAutosaveState) {
-            form._tastyFontsAutosaveState = {
-                inFlight: false,
-                queued: false,
-                timer: 0,
-                lastSerialized: ''
+        if (!form._tastyFontsSettingsState) {
+            form._tastyFontsSettingsState = {
+                initialState: {},
+                isDirty: false,
             };
         }
 
-        return form._tastyFontsAutosaveState;
+        return form._tastyFontsSettingsState;
     }
 
     function serializeSettingsForm(form) {
@@ -999,7 +1022,7 @@
         });
     }
 
-    function syncMonoDependentControls(enabled) {
+    function syncMonoDependentControls(enabled, options = {}) {
         outputMonoDependentInputs.forEach((input) => {
             input.disabled = !enabled;
 
@@ -1009,6 +1032,122 @@
                 label.classList.toggle('is-disabled', !enabled);
             }
         });
+
+        if (enabled && options.enableDefaults) {
+            outputMonoDependentInputs.forEach((input) => {
+                input.checked = true;
+            });
+        }
+    }
+
+    function setSettingsFormStatus(form, isDirty) {
+        if (!form) {
+            return;
+        }
+
+        getSettingsFormStatuses(form).forEach((status) => {
+            status.textContent = isDirty
+                ? getString('settingsUnsaved', 'Unsaved changes')
+                : '';
+            status.hidden = !isDirty;
+        });
+    }
+
+    function settingsFormHasUnsavedChanges(form) {
+        const state = getSettingsFormState(form);
+
+        return !!(state && state.isDirty);
+    }
+
+    function anySettingsFormHasUnsavedChanges() {
+        return settingsForms.some((form) => settingsFormHasUnsavedChanges(form));
+    }
+
+    function syncSettingsFormDirtyState(form) {
+        const state = getSettingsFormState(form);
+
+        if (!form || !state) {
+            return false;
+        }
+
+        const currentState = serializeSettingsForm(form);
+        const isDirty = !settingsStatesMatch(state.initialState, currentState);
+
+        state.isDirty = isDirty;
+        form.toggleAttribute('data-has-unsaved-changes', isDirty);
+        form.classList.toggle('has-unsaved-changes', isDirty);
+
+        getSettingsFormButtons(form).forEach((button) => {
+            button.disabled = !isDirty;
+        });
+
+        setSettingsFormStatus(form, isDirty);
+
+        return isDirty;
+    }
+
+    function refreshSettingsFormBaseline(form) {
+        const state = getSettingsFormState(form);
+
+        if (!form || !state) {
+            return;
+        }
+
+        state.initialState = serializeSettingsForm(form);
+        state.isDirty = false;
+        form.removeAttribute('data-has-unsaved-changes');
+        form.classList.remove('has-unsaved-changes');
+
+        getSettingsFormButtons(form).forEach((button) => {
+            button.disabled = true;
+        });
+
+        setSettingsFormStatus(form, false);
+    }
+
+    function getSettingsFormButtons(form) {
+        if (!form) {
+            return [];
+        }
+
+        const formId = String(form.getAttribute('id') || '').trim();
+        const internalButtons = Array.from(form.querySelectorAll('[data-settings-save-button]'));
+        const externalButtons = formId
+            ? Array.from(document.querySelectorAll(`[data-settings-save-button][form="${formId}"]`))
+            : [];
+
+        return Array.from(new Set([...internalButtons, ...externalButtons]));
+    }
+
+    function getSettingsFormStatuses(form) {
+        if (!form) {
+            return [];
+        }
+
+        const formId = String(form.getAttribute('id') || '').trim();
+        const internalStatuses = Array.from(form.querySelectorAll('[data-settings-save-status]'));
+        const externalStatuses = formId
+            ? Array.from(document.querySelectorAll(`[data-settings-save-status][data-settings-form-id="${formId}"]`))
+            : [];
+
+        return Array.from(new Set([...internalStatuses, ...externalStatuses]));
+    }
+
+    function syncSettingsSaveShell() {
+        if (!settingsSaveShell) {
+            return;
+        }
+
+        settingsSaveShell.hidden = activeTabKeyForGroup('settings') === 'developer';
+    }
+
+    function handleSettingsBeforeUnload(event) {
+        if (settingsNavigationInFlight || !anySettingsFormHasUnsavedChanges()) {
+            return;
+        }
+
+        event.preventDefault();
+        event.returnValue = getString('settingsLeaveWarning', 'You have unsaved settings changes.');
     }
 
     function applySavedSettingsState(settings) {
@@ -1033,7 +1172,9 @@
         }
 
         if (Object.prototype.hasOwnProperty.call(settings, 'output_quick_mode_preference') && outputQuickModePreferenceInput) {
-            outputQuickModePreferenceInput.value = sanitizeOutputQuickModePreference(settings.output_quick_mode_preference) || 'custom';
+            const normalizedQuickModePreference = sanitizeOutputQuickModePreference(settings.output_quick_mode_preference) || 'custom';
+            outputQuickModePreferenceInput.value = normalizedQuickModePreference;
+            outputQuickModePreferenceInput.setAttribute('data-output-quick-mode-saved-preference', normalizedQuickModePreference);
         }
 
         [
@@ -1077,18 +1218,14 @@
 
         if (Object.prototype.hasOwnProperty.call(settings, 'monospace_role_enabled')) {
             monospaceRoleEnabled = !!settings.monospace_role_enabled && !!roleMonospace && !!roleMonospaceFallback;
-            syncMonoDependentControls(monospaceRoleEnabled);
+            syncMonoDependentControls(!!settings.monospace_role_enabled);
         }
 
         syncOutputSettingsUi();
         syncUnicodeRangeUi();
 
-        settingsAutosaveForms.forEach((form) => {
-            const state = getSettingsAutosaveState(form);
-
-            if (state) {
-                state.lastSerialized = JSON.stringify(serializeSettingsForm(form));
-            }
+        settingsForms.forEach((form) => {
+            refreshSettingsFormBaseline(form);
         });
     }
 
@@ -1233,81 +1370,30 @@
         });
     }
 
-    async function saveSettingsForm(form) {
-        const state = getSettingsAutosaveState(form);
-
-        if (!form || !state || !hasRestConfig() || !window.fetch) {
-            return false;
-        }
-
-        if (state.timer) {
-            window.clearTimeout(state.timer);
-            state.timer = 0;
-        }
-
-        if (state.inFlight) {
-            state.queued = true;
-            return false;
-        }
-
-        const body = serializeSettingsForm(form);
-        const serialized = JSON.stringify(body);
-
-        if (serialized === state.lastSerialized) {
-            return true;
-        }
-
-        state.inFlight = true;
-        form.setAttribute('aria-busy', 'true');
-
-        try {
-            const payload = await requestJson(getRoutePath('saveSettings', 'settings'), {
-                method: 'PATCH',
-                body,
-                fallbackMessage: getString('settingsSaveError', 'The settings could not be saved.')
-            });
-
-            applySavedSettingsState(payload.settings || {});
-            applyOutputPanelsState(payload.output_panels || []);
-            showToast(payload.message || getString('settingsSaved', 'Plugin settings saved.'), 'success');
-
-            if (payload && payload.reload_required) {
-                reloadPageSoon(650, captureTrackedUiState());
-            }
-
-            return true;
-        } catch (error) {
-            showToast(getErrorMessage(error, getString('settingsSaveError', 'The settings could not be saved.')), 'error');
-            return false;
-        } finally {
-            state.inFlight = false;
-            form.removeAttribute('aria-busy');
-
-            if (state.queued) {
-                state.queued = false;
-                state.timer = window.setTimeout(() => {
-                    state.timer = 0;
-                    void saveSettingsForm(form);
-                }, 0);
-            }
-        }
-    }
-
-    function scheduleSettingsAutosave(form) {
-        const state = getSettingsAutosaveState(form);
-
-        if (!form || !state) {
+    function applyGeneratedCssPanelState(panel) {
+        if (!panel || typeof panel !== 'object') {
             return;
         }
 
-        if (state.timer) {
-            window.clearTimeout(state.timer);
+        const targetId = String(panel.target || '');
+        const rawValue = String(panel.value || '');
+
+        if (!targetId) {
+            return;
         }
 
-        state.timer = window.setTimeout(() => {
-            state.timer = 0;
-            void saveSettingsForm(form);
-        }, settingsAutosaveDelay);
+        setSnippetPanelContent(
+            targetId,
+            rawValue,
+            typeof panel.display_value === 'string' ? panel.display_value : rawValue
+        );
+
+        const readableTargetId = `${targetId}-readable`;
+        const readableTarget = document.getElementById(readableTargetId);
+
+        if (readableTarget && typeof panel.readable_display_value === 'string') {
+            setSnippetTargetContent(readableTarget, panel.readable_display_value);
+        }
     }
 
     function getSessionStorage() {
@@ -1358,12 +1444,24 @@
         return toggle ? String(toggle.getAttribute('data-disclosure-toggle') || '').trim() : '';
     }
 
+    function disclosureToggleElements() {
+        return Array.from(document.querySelectorAll('[data-disclosure-toggle]'));
+    }
+
+    function tabButtonElements() {
+        return Array.from(document.querySelectorAll('[data-tab-group][data-tab-target]'));
+    }
+
+    function tabPanelElements() {
+        return Array.from(document.querySelectorAll('[data-tab-group][data-tab-panel]'));
+    }
+
     function disclosureToggleByTargetId(targetId) {
         if (!targetId) {
             return null;
         }
 
-        return disclosureToggles.find((toggle) => getDisclosureToggleTargetId(toggle) === targetId) || null;
+        return disclosureToggleElements().find((toggle) => getDisclosureToggleTargetId(toggle) === targetId) || null;
     }
 
     function isDisclosureExpanded(toggle) {
@@ -2317,13 +2415,16 @@
         }
 
         pageReloadScheduled = true;
+        settingsNavigationInFlight = true;
 
         if (pendingUiState) {
             savePendingUiState(pendingUiState);
         }
 
         window.setTimeout(() => {
+            syncTrackedUiUrl('replace');
             const reloadUrl = new URL(window.location.href);
+            reloadUrl.searchParams.set('page', 'tasty-custom-fonts');
             reloadUrl.searchParams.set(reloadQueryKey, String(Date.now()));
             window.location.replace(reloadUrl.toString());
         }, delay);
@@ -2333,8 +2434,6 @@
         const snapshot = {
             heading: getElementValue(roleHeading, ''),
             body: getElementValue(roleBody, ''),
-            headingDeliveryId: getElementValue(roleDeliverySelects.heading, ''),
-            bodyDeliveryId: getElementValue(roleDeliverySelects.body, ''),
             headingFallback: getElementValue(roleHeadingFallback, 'sans-serif'),
             bodyFallback: getElementValue(roleBodyFallback, 'sans-serif'),
             headingWeight: getElementValue(roleWeightSelects.heading, ''),
@@ -2345,7 +2444,6 @@
 
         if (monospaceRoleEnabled) {
             snapshot.monospace = getElementValue(roleMonospace, '');
-            snapshot.monospaceDeliveryId = getElementValue(roleDeliverySelects.monospace, '');
             snapshot.monospaceFallback = getElementValue(roleMonospaceFallback, 'monospace');
             snapshot.monospaceWeight = getElementValue(roleWeightSelects.monospace, '');
             snapshot.monospaceAxes = roleAxisFieldValues('monospace');
@@ -2369,14 +2467,6 @@
 
         renderAllRoleWeightEditors(snapshot);
 
-        if (roleDeliverySelects.heading) {
-            roleDeliverySelects.heading.value = snapshot.headingDeliveryId || roleDeliverySelects.heading.value || '';
-        }
-
-        if (roleDeliverySelects.body) {
-            roleDeliverySelects.body.value = snapshot.bodyDeliveryId || roleDeliverySelects.body.value || '';
-        }
-
         if (roleHeadingFallback) {
             roleHeadingFallback.value = snapshot.headingFallback || 'sans-serif';
         }
@@ -2387,10 +2477,6 @@
 
         if (monospaceRoleEnabled && roleMonospace) {
             roleMonospace.value = snapshot.monospace || '';
-        }
-
-        if (monospaceRoleEnabled && roleDeliverySelects.monospace) {
-            roleDeliverySelects.monospace.value = snapshot.monospaceDeliveryId || roleDeliverySelects.monospace.value || '';
         }
 
         if (monospaceRoleEnabled && roleMonospaceFallback) {
@@ -2417,162 +2503,42 @@
         return normalizeAxisSettings(values);
     }
 
-    function roleDeliveryEntryForFamily(familyName) {
+    function roleFamilyEntryForFamily(familyName) {
         const family = String(familyName || '').trim();
-        const entry = family ? roleDeliveryCatalog[family] : null;
+        const entry = family ? roleFamilyCatalog[family] : null;
 
         return entry && typeof entry === 'object' ? entry : null;
     }
 
-    function roleDeliveryOptionsForFamily(familyName) {
-        const entry = roleDeliveryEntryForFamily(familyName);
-        const deliveries = entry && Array.isArray(entry.deliveries) ? entry.deliveries : [];
-
-        return deliveries.filter((option) => option && typeof option === 'object');
-    }
-
-    function roleDeliveryOptionById(deliveryId, familyName = '') {
-        const normalizedId = String(deliveryId || '').trim();
-
-        if (!normalizedId) {
-            return null;
-        }
-
-        const familyOptions = familyName ? roleDeliveryOptionsForFamily(familyName) : [];
-
-        if (familyOptions.length > 0) {
-            return familyOptions.find((option) => String(option.id || '') === normalizedId) || null;
-        }
-
-        const families = Object.keys(roleDeliveryCatalog || {});
-
-        for (const currentFamilyName of families) {
-            const match = roleDeliveryOptionsForFamily(currentFamilyName).find((option) => String(option.id || '') === normalizedId);
-
-            if (match) {
-                return match;
-            }
-        }
-
-        return null;
-    }
-
-    function deliveryFormatForRoleSelection(deliveryId, familyName = '') {
-        const option = roleDeliveryOptionById(deliveryId, familyName);
-        const format = option ? String(option.format || '').trim().toLowerCase() : '';
+    function deliveryFormatForFamily(familyName) {
+        const entry = roleFamilyEntryForFamily(familyName);
+        const format = entry ? String(entry.format || '').trim().toLowerCase() : '';
 
         return format === 'variable' ? 'variable' : 'static';
     }
 
-    function resolveRoleDeliveryId(roleKey, state = {}) {
-        const familyName = String(state[roleKey] || '').trim();
-        const savedValue = String(state[`${roleKey}DeliveryId`] || state[`${roleKey}_delivery_id`] || '').trim();
-        const options = roleDeliveryOptionsForFamily(familyName);
-
-        if (!familyName || !options.length) {
-            return '';
-        }
-
-        if (savedValue && options.some((option) => String(option.id || '') === savedValue)) {
-            return savedValue;
-        }
-
-        const familyEntry = roleDeliveryEntryForFamily(familyName);
-        const activeDeliveryId = familyEntry ? String(familyEntry.active_delivery_id || '').trim() : '';
-
-        if (activeDeliveryId && options.some((option) => String(option.id || '') === activeDeliveryId)) {
-            return activeDeliveryId;
-        }
-
-        return String(options[0].id || '').trim();
-    }
-
-    function roleAxisDefinitionsForDelivery(deliveryId) {
-        const normalizedId = String(deliveryId || '').trim();
-        const entry = normalizedId ? roleAxisCatalog[normalizedId] : null;
-        const axes = entry && typeof entry === 'object' ? entry.axes : null;
+    function roleAxisDefinitionsForFamily(familyName) {
+        const entry = roleFamilyEntryForFamily(familyName);
+        const axes = entry && entry.axes && typeof entry.axes === 'object' ? entry.axes : null;
 
         return axes && typeof axes === 'object' ? axes : {};
     }
 
-    function roleWeightEntryForDelivery(deliveryId) {
-        const normalizedId = String(deliveryId || '').trim();
-        const entry = normalizedId ? roleWeightCatalog[normalizedId] : null;
-
-        return entry && typeof entry === 'object' ? entry : null;
+    function roleWeightEntryForFamily(familyName) {
+        return roleFamilyEntryForFamily(familyName);
     }
 
-    function roleWeightOptionsForDelivery(deliveryId) {
-        const entry = roleWeightEntryForDelivery(deliveryId);
+    function roleWeightOptionsForFamily(familyName) {
+        const entry = roleWeightEntryForFamily(familyName);
         const weights = entry && Array.isArray(entry.weights) ? entry.weights : [];
 
         return weights.filter((option) => option && typeof option === 'object');
     }
 
-    function deliveryUsesVariableWeightAxis(deliveryId) {
-        const entry = roleWeightEntryForDelivery(deliveryId);
+    function familyUsesVariableWeightAxis(familyName) {
+        const entry = roleWeightEntryForFamily(familyName);
 
-        return !!(entry && entry.has_weight_axis);
-    }
-
-    function renderRoleDeliveryEditor(roleKey, overrideState = null) {
-        const editor = roleDeliveryEditors[roleKey];
-        const select = roleDeliverySelects[roleKey];
-        const clearButton = select ? select.closest('.tasty-fonts-select-field')?.querySelector('[data-clear-select-button]') : null;
-
-        if (!editor || !select) {
-            return;
-        }
-
-        const roleSelect = ({
-            heading: roleHeading,
-            body: roleBody,
-            monospace: roleMonospace,
-        })[roleKey];
-        const summary = editor.querySelector(`[data-role-delivery-summary="${roleKey}"]`);
-        const state = normalizeRoleState(overrideState || currentDraftRoleState());
-        const familyName = roleSelect ? String(roleSelect.value || '').trim() : '';
-        const options = roleDeliveryOptionsForFamily(familyName);
-        const selectedValue = resolveRoleDeliveryId(roleKey, state);
-
-        if (!familyName || !options.length) {
-            editor.hidden = true;
-            select.innerHTML = '';
-
-            if (clearButton) {
-                syncClearableSelectButton(clearButton);
-            }
-
-            return;
-        }
-
-        editor.hidden = false;
-        select.innerHTML = '';
-
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.textContent = getString('roleDeliveryDefault', 'Use Family Default');
-        select.appendChild(defaultOption);
-
-        options.forEach((option) => {
-            const element = document.createElement('option');
-            element.value = String(option.id || '');
-            element.textContent = String(option.label || option.id || '');
-            select.appendChild(element);
-        });
-
-        select.value = selectedValue || '';
-
-        if (summary) {
-            summary.textContent = formatMessage(
-                getString('roleDeliverySummary', 'Saved deliveries for %1$s. Choose the static or variable delivery this role should use.'),
-                [familyName]
-            );
-        }
-
-        if (clearButton) {
-            syncClearableSelectButton(clearButton);
-        }
+        return !!(entry && entry.hasWeightAxis);
     }
 
     function renderRoleWeightEditor(roleKey, overrideState = null) {
@@ -2592,10 +2558,9 @@
         const summary = editor.querySelector(`[data-role-weight-summary="${roleKey}"]`);
         const familyName = roleSelect ? String(roleSelect.value || '').trim() : '';
         const state = normalizeRoleState(overrideState || currentDraftRoleState());
-        const deliveryId = resolveRoleDeliveryId(roleKey, state);
-        const deliveryFormat = deliveryFormatForRoleSelection(deliveryId, familyName);
-        const options = roleWeightOptionsForDelivery(deliveryId);
-        const shouldShow = !!familyName && !!deliveryId && deliveryFormat === 'static' && options.length > 1;
+        const deliveryFormat = deliveryFormatForFamily(familyName);
+        const options = roleWeightOptionsForFamily(familyName);
+        const shouldShow = !!familyName && deliveryFormat === 'static' && options.length > 1;
         const currentValue = state[`${roleKey}Weight`] || '';
 
         if (!shouldShow) {
@@ -2651,19 +2616,16 @@
     }
 
     function renderAllRoleWeightEditors(overrideState = null) {
-        renderRoleDeliveryEditor('heading', overrideState);
-        renderRoleDeliveryEditor('body', overrideState);
         renderRoleWeightEditor('heading', overrideState);
         renderRoleWeightEditor('body', overrideState);
 
         if (monospaceRoleEnabled) {
-            renderRoleDeliveryEditor('monospace', overrideState);
             renderRoleWeightEditor('monospace', overrideState);
         }
     }
 
-    function defaultRoleAxesForDelivery(deliveryId) {
-        const axes = roleAxisDefinitionsForDelivery(deliveryId);
+    function defaultRoleAxesForFamily(familyName) {
+        const axes = roleAxisDefinitionsForFamily(familyName);
         const defaults = {};
 
         Object.entries(axes).forEach(([tag, definition]) => {
@@ -2695,14 +2657,13 @@
         const summary = editor.querySelector(`[data-role-axis-summary="${roleKey}"]`);
         const familyName = roleSelect ? String(roleSelect.value || '').trim() : '';
         const state = normalizeRoleState(overrideState || currentDraftRoleState());
-        const deliveryId = resolveRoleDeliveryId(roleKey, state);
-        const deliveryFormat = deliveryFormatForRoleSelection(deliveryId, familyName);
-        const definitions = variableFontsEnabled ? roleAxisDefinitionsForDelivery(deliveryId) : {};
+        const deliveryFormat = deliveryFormatForFamily(familyName);
+        const definitions = variableFontsEnabled ? roleAxisDefinitionsForFamily(familyName) : {};
         const currentValues = state[`${roleKey}Axes`] && Object.keys(state[`${roleKey}Axes`]).length
             ? state[`${roleKey}Axes`]
-            : defaultRoleAxesForDelivery(deliveryId);
+            : defaultRoleAxesForFamily(familyName);
 
-        if (!fields || !familyName || !deliveryId || deliveryFormat !== 'variable' || !Object.keys(definitions).length) {
+        if (!fields || !familyName || deliveryFormat !== 'variable' || !Object.keys(definitions).length) {
             editor.hidden = true;
 
             if (fields) {
@@ -2794,10 +2755,9 @@
         const familySelect = previewRoleSelects[roleKey];
         const state = normalizeRoleState(overrideState || currentPreviewRoleState());
         const familyName = String(state[roleKey] || (familySelect ? familySelect.value : '') || '').trim();
-        const deliveryId = resolveRoleDeliveryId(roleKey, state);
-        const deliveryFormat = deliveryFormatForRoleSelection(deliveryId, familyName);
-        const options = roleWeightOptionsForDelivery(deliveryId);
-        const shouldShow = !!familyName && !!deliveryId && deliveryFormat === 'static' && options.length > 1;
+        const deliveryFormat = deliveryFormatForFamily(familyName);
+        const options = roleWeightOptionsForFamily(familyName);
+        const shouldShow = !!familyName && deliveryFormat === 'static' && options.length > 1;
         const currentValue = state[`${roleKey}Weight`] || '';
 
         if (!shouldShow) {
@@ -2846,68 +2806,11 @@
     }
 
     function renderAllPreviewWeightEditors(overrideState = null) {
-        renderPreviewDeliveryEditor('heading', overrideState);
-        renderPreviewDeliveryEditor('body', overrideState);
         renderPreviewWeightEditor('heading', overrideState);
         renderPreviewWeightEditor('body', overrideState);
 
         if (monospaceRoleEnabled) {
-            renderPreviewDeliveryEditor('monospace', overrideState);
             renderPreviewWeightEditor('monospace', overrideState);
-        }
-    }
-
-    function renderPreviewDeliveryEditor(roleKey, overrideState = null) {
-        const editor = previewDeliveryEditors[roleKey];
-        const select = previewDeliverySelects[roleKey];
-        const clearButton = select ? select.closest('.tasty-fonts-select-field')?.querySelector('[data-clear-select-button]') : null;
-
-        if (!editor || !select) {
-            return;
-        }
-
-        const familySelect = previewRoleSelects[roleKey];
-        const state = normalizeRoleState(overrideState || currentPreviewRoleState());
-        const familyName = String(state[roleKey] || (familySelect ? familySelect.value : '') || '').trim();
-        const options = roleDeliveryOptionsForFamily(familyName);
-
-        if (!familyName || !options.length) {
-            editor.hidden = true;
-            select.innerHTML = '';
-
-            if (clearButton) {
-                syncClearableSelectButton(clearButton);
-            }
-
-            return;
-        }
-
-        editor.hidden = false;
-        select.innerHTML = '';
-
-        const familyEntry = roleDeliveryEntryForFamily(familyName);
-        const activeDeliveryId = familyEntry ? String(familyEntry.active_delivery_id || '').trim() : '';
-        const activeOption = options.find((option) => String(option.id || '') === activeDeliveryId) || options[0] || null;
-        const explicitValue = String(state[`${roleKey}DeliveryId`] || state[`${roleKey}_delivery_id`] || '').trim();
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.textContent = formatMessage(
-            getString('previewDeliveryDefault', 'Use Family Default (%1$s)'),
-            [String(activeOption && (activeOption.label || activeOption.id) ? (activeOption.label || activeOption.id) : '')]
-        );
-        select.appendChild(defaultOption);
-
-        options.forEach((option) => {
-            const element = document.createElement('option');
-            element.value = String(option.id || '');
-            element.textContent = String(option.label || option.id || '');
-            select.appendChild(element);
-        });
-
-        select.value = explicitValue && options.some((option) => String(option.id || '') === explicitValue) ? explicitValue : '';
-
-        if (clearButton) {
-            syncClearableSelectButton(clearButton);
         }
     }
 
@@ -2922,14 +2825,13 @@
         const fields = editor.querySelector(`[data-preview-axis-fields="${roleKey}"]`);
         const state = normalizeRoleState(overrideState || currentPreviewRoleState());
         const familyName = String(state[roleKey] || (familySelect ? familySelect.value : '') || '').trim();
-        const deliveryId = resolveRoleDeliveryId(roleKey, state);
-        const deliveryFormat = deliveryFormatForRoleSelection(deliveryId, familyName);
-        const definitions = variableFontsEnabled ? roleAxisDefinitionsForDelivery(deliveryId) : {};
+        const deliveryFormat = deliveryFormatForFamily(familyName);
+        const definitions = variableFontsEnabled ? roleAxisDefinitionsForFamily(familyName) : {};
         const currentValues = state[`${roleKey}Axes`] && Object.keys(state[`${roleKey}Axes`]).length
             ? state[`${roleKey}Axes`]
-            : defaultRoleAxesForDelivery(deliveryId);
+            : defaultRoleAxesForFamily(familyName);
 
-        if (!fields || !familyName || !deliveryId || deliveryFormat !== 'variable' || !Object.keys(definitions).length) {
+        if (!fields || !familyName || deliveryFormat !== 'variable' || !Object.keys(definitions).length) {
             editor.hidden = true;
 
             if (fields) {
@@ -4152,11 +4054,11 @@
     }
 
     function tabButtonsForGroup(group) {
-        return tabButtons.filter((tab) => tab.getAttribute('data-tab-group') === group);
+        return tabButtonElements().filter((tab) => tab.getAttribute('data-tab-group') === group);
     }
 
     function tabPanelsForGroup(group) {
-        return tabPanels.filter((panel) => panel.getAttribute('data-tab-group') === group);
+        return tabPanelElements().filter((panel) => panel.getAttribute('data-tab-group') === group);
     }
 
     function activeTabKeyForGroup(group) {
@@ -4192,6 +4094,10 @@
                 rootPage.setAttribute('data-current-page', key);
             }
         }
+
+        if (group === 'settings') {
+            syncSettingsSaveShell();
+        }
     }
 
     function setDisclosureState(toggle, expanded) {
@@ -4218,7 +4124,7 @@
     }
 
     function syncDisclosureToggles() {
-        disclosureToggles.forEach((toggle) => {
+        disclosureToggleElements().forEach((toggle) => {
             setDisclosureState(toggle, toggle.getAttribute('aria-expanded') === 'true');
         });
     }
@@ -4389,6 +4295,14 @@
         toast.setAttribute('data-toast-tone', resolvedTone);
         toast.setAttribute('role', resolvedTone === 'error' ? 'alert' : 'status');
 
+        if (actionItems.length > 0) {
+            toast.classList.add('is-actionable');
+
+            if (resolvedTone === 'error') {
+                toast.classList.add('is-confirmation');
+            }
+        }
+
         body.className = 'tasty-fonts-toast-body';
         text.className = 'tasty-fonts-toast-message';
         text.textContent = message;
@@ -4538,7 +4452,7 @@
 
         writeButtonLabel(
             button,
-            formatMessage(getString('confirmActionLabel', 'Confirm %s'), [originalLabel])
+            getString('confirmActionShort', 'Confirm?')
         );
 
         button.classList.add('is-awaiting-confirmation');
@@ -4961,9 +4875,6 @@
             heading: getElementValue(roleHeading, ''),
             body: getElementValue(roleBody, ''),
             monospace: monospaceRoleEnabled ? getElementValue(roleMonospace, '') : '',
-            headingDeliveryId: getElementValue(roleDeliverySelects.heading, ''),
-            bodyDeliveryId: getElementValue(roleDeliverySelects.body, ''),
-            monospaceDeliveryId: monospaceRoleEnabled ? getElementValue(roleDeliverySelects.monospace, '') : '',
             headingFallback: getElementValue(roleHeadingFallback, 'sans-serif'),
             bodyFallback: getElementValue(roleBodyFallback, 'sans-serif'),
             monospaceFallback: monospaceRoleEnabled ? getElementValue(roleMonospaceFallback, 'monospace') : 'monospace',
@@ -4981,9 +4892,6 @@
             heading: getElementValue(roleHeading, ''),
             body: getElementValue(roleBody, ''),
             monospace: monospaceRoleEnabled ? getElementValue(roleMonospace, '') : '',
-            headingDeliveryId: getElementValue(roleDeliverySelects.heading, ''),
-            bodyDeliveryId: getElementValue(roleDeliverySelects.body, ''),
-            monospaceDeliveryId: monospaceRoleEnabled ? getElementValue(roleDeliverySelects.monospace, '') : '',
             headingFallback: getElementValue(roleHeadingFallback, 'sans-serif'),
             bodyFallback: getElementValue(roleBodyFallback, 'sans-serif'),
             monospaceFallback: monospaceRoleEnabled ? getElementValue(roleMonospaceFallback, 'monospace') : 'monospace',
@@ -5007,20 +4915,52 @@
 
     let initialDraftRoleState = roleForm ? currentDraftRoleState() : normalizeRoleState({});
 
+    function resolveAssignedRoleState(roleKey, family, currentState = {}, preserveStates = []) {
+        if (typeof adminContracts.resolveAssignedRoleState === 'function') {
+            return adminContracts.resolveAssignedRoleState(roleKey, family, currentState, {
+                monospaceRoleEnabled,
+                variableFontsEnabled,
+                roleFamilyCatalog,
+                preserveStates,
+            });
+        }
+
+        const normalizedRoleKey = String(roleKey || '').trim();
+        const nextFamily = String(family || '').trim();
+        const nextState = normalizeRoleState({
+            ...currentState,
+            [normalizedRoleKey]: nextFamily,
+            [`${normalizedRoleKey}Weight`]: '',
+            [`${normalizedRoleKey}Axes`]: {},
+        });
+        const matchingState = preserveStates
+            .map((state) => normalizeRoleState(state))
+            .find((state) => String(state[normalizedRoleKey] || '').trim() === nextFamily);
+
+        if (!matchingState) {
+            return nextState;
+        }
+
+        nextState[`${normalizedRoleKey}Weight`] = String(matchingState[`${normalizedRoleKey}Weight`] || '').trim();
+        nextState[`${normalizedRoleKey}Axes`] = variableFontsEnabled ? (matchingState[`${normalizedRoleKey}Axes`] || {}) : {};
+
+        return nextState;
+    }
+
     function roleStatesMatch(left = {}, right = {}) {
         if (typeof adminContracts.roleStatesMatch === 'function') {
             return adminContracts.roleStatesMatch(left, right, {
                 monospaceRoleEnabled,
                 variableFontsEnabled,
-                roleDeliveryCatalog,
+                roleFamilyCatalog,
             });
         }
 
         const leftState = normalizeRoleState(left);
         const rightState = normalizeRoleState(right);
         const keys = monospaceRoleEnabled
-            ? ['heading', 'body', 'monospace', 'headingDeliveryId', 'bodyDeliveryId', 'monospaceDeliveryId', 'headingFallback', 'bodyFallback', 'monospaceFallback', 'headingWeight', 'bodyWeight', 'monospaceWeight', 'headingAxes', 'bodyAxes', 'monospaceAxes']
-            : ['heading', 'body', 'headingDeliveryId', 'bodyDeliveryId', 'headingFallback', 'bodyFallback', 'headingWeight', 'bodyWeight', 'headingAxes', 'bodyAxes'];
+            ? ['heading', 'body', 'monospace', 'headingFallback', 'bodyFallback', 'monospaceFallback', 'headingWeight', 'bodyWeight', 'monospaceWeight', 'headingAxes', 'bodyAxes', 'monospaceAxes']
+            : ['heading', 'body', 'headingFallback', 'bodyFallback', 'headingWeight', 'bodyWeight', 'headingAxes', 'bodyAxes'];
 
         return keys.every((key) => {
             if (key.endsWith('Axes')) {
@@ -5288,17 +5228,6 @@
             }
 
             element.value = state[roleKey] || '';
-        });
-
-        Object.entries(previewDeliverySelects).forEach(([roleKey, element]) => {
-            if (!element || element.options.length === 0) {
-                return;
-            }
-
-            const currentValue = resolveRoleDeliveryId(roleKey, state);
-            const validValues = new Set(Array.from(element.options).map((option) => String(option.value || '')));
-
-            element.value = validValues.has(currentValue) ? currentValue : '';
         });
 
         Object.entries(previewWeightSelects).forEach(([roleKey, element]) => {
@@ -5830,6 +5759,55 @@
         return message || formatMessage(getString('fallbackSaved', 'Saved fallback for %1$s.'), [family]);
     }
 
+    function buildFallbackBatchSavedMessage(count) {
+        return formatPluralMessage(
+            'Saved fallback change for %d family.',
+            'Saved fallback changes for %d families.',
+            count,
+            [count]
+        );
+    }
+
+    function buildFallbackBatchPartialMessage(savedCount, failedCount) {
+        return formatMessage(
+            getString(
+                'fallbackSavedPartial',
+                'Saved fallback changes for %1$d families. %2$d still need attention.'
+            ),
+            [savedCount, failedCount]
+        );
+    }
+
+    function setRoleFamilyCatalogFallback(family, fallback) {
+        const familyName = String(family || '').trim();
+
+        if (!familyName) {
+            return;
+        }
+
+        if (!roleFamilyCatalog[familyName] || typeof roleFamilyCatalog[familyName] !== 'object') {
+            roleFamilyCatalog[familyName] = {};
+        }
+
+        roleFamilyCatalog[familyName].fallback = fallback;
+    }
+
+    function dirtyFamilyFallbackSelectors(primarySelector = null) {
+        const selectors = Array.from(document.querySelectorAll('.tasty-fonts-fallback-selector'));
+        const dirtySelectors = selectors.filter((selector) => {
+            const savedValue = selector.dataset.savedValue || 'sans-serif';
+            const nextValue = selector.value || 'sans-serif';
+
+            return savedValue !== nextValue;
+        });
+
+        if (!primarySelector || !dirtySelectors.includes(primarySelector)) {
+            return dirtySelectors;
+        }
+
+        return [primarySelector, ...dirtySelectors.filter((selector) => selector !== primarySelector)];
+    }
+
     function buildFallbackErrorMessage(error) {
         return getErrorMessage(error, getString('fallbackSaveError', 'The fallback could not be saved.'));
     }
@@ -5855,11 +5833,12 @@
     }
 
     // Family fallback persistence
-    async function saveFamilyFallback(selector, form) {
+    async function saveFamilyFallback(selector, form, options = {}) {
         if (!selector) {
             return false;
         }
 
+        const suppressToast = !!options.suppressToast;
         const family = selector.dataset.fontFamily || '';
         const previousValue = selector.dataset.savedValue || 'sans-serif';
         const nextValue = selector.value || 'sans-serif';
@@ -5900,10 +5879,15 @@
 
             selector.value = savedFallback;
             selector.dataset.savedValue = savedFallback;
+            setRoleFamilyCatalogFallback(family, savedFallback);
             updateInlineStackPreview(family);
+            updateRoleOutputs();
+            applyGeneratedCssPanelState(payload.generated_css_panel || null);
             syncFamilyFallbackSaveState(saveForm);
             setFamilyFallbackFeedback(saveForm, message, 'success');
-            showToast(message, 'success');
+            if (!suppressToast) {
+                showToast(message, 'success');
+            }
             return true;
         } catch (error) {
             const message = buildFallbackErrorMessage(error);
@@ -5912,7 +5896,9 @@
             updateInlineStackPreview(family);
             syncFamilyFallbackSaveState(saveForm);
             setFamilyFallbackFeedback(saveForm, message, 'error');
-            showToast(message, 'error');
+            if (!suppressToast) {
+                showToast(message, 'error');
+            }
             return false;
         } finally {
             selector.disabled = false;
@@ -5925,6 +5911,44 @@
                 row.classList.remove('is-saving');
             }
         }
+    }
+
+    async function saveDirtyFamilyFallbacks(primarySelector, primaryForm) {
+        const selectors = dirtyFamilyFallbackSelectors(primarySelector);
+
+        if (selectors.length === 0) {
+            syncFamilyFallbackSaveState(primaryForm);
+            return true;
+        }
+
+        if (selectors.length === 1) {
+            const selector = selectors[0];
+
+            return saveFamilyFallback(selector, selector.closest('[data-family-fallback-form]'));
+        }
+
+        let savedCount = 0;
+        let failedCount = 0;
+
+        for (const selector of selectors) {
+            const form = selector.closest('[data-family-fallback-form]');
+            const saved = await saveFamilyFallback(selector, form, { suppressToast: true });
+
+            if (saved) {
+                savedCount += 1;
+                continue;
+            }
+
+            failedCount += 1;
+        }
+
+        if (failedCount === 0) {
+            showToast(buildFallbackBatchSavedMessage(savedCount), 'success');
+            return true;
+        }
+
+        showToast(buildFallbackBatchPartialMessage(savedCount, failedCount), 'error');
+        return false;
     }
 
     async function saveFamilyFontDisplay(selector, form) {
@@ -6186,10 +6210,6 @@
             const requestBody = {
                 heading: getElementValue(roleHeading, ''),
                 body: getElementValue(roleBody, ''),
-                heading_delivery_id: getElementValue(roleDeliverySelects.heading, ''),
-                body_delivery_id: getElementValue(roleDeliverySelects.body, ''),
-                heading_fallback: getElementValue(roleHeadingFallback, 'sans-serif'),
-                body_fallback: getElementValue(roleBodyFallback, 'sans-serif'),
                 heading_weight: getElementValue(roleWeightSelects.heading, ''),
                 body_weight: getElementValue(roleWeightSelects.body, ''),
                 heading_axes: roleAxisFieldValues('heading'),
@@ -6198,8 +6218,6 @@
 
             if (monospaceRoleEnabled) {
                 requestBody.monospace = getElementValue(roleMonospace, '');
-                requestBody.monospace_delivery_id = getElementValue(roleDeliverySelects.monospace, '');
-                requestBody.monospace_fallback = getElementValue(roleMonospaceFallback, 'monospace');
                 requestBody.monospace_weight = getElementValue(roleWeightSelects.monospace, '');
                 requestBody.monospace_axes = roleAxisFieldValues('monospace');
             }
@@ -6223,9 +6241,6 @@
                 heading: typeof roles.heading === 'string' ? roles.heading : getElementValue(roleHeading, ''),
                 body: typeof roles.body === 'string' ? roles.body : getElementValue(roleBody, ''),
                 monospace: typeof roles.monospace === 'string' ? roles.monospace : getElementValue(roleMonospace, ''),
-                headingDeliveryId: roles.heading_delivery_id || '',
-                bodyDeliveryId: roles.body_delivery_id || '',
-                monospaceDeliveryId: roles.monospace_delivery_id || '',
                 headingFallback: typeof roles.heading_fallback === 'string' ? roles.heading_fallback : getElementValue(roleHeadingFallback, 'sans-serif'),
                 bodyFallback: typeof roles.body_fallback === 'string' ? roles.body_fallback : getElementValue(roleBodyFallback, 'sans-serif'),
                 monospaceFallback: typeof roles.monospace_fallback === 'string' ? roles.monospace_fallback : getElementValue(roleMonospaceFallback, 'monospace'),
@@ -6236,14 +6251,6 @@
                 bodyAxes: roles.body_axes || {},
                 monospaceAxes: roles.monospace_axes || {},
             });
-
-            if (roleDeliverySelects.heading && typeof roles.heading_delivery_id === 'string') {
-                roleDeliverySelects.heading.value = roles.heading_delivery_id;
-            }
-
-            if (roleDeliverySelects.body && typeof roles.body_delivery_id === 'string') {
-                roleDeliverySelects.body.value = roles.body_delivery_id;
-            }
 
             if (roleHeadingFallback && typeof roles.heading_fallback === 'string') {
                 roleHeadingFallback.value = roles.heading_fallback;
@@ -6261,17 +6268,10 @@
                 roleMonospaceFallback.value = roles.monospace_fallback;
             }
 
-            if (monospaceRoleEnabled && roleDeliverySelects.monospace && typeof roles.monospace_delivery_id === 'string') {
-                roleDeliverySelects.monospace.value = roles.monospace_delivery_id;
-            }
-
             renderAllRoleAxisEditors({
                 heading: typeof roles.heading === 'string' ? roles.heading : getElementValue(roleHeading, ''),
                 body: typeof roles.body === 'string' ? roles.body : getElementValue(roleBody, ''),
                 monospace: typeof roles.monospace === 'string' ? roles.monospace : getElementValue(roleMonospace, ''),
-                headingDeliveryId: roles.heading_delivery_id || '',
-                bodyDeliveryId: roles.body_delivery_id || '',
-                monospaceDeliveryId: roles.monospace_delivery_id || '',
                 headingFallback: typeof roles.heading_fallback === 'string' ? roles.heading_fallback : getElementValue(roleHeadingFallback, 'sans-serif'),
                 bodyFallback: typeof roles.body_fallback === 'string' ? roles.body_fallback : getElementValue(roleBodyFallback, 'sans-serif'),
                 monospaceFallback: typeof roles.monospace_fallback === 'string' ? roles.monospace_fallback : getElementValue(roleMonospaceFallback, 'monospace'),
@@ -6283,6 +6283,10 @@
                 monospaceAxes: roles.monospace_axes || {},
             });
 
+            syncPreviewBootstrapState({
+                roles,
+                appliedRoles: payload.applied_roles || {},
+            });
             initialDraftRoleState = currentDraftRoleState();
             updateRoleOutputs();
             syncRoleDeploymentState(payload.role_deployment || null);
@@ -6432,7 +6436,15 @@
         container.hidden = true;
 
         const fieldset = container.closest('fieldset');
+        const noteElement = fieldset
+            ? fieldset.querySelector(`[data-import-format-note="${provider}"]`)
+            : null;
         const visibleModes = familyVisibleFormats(family, provider);
+
+        if (noteElement) {
+            noteElement.hidden = true;
+            noteElement.textContent = '';
+        }
 
         if (!family || visibleModes.length < 2) {
             if (fieldset) {
@@ -6453,7 +6465,7 @@
             const isActive = mode === selectedMode;
 
             button.type = 'button';
-            button.className = `button tasty-fonts-filter-pill tasty-fonts-filter-pill--choice${isActive ? ' is-active' : ''}`;
+            button.className = `tasty-fonts-output-quick-option${isActive ? ' is-active' : ''}`;
             button.dataset.importFormatMode = mode;
             button.dataset.importFormatProvider = provider;
             button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
@@ -6473,12 +6485,9 @@
             .map((mode) => familyFormatInfo(family, mode, provider))
             .find((format) => format && format.source_only);
 
-        if (sourceOnlyFormat) {
-            const note = document.createElement('p');
-
-            note.className = 'tasty-fonts-muted';
-            note.textContent = variableFormatSelectionNote(provider, sourceOnlyFormat);
-            container.appendChild(note);
+        if (noteElement && sourceOnlyFormat) {
+            noteElement.textContent = variableFormatSelectionNote(provider, sourceOnlyFormat);
+            noteElement.hidden = !noteElement.textContent;
         }
 
         container.hidden = false;
@@ -8427,20 +8436,10 @@
             roleMonospace.value = family;
         }
 
-        renderAllRoleWeightEditors({
-            ...snapshotBeforeChange,
-            [role]: family,
-            [`${role}DeliveryId`]: '',
-            [`${role}Weight`]: '',
-            [`${role}Axes`]: {},
-        });
-        renderAllRoleAxisEditors({
-            ...snapshotBeforeChange,
-            [role]: family,
-            [`${role}DeliveryId`]: '',
-            [`${role}Weight`]: '',
-            [`${role}Axes`]: {},
-        });
+        const nextRoleState = resolveAssignedRoleState(role, family, snapshotBeforeChange, [currentAppliedRoleState()]);
+
+        renderAllRoleWeightEditors(nextRoleState);
+        renderAllRoleAxisEditors(nextRoleState);
         updateRoleOutputs();
         void saveRoleDraft(snapshotBeforeChange).then((saved) => {
             if (saved) {
@@ -8841,7 +8840,7 @@
                 event.preventDefault();
 
                 const selector = form.querySelector('.tasty-fonts-fallback-selector');
-                const saved = await saveFamilyFallback(selector, form);
+                const saved = await saveDirtyFamilyFallbacks(selector, form);
 
                 if (!saved) {
                     syncFamilyFallbackSaveState(form);
@@ -8859,23 +8858,6 @@
                 setFamilyFontDisplayFeedback(form, '', '');
             });
             syncFamilyFontDisplaySaveState(form);
-        });
-
-        document.querySelectorAll('[data-family-font-display-form]').forEach((form) => {
-            form.addEventListener('submit', async (event) => {
-                if (!hasRestConfig() || !window.fetch) {
-                    return;
-                }
-
-                event.preventDefault();
-
-                const selector = form.querySelector('.tasty-fonts-font-display-selector');
-                const saved = await saveFamilyFontDisplay(selector, form);
-
-                if (!saved) {
-                    syncFamilyFontDisplaySaveState(form);
-                }
-            });
         });
     }
 
@@ -9002,7 +8984,6 @@
                 previewRoleState = normalizeRoleState({
                     ...(previewRoleState || currentDraftRoleState()),
                     [roleKey]: nextFamily,
-                    [`${roleKey}DeliveryId`]: '',
                     [`${roleKey}Weight`]: '',
                     [`${roleKey}Axes`]: {},
                 });
@@ -9027,39 +9008,6 @@
                 });
                 previewDirty = true;
                 previewFollowsDraft = false;
-                applyPreviewOutputs(previewSourceLabel ? previewSourceLabel.textContent : '');
-            });
-        });
-
-        Object.entries(roleDeliverySelects).forEach(([roleKey, element]) => {
-            if (!element) {
-                return;
-            }
-
-            element.addEventListener('change', () => {
-                renderAllRoleWeightEditors();
-                renderAllRoleAxisEditors();
-                updateRoleOutputs();
-            });
-        });
-
-        Object.entries(previewDeliverySelects).forEach(([roleKey, element]) => {
-            if (!element) {
-                return;
-            }
-
-            element.addEventListener('change', () => {
-                initializePreviewWorkspace();
-                previewRoleState = normalizeRoleState({
-                    ...(previewRoleState || currentDraftRoleState()),
-                    [`${roleKey}DeliveryId`]: element.value || '',
-                    [`${roleKey}Weight`]: '',
-                    [`${roleKey}Axes`]: {},
-                });
-                previewDirty = true;
-                previewFollowsDraft = false;
-                renderAllPreviewWeightEditors(previewRoleState);
-                renderAllPreviewAxisEditors(previewRoleState);
                 applyPreviewOutputs(previewSourceLabel ? previewSourceLabel.textContent : '');
             });
         });
@@ -9443,7 +9391,7 @@
     }
 
     function initializeTabs() {
-        const groups = new Set(tabButtons.map((tab) => tab.getAttribute('data-tab-group')).filter(Boolean));
+        const groups = new Set(tabButtonElements().map((tab) => tab.getAttribute('data-tab-group')).filter(Boolean));
 
         groups.forEach((group) => {
             const buttons = tabButtonsForGroup(group);
@@ -9465,26 +9413,26 @@
 
     function outputClassFlagInputs() {
         return Array.from(document.querySelectorAll(
-            'input[name="class_output_role_heading_enabled"], ' +
-            'input[name="class_output_role_body_enabled"], ' +
-            'input[name="class_output_role_monospace_enabled"], ' +
-            'input[name="class_output_role_alias_interface_enabled"], ' +
-            'input[name="class_output_role_alias_ui_enabled"], ' +
-            'input[name="class_output_role_alias_code_enabled"], ' +
-            'input[name="class_output_category_sans_enabled"], ' +
-            'input[name="class_output_category_serif_enabled"], ' +
-            'input[name="class_output_category_mono_enabled"], ' +
-            'input[name="class_output_families_enabled"]'
+            'input[type="checkbox"][name="class_output_role_heading_enabled"], ' +
+            'input[type="checkbox"][name="class_output_role_body_enabled"], ' +
+            'input[type="checkbox"][name="class_output_role_monospace_enabled"], ' +
+            'input[type="checkbox"][name="class_output_role_alias_interface_enabled"], ' +
+            'input[type="checkbox"][name="class_output_role_alias_ui_enabled"], ' +
+            'input[type="checkbox"][name="class_output_role_alias_code_enabled"], ' +
+            'input[type="checkbox"][name="class_output_category_sans_enabled"], ' +
+            'input[type="checkbox"][name="class_output_category_serif_enabled"], ' +
+            'input[type="checkbox"][name="class_output_category_mono_enabled"], ' +
+            'input[type="checkbox"][name="class_output_families_enabled"]'
         ));
     }
 
     function outputVariableFlagInputs() {
         return Array.from(document.querySelectorAll(
-            'input[name="extended_variable_weight_tokens_enabled"], ' +
-            'input[name="extended_variable_role_aliases_enabled"], ' +
-            'input[name="extended_variable_category_sans_enabled"], ' +
-            'input[name="extended_variable_category_serif_enabled"], ' +
-            'input[name="extended_variable_category_mono_enabled"]'
+            'input[type="checkbox"][name="extended_variable_weight_tokens_enabled"], ' +
+            'input[type="checkbox"][name="extended_variable_role_aliases_enabled"], ' +
+            'input[type="checkbox"][name="extended_variable_category_sans_enabled"], ' +
+            'input[type="checkbox"][name="extended_variable_category_serif_enabled"], ' +
+            'input[type="checkbox"][name="extended_variable_category_mono_enabled"]'
         ));
     }
 
@@ -9534,16 +9482,20 @@
 
     function syncOutputQuickModePreferenceFromState() {
         const state = currentOutputQuickModeState();
-        const preference = currentOutputQuickModePreference();
+        const preference = !outputQuickModeBootstrapped && initialOutputQuickModePreference
+            ? sanitizeOutputQuickModePreference(initialOutputQuickModePreference)
+            : currentOutputQuickModePreference();
 
         if (preference === 'custom') {
             setOutputQuickModePreference('custom');
+            outputQuickModeBootstrapped = true;
             return;
         }
 
         setOutputQuickModePreference(
             normalizeOutputQuickModePreference(preference, state)
         );
+        outputQuickModeBootstrapped = true;
     }
 
     function ensureOutputLayerCanDisable(layerKey, input) {
@@ -9681,11 +9633,8 @@
                 }
 
                 applyOutputQuickMode(input.value);
-
-                // Presets mutate the persisted checkbox fields programmatically, so
-                // explicitly queue an autosave for the owning settings form.
                 if (input.form) {
-                    scheduleSettingsAutosave(input.form);
+                    syncSettingsFormDirtyState(input.form);
                 }
             });
         });
@@ -9714,37 +9663,48 @@
             outputRoleWeightInput.addEventListener('change', syncOutputSettingsUi);
         }
 
+        monospaceRoleSettingInputs.forEach((input) => {
+            input.addEventListener('change', () => {
+                monospaceRoleEnabled = !!input.checked && !!roleMonospace && !!roleMonospaceFallback;
+                syncCheckboxFields('monospace_role_enabled', !!input.checked);
+                syncMonoDependentControls(!!input.checked, { enableDefaults: !!input.checked });
+                syncOutputSettingsUi();
+            });
+        });
+
         syncPillOptionUi();
         syncOutputSettingsUi();
         syncUnicodeRangeUi();
     }
 
-    function bindSettingsAutosave() {
-        settingsAutosaveForms.forEach((form) => {
-            const state = getSettingsAutosaveState(form);
+    function bindSettingsForms() {
+        window.addEventListener('beforeunload', handleSettingsBeforeUnload);
 
-            if (state) {
-                state.lastSerialized = JSON.stringify(serializeSettingsForm(form));
-            }
-
-            form.addEventListener('submit', (event) => {
-                event.preventDefault();
-            });
-
+        settingsForms.forEach((form) => {
+            refreshSettingsFormBaseline(form);
             form.querySelectorAll('input, select, textarea').forEach((field) => {
                 const eventName = field.matches('input[type="text"], input[type="search"], input[type="url"], input[type="number"], textarea')
                     ? 'input'
                     : 'change';
 
                 field.addEventListener(eventName, () => {
-                    scheduleSettingsAutosave(form);
+                    syncSettingsFormDirtyState(form);
                 });
 
                 if (eventName !== 'change') {
                     field.addEventListener('change', () => {
-                        scheduleSettingsAutosave(form);
+                        syncSettingsFormDirtyState(form);
                     });
                 }
+            });
+
+            form.addEventListener('submit', (event) => {
+                if (!syncSettingsFormDirtyState(form)) {
+                    event.preventDefault();
+                    return;
+                }
+
+                settingsNavigationInFlight = true;
             });
         });
     }
@@ -9791,7 +9751,7 @@
         bindBunnyImportControls();
         bindUploadControls();
         bindOutputSettingsControls();
-        bindSettingsAutosave();
+        bindSettingsForms();
         bindDeveloperToolsControls();
 
         syncDisclosureToggles();
@@ -9814,6 +9774,7 @@
         applyTrackedUiState(initialTrackedUiState);
         syncTrackedUiUrl('replace');
         syncRoleDisclosureForCurrentPage();
+        syncSettingsSaveShell();
         const appliedPendingUiState = applyPendingUiState();
 
         if (!appliedPendingUiState && !hasTrackedUiState(initialTrackedUiState)) {

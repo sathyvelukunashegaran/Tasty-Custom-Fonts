@@ -344,12 +344,14 @@ $tests['admin_page_renderer_renders_single_page_tabs_with_settings_active'] = st
     assertSameValue(1, preg_match('/id="tasty-fonts-add-font-tab-bunny"[\s\S]*?tabindex="-1"/', $output), 'Inactive add-font tabs should be removed from the normal keyboard tab order.');
     assertSameValue(1, preg_match('/id="tasty-fonts-diagnostics-tab-system"[\s\S]*?tabindex="-1"/', $output), 'Inactive diagnostics tabs should be removed from the normal keyboard tab order.');
     assertSameValue(1, preg_match('/Version [0-9]+\.[0-9]+\.[0-9]+/', $output), 'The page heading should include the current plugin version for assistive technologies.');
-    assertContainsValue('data-settings-autosave="output"', $output, 'The Settings tab should render the output settings form with autosave enabled.');
-    assertContainsValue('data-settings-autosave="integrations"', $output, 'The Settings tab should render the integrations settings form with autosave enabled.');
-    assertContainsValue('data-settings-autosave="behavior"', $output, 'The Settings tab should render the behavior settings form with autosave enabled.');
-    assertNotContainsValue('data-settings-autosave="developer"', $output, 'Developer actions should not participate in settings autosave.');
-    assertNotContainsValue('Save Output Settings', $output, 'The Settings tab should no longer render a dedicated output save button.');
-    assertNotContainsValue('Save Behavior Settings', $output, 'The Settings tab should no longer render a dedicated behavior save button.');
+    assertContainsValue('id="tasty-fonts-settings-form"', $output, 'The Settings tab should render one shared settings form for Output, Integrations, and Behavior.');
+    assertContainsValue('data-settings-form="settings"', $output, 'The Settings tab should render shared explicit-save state tracking for the combined settings form.');
+    assertNotContainsValue('data-settings-autosave="output"', $output, 'The Settings tab should no longer render autosave wiring for output settings.');
+    assertNotContainsValue('data-settings-autosave="integrations"', $output, 'The Settings tab should no longer render autosave wiring for integrations settings.');
+    assertNotContainsValue('data-settings-autosave="behavior"', $output, 'The Settings tab should no longer render autosave wiring for behavior settings.');
+    assertContainsValue('form="tasty-fonts-settings-form"', $output, 'The shared Settings save button should submit the combined settings form from the header.');
+    assertSameValue(1, substr_count($output, 'data-settings-save-button'), 'The shared Settings save control should render once in the header.');
+    assertContainsValue('>Save changes<', $output, 'Settings sections should expose an explicit Save changes action.');
     assertContainsValue('>Font Library<', $output, 'The unified admin page should still include the library section inside its own tab panel.');
     assertContainsValue('Activity', $output, 'The unified admin page should keep diagnostics activity available in its diagnostics tab.');
     assertSameValue(1, substr_count($output, 'id="tasty-fonts-help-tooltip-layer"'), 'The shared help tooltip layer should be rendered once at the unified page shell level.');
@@ -1932,7 +1934,7 @@ $tests['admin_page_renderer_exposes_behavior_tab_and_can_hide_help_ui'] = static
     assertContainsValue('Nightly', $output, 'The Behavior tab should render the nightly update channel option inline.');
     assertContainsValue('Upgrade Available', $output, 'The Behavior tab should render the current update channel status badge.');
     assertContainsValue('Installed: 1.7.0. Latest for Beta: 1.7.1-beta.2.', $output, 'The Behavior tab should render the update channel version summary inline with the field.');
-    assertContainsValue('A newer package is available for the selected channel through the normal WordPress updates flow.', $output, 'The Behavior tab should render the update channel status copy.');
+    assertNotContainsValue('A newer package is available for the selected channel through the normal WordPress updates flow.', $output, 'The Behavior tab should omit the redundant update channel status copy.');
     assertNotContainsValue('Rollback Reinstall', $output, 'The Behavior tab should no longer render a separate rollback subsection title.');
     assertNotContainsValue('Enable Block Editor Font Library Sync', $output, 'The Behavior panel should no longer render the Gutenberg sync toggle after it moves into Integrations.');
     assertContainsValue('Enable Monospace Role', $output, 'The Behavior panel should still render the monospace toggle.');
@@ -1941,6 +1943,7 @@ $tests['admin_page_renderer_exposes_behavior_tab_and_can_hide_help_ui'] = static
     assertContainsValue('Reset Plugin Settings', $output, 'The Developer tab should expose the reset-settings action.');
     assertContainsValue('Wipe Managed Font Library', $output, 'The Developer tab should expose the library-wipe action.');
     assertContainsValue('Clear Plugin Caches and Regenerate Assets', $output, 'The Developer tab should expose the cache-reset action.');
+    assertContainsValue('Regenerate Generated CSS', $output, 'The Developer tab should expose the CSS-regeneration action.');
     assertContainsValue('Reset Integration Detection State', $output, 'The Developer tab should expose the integration-reset action.');
     assertContainsValue('Reset Suppressed Notices', $output, 'The Developer tab should expose the suppressed-notices reset action.');
     assertContainsValue('data-developer-confirm-message=', $output, 'Destructive developer actions should use browser-level confirm messages.');
@@ -1949,6 +1952,8 @@ $tests['admin_page_renderer_exposes_behavior_tab_and_can_hide_help_ui'] = static
     assertNotContainsValue('Role Options', $output, 'The Behavior panel should no longer render the role options subsection title.');
     assertNotContainsValue('Uninstall Settings', $output, 'The Behavior panel should no longer render the uninstall settings subsection title.');
     assertNotContainsValue('Saved automatically:', $output, 'Settings panels should no longer render autosave footnotes.');
+    assertContainsValue('tasty-fonts-settings-save-button', $output, 'The shared Settings form should render the pill-style save button in the header.');
+    assertNotContainsValue('Unsaved changes', $output, 'The shared Settings header should rely on button state instead of a separate unsaved-changes message.');
     assertContainsValue('Tasty Custom Fonts', $output, 'The masthead should render the plugin title.');
     assertContainsValue('is-training-wheels-off', $output, 'Hide Onboarding Hints should add the admin state class used to suppress descriptive copy.');
     assertNotContainsValue('Typography Workspace', $output, 'The masthead should omit the eyebrow label in the streamlined header layout.');
@@ -1956,6 +1961,9 @@ $tests['admin_page_renderer_exposes_behavior_tab_and_can_hide_help_ui'] = static
     assertNotContainsValue('Deploy fonts, manage your library, and fine-tune output from one polished workspace.', $output, 'The streamlined masthead should omit the supporting summary copy.');
     assertNotContainsValue('Choose whether the generated stylesheet loads as a file or is printed inline in the page head.', $output, 'Hide Onboarding Hints should omit output setting descriptions from the rendered HTML.');
     assertNotContainsValue('Keep builder and framework integrations aligned with Tasty Fonts role variables.', $output, 'Hide Onboarding Hints should omit integrations tab summary descriptions from the rendered HTML.');
+    assertNotContainsValue('Tasty Fonts manages only the two base ACSS font-family settings needed for heading and body text.', $output, 'The Integrations tab should omit the redundant ACSS desired mapping description.');
+    assertNotContainsValue('Control optional roles, guidance, and uninstall cleanup.', $output, 'The Behavior tab should omit the redundant summary description.');
+    assertNotContainsValue('Manual reset and maintenance tools for plugin development, troubleshooting, and integration work.', $output, 'The Developer tab should omit the redundant summary description.');
     assertNotContainsValue('Hides helper tips and extra info buttons.', $output, 'Hide Onboarding Hints should omit behavior toggle descriptions from the rendered HTML.');
     assertNotContainsValue('tasty-fonts-toggle-description', $output, 'Hide Onboarding Hints should omit settings toggle description elements from the rendered HTML.');
     assertNotContainsValue('tasty-fonts-help-button', $output, 'Hide Onboarding Hints should remove inline help buttons from the rendered admin UI.');
@@ -2599,7 +2607,7 @@ $tests['admin_page_renderer_only_highlights_publish_roles_when_changes_are_pendi
     assertContainsValue('No draft changes to save.', $matchedOutput, 'The disabled Save Draft action should explain why it is unavailable.');
 };
 
-$tests['admin_page_renderer_treats_blank_applied_delivery_ids_as_the_active_delivery_when_comparing_role_changes'] = static function (): void {
+$tests['admin_page_renderer_ignores_legacy_delivery_ids_when_comparing_role_changes'] = static function (): void {
     resetTestState();
 
     $renderer = new AdminPageRenderer(new Storage());
@@ -2676,8 +2684,8 @@ $tests['admin_page_renderer_treats_blank_applied_delivery_ids_as_the_active_deli
     ]);
     $output = (string) ob_get_clean();
 
-    assertContainsValue('data-role-apply-live aria-disabled="true" disabled', $output, 'Publish Roles should stay disabled when the applied delivery is only implicit through the family active delivery.');
-    assertNotContainsValue('is-pending-live-change', $output, 'Publish Roles should not show a pending-live highlight when the effective delivery has not changed.');
+    assertContainsValue('data-role-apply-live aria-disabled="true" disabled', $output, 'Publish Roles should stay disabled when legacy role delivery IDs are the only difference from the live roles.');
+    assertNotContainsValue('is-pending-live-change', $output, 'Publish Roles should not show a pending-live highlight when only ignored legacy delivery IDs differ.');
 };
 
 $tests['admin_page_renderer_keeps_deployment_and_role_selection_ahead_of_library_and_activity'] = static function (): void {
@@ -3583,6 +3591,10 @@ $tests['admin_page_renderer_allows_fallback_only_heading_and_body_roles'] = stat
     assertContainsValue('data-clear-target="tasty_fonts_heading_font"', $output, 'The heading family selector should render a clear button.');
     assertContainsValue('data-role-weight-editor="heading"', $output, 'The role form should render the heading weight editor shell.');
     assertContainsValue('data-role-weight-editor="body"', $output, 'The role form should render the body weight editor shell.');
+    assertNotContainsValue('data-role-delivery-select="heading"', $output, 'The role form should not render a heading delivery selector once delivery is locked to the library.');
+    assertNotContainsValue('data-role-delivery-select="body"', $output, 'The role form should not render a body delivery selector once delivery is locked to the library.');
+    assertNotContainsValue('name="tasty_fonts_heading_fallback"', $output, 'The role form should no longer render a heading fallback field once fallback management lives in the library.');
+    assertNotContainsValue('name="tasty_fonts_body_fallback"', $output, 'The role form should no longer render a body fallback field once fallback management lives in the library.');
     assertSameValue(true, substr_count($output, 'Use Fallback Only') >= 3, 'Heading, body, and preview selectors should all expose fallback-only choices.');
     assertContainsValue('Fallback only (sans-serif)', $output, 'Fallback-only heading selections should render a readable preview label.');
     assertContainsValue('Fallback only (serif)', $output, 'Fallback-only body selections should render a readable preview label.');
@@ -3651,6 +3663,8 @@ $tests['admin_page_renderer_preview_workspace_defaults_to_live_sitewide_baseline
     assertContainsValue('data-preview-axis-editor="heading"', $output, 'The preview tray should render a heading variable-axis editor shell.');
     assertContainsValue('data-preview-weight-select="body"', $output, 'The preview tray should expose a body weight selector for dynamic preview control.');
     assertContainsValue('data-preview-axis-fields="monospace"', $output, 'The preview tray should expose a monospace axis container when the role is enabled.');
+    assertNotContainsValue('data-preview-delivery-select="heading"', $output, 'The preview tray should not render a heading delivery selector once delivery is locked to the library.');
+    assertNotContainsValue('data-preview-delivery-select="body"', $output, 'The preview tray should not render a body delivery selector once delivery is locked to the library.');
     assertSameValue(true, substr_count($output, 'data-clear-select-button') >= 3, 'The preview tray should render clear buttons for its role pickers.');
     assertContainsValue('Use current draft selections', $output, 'The live baseline preview should offer a quick way to compare against the current draft roles.');
     assertContainsValue('value="Lora" selected', $output, 'The preview tray should seed its live baseline selector values from the applied sitewide roles.');

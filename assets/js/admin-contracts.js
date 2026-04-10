@@ -181,6 +181,28 @@
         return normalized;
     }
 
+    function defaultRoleFallback(roleKey) {
+        return roleKey === 'monospace' ? 'monospace' : 'sans-serif';
+    }
+
+    function resolveRoleFallback(roleKey, input = {}, options = {}) {
+        const defaultFallback = defaultRoleFallback(roleKey);
+        const familyName = String(input[roleKey] || '').trim();
+        const familyCatalog = options.roleFamilyCatalog && typeof options.roleFamilyCatalog === 'object'
+            ? options.roleFamilyCatalog
+            : {};
+
+        if (familyName && familyCatalog[familyName] && typeof familyCatalog[familyName] === 'object') {
+            const familyFallback = String(familyCatalog[familyName].fallback || '').trim();
+
+            if (familyFallback !== '') {
+                return sanitizeFallback(familyFallback, defaultFallback);
+            }
+        }
+
+        return sanitizeFallback(input[`${roleKey}Fallback`] || input[`${roleKey}_fallback`], defaultFallback);
+    }
+
     function normalizeRoleState(input = {}, options = {}) {
         const monospaceRoleEnabled = !!options.monospaceRoleEnabled;
         const variableFontsEnabled = !!options.variableFontsEnabled;
@@ -189,12 +211,9 @@
             heading: String(input.heading || '').trim(),
             body: String(input.body || '').trim(),
             monospace: monospaceRoleEnabled ? String(input.monospace || '').trim() : '',
-            headingDeliveryId: String(input.headingDeliveryId || input.heading_delivery_id || '').trim(),
-            bodyDeliveryId: String(input.bodyDeliveryId || input.body_delivery_id || '').trim(),
-            monospaceDeliveryId: monospaceRoleEnabled ? String(input.monospaceDeliveryId || input.monospace_delivery_id || '').trim() : '',
-            headingFallback: sanitizeFallback(input.headingFallback || input.heading_fallback, 'sans-serif'),
-            bodyFallback: sanitizeFallback(input.bodyFallback || input.body_fallback, 'sans-serif'),
-            monospaceFallback: sanitizeFallback(input.monospaceFallback || input.monospace_fallback, 'monospace'),
+            headingFallback: resolveRoleFallback('heading', input, options),
+            bodyFallback: resolveRoleFallback('body', input, options),
+            monospaceFallback: resolveRoleFallback('monospace', input, options),
             headingWeight: normalizeRoleWeight(input.headingWeight || input.heading_weight),
             bodyWeight: normalizeRoleWeight(input.bodyWeight || input.body_weight),
             monospaceWeight: normalizeRoleWeight(input.monospaceWeight || input.monospace_weight),
@@ -206,46 +225,9 @@
         };
     }
 
-    function roleDeliveryOptionsForFamily(familyName, roleDeliveryCatalog = {}) {
-        const entry = familyName && roleDeliveryCatalog && typeof roleDeliveryCatalog === 'object'
-            ? roleDeliveryCatalog[familyName]
-            : null;
-        const deliveries = entry && Array.isArray(entry.deliveries) ? entry.deliveries : [];
-
-        return deliveries.filter((option) => option && typeof option === 'object');
-    }
-
-    function resolveRoleDeliveryId(roleKey, state = {}, roleDeliveryCatalog = {}) {
-        const familyName = String(state[roleKey] || '').trim();
-        const savedValue = String(state[`${roleKey}DeliveryId`] || state[`${roleKey}_delivery_id`] || '').trim();
-        const options = roleDeliveryOptionsForFamily(familyName, roleDeliveryCatalog);
-
-        if (!familyName || !options.length) {
-            return '';
-        }
-
-        if (savedValue && options.some((option) => String(option.id || '') === savedValue)) {
-            return savedValue;
-        }
-
-        const familyEntry = roleDeliveryCatalog && typeof roleDeliveryCatalog === 'object'
-            ? roleDeliveryCatalog[familyName]
-            : null;
-        const activeDeliveryId = familyEntry ? String(familyEntry.active_delivery_id || '').trim() : '';
-
-        if (activeDeliveryId && options.some((option) => String(option.id || '') === activeDeliveryId)) {
-            return activeDeliveryId;
-        }
-
-        return String(options[0].id || '').trim();
-    }
-
     function roleStatesMatch(left = {}, right = {}, options = {}) {
         const monospaceRoleEnabled = !!options.monospaceRoleEnabled;
         const variableFontsEnabled = !!options.variableFontsEnabled;
-        const roleDeliveryCatalog = options.roleDeliveryCatalog && typeof options.roleDeliveryCatalog === 'object'
-            ? options.roleDeliveryCatalog
-            : {};
         const leftState = normalizeRoleState(left, options);
         const rightState = normalizeRoleState(right, options);
         const roleKeys = monospaceRoleEnabled ? ['heading', 'body', 'monospace'] : ['heading', 'body'];
@@ -259,10 +241,6 @@
                 return false;
             }
 
-            if (resolveRoleDeliveryId(roleKey, leftState, roleDeliveryCatalog) !== resolveRoleDeliveryId(roleKey, rightState, roleDeliveryCatalog)) {
-                return false;
-            }
-
             if (leftState[`${roleKey}Weight`] !== rightState[`${roleKey}Weight`]) {
                 return false;
             }
@@ -273,6 +251,36 @@
 
             return JSON.stringify(leftState[`${roleKey}Axes`] || {}) === JSON.stringify(rightState[`${roleKey}Axes`] || {});
         });
+    }
+
+    function resolveAssignedRoleState(roleKey, family, currentState = {}, options = {}) {
+        const normalizedRoleKey = String(roleKey || '').trim();
+        const nextFamily = String(family || '').trim();
+        const nextState = normalizeRoleState(
+            {
+                ...currentState,
+                [normalizedRoleKey]: nextFamily,
+                [`${normalizedRoleKey}Weight`]: '',
+                [`${normalizedRoleKey}Axes`]: {},
+            },
+            options
+        );
+        const preserveStates = Array.isArray(options.preserveStates) ? options.preserveStates : [];
+
+        const matchingState = preserveStates
+            .map((state) => normalizeRoleState(state, options))
+            .find((state) => String(state[normalizedRoleKey] || '').trim() === nextFamily);
+
+        if (!matchingState) {
+            return nextState;
+        }
+
+        nextState[`${normalizedRoleKey}Weight`] = String(matchingState[`${normalizedRoleKey}Weight`] || '').trim();
+        nextState[`${normalizedRoleKey}Axes`] = !!options.variableFontsEnabled
+            ? normalizeAxisSettings(matchingState[`${normalizedRoleKey}Axes`] || {})
+            : {};
+
+        return nextState;
     }
 
     function sanitizeOutputQuickModePreference(value) {
@@ -345,6 +353,10 @@
         return true;
     }
 
+    function settingsStatesMatch(left = {}, right = {}) {
+        return JSON.stringify(left || {}) === JSON.stringify(right || {});
+    }
+
     return {
         canDisableOutputLayer,
         describeFontType,
@@ -354,7 +366,9 @@
         hasStaticFontMetadata,
         hasVariableFontMetadata,
         normalizeOutputQuickModePreference,
+        resolveAssignedRoleState,
         roleStatesMatch,
+        settingsStatesMatch,
         sanitizeFallback,
         sanitizeOutputQuickModePreference,
         slugify,

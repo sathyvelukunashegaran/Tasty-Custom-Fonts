@@ -163,20 +163,23 @@ final class AdminPageViewBuilder
         $previewRoles = $previewBaselineSource === 'live_sitewide' && $appliedRoles !== []
             ? $appliedRoles
             : $roles;
-        $hasPendingLiveRoleChanges = $applyEverywhere && !$this->roleSetsMatch($roles, $appliedRoles, $monospaceRoleEnabled, $catalog, $variableFontsEnabled);
-        $previewHasDraftRoleChanges = !$this->roleSetsMatch($previewRoles, $roles, $monospaceRoleEnabled, $catalog, $variableFontsEnabled);
-        $previewHasPendingLiveRoleChanges = $applyEverywhere && !$this->roleSetsMatch($previewRoles, $appliedRoles, $monospaceRoleEnabled, $catalog, $variableFontsEnabled);
+        $hasPendingLiveRoleChanges = $applyEverywhere && !$this->roleSetsMatch($roles, $appliedRoles, $monospaceRoleEnabled, $catalog, $variableFontsEnabled, $familyFallbacks);
+        $previewHasDraftRoleChanges = !$this->roleSetsMatch($previewRoles, $roles, $monospaceRoleEnabled, $catalog, $variableFontsEnabled, $familyFallbacks);
+        $previewHasPendingLiveRoleChanges = $applyEverywhere && !$this->roleSetsMatch($previewRoles, $appliedRoles, $monospaceRoleEnabled, $catalog, $variableFontsEnabled, $familyFallbacks);
+        $previewHeadingFallback = $this->resolveEffectiveRoleFallback('heading', $previewRoles, $catalog, $familyFallbacks);
+        $previewBodyFallback = $this->resolveEffectiveRoleFallback('body', $previewRoles, $catalog, $familyFallbacks);
+        $previewMonospaceFallback = $this->resolveEffectiveRoleFallback('monospace', $previewRoles, $catalog, $familyFallbacks);
         $previewHeadingStack = FontUtils::buildFontStack(
             (string) ($previewRoles['heading'] ?? ''),
-            (string) ($previewRoles['heading_fallback'] ?? 'sans-serif')
+            $previewHeadingFallback
         );
         $previewBodyStack = FontUtils::buildFontStack(
             (string) ($previewRoles['body'] ?? ''),
-            (string) ($previewRoles['body_fallback'] ?? 'sans-serif')
+            $previewBodyFallback
         );
         $previewMonospaceStack = FontUtils::buildFontStack(
             (string) ($previewRoles['monospace'] ?? ''),
-            (string) ($previewRoles['monospace_fallback'] ?? 'monospace')
+            $previewMonospaceFallback
         );
         $saveDraftDisabledCopy = __('No draft changes to save.', 'tasty-fonts');
         $applyLiveDisabledCopy = !$applyEverywhere
@@ -185,9 +188,9 @@ final class AdminPageViewBuilder
         $headingFamily = (string) ($roles['heading'] ?? '');
         $bodyFamily = (string) ($roles['body'] ?? '');
         $monospaceFamily = (string) ($roles['monospace'] ?? '');
-        $headingFallback = (string) ($roles['heading_fallback'] ?? 'sans-serif');
-        $bodyFallback = (string) ($roles['body_fallback'] ?? 'sans-serif');
-        $monospaceFallback = (string) ($roles['monospace_fallback'] ?? 'monospace');
+        $headingFallback = $this->resolveEffectiveRoleFallback('heading', $roles, $catalog, $familyFallbacks);
+        $bodyFallback = $this->resolveEffectiveRoleFallback('body', $roles, $catalog, $familyFallbacks);
+        $monospaceFallback = $this->resolveEffectiveRoleFallback('monospace', $roles, $catalog, $familyFallbacks);
         $headingStack = FontUtils::buildFontStack($headingFamily, $headingFallback);
         $bodyStack = FontUtils::buildFontStack($bodyFamily, $bodyFallback);
         $monospaceStack = FontUtils::buildFontStack($monospaceFamily, $monospaceFallback);

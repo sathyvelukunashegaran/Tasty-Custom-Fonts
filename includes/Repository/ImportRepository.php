@@ -144,16 +144,18 @@ final class ImportRepository
 
         $library = $this->getLibrary();
         $existing = $library[$familySlug] ?? null;
-        $family = $this->normalizeFamilyRecord(
-            [
-                'family' => $familyName,
-                'slug' => $familySlug,
-                'publish_state' => $defaultPublishState,
-                'active_delivery_id' => $activate ? (string) ($normalizedProfile['id'] ?? '') : '',
-                'delivery_profiles' => [$normalizedProfile['id'] => $normalizedProfile],
-            ],
-            is_array($existing) ? $existing : null
-        );
+        $familyInput = [
+            'family' => $familyName,
+            'slug' => $familySlug,
+            'publish_state' => $defaultPublishState,
+            'delivery_profiles' => [$normalizedProfile['id'] => $normalizedProfile],
+        ];
+
+        if ($activate) {
+            $familyInput['active_delivery_id'] = (string) ($normalizedProfile['id'] ?? '');
+        }
+
+        $family = $this->normalizeFamilyRecord($familyInput, is_array($existing) ? $existing : null);
 
         $profiles = is_array($family['delivery_profiles'] ?? null) ? $family['delivery_profiles'] : [];
         $profiles[(string) $normalizedProfile['id']] = $normalizedProfile;
@@ -352,6 +354,20 @@ final class ImportRepository
         $inputProfiles = $family['delivery_profiles'] ?? [];
         $profiles = [];
 
+        foreach ($existingProfiles as $key => $profile) {
+            if (!is_array($profile)) {
+                continue;
+            }
+
+            $normalizedProfile = $this->normalizeDeliveryProfile($profile + ['id' => is_string($key) ? $key : '']);
+
+            if ($normalizedProfile === []) {
+                continue;
+            }
+
+            $profiles[(string) $normalizedProfile['id']] = $normalizedProfile;
+        }
+
         if (is_array($inputProfiles)) {
             foreach ($inputProfiles as $key => $profile) {
                 if (!is_array($profile)) {
@@ -368,25 +384,9 @@ final class ImportRepository
             }
         }
 
-        foreach ($existingProfiles as $key => $profile) {
-            if (!is_array($profile)) {
-                continue;
-            }
-
-            $normalizedProfile = $this->normalizeDeliveryProfile($profile + ['id' => is_string($key) ? $key : '']);
-
-            if ($normalizedProfile === []) {
-                continue;
-            }
-
-            if (!isset($profiles[(string) $normalizedProfile['id']])) {
-                $profiles[(string) $normalizedProfile['id']] = $normalizedProfile;
-            }
-        }
-
         $activeDeliveryId = $this->normalizeDeliveryId((string) ($family['active_delivery_id'] ?? ($existing['active_delivery_id'] ?? '')));
 
-        if ($activeDeliveryId === '' || !isset($profiles[$activeDeliveryId])) {
+        if ($activeDeliveryId === '') {
             $activeDeliveryId = $profiles !== [] ? (string) array_key_first($profiles) : '';
         }
 
@@ -556,6 +556,10 @@ final class ImportRepository
 
     private function normalizeDeliveryId(string $deliveryId): string
     {
+        if (trim($deliveryId) === '') {
+            return '';
+        }
+
         return FontUtils::slugify($deliveryId);
     }
 

@@ -455,6 +455,75 @@ $tests['developer_tools_clear_plugin_caches_and_regenerate_assets'] = static fun
     assertSameValue(1, did_action('tasty_fonts_after_clear_plugin_caches'), 'Clearing plugin caches should emit an after hook.');
 };
 
+$tests['developer_tools_regenerate_css_rebuilds_the_stylesheet_without_clearing_external_caches'] = static function (): void {
+    resetTestState();
+
+    global $clearedScheduledHooks;
+    global $transientDeleted;
+    global $transientStore;
+
+    $services = makeServiceGraph();
+    $services['developer_tools']->ensureStorageScaffolding();
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-upload',
+            'label' => 'Local Upload',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                [
+                    'family' => 'Inter',
+                    'slug' => 'inter',
+                    'source' => 'local',
+                    'weight' => '400',
+                    'style' => 'normal',
+                    'files' => ['woff2' => 'upload/inter/inter-400-normal.woff2'],
+                    'paths' => ['woff2' => 'upload/inter/inter-400-normal.woff2'],
+                ],
+            ],
+        ],
+        'published',
+        true
+    );
+    $services['settings']->saveRoles(
+        [
+            'heading' => 'Inter',
+            'body' => 'Inter',
+            'heading_fallback' => 'serif',
+            'body_fallback' => 'sans-serif',
+        ],
+        ['Inter']
+    );
+    $services['settings']->saveSettings([
+        'auto_apply_roles' => '1',
+        'font_display' => 'optional',
+    ]);
+    $services['assets']->refreshGeneratedAssets(true, false);
+    $services['assets']->ensureGeneratedCssFile(false);
+
+    $generatedPath = (string) $services['storage']->getGeneratedCssPath();
+    $beforeCss = is_readable($generatedPath) ? (string) file_get_contents($generatedPath) : '';
+
+    $services['settings']->saveSettings(['font_display' => 'swap']);
+    $transientStore[GoogleFontsClient::TRANSIENT_CATALOG] = ['Inter'];
+    $transientStore[BunnyFontsClient::TRANSIENT_CATALOG] = ['Inter'];
+
+    $result = $services['developer_tools']->regenerateCss();
+    $afterCss = is_readable($generatedPath) ? (string) file_get_contents($generatedPath) : '';
+
+    assertTrueValue($result, 'Regenerating CSS should report success.');
+    assertSameValue(true, in_array(AssetService::ACTION_REGENERATE_CSS, $clearedScheduledHooks, true), 'Regenerating CSS should clear queued CSS regeneration hooks before rebuilding.');
+    assertSameValue(false, in_array(GoogleFontsClient::TRANSIENT_CATALOG, $transientDeleted, true), 'Regenerating CSS should not clear the Google catalog cache.');
+    assertSameValue(false, in_array(BunnyFontsClient::TRANSIENT_CATALOG, $transientDeleted, true), 'Regenerating CSS should not clear the Bunny catalog cache.');
+    assertContainsValue('font-display:swap', $afterCss, 'Regenerating CSS should rebuild the generated stylesheet using the current settings.');
+    assertTrueValue($beforeCss !== $afterCss, 'Regenerating CSS should rewrite the generated stylesheet when the CSS payload changes.');
+    assertSameValue(1, did_action('tasty_fonts_before_regenerate_css'), 'Regenerating CSS should emit a before hook.');
+    assertSameValue(1, did_action('tasty_fonts_after_regenerate_css'), 'Regenerating CSS should emit an after hook.');
+};
+
 $tests['developer_tools_reset_integration_detection_state_and_suppressed_notices'] = static function (): void {
     resetTestState();
 
@@ -714,6 +783,52 @@ $tests['settings_repository_keeps_custom_output_quick_mode_sticky_and_coerces_st
     assertSameValue('custom', (string) ($saved['output_quick_mode_preference'] ?? ''), 'Stale non-custom quick-mode preferences should normalize to custom when the saved booleans no longer match the preset shape.');
 };
 
+$tests['settings_repository_persists_variables_and_classes_quick_modes_when_settings_match_presets'] = static function (): void {
+    resetTestState();
+
+    $settings = new SettingsRepository();
+    $saved = $settings->saveSettings([
+        'minimal_output_preset_enabled' => '0',
+        'output_quick_mode_preference' => 'variables',
+        'class_output_enabled' => '0',
+        'per_variant_font_variables_enabled' => '1',
+        'role_usage_font_weight_enabled' => '0',
+        'extended_variable_weight_tokens_enabled' => '1',
+        'extended_variable_role_aliases_enabled' => '1',
+        'extended_variable_category_sans_enabled' => '1',
+        'extended_variable_category_serif_enabled' => '1',
+        'extended_variable_category_mono_enabled' => '1',
+    ]);
+
+    assertSameValue('variables', (string) ($saved['output_quick_mode_preference'] ?? ''), 'Variables-only should remain selected when the saved booleans still match the preset.');
+    assertSameValue(false, !empty($saved['class_output_enabled']), 'Variables-only should keep class output disabled.');
+    assertSameValue(true, !empty($saved['per_variant_font_variables_enabled']), 'Variables-only should keep variable output enabled.');
+    assertSameValue(false, !empty($saved['role_usage_font_weight_enabled']), 'Variables-only should keep role font-weight output disabled.');
+
+    $saved = $settings->saveSettings([
+        'minimal_output_preset_enabled' => '0',
+        'output_quick_mode_preference' => 'classes',
+        'class_output_enabled' => '1',
+        'class_output_role_heading_enabled' => '1',
+        'class_output_role_body_enabled' => '1',
+        'class_output_role_monospace_enabled' => '1',
+        'class_output_role_alias_interface_enabled' => '1',
+        'class_output_role_alias_ui_enabled' => '1',
+        'class_output_role_alias_code_enabled' => '1',
+        'class_output_category_sans_enabled' => '1',
+        'class_output_category_serif_enabled' => '1',
+        'class_output_category_mono_enabled' => '1',
+        'class_output_families_enabled' => '1',
+        'per_variant_font_variables_enabled' => '0',
+        'role_usage_font_weight_enabled' => '0',
+    ]);
+
+    assertSameValue('classes', (string) ($saved['output_quick_mode_preference'] ?? ''), 'Classes-only should remain selected when the saved booleans still match the preset.');
+    assertSameValue(true, !empty($saved['class_output_enabled']), 'Classes-only should keep class output enabled.');
+    assertSameValue(false, !empty($saved['per_variant_font_variables_enabled']), 'Classes-only should keep variable output disabled.');
+    assertSameValue(false, !empty($saved['role_usage_font_weight_enabled']), 'Classes-only should keep role font-weight output disabled.');
+};
+
 $tests['settings_repository_defaults_block_editor_font_library_sync_on_by_default'] = static function (): void {
     resetTestState();
 
@@ -906,6 +1021,27 @@ $tests['settings_repository_defaults_and_persists_optional_monospace_role_settin
     assertSameValue(true, $settings->getSettings()['monospace_role_enabled'], 'The monospace role toggle should persist in plugin settings.');
     assertSameValue('', $savedRoles['monospace'], 'Saving monospace roles should not force a family selection when fallback-only mode is chosen.');
     assertSameValue('monospace', $savedRoles['monospace_fallback'], 'Blank monospace fallback input should normalize back to the generic monospace fallback.');
+};
+
+$tests['settings_repository_reenables_monospace_class_outputs_when_the_role_is_first_enabled'] = static function (): void {
+    resetTestState();
+
+    $settings = new SettingsRepository();
+    $settings->saveSettings([
+        'class_output_enabled' => '1',
+        'class_output_role_monospace_enabled' => '0',
+        'class_output_role_alias_code_enabled' => '0',
+        'class_output_category_mono_enabled' => '0',
+    ]);
+
+    $saved = $settings->saveSettings([
+        'monospace_role_enabled' => '1',
+    ]);
+
+    assertSameValue(true, !empty($saved['monospace_role_enabled']), 'Enabling the monospace role should persist the setting.');
+    assertSameValue(true, !empty($saved['class_output_role_monospace_enabled']), 'Enabling the monospace role should restore the monospace class output.');
+    assertSameValue(true, !empty($saved['class_output_role_alias_code_enabled']), 'Enabling the monospace role should restore the code alias output.');
+    assertSameValue(true, !empty($saved['class_output_category_mono_enabled']), 'Enabling the monospace role should restore the mono category output.');
 };
 
 $tests['settings_repository_defaults_and_persists_variable_font_feature_settings'] = static function (): void {
@@ -1363,7 +1499,7 @@ $tests['admin_page_context_builder_treats_unavailable_integrations_as_inactive_e
     assertSameValue('unavailable', (string) ($context['oxygen_integration']['status'] ?? ''), 'Oxygen should report an unavailable status when the plugin is inactive.');
 };
 
-$tests['admin_page_context_builder_treats_implicit_active_role_deliveries_as_matching_live_roles'] = static function (): void {
+$tests['admin_page_context_builder_ignores_legacy_role_delivery_ids_when_comparing_live_roles'] = static function (): void {
     resetTestState();
 
     $services = makeServiceGraph();
@@ -1446,8 +1582,8 @@ $tests['admin_page_context_builder_treats_implicit_active_role_deliveries_as_mat
 
     $context = $builder->build();
 
-    assertSameValue('Live', (string) ($context['role_deployment']['badge'] ?? ''), 'Role deployment should stay live when applied roles rely on the family active delivery and the draft explicitly selects that same delivery.');
-    assertSameValue('Live Roles Active', (string) ($context['role_deployment']['title'] ?? ''), 'Role deployment should not report pending live changes when only the stored delivery ID representation differs.');
+    assertSameValue('Live', (string) ($context['role_deployment']['badge'] ?? ''), 'Role deployment should stay live when draft and applied roles only differ by legacy delivery IDs.');
+    assertSameValue('Live Roles Active', (string) ($context['role_deployment']['title'] ?? ''), 'Role deployment should ignore legacy delivery ID differences.');
 };
 
 $tests['admin_controller_applies_acss_font_mapping_when_sync_is_enabled'] = static function (): void {
@@ -1861,6 +1997,129 @@ $tests['asset_service_forces_swap_for_self_hosted_admin_preview_font_faces'] = s
     assertNotContainsValue('font-display:optional', $css, 'Admin preview font-face CSS should ignore optional display policies during preview rendering.');
 };
 
+$tests['asset_service_generates_runtime_css_for_only_the_active_self_hosted_delivery'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400-static-a.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400-static-b.woff2'), 'font-data');
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted-a',
+            'label' => 'Self-hosted A',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'format' => 'static',
+            'variants' => ['regular'],
+            'faces' => [[
+                'family' => 'Inter',
+                'slug' => 'inter',
+                'source' => 'local',
+                'weight' => '400',
+                'style' => 'normal',
+                'files' => ['woff2' => 'inter/Inter-400-static-a.woff2'],
+                'paths' => ['woff2' => 'inter/Inter-400-static-a.woff2'],
+            ]],
+        ],
+        'published',
+        false
+    );
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted-b',
+            'label' => 'Self-hosted B',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'format' => 'static',
+            'variants' => ['regular'],
+            'faces' => [[
+                'family' => 'Inter',
+                'slug' => 'inter',
+                'source' => 'local',
+                'weight' => '400',
+                'style' => 'normal',
+                'files' => ['woff2' => 'inter/Inter-400-static-b.woff2'],
+                'paths' => ['woff2' => 'inter/Inter-400-static-b.woff2'],
+            ]],
+        ],
+        'published',
+        true
+    );
+
+    $css = $services['assets']->getCss();
+
+    assertContainsValue('Inter-400-static-b.woff2', $css, 'Generated runtime CSS should include only the active self-hosted delivery.');
+    assertNotContainsValue('Inter-400-static-a.woff2', $css, 'Generated runtime CSS should exclude inactive self-hosted deliveries.');
+};
+
+$tests['asset_service_generates_preview_font_faces_for_only_the_active_self_hosted_delivery'] = static function (): void {
+    resetTestState();
+
+    global $inlineStyles;
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400-preview-a.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400-preview-b.woff2'), 'font-data');
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted-a',
+            'label' => 'Self-hosted A',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'format' => 'static',
+            'variants' => ['regular'],
+            'faces' => [[
+                'family' => 'Inter',
+                'slug' => 'inter',
+                'source' => 'local',
+                'weight' => '400',
+                'style' => 'normal',
+                'files' => ['woff2' => 'inter/Inter-400-preview-a.woff2'],
+                'paths' => ['woff2' => 'inter/Inter-400-preview-a.woff2'],
+            ]],
+        ],
+        'published',
+        false
+    );
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted-b',
+            'label' => 'Self-hosted B',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'format' => 'static',
+            'variants' => ['regular'],
+            'faces' => [[
+                'family' => 'Inter',
+                'slug' => 'inter',
+                'source' => 'local',
+                'weight' => '400',
+                'style' => 'normal',
+                'files' => ['woff2' => 'inter/Inter-400-preview-b.woff2'],
+                'paths' => ['woff2' => 'inter/Inter-400-preview-b.woff2'],
+            ]],
+        ],
+        'published',
+        true
+    );
+
+    $services['assets']->enqueueFontFacesOnly('tasty-fonts-admin-fonts');
+    $css = (string) ($inlineStyles['tasty-fonts-admin-fonts'] ?? '');
+
+    assertContainsValue('font-family:"Inter";font-weight:400;font-style:normal;src:url("/wp-content/uploads/fonts/inter/Inter-400-preview-b.woff2")', $css, 'Admin preview font-face CSS should include the active self-hosted delivery for the selected family.');
+    assertNotContainsValue('font-family:"Inter";font-weight:400;font-style:normal;src:url("/wp-content/uploads/fonts/inter/Inter-400-preview-a.woff2")', $css, 'Admin preview font-face CSS should exclude inactive self-hosted deliveries for the selected family.');
+};
+
 $tests['runtime_service_outputs_primary_font_preloads_for_live_sitewide_roles'] = static function (): void {
     resetTestState();
 
@@ -1988,7 +2247,7 @@ $tests['runtime_service_uses_saved_role_weight_overrides_for_primary_preloads'] 
     assertNotContainsValue('href="/wp-content/uploads/fonts/inter/Inter-700.woff2"', $output, 'Frontend preload output should stop assuming the default bold heading face when a saved weight override exists.');
 };
 
-$tests['runtime_service_prefers_saved_role_delivery_overrides_for_primary_preloads'] = static function (): void {
+$tests['runtime_service_uses_the_active_family_delivery_for_primary_preloads'] = static function (): void {
     resetTestState();
 
     $services = makeServiceGraph();
@@ -2103,8 +2362,8 @@ $tests['runtime_service_prefers_saved_role_delivery_overrides_for_primary_preloa
     $services['runtime']->outputPreloadHints();
     $output = (string) ob_get_clean();
 
-    assertContainsValue('href="/wp-content/uploads/fonts/inter/Inter-700-static.woff2"', $output, 'Frontend preload output should honor saved role delivery overrides before the family active delivery.');
-    assertNotContainsValue('href="/wp-content/uploads/fonts/inter/Inter-Variable.woff2"', $output, 'Frontend preload output should avoid the family active delivery when a role-level delivery override points to a different saved profile.');
+    assertContainsValue('href="/wp-content/uploads/fonts/inter/Inter-Variable.woff2"', $output, 'Frontend preload output should follow the family active delivery even when legacy role delivery IDs still exist in stored role data.');
+    assertNotContainsValue('href="/wp-content/uploads/fonts/inter/Inter-700-static.woff2"', $output, 'Frontend preload output should ignore legacy role delivery overrides.');
 };
 
 $tests['runtime_service_preloads_variable_faces_when_their_weight_axis_covers_role_targets'] = static function (): void {

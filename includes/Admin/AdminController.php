@@ -6,6 +6,7 @@ namespace TastyFonts\Admin;
 
 defined('ABSPATH') || exit;
 
+use TastyFonts\Admin\Renderer\ToolsSectionRenderer;
 use TastyFonts\Adobe\AdobeProjectClient;
 use TastyFonts\Bunny\BunnyFontsClient;
 use TastyFonts\Bunny\BunnyImportService;
@@ -204,9 +205,7 @@ final class AdminController
                 'trainingWheelsOff' => !empty($settings['training_wheels_off']),
                 'monospaceRoleEnabled' => !empty($settings['monospace_role_enabled']),
                 'variableFontsEnabled' => $variableFontsEnabled,
-                'roleDeliveryCatalog' => $this->buildRoleDeliveryCatalog($catalog, $variableFontsEnabled),
-                'roleAxisCatalog' => $this->buildRoleAxisCatalog($catalog),
-                'roleWeightCatalog' => $this->buildRoleWeightCatalog($catalog),
+                'roleFamilyCatalog' => $this->buildRoleFamilyCatalog($catalog),
                 'previewBootstrap' => [
                     'roles' => $roles,
                     'appliedRoles' => $appliedRoles,
@@ -253,6 +252,10 @@ final class AdminController
         }
 
         if ($this->handleClearPluginCachesAction()) {
+            return;
+        }
+
+        if ($this->handleRegenerateCssAction()) {
             return;
         }
 
@@ -459,11 +462,13 @@ final class AdminController
         }
 
         $this->settings->saveFamilyFallback($family, $fallback);
+        $this->assets->refreshGeneratedAssets(false);
 
         return [
             'family' => $family,
             'fallback' => $fallback,
             'stack' => FontUtils::buildFontStack($family, $fallback),
+            'generated_css_panel' => $this->buildGeneratedCssPanelPayload($this->settings->getSettings()),
             'message' => sprintf(
                 __('Saved fallback for %s.', 'tasty-fonts'),
                 $family
@@ -520,6 +525,7 @@ final class AdminController
         return [
             'message' => $message,
             'roles' => $roles,
+            'applied_roles' => $appliedRoles,
             'role_deployment' => $this->buildRoleDeploymentContext($roles, $appliedRoles, $applyEverywhere, $settings),
         ];
     }
@@ -681,6 +687,21 @@ final class AdminController
         }
 
         $message = __('Plugin caches cleared and generated assets refreshed.', 'tasty-fonts');
+        $this->log->add($message);
+
+        return ['message' => $message];
+    }
+
+    public function regenerateCss(): array|WP_Error
+    {
+        if (!$this->developerTools->regenerateCss()) {
+            return new WP_Error(
+                'tasty_fonts_regenerate_css_failed',
+                __('Generated CSS could not be rebuilt.', 'tasty-fonts')
+            );
+        }
+
+        $message = __('Generated CSS regenerated.', 'tasty-fonts');
         $this->log->add($message);
 
         return ['message' => $message];
@@ -874,6 +895,23 @@ final class AdminController
         $this->redirectWithSuccess((string) ($result['message'] ?? __('Plugin caches cleared.', 'tasty-fonts')));
     }
 
+    private function handleRegenerateCssAction(): bool
+    {
+        if (!isset($_POST['tasty_fonts_regenerate_css'])) {
+            return false;
+        }
+
+        check_admin_referer('tasty_fonts_regenerate_css');
+
+        $result = $this->regenerateCss();
+
+        if (is_wp_error($result)) {
+            $this->redirectWithError($result->get_error_message());
+        }
+
+        $this->redirectWithSuccess((string) ($result['message'] ?? __('Generated CSS regenerated.', 'tasty-fonts')));
+    }
+
     private function handleResetIntegrationDetectionStateAction(): bool
     {
         if (!isset($_POST['tasty_fonts_reset_integration_detection_state'])) {
@@ -949,18 +987,21 @@ final class AdminController
         $family = $this->getPostedText('tasty_fonts_family_name');
         $fallback = $this->getPostedFallback('tasty_fonts_family_fallback');
 
-        if ($family !== '') {
-            $this->settings->saveFamilyFallback($family, $fallback);
-            $this->log->add(
-                sprintf(
-                    __('Saved fallback for %1$s: %2$s.', 'tasty-fonts'),
-                    $family,
-                    $fallback
-                )
-            );
+        $result = $this->saveFamilyFallbackValue($family, $fallback);
+
+        if (is_wp_error($result)) {
+            $this->redirectWithError($result->get_error_message());
         }
 
-        $this->redirectWithNoticeKey('fallback_saved');
+        $this->log->add(
+            sprintf(
+                __('Saved fallback for %1$s: %2$s.', 'tasty-fonts'),
+                (string) ($result['family'] ?? $family),
+                (string) ($result['fallback'] ?? $fallback)
+            )
+        );
+
+        $this->redirectWithSuccess((string) ($result['message'] ?? __('Font fallback saved.', 'tasty-fonts')));
     }
 
     private function handleSaveFamilyFontDisplayAction(): bool
@@ -1057,8 +1098,12 @@ final class AdminController
                     [
                         'heading' => $this->getPostedText('tasty_fonts_heading_font'),
                         'body' => $this->getPostedText('tasty_fonts_body_font'),
-                        'heading_fallback' => $this->getPostedFallback('tasty_fonts_heading_fallback'),
-                        'body_fallback' => $this->getPostedFallback('tasty_fonts_body_fallback'),
+                        'heading_fallback' => isset($_POST['tasty_fonts_heading_fallback'])
+                            ? $this->getPostedFallback('tasty_fonts_heading_fallback')
+                            : null,
+                        'body_fallback' => isset($_POST['tasty_fonts_body_fallback'])
+                            ? $this->getPostedFallback('tasty_fonts_body_fallback')
+                            : null,
                         'heading_weight' => isset($_POST['tasty_fonts_heading_weight']) ? $this->getPostedText('tasty_fonts_heading_weight') : null,
                         'body_weight' => isset($_POST['tasty_fonts_body_weight']) ? $this->getPostedText('tasty_fonts_body_weight') : null,
                         'heading_axes' => isset($_POST['tasty_fonts_heading_axes']) ? $this->getPostedArray('tasty_fonts_heading_axes') : null,
@@ -1223,6 +1268,18 @@ final class AdminController
     private function buildGeneratedCssPanel(array $settings): array
     {
         return $this->pageContextBuilder->buildGeneratedCssPanel($settings);
+    }
+
+    private function buildGeneratedCssPanelPayload(array $settings): array
+    {
+        $panel = $this->buildGeneratedCssPanel($settings);
+        $toolsRenderer = new ToolsSectionRenderer($this->storage);
+        $panelValue = (string) ($panel['value'] ?? '');
+
+        $panel['display_value'] = $panelValue;
+        $panel['readable_display_value'] = $toolsRenderer->formatSnippetForDisplay($panelValue);
+
+        return $panel;
     }
 
     private function buildGeneratedCssDownloadData(array $settings): array
@@ -1672,6 +1729,11 @@ final class AdminController
         if ($relativePath !== '' && SiteEnvironment::isLikelyLocalEnvironment(rest_url(''), SiteEnvironment::currentEnvironmentType())) {
             $assetPath = TASTY_FONTS_DIR . ltrim($relativePath, '/');
             $modifiedAt = is_readable($assetPath) ? filemtime($assetPath) : false;
+            $contentHash = is_readable($assetPath) ? md5_file($assetPath) : false;
+
+            if (is_int($modifiedAt) && $modifiedAt > 0 && is_string($contentHash) && $contentHash !== '') {
+                return TASTY_FONTS_VERSION . '.' . $modifiedAt . '.' . substr($contentHash, 0, 12);
+            }
 
             if (is_int($modifiedAt) && $modifiedAt > 0) {
                 return TASTY_FONTS_VERSION . '.' . $modifiedAt;
@@ -1887,31 +1949,15 @@ final class AdminController
         }
 
         foreach (['heading', 'body', 'monospace'] as $roleKey) {
-            $deliveryKey = $roleKey . '_delivery_id';
-
-            if (!array_key_exists($deliveryKey, $roleValues)) {
-                continue;
-            }
-
-            $sanitized[$deliveryKey] = $this->sanitizeRoleDeliveryValue(
-                $roleValues[$deliveryKey],
-                (string) ($sanitized[$roleKey] ?? $roleValues[$roleKey] ?? ''),
-                $catalog
-            );
-        }
-
-        foreach (['heading', 'body', 'monospace'] as $roleKey) {
             $weightKey = $roleKey . '_weight';
 
             if (!array_key_exists($weightKey, $roleValues)) {
                 continue;
             }
 
-            $deliveryKey = $roleKey . '_delivery_id';
             $sanitized[$weightKey] = $this->sanitizeRoleWeightValue(
                 $roleValues[$weightKey],
                 (string) ($sanitized[$roleKey] ?? $roleValues[$roleKey] ?? ''),
-                (string) ($sanitized[$deliveryKey] ?? $roleValues[$deliveryKey] ?? ''),
                 $catalog
             );
         }
@@ -1924,11 +1970,9 @@ final class AdminController
                     continue;
                 }
 
-                $deliveryKey = $roleKey . '_delivery_id';
                 $sanitized[$axisKey] = $this->sanitizeRoleAxisValues(
                     $roleValues[$axisKey],
                     (string) ($sanitized[$roleKey] ?? $roleValues[$roleKey] ?? ''),
-                    (string) ($sanitized[$deliveryKey] ?? $roleValues[$deliveryKey] ?? ''),
                     $catalog
                 );
             }
@@ -2292,7 +2336,7 @@ final class AdminController
         return FontUtils::normalizeAxesMap($axes);
     }
 
-    private function sanitizeRoleAxisValues(mixed $rawValues, string $familyName, string $deliveryId, array $catalog): array
+    private function sanitizeRoleAxisValues(mixed $rawValues, string $familyName, array $catalog): array
     {
         if (!is_array($rawValues) || trim($familyName) === '') {
             return [];
@@ -2304,22 +2348,8 @@ final class AdminController
             return [];
         }
 
-        $availableAxes = [];
-
-        foreach ((array) ($family['available_deliveries'] ?? []) as $profile) {
-            if (
-                is_array($profile)
-                && $deliveryId !== ''
-                && (string) ($profile['id'] ?? '') === $deliveryId
-            ) {
-                $availableAxes = $this->profileVariationAxes($profile);
-                break;
-            }
-        }
-
-        if ($availableAxes === [] && $deliveryId === '') {
-            $availableAxes = FontUtils::normalizeAxesMap($family['variation_axes'] ?? []);
-        }
+        $activeDelivery = is_array($family['active_delivery'] ?? null) ? $family['active_delivery'] : [];
+        $availableAxes = $this->profileVariationAxes($activeDelivery);
 
         if ($availableAxes === []) {
             return [];
@@ -2346,176 +2376,45 @@ final class AdminController
         return $filtered;
     }
 
-    private function buildRoleDeliveryCatalog(array $catalog, bool $variableFontsEnabled = true): array
+    private function buildRoleFamilyCatalog(array $catalog): array
     {
         $map = [];
+        $settings = $this->settings->getSettings();
+        $familyFallbacks = is_array($settings['family_fallbacks'] ?? null) ? $settings['family_fallbacks'] : [];
 
         foreach ($catalog as $familyName => $family) {
             if (!is_array($family)) {
                 continue;
             }
 
-            $deliveries = [];
+            $activeDelivery = is_array($family['active_delivery'] ?? null) ? $family['active_delivery'] : [];
+            $deliveryId = sanitize_text_field((string) ($activeDelivery['id'] ?? ''));
 
-            foreach ((array) ($family['available_deliveries'] ?? []) as $profile) {
-                if (!is_array($profile)) {
-                    continue;
-                }
-
-                $format = FontUtils::resolveProfileFormat($profile);
-
-                if (!$variableFontsEnabled && $format === 'variable') {
-                    continue;
-                }
-
-                $deliveryId = sanitize_text_field((string) ($profile['id'] ?? ''));
-
-                if ($deliveryId === '') {
-                    continue;
-                }
-
-                $deliveries[] = [
-                    'id' => $deliveryId,
-                    'label' => trim(
-                        $this->translateProfileLabel((string) ($profile['label'] ?? ''))
-                        . ' · '
-                        . ucfirst($format)
-                    ),
-                    'provider' => (string) ($profile['provider'] ?? ''),
-                    'type' => (string) ($profile['type'] ?? ''),
-                    'format' => $format,
-                    'source_only' => !empty($profile['source_only']),
-                    'has_weight_axis' => FontUtils::normalizeAxesMap($profile['variation_axes'] ?? []) !== []
-                        || $this->profileHasWeightAxis($profile),
-                ];
-            }
-
-            if ($deliveries === []) {
+            if ($deliveryId === '') {
                 continue;
             }
 
             $map[(string) $familyName] = [
-                'active_delivery_id' => (string) ($family['active_delivery_id'] ?? ''),
-                'deliveries' => $deliveries,
+                'activeDeliveryId' => $deliveryId,
+                'activeDeliveryLabel' => trim(
+                    $this->translateProfileLabel((string) ($activeDelivery['label'] ?? ''))
+                    . ' · '
+                    . ucfirst(FontUtils::resolveProfileFormat($activeDelivery))
+                ),
+                'format' => FontUtils::resolveProfileFormat($activeDelivery),
+                'weights' => $this->buildRoleWeightOptionsForProfile($activeDelivery),
+                'axes' => $this->profileVariationAxes($activeDelivery),
+                'hasWeightAxis' => $this->profileHasWeightAxis($activeDelivery),
+                'fallback' => array_key_exists((string) $familyName, $familyFallbacks)
+                    ? FontUtils::sanitizeFallback((string) $familyFallbacks[(string) $familyName])
+                    : FontUtils::defaultFallbackForCategory((string) ($family['font_category'] ?? '')),
             ];
         }
 
         return $map;
     }
 
-    private function buildRoleAxisCatalog(array $catalog): array
-    {
-        $map = [];
-
-        foreach ($catalog as $familyName => $family) {
-            if (!is_array($family)) {
-                continue;
-            }
-
-            foreach ((array) ($family['available_deliveries'] ?? []) as $profile) {
-                if (!is_array($profile)) {
-                    continue;
-                }
-
-                $deliveryId = sanitize_text_field((string) ($profile['id'] ?? ''));
-                $axes = $this->profileVariationAxes($profile);
-
-                if ($deliveryId === '' || $axes === []) {
-                    continue;
-                }
-
-                $map[$deliveryId] = [
-                    'axes' => $axes,
-                    'has_variable_faces' => FontUtils::resolveProfileFormat($profile) === 'variable',
-                ];
-            }
-        }
-
-        return $map;
-    }
-
-    private function buildRoleWeightCatalog(array $catalog): array
-    {
-        $map = [];
-
-        foreach ($catalog as $familyName => $family) {
-            if (!is_array($family)) {
-                continue;
-            }
-
-            foreach ((array) ($family['available_deliveries'] ?? []) as $profile) {
-                if (!is_array($profile)) {
-                    continue;
-                }
-
-                $deliveryId = sanitize_text_field((string) ($profile['id'] ?? ''));
-
-                if ($deliveryId === '') {
-                    continue;
-                }
-
-                $weights = [];
-
-                foreach ((array) ($profile['faces'] ?? []) as $face) {
-                    if (
-                        !is_array($face)
-                        || FontUtils::normalizeStyle((string) ($face['style'] ?? 'normal')) !== 'normal'
-                    ) {
-                        continue;
-                    }
-
-                    $weight = $this->resolveConcreteRoleWeight((string) ($face['weight'] ?? ''));
-
-                    if ($weight === '') {
-                        continue;
-                    }
-
-                    $weights[$weight] = [
-                        'value' => $weight,
-                        'label' => trim($weight . ' ' . $this->buildRoleWeightLabel($weight)),
-                    ];
-                }
-
-                if ($weights === [] && !$this->profileHasWeightAxis($profile)) {
-                    continue;
-                }
-
-                uksort($weights, static fn (string $left, string $right): int => ((int) $left) <=> ((int) $right));
-
-                $map[$deliveryId] = [
-                    'weights' => array_values($weights),
-                    'has_weight_axis' => $this->profileHasWeightAxis($profile),
-                ];
-            }
-        }
-
-        return $map;
-    }
-
-    private function sanitizeRoleDeliveryValue(mixed $deliveryValue, string $familyName, array $catalog): string
-    {
-        $deliveryId = sanitize_text_field((string) $deliveryValue);
-
-        if ($deliveryId === '' || trim($familyName) === '') {
-            return '';
-        }
-
-        $catalogEntry = $catalog[trim($familyName)] ?? null;
-
-        if (!is_array($catalogEntry)) {
-            return '';
-        }
-
-        foreach ((array) ($catalogEntry['available_deliveries'] ?? []) as $profile) {
-            if (is_array($profile) && (string) ($profile['id'] ?? '') === $deliveryId) {
-                return $deliveryId;
-            }
-        }
-
-        return '';
-    }
-
-    private function sanitizeRoleWeightValue(mixed $weightValue, string $familyName, string $deliveryId, array $catalog): string
+    private function sanitizeRoleWeightValue(mixed $weightValue, string $familyName, array $catalog): string
     {
         $weight = $this->resolveConcreteRoleWeight((string) $weightValue);
 
@@ -2523,24 +2422,49 @@ final class AdminController
             return '';
         }
 
-        if ($deliveryId === '') {
-            $family = $catalog[trim($familyName)] ?? null;
-            $deliveryId = is_array($family) ? (string) ($family['active_delivery_id'] ?? '') : '';
-        }
+        $family = $catalog[trim($familyName)] ?? null;
+        $profile = is_array($family['active_delivery'] ?? null) ? $family['active_delivery'] : [];
 
-        $catalogEntry = $this->buildRoleWeightCatalog($catalog)[$deliveryId] ?? null;
-
-        if (!is_array($catalogEntry) || !empty($catalogEntry['has_weight_axis'])) {
+        if ($profile === [] || $this->profileHasWeightAxis($profile)) {
             return '';
         }
 
-        foreach ((array) ($catalogEntry['weights'] ?? []) as $option) {
+        foreach ($this->buildRoleWeightOptionsForProfile($profile) as $option) {
             if (is_array($option) && (string) ($option['value'] ?? '') === $weight) {
                 return $weight;
             }
         }
 
         return '';
+    }
+
+    private function buildRoleWeightOptionsForProfile(array $profile): array
+    {
+        $weights = [];
+
+        foreach ((array) ($profile['faces'] ?? []) as $face) {
+            if (
+                !is_array($face)
+                || FontUtils::normalizeStyle((string) ($face['style'] ?? 'normal')) !== 'normal'
+            ) {
+                continue;
+            }
+
+            $weight = $this->resolveConcreteRoleWeight((string) ($face['weight'] ?? ''));
+
+            if ($weight === '') {
+                continue;
+            }
+
+            $weights[$weight] = [
+                'value' => $weight,
+                'label' => trim($weight . ' ' . $this->buildRoleWeightLabel($weight)),
+            ];
+        }
+
+        uksort($weights, static fn (string $left, string $right): int => ((int) $left) <=> ((int) $right));
+
+        return array_values($weights);
     }
 
     private function profileVariationAxes(array $profile): array

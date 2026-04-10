@@ -140,17 +140,17 @@ final class CssBuilder
         return implode("\n", $variableLines);
     }
 
-    public function buildRoleStackSnippet(array $roles, bool $includeMonospace = false): string
+    public function buildRoleStackSnippet(array $roles, bool $includeMonospace = false, array $settings = [], array $families = []): string
     {
         $stacks = [
-            FontUtils::buildFontStack((string) ($roles['heading'] ?? ''), (string) ($roles['heading_fallback'] ?? 'sans-serif')),
-            FontUtils::buildFontStack((string) ($roles['body'] ?? ''), (string) ($roles['body_fallback'] ?? 'sans-serif')),
+            FontUtils::buildFontStack((string) ($roles['heading'] ?? ''), $this->resolveRoleFallback('heading', $roles, $settings, $families)),
+            FontUtils::buildFontStack((string) ($roles['body'] ?? ''), $this->resolveRoleFallback('body', $roles, $settings, $families)),
         ];
 
         if ($includeMonospace) {
             $stacks[] = FontUtils::buildFontStack(
                 (string) ($roles['monospace'] ?? ''),
-                (string) ($roles['monospace_fallback'] ?? 'monospace')
+                $this->resolveRoleFallback('monospace', $roles, $settings, $families)
             );
         }
 
@@ -168,23 +168,23 @@ final class CssBuilder
         return implode("\n", $names);
     }
 
-    public function buildRoleClassSnippet(array $roles, bool $includeMonospace = false, array $settings = []): string
+    public function buildRoleClassSnippet(array $roles, bool $includeMonospace = false, array $settings = [], array $families = []): string
     {
         $blocks = [];
 
         if ($this->classOutputRoleEnabled($settings, 'heading')) {
-            $blocks[] = $this->buildClassRule('.font-heading', (string) ($roles['heading'] ?? ''), (string) ($roles['heading_fallback'] ?? 'sans-serif'));
+            $blocks[] = $this->buildClassRule('.font-heading', (string) ($roles['heading'] ?? ''), $this->resolveRoleFallback('heading', $roles, $settings, $families));
         }
 
         if ($this->classOutputRoleEnabled($settings, 'body')) {
-            $blocks[] = $this->buildClassRule('.font-body', (string) ($roles['body'] ?? ''), (string) ($roles['body_fallback'] ?? 'sans-serif'));
+            $blocks[] = $this->buildClassRule('.font-body', (string) ($roles['body'] ?? ''), $this->resolveRoleFallback('body', $roles, $settings, $families));
         }
 
         if ($includeMonospace && $this->classOutputRoleEnabled($settings, 'monospace')) {
             $blocks[] = $this->buildClassRule(
                 '.font-monospace',
                 (string) ($roles['monospace'] ?? ''),
-                (string) ($roles['monospace_fallback'] ?? 'monospace')
+                $this->resolveRoleFallback('monospace', $roles, $settings, $families)
             );
         }
 
@@ -298,8 +298,8 @@ final class CssBuilder
         $blocks = [];
 
         if ($this->classOutputEnabled($settings)) {
-            $roleClasses = $this->buildRoleClassSnippet($roles, $includeMonospace, $settings);
-            $roleAliasClasses = $this->buildRoleAliasClassSnippet($roles, $includeMonospace, $settings);
+            $roleClasses = $this->buildRoleClassSnippet($roles, $includeMonospace, $settings, $families);
+            $roleAliasClasses = $this->buildRoleAliasClassSnippet($roles, $includeMonospace, $settings, $families);
             $categoryClasses = $this->buildCategoryAliasClassSnippet($roles, $includeMonospace, $families, $settings);
 
             if ($roleClasses !== '') {
@@ -597,26 +597,20 @@ final class CssBuilder
         $headingFamily = trim((string) ($roles['heading'] ?? ''));
         $bodyFamily = trim((string) ($roles['body'] ?? ''));
         $monospaceFamily = trim((string) ($roles['monospace'] ?? ''));
+        $headingFallback = $this->resolveRoleFallback('heading', $roles, $settings, $variableFamilies);
+        $bodyFallback = $this->resolveRoleFallback('body', $roles, $settings, $variableFamilies);
+        $monospaceFallback = $this->resolveRoleFallback('monospace', $roles, $settings, $variableFamilies);
         $roleDeclarations = [];
         $variationDeclarations = [];
 
         if ($this->minimalOutputPresetEnabled($settings)) {
             $roleDeclarations = [
-                '--font-heading' => FontUtils::buildFontStack(
-                    $headingFamily,
-                    (string) ($roles['heading_fallback'] ?? 'sans-serif')
-                ),
-                '--font-body' => FontUtils::buildFontStack(
-                    $bodyFamily,
-                    (string) ($roles['body_fallback'] ?? 'sans-serif')
-                ),
+                '--font-heading' => FontUtils::buildFontStack($headingFamily, $headingFallback),
+                '--font-body' => FontUtils::buildFontStack($bodyFamily, $bodyFallback),
             ];
 
             if ($includeMonospace) {
-                $roleDeclarations['--font-monospace'] = FontUtils::buildFontStack(
-                    $monospaceFamily,
-                    (string) ($roles['monospace_fallback'] ?? 'monospace')
-                );
+                $roleDeclarations['--font-monospace'] = FontUtils::buildFontStack($monospaceFamily, $monospaceFallback);
             }
 
             $this->appendRoleVariationDeclarations($variationDeclarations, $roles, 'heading');
@@ -649,24 +643,15 @@ final class CssBuilder
         $weightDeclarations = [];
 
         if ($headingFamily !== '') {
-            $roleDeclarations['--font-heading'] = FontUtils::buildFontStack(
-                $headingFamily,
-                (string) ($roles['heading_fallback'] ?? 'sans-serif')
-            );
+            $roleDeclarations['--font-heading'] = FontUtils::buildFontStack($headingFamily, $headingFallback);
         }
 
         if ($bodyFamily !== '') {
-            $roleDeclarations['--font-body'] = FontUtils::buildFontStack(
-                $bodyFamily,
-                (string) ($roles['body_fallback'] ?? 'sans-serif')
-            );
+            $roleDeclarations['--font-body'] = FontUtils::buildFontStack($bodyFamily, $bodyFallback);
         }
 
         if ($includeMonospace) {
-            $roleDeclarations['--font-monospace'] = FontUtils::buildFontStack(
-                $monospaceFamily,
-                (string) ($roles['monospace_fallback'] ?? 'monospace')
-            );
+            $roleDeclarations['--font-monospace'] = FontUtils::buildFontStack($monospaceFamily, $monospaceFallback);
         }
 
         $this->appendRoleVariationDeclarations($variationDeclarations, $roles, 'heading');
@@ -1057,16 +1042,20 @@ final class CssBuilder
             }
         }
 
+        if ($weight !== '') {
+            return $weight;
+        }
+
         return $includeExtendedVariables ? $weight : '';
     }
 
-    private function buildRoleAliasClassSnippet(array $roles, bool $includeMonospace = false, array $settings = []): string
+    private function buildRoleAliasClassSnippet(array $roles, bool $includeMonospace = false, array $settings = [], array $families = []): string
     {
         $blocks = [];
         $bodyFamily = trim((string) ($roles['body'] ?? ''));
-        $bodyFallback = (string) ($roles['body_fallback'] ?? 'sans-serif');
+        $bodyFallback = $this->resolveRoleFallback('body', $roles, $settings, $families);
         $monospaceFamily = trim((string) ($roles['monospace'] ?? ''));
-        $monospaceFallback = (string) ($roles['monospace_fallback'] ?? 'monospace');
+        $monospaceFallback = $this->resolveRoleFallback('monospace', $roles, $settings, $families);
 
         if ($bodyFamily !== '' && $this->classOutputRoleAliasEnabled($settings, 'interface')) {
             $blocks[] = $this->buildClassRule('.font-interface', $bodyFamily, $bodyFallback);
@@ -1247,6 +1236,53 @@ final class CssBuilder
         }
 
         return $weight;
+    }
+
+    private function resolveRoleFallback(string $roleKey, array $roles, array $settings, array $families = []): string
+    {
+        $default = $roleKey === 'monospace' ? 'monospace' : 'sans-serif';
+        $familyName = trim((string) ($roles[$roleKey] ?? ''));
+
+        if ($familyName !== '') {
+            $family = $this->findFamilyByName($familyName, $families);
+
+            if (is_array($family)) {
+                return $this->resolveFamilyFallback($family, $settings);
+            }
+
+            $fallbacks = is_array($settings['family_fallbacks'] ?? null) ? $settings['family_fallbacks'] : [];
+
+            if (array_key_exists($familyName, $fallbacks)) {
+                $configuredFallback = trim((string) $fallbacks[$familyName]);
+
+                if ($configuredFallback !== '') {
+                    return FontUtils::sanitizeFallback($configuredFallback);
+                }
+            }
+        }
+
+        $fallback = trim((string) ($roles[$roleKey . '_fallback'] ?? ''));
+
+        return $fallback !== '' ? FontUtils::sanitizeFallback($fallback) : $default;
+    }
+
+    private function findFamilyByName(string $familyName, array $families): ?array
+    {
+        if (is_array($families[$familyName] ?? null)) {
+            return $families[$familyName];
+        }
+
+        foreach ($families as $family) {
+            if (!is_array($family)) {
+                continue;
+            }
+
+            if (trim((string) ($family['family'] ?? '')) === $familyName) {
+                return $family;
+            }
+        }
+
+        return null;
     }
 
     private function resolveFamilyFallback(array $family, array $settings): string

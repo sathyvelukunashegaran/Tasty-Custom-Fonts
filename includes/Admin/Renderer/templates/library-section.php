@@ -224,23 +224,30 @@
                                                     </label>
                                                 </div>
 
-                                                <fieldset class="tasty-fonts-source-delivery-choice" id="tasty-fonts-google-delivery-choice">
-                                                    <legend class="tasty-fonts-field-label"><?php esc_html_e('Format', 'tasty-fonts'); ?></legend>
-                                                    <div id="tasty-fonts-google-format-choice" class="tasty-fonts-output-quick-options tasty-fonts-settings-flat-row-options" hidden></div>
-                                                </fieldset>
+                                                <div class="tasty-fonts-import-choice-grid">
+                                                    <fieldset class="tasty-fonts-source-delivery-choice tasty-fonts-import-choice-fieldset tasty-fonts-import-choice-fieldset--format" id="tasty-fonts-google-delivery-choice">
+                                                        <legend class="screen-reader-text"><?php esc_html_e('Format', 'tasty-fonts'); ?></legend>
+                                                        <span class="tasty-fonts-field-label tasty-fonts-import-choice-label"><?php esc_html_e('Format', 'tasty-fonts'); ?></span>
+                                                        <div id="tasty-fonts-google-format-choice" class="tasty-fonts-output-quick-options tasty-fonts-import-choice-options tasty-fonts-import-choice-options--segmented" hidden></div>
+                                                        <p class="tasty-fonts-muted tasty-fonts-import-choice-note" data-import-format-note="google" hidden></p>
+                                                    </fieldset>
 
-                                                <fieldset class="tasty-fonts-source-delivery-choice">
-                                                    <legend class="tasty-fonts-field-label"><?php esc_html_e('Delivery', 'tasty-fonts'); ?></legend>
-                                                    <label class="tasty-fonts-filter-pill tasty-fonts-filter-pill--choice">
-                                                        <input type="radio" name="tasty_fonts_google_delivery_mode" value="self_hosted" checked>
-                                                        <span><?php esc_html_e('Self-hosted', 'tasty-fonts'); ?></span>
-                                                    </label>
-                                                    <label class="tasty-fonts-filter-pill tasty-fonts-filter-pill--choice">
-                                                        <input type="radio" name="tasty_fonts_google_delivery_mode" value="cdn">
-                                                        <span><?php esc_html_e('Use Google CDN', 'tasty-fonts'); ?></span>
-                                                    </label>
-                                                    <p class="tasty-fonts-muted"><?php esc_html_e('Self-hosting serves font files from your own site. Google CDN keeps delivery remote and uses Google’s stylesheet endpoint.', 'tasty-fonts'); ?></p>
-                                                </fieldset>
+                                                    <fieldset class="tasty-fonts-source-delivery-choice tasty-fonts-import-choice-fieldset tasty-fonts-import-choice-fieldset--delivery">
+                                                        <legend class="screen-reader-text"><?php esc_html_e('Delivery', 'tasty-fonts'); ?></legend>
+                                                        <span class="tasty-fonts-field-label tasty-fonts-import-choice-label"><?php esc_html_e('Delivery', 'tasty-fonts'); ?></span>
+                                                        <div class="tasty-fonts-output-quick-options tasty-fonts-import-choice-options tasty-fonts-import-choice-options--segmented" data-import-delivery-choice="google">
+                                                            <label class="tasty-fonts-output-quick-option is-active" data-pill-option>
+                                                                <input type="radio" name="tasty_fonts_google_delivery_mode" value="self_hosted" checked data-pill-option-input>
+                                                                <span><?php esc_html_e('Self-hosted', 'tasty-fonts'); ?></span>
+                                                            </label>
+                                                            <label class="tasty-fonts-output-quick-option" data-pill-option>
+                                                                <input type="radio" name="tasty_fonts_google_delivery_mode" value="cdn" data-pill-option-input>
+                                                                <span><?php esc_html_e('Use Google CDN', 'tasty-fonts'); ?></span>
+                                                            </label>
+                                                        </div>
+                                                    </fieldset>
+
+                                                </div>
 
                                                 <div class="tasty-fonts-selected-wrap tasty-fonts-selected-wrap--import">
                                                     <div class="tasty-fonts-selected-card tasty-fonts-selected-card--import-family">
@@ -364,23 +371,30 @@
                                                     </label>
                                                 </div>
 
-                                                <fieldset class="tasty-fonts-source-delivery-choice" id="tasty-fonts-bunny-delivery-choice">
-                                                    <legend class="tasty-fonts-field-label"><?php esc_html_e('Format', 'tasty-fonts'); ?></legend>
-                                                    <div id="tasty-fonts-bunny-format-choice" class="tasty-fonts-output-quick-options tasty-fonts-settings-flat-row-options" hidden></div>
-                                                </fieldset>
+                                                <div class="tasty-fonts-import-choice-grid">
+                                                    <fieldset class="tasty-fonts-source-delivery-choice tasty-fonts-import-choice-fieldset tasty-fonts-import-choice-fieldset--format" id="tasty-fonts-bunny-delivery-choice">
+                                                        <legend class="screen-reader-text"><?php esc_html_e('Format', 'tasty-fonts'); ?></legend>
+                                                        <span class="tasty-fonts-field-label tasty-fonts-import-choice-label"><?php esc_html_e('Format', 'tasty-fonts'); ?></span>
+                                                        <div id="tasty-fonts-bunny-format-choice" class="tasty-fonts-output-quick-options tasty-fonts-import-choice-options tasty-fonts-import-choice-options--segmented" hidden></div>
+                                                        <p class="tasty-fonts-muted tasty-fonts-import-choice-note" data-import-format-note="bunny" hidden></p>
+                                                    </fieldset>
 
-                                                <fieldset class="tasty-fonts-source-delivery-choice">
-                                                    <legend class="tasty-fonts-field-label"><?php esc_html_e('Delivery', 'tasty-fonts'); ?></legend>
-                                                    <label class="tasty-fonts-filter-pill tasty-fonts-filter-pill--choice">
-                                                        <input type="radio" name="tasty_fonts_bunny_delivery_mode" value="self_hosted" checked>
-                                                        <span><?php esc_html_e('Self-hosted', 'tasty-fonts'); ?></span>
-                                                    </label>
-                                                    <label class="tasty-fonts-filter-pill tasty-fonts-filter-pill--choice">
-                                                        <input type="radio" name="tasty_fonts_bunny_delivery_mode" value="cdn">
-                                                        <span><?php esc_html_e('Use Bunny CDN', 'tasty-fonts'); ?></span>
-                                                    </label>
-                                                    <p class="tasty-fonts-muted"><?php esc_html_e('Self-hosting downloads the selected font files into your site library. Bunny CDN keeps runtime delivery remote through Bunny’s stylesheet endpoint.', 'tasty-fonts'); ?></p>
-                                                </fieldset>
+                                                    <fieldset class="tasty-fonts-source-delivery-choice tasty-fonts-import-choice-fieldset tasty-fonts-import-choice-fieldset--delivery">
+                                                        <legend class="screen-reader-text"><?php esc_html_e('Delivery', 'tasty-fonts'); ?></legend>
+                                                        <span class="tasty-fonts-field-label tasty-fonts-import-choice-label"><?php esc_html_e('Delivery', 'tasty-fonts'); ?></span>
+                                                        <div class="tasty-fonts-output-quick-options tasty-fonts-import-choice-options tasty-fonts-import-choice-options--segmented" data-import-delivery-choice="bunny">
+                                                            <label class="tasty-fonts-output-quick-option is-active" data-pill-option>
+                                                                <input type="radio" name="tasty_fonts_bunny_delivery_mode" value="self_hosted" checked data-pill-option-input>
+                                                                <span><?php esc_html_e('Self-hosted', 'tasty-fonts'); ?></span>
+                                                            </label>
+                                                            <label class="tasty-fonts-output-quick-option" data-pill-option>
+                                                                <input type="radio" name="tasty_fonts_bunny_delivery_mode" value="cdn" data-pill-option-input>
+                                                                <span><?php esc_html_e('Use Bunny CDN', 'tasty-fonts'); ?></span>
+                                                            </label>
+                                                        </div>
+                                                    </fieldset>
+
+                                                </div>
 
                                                 <div class="tasty-fonts-selected-wrap tasty-fonts-selected-wrap--import">
                                                     <div class="tasty-fonts-selected-card tasty-fonts-selected-card--import-family">

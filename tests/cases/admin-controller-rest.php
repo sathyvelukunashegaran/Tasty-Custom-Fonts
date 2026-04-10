@@ -381,6 +381,19 @@ $tests['admin_controller_versions_admin_assets_from_plugin_version'] = static fu
     assertSameValue(TASTY_FONTS_VERSION, $version, 'Admin asset versioning should reuse the plugin version instead of hashing shipped files on every request.');
 };
 
+$tests['admin_controller_versions_local_admin_assets_with_content_hashes'] = static function (): void {
+    resetTestState();
+
+    $controller = makeAdminControllerTestInstance();
+    $version = invokePrivateMethod($controller, 'assetVersionFor', ['assets/js/admin.js']);
+
+    assertSameValue(
+        1,
+        preg_match('/^' . preg_quote(TASTY_FONTS_VERSION, '/') . '\.\d+\.[a-f0-9]{12}$/', (string) $version),
+        'Local admin asset versioning should append a file timestamp and content hash so browser reloads pick up fresh JS and CSS.'
+    );
+};
+
 $tests['admin_controller_builds_reordered_overview_metrics'] = static function (): void {
     resetTestState();
 
@@ -788,6 +801,79 @@ $tests['admin_controller_builds_five_preview_panels_including_code'] = static fu
     );
 };
 
+$tests['admin_controller_keeps_role_font_weights_in_usage_panel_when_variable_output_is_disabled'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400-normal.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-700-normal.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('jetbrains-mono/JetBrainsMono-400-normal.woff2'), 'font-data');
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular', '700'],
+            'faces' => [
+                ['family' => 'Inter', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400-normal.woff2']],
+                ['family' => 'Inter', 'weight' => '700', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-700-normal.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
+    $services['imports']->saveProfile(
+        'JetBrains Mono',
+        'jetbrains-mono',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'JetBrains Mono', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'jetbrains-mono/JetBrainsMono-400-normal.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
+
+    $roles = [
+        'heading' => 'Inter',
+        'body' => 'Inter',
+        'monospace' => 'JetBrains Mono',
+        'heading_fallback' => 'sans-serif',
+        'body_fallback' => 'sans-serif',
+        'monospace_fallback' => 'monospace',
+    ];
+    $settings = $services['settings']->saveSettings([
+        'minify_css_output' => '0',
+        'per_variant_font_variables_enabled' => '0',
+        'role_usage_font_weight_enabled' => '1',
+        'class_output_enabled' => '1',
+        'monospace_role_enabled' => '1',
+    ]);
+    $panels = invokePrivateMethod(
+        $services['controller'],
+        'buildOutputPanels',
+        [$roles, $settings, $services['catalog']->getCatalog()]
+    );
+    $panelValues = [];
+
+    foreach ($panels as $panel) {
+        $panelValues[(string) ($panel['key'] ?? '')] = (string) ($panel['value'] ?? '');
+    }
+
+    assertContainsValue('font-weight: 400;', $panelValues['usage'] ?? '', 'The Site Snippet should keep raw body font weights when variable output is disabled.');
+    assertContainsValue('font-weight: 700;', $panelValues['usage'] ?? '', 'The Site Snippet should keep raw heading font weights when variable output is disabled.');
+    assertNotContainsValue('var(--weight-700)', $panelValues['usage'] ?? '', 'The Site Snippet should not rely on weight tokens when variable output is disabled.');
+};
+
 $tests['admin_controller_exposes_generated_css_as_a_top_level_panel'] = static function (): void {
     resetTestState();
 
@@ -965,6 +1051,87 @@ $tests['admin_controller_localizes_rest_transport_config'] = static function ():
         AdminController::PAGE_ROLES,
         (string) ($localizedScripts['tasty-fonts-admin']['data']['currentPage'] ?? ''),
         'Admin scripts should receive the current admin page identifier for page-scoped UI state.'
+    );
+};
+
+$tests['admin_controller_localizes_role_family_catalog_from_active_deliveries'] = static function (): void {
+    resetTestState();
+
+    global $localizedScripts;
+
+    $services = makeServiceGraph();
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'inter-static-inactive',
+            'label' => 'Self-hosted (inactive)',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'format' => 'static',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '700', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-700.woff2'], 'paths' => []],
+            ],
+        ],
+        'published',
+        false
+    );
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'inter-variable-active',
+            'label' => 'Self-hosted (active)',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'format' => 'variable',
+            'variants' => ['regular'],
+            'faces' => [
+                [
+                    'family' => 'Inter',
+                    'slug' => 'inter',
+                    'source' => 'local',
+                    'weight' => '100 900',
+                    'style' => 'normal',
+                    'axes' => [
+                        'WGHT' => ['min' => '100', 'default' => '400', 'max' => '900'],
+                        'opsz' => ['min' => '14', 'default' => '32', 'max' => '72'],
+                    ],
+                    'files' => ['woff2' => 'inter/Inter-Variable.woff2'],
+                    'paths' => [],
+                ],
+            ],
+        ],
+        'published',
+        true
+    );
+
+    $services['controller']->enqueueAssets('toplevel_page_' . AdminController::MENU_SLUG);
+
+    $catalog = is_array($localizedScripts['tasty-fonts-admin']['data']['roleFamilyCatalog'] ?? null)
+        ? $localizedScripts['tasty-fonts-admin']['data']['roleFamilyCatalog']
+        : [];
+    $inter = is_array($catalog['Inter'] ?? null) ? $catalog['Inter'] : [];
+
+    assertSameValue('inter-variable-active', (string) ($inter['activeDeliveryId'] ?? ''), 'Admin scripts should localize the active delivery ID for each family.');
+    assertContainsValue('Self-hosted (active)', (string) ($inter['activeDeliveryLabel'] ?? ''), 'Admin scripts should localize the active delivery label for each family.');
+    assertSameValue('variable', (string) ($inter['format'] ?? ''), 'Admin scripts should localize the active delivery format for each family.');
+    assertSameValue(true, !empty($inter['hasWeightAxis']), 'Admin scripts should report whether the active delivery exposes a weight axis.');
+    assertSameValue(
+        ['OPSZ', 'WGHT'],
+        array_keys(is_array($inter['axes'] ?? null) ? $inter['axes'] : []),
+        'Admin scripts should expose variable axes from the active delivery only.'
+    );
+    assertSameValue(
+        [
+            [
+                'value' => '400',
+                'label' => '400 Regular',
+            ],
+        ],
+        $inter['weights'] ?? null,
+        'Admin scripts should derive role weight metadata from the active delivery only.'
     );
 };
 
@@ -1197,6 +1364,56 @@ $tests['rest_controller_returns_native_payloads_for_write_routes'] = static func
     assertSameValue('serif', (string) ($response->get_data()['fallback'] ?? ''), 'REST write routes should return the saved fallback in the response body.');
 };
 
+$tests['rest_controller_family_fallback_returns_refreshed_generated_css_panel'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400.woff2'), 'font-data');
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400.woff2'], 'paths' => ['woff2' => 'inter/Inter-400.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
+    $services['settings']->saveRoles(
+        [
+            'heading' => 'Inter',
+            'body' => 'Inter',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'sans-serif',
+        ],
+        ['Inter']
+    );
+    $services['settings']->setAutoApplyRoles(true);
+    $services['assets']->refreshGeneratedAssets(false, false);
+
+    $request = new WP_REST_Request('PATCH', '/' . RestController::API_NAMESPACE . '/families/fallback');
+    $request->set_body_params([
+        'family' => 'Inter',
+        'fallback' => 'serif',
+    ]);
+
+    $response = $services['rest']->saveFamilyFallback($request);
+    $data = $response instanceof WP_REST_Response ? $response->get_data() : [];
+    $panel = is_array($data['generated_css_panel'] ?? null) ? $data['generated_css_panel'] : [];
+
+    assertSameValue(true, $response instanceof WP_REST_Response, 'Family fallback saves should return a native REST response.');
+    assertSameValue('generated', (string) ($panel['key'] ?? ''), 'Family fallback saves should include the refreshed Generated CSS diagnostics panel.');
+    assertContainsValue('"Inter",serif', (string) ($panel['value'] ?? ''), 'The refreshed Generated CSS panel should include the saved fallback stack.');
+    assertContainsValue('"Inter",serif', (string) ($panel['readable_display_value'] ?? ''), 'The readable Generated CSS panel payload should also reflect the saved fallback stack.');
+};
+
 $tests['rest_controller_settings_accepts_patch_payloads'] = static function (): void {
     resetTestState();
 
@@ -1261,6 +1478,62 @@ $tests['rest_controller_settings_keeps_custom_output_preference_sticky'] = stati
     assertSameValue('custom', (string) ($data['settings']['output_quick_mode_preference'] ?? ''), 'Custom should remain selected when the saved booleans happen to match variables-only.');
 };
 
+$tests['rest_controller_settings_preserves_variables_and_classes_output_presets'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $request = new WP_REST_Request('PATCH', '/' . RestController::API_NAMESPACE . '/settings');
+    $request->set_body_params([
+        'minimal_output_preset_enabled' => '0',
+        'output_quick_mode_preference' => 'variables',
+        'class_output_enabled' => '0',
+        'per_variant_font_variables_enabled' => '1',
+        'role_usage_font_weight_enabled' => '0',
+        'extended_variable_weight_tokens_enabled' => '1',
+        'extended_variable_role_aliases_enabled' => '1',
+        'extended_variable_category_sans_enabled' => '1',
+        'extended_variable_category_serif_enabled' => '1',
+        'extended_variable_category_mono_enabled' => '1',
+    ]);
+
+    $response = $services['rest']->saveSettings($request);
+    $data = $response->get_data();
+
+    assertSameValue(true, $response instanceof WP_REST_Response, 'Variables-only autosave should return a native REST response.');
+    assertSameValue('variables', (string) ($data['settings']['output_quick_mode_preference'] ?? ''), 'Variables-only should remain selected when the saved booleans still match the preset.');
+    assertSameValue(false, !empty($data['settings']['class_output_enabled']), 'Variables-only should keep class output disabled.');
+    assertSameValue(true, !empty($data['settings']['per_variant_font_variables_enabled']), 'Variables-only should keep variable output enabled.');
+    assertSameValue(false, !empty($data['settings']['role_usage_font_weight_enabled']), 'Variables-only should keep role font-weight output disabled.');
+
+    $request = new WP_REST_Request('PATCH', '/' . RestController::API_NAMESPACE . '/settings');
+    $request->set_body_params([
+        'minimal_output_preset_enabled' => '0',
+        'output_quick_mode_preference' => 'classes',
+        'class_output_enabled' => '1',
+        'class_output_role_heading_enabled' => '1',
+        'class_output_role_body_enabled' => '1',
+        'class_output_role_monospace_enabled' => '1',
+        'class_output_role_alias_interface_enabled' => '1',
+        'class_output_role_alias_ui_enabled' => '1',
+        'class_output_role_alias_code_enabled' => '1',
+        'class_output_category_sans_enabled' => '1',
+        'class_output_category_serif_enabled' => '1',
+        'class_output_category_mono_enabled' => '1',
+        'class_output_families_enabled' => '1',
+        'per_variant_font_variables_enabled' => '0',
+        'role_usage_font_weight_enabled' => '0',
+    ]);
+
+    $response = $services['rest']->saveSettings($request);
+    $data = $response->get_data();
+
+    assertSameValue(true, $response instanceof WP_REST_Response, 'Classes-only autosave should return a native REST response.');
+    assertSameValue('classes', (string) ($data['settings']['output_quick_mode_preference'] ?? ''), 'Classes-only should remain selected when the saved booleans still match the preset.');
+    assertSameValue(true, !empty($data['settings']['class_output_enabled']), 'Classes-only should keep class output enabled.');
+    assertSameValue(false, !empty($data['settings']['per_variant_font_variables_enabled']), 'Classes-only should keep variable output disabled.');
+    assertSameValue(false, !empty($data['settings']['role_usage_font_weight_enabled']), 'Classes-only should keep role font-weight output disabled.');
+};
+
 $tests['rest_controller_settings_rejects_invalid_custom_unicode_range'] = static function (): void {
     resetTestState();
 
@@ -1308,6 +1581,32 @@ $tests['rest_controller_settings_reload_toast_mentions_reload_when_needed'] = st
     assertSameValue(true, $response instanceof WP_REST_Response, 'The settings autosave route should return a native REST response object.');
     assertSameValue(true, !empty($data['reload_required']), 'Reload-only settings should return an explicit reload flag for the autosave client.');
     assertContainsValue('Reload the page to apply this change.', (string) ($data['message'] ?? ''), 'Reload-only settings should mention the required page reload in the autosave toast message.');
+};
+
+$tests['rest_controller_settings_reenables_monospace_class_outputs_when_the_role_is_first_enabled'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings([
+        'class_output_enabled' => '1',
+        'class_output_role_monospace_enabled' => '0',
+        'class_output_role_alias_code_enabled' => '0',
+        'class_output_category_mono_enabled' => '0',
+    ]);
+
+    $request = new WP_REST_Request('PATCH', '/' . RestController::API_NAMESPACE . '/settings');
+    $request->set_body_params([
+        'monospace_role_enabled' => '1',
+    ]);
+
+    $response = $services['rest']->saveSettings($request);
+    $data = $response instanceof WP_REST_Response ? $response->get_data() : [];
+
+    assertSameValue(true, $response instanceof WP_REST_Response, 'Enabling the monospace role through autosave should return a native REST response.');
+    assertSameValue(true, !empty($data['settings']['monospace_role_enabled']), 'Autosave should persist the monospace role setting.');
+    assertSameValue(true, !empty($data['settings']['class_output_role_monospace_enabled']), 'Autosave should restore the monospace class output when the role is first enabled.');
+    assertSameValue(true, !empty($data['settings']['class_output_role_alias_code_enabled']), 'Autosave should restore the code alias output when the role is first enabled.');
+    assertSameValue(true, !empty($data['settings']['class_output_category_mono_enabled']), 'Autosave should restore the mono category output when the role is first enabled.');
 };
 
 $tests['rest_controller_settings_reload_flag_covers_update_channel_changes'] = static function (): void {
@@ -1483,6 +1782,74 @@ $tests['rest_controller_roles_draft_accepts_saved_static_role_weights'] = static
     assertSameValue('600', (string) ($data['roles']['heading_weight'] ?? ''), 'The roles/draft route should preserve saved heading weight overrides.');
     assertSameValue('400', (string) ($data['roles']['body_weight'] ?? ''), 'The roles/draft route should preserve saved body weight overrides.');
     assertSameValue('500', (string) ($data['roles']['monospace_weight'] ?? ''), 'The roles/draft route should preserve saved monospace weight overrides.');
+    assertSameValue('', (string) ($data['roles']['heading_delivery_id'] ?? ''), 'The roles/draft route should ignore legacy heading delivery overrides.');
+    assertSameValue('', (string) ($data['roles']['body_delivery_id'] ?? ''), 'The roles/draft route should ignore legacy body delivery overrides.');
+    assertSameValue('', (string) ($data['roles']['monospace_delivery_id'] ?? ''), 'The roles/draft route should ignore legacy monospace delivery overrides.');
+};
+
+$tests['rest_controller_roles_draft_returns_current_applied_roles_for_client_resync'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'format' => 'static',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400.woff2'], 'paths' => []],
+            ],
+        ],
+        'published',
+        true
+    );
+    $services['imports']->saveProfile(
+        'Raleway',
+        'raleway',
+        [
+            'id' => 'local-self_hosted-heading',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'format' => 'static',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Raleway', 'slug' => 'raleway', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'raleway/Raleway-400.woff2'], 'paths' => []],
+            ],
+        ],
+        'published',
+        true
+    );
+
+    $catalog = $services['catalog']->getCatalog();
+    $availableFamilies = array_values($catalog);
+    $services['settings']->saveAppliedRoles([
+        'heading' => 'Raleway',
+        'body' => 'Inter',
+        'heading_fallback' => 'sans-serif',
+        'body_fallback' => 'sans-serif',
+    ], $availableFamilies);
+    $services['settings']->setAutoApplyRoles(true);
+
+    $request = new WP_REST_Request('PATCH', '/' . RestController::API_NAMESPACE . '/roles/draft');
+    $request->set_body_params([
+        'heading' => 'Inter',
+        'body' => 'Inter',
+        'heading_fallback' => 'sans-serif',
+        'body_fallback' => 'sans-serif',
+    ]);
+
+    $response = $services['rest']->saveRoleDraft($request);
+    $data = $response instanceof WP_REST_Response ? $response->get_data() : [];
+
+    assertSameValue(true, $response instanceof WP_REST_Response, 'The roles/draft route should return a native REST response when applied roles are active.');
+    assertSameValue('Raleway', (string) ($data['applied_roles']['heading'] ?? ''), 'The roles/draft route should include the current live heading role for client-side resync.');
+    assertSameValue('Inter', (string) ($data['applied_roles']['body'] ?? ''), 'The roles/draft route should include the current live body role for client-side resync.');
 };
 
 $tests['rest_controller_settings_accepts_variable_font_feature_flag'] = static function (): void {
@@ -1659,6 +2026,12 @@ $tests['admin_controller_family_font_display_changes_refresh_generated_assets'] 
         ],
         ['Inter']
     );
+    $services['settings']->saveSettings([
+        'class_output_enabled' => '1',
+        'class_output_families_enabled' => '1',
+        'minimal_output_preset_enabled' => '0',
+        'output_quick_mode_preference' => 'custom',
+    ]);
     $services['settings']->setAutoApplyRoles(true);
 
     $services['assets']->getCss();
@@ -1668,6 +2041,67 @@ $tests['admin_controller_family_font_display_changes_refresh_generated_assets'] 
 
     assertSameValue(true, in_array('tasty_fonts_css_v2', $transientDeleted, true), 'Saving a family font-display override should invalidate the cached CSS payload.');
     assertContainsValue('font-display:swap', $services['assets']->getCss(), 'Saving a family font-display override should rebuild the generated CSS with the new value.');
+};
+
+$tests['admin_controller_family_fallback_changes_refresh_generated_assets'] = static function (): void {
+    resetTestState();
+
+    global $transientDeleted;
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-400.woff2'), 'font-data');
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400.woff2'], 'paths' => ['woff2' => 'inter/Inter-400.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
+    $services['settings']->saveRoles(
+        [
+            'heading' => 'Inter',
+            'body' => 'Inter',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'sans-serif',
+        ],
+        ['Inter']
+    );
+    $services['settings']->setAutoApplyRoles(true);
+
+    $services['assets']->getCss();
+    $transientDeleted = [];
+
+    $result = $services['controller']->saveFamilyFallbackValue('Inter', 'serif');
+
+    assertSameValue(true, in_array('tasty_fonts_css_v2', $transientDeleted, true), 'Saving a family fallback should invalidate the cached CSS payload.');
+    assertSameValue('"Inter", serif', (string) ($result['stack'] ?? ''), 'Saving a family fallback should return the rebuilt family stack.');
+};
+
+$tests['admin_controller_build_admin_page_url_preserves_settings_context'] = static function (): void {
+    resetTestState();
+
+    $_GET['page'] = 'tasty-custom-fonts';
+    $_GET['tf_page'] = 'settings';
+    $_GET['tf_studio'] = 'output-settings';
+
+    $services = makeServiceGraph();
+    $url = (string) invokePrivateMethod($services['controller'], 'buildAdminPageUrl', []);
+
+    assertContainsValue('page=tasty-custom-fonts', $url, 'Admin redirects should always return to the canonical top-level dashboard slug.');
+    assertContainsValue('tf_page=settings', $url, 'Admin redirects should preserve the current Settings page context.');
+    assertContainsValue('tf_studio=output-settings', $url, 'Admin redirects should preserve the active Settings section context.');
+
+    $_GET = [];
 };
 
 $tests['admin_controller_builds_notice_messages_from_known_keys'] = static function (): void {

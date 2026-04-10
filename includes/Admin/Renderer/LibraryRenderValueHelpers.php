@@ -15,7 +15,8 @@ trait LibraryRenderValueHelpers
         array $right,
         bool $includeMonospace,
         array $catalog = [],
-        bool $includeVariableAxes = true
+        bool $includeVariableAxes = true,
+        array $familyFallbacks = []
     ): bool
     {
         $roleKeys = ['heading', 'body'];
@@ -30,15 +31,8 @@ trait LibraryRenderValueHelpers
             }
 
             if (
-                $this->normalizeRoleFallbackForComparison($roleKey, $left)
-                !== $this->normalizeRoleFallbackForComparison($roleKey, $right)
-            ) {
-                return false;
-            }
-
-            if (
-                $this->resolveRoleDeliveryIdForComparison($roleKey, $left, $catalog)
-                !== $this->resolveRoleDeliveryIdForComparison($roleKey, $right, $catalog)
+                $this->resolveEffectiveRoleFallback($roleKey, $left, $catalog, $familyFallbacks)
+                !== $this->resolveEffectiveRoleFallback($roleKey, $right, $catalog, $familyFallbacks)
             ) {
                 return false;
             }
@@ -62,54 +56,35 @@ trait LibraryRenderValueHelpers
         return true;
     }
 
-    protected function normalizeRoleFallbackForComparison(string $roleKey, array $roles): string
+    protected function resolveEffectiveRoleFallback(
+        string $roleKey,
+        array $roles,
+        array $catalog = [],
+        array $familyFallbacks = []
+    ): string
     {
         $default = $roleKey === 'monospace' ? 'monospace' : 'sans-serif';
+        $familyName = trim((string) ($roles[$roleKey] ?? ''));
+
+        if ($familyName !== '') {
+            if (array_key_exists($familyName, $familyFallbacks)) {
+                $configuredFallback = trim((string) $familyFallbacks[$familyName]);
+
+                if ($configuredFallback !== '') {
+                    return FontUtils::sanitizeFallback($configuredFallback);
+                }
+            }
+
+            $family = $this->findCatalogFamilyByName($familyName, $catalog);
+
+            if (is_array($family)) {
+                return FontUtils::defaultFallbackForCategory($this->resolveFamilyCategory($family));
+            }
+        }
+
         $fallback = trim((string) ($roles[$roleKey . '_fallback'] ?? ''));
 
         return $fallback !== '' ? FontUtils::sanitizeFallback($fallback) : $default;
-    }
-
-    protected function resolveRoleDeliveryIdForComparison(string $roleKey, array $roles, array $catalog): string
-    {
-        $familyName = trim((string) ($roles[$roleKey] ?? ''));
-        $savedDeliveryId = trim((string) ($roles[$roleKey . '_delivery_id'] ?? ''));
-
-        if ($familyName === '') {
-            return '';
-        }
-
-        $family = $this->findCatalogFamilyByName($familyName, $catalog);
-
-        if (!is_array($family)) {
-            return $savedDeliveryId;
-        }
-
-        $deliveryIds = [];
-
-        foreach ((array) ($family['available_deliveries'] ?? []) as $profile) {
-            if (!is_array($profile)) {
-                continue;
-            }
-
-            $deliveryId = trim((string) ($profile['id'] ?? ''));
-
-            if ($deliveryId !== '') {
-                $deliveryIds[] = $deliveryId;
-            }
-        }
-
-        if ($savedDeliveryId !== '' && in_array($savedDeliveryId, $deliveryIds, true)) {
-            return $savedDeliveryId;
-        }
-
-        $activeDeliveryId = trim((string) ($family['active_delivery_id'] ?? ''));
-
-        if ($activeDeliveryId !== '' && in_array($activeDeliveryId, $deliveryIds, true)) {
-            return $activeDeliveryId;
-        }
-
-        return $deliveryIds[0] ?? $savedDeliveryId;
     }
 
     protected function findCatalogFamilyByName(string $familyName, array $catalog): ?array
