@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.10.0-beta.2] - 2026-04-11
+
 ### Added
 
 - Added a WordPress-style `readme.txt` with distribution metadata, FAQs, screenshots references, and a clearer multisite stance for plugin installs outside the GitHub-only README flow.
