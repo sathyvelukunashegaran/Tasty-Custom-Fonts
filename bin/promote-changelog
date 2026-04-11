@@ -63,6 +63,12 @@ php -r '
 
   $prefix = substr($contents, 0, $start);
   $suffix = $nextHeading === false ? "" : substr($contents, $nextHeading + 1);
+
+  if (strpos($contents, "## [" . $version . "]") !== false) {
+      fwrite(STDERR, "CHANGELOG.md already contains a section for version " . $version . "\n");
+      exit(1);
+  }
+
   $updated = rtrim($prefix, "\n")
       . "\n\n## [Unreleased]\n\n## [" . $version . "] - " . $date . "\n\n"
       . $body
