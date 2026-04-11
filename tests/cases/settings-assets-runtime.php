@@ -2415,6 +2415,71 @@ $tests['runtime_service_outputs_primary_font_preloads_for_live_sitewide_roles'] 
     assertContainsValue('crossorigin', $output, 'Frontend preload output should include crossorigin so the hint matches the font request mode.');
 };
 
+$tests['runtime_service_builds_link_header_values_for_primary_preloads'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('inter/Inter-700.woff2'), 'font-data');
+    $services['storage']->writeAbsoluteFile((string) $services['storage']->pathForRelativePath('lora/Lora-400.woff2'), 'font-data');
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['700'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '700', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-700.woff2'], 'paths' => ['woff2' => 'inter/Inter-700.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
+    $services['imports']->saveProfile(
+        'Lora',
+        'lora',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Lora', 'slug' => 'lora', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'lora/Lora-400.woff2'], 'paths' => ['woff2' => 'lora/Lora-400.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
+    $services['settings']->saveAppliedRoles(
+        [
+            'heading' => 'Inter',
+            'body' => 'Lora',
+            'heading_fallback' => 'sans-serif',
+            'body_fallback' => 'serif',
+        ],
+        ['Inter', 'Lora']
+    );
+    $services['settings']->setAutoApplyRoles(true);
+    $services['settings']->saveSettings(['preload_primary_fonts' => '1']);
+
+    $headers = $services['runtime']->getPreloadLinkHeaderValues();
+
+    assertContainsValue(
+        '</wp-content/uploads/fonts/inter/Inter-700.woff2>; rel=preload; as=font; type="font/woff2"; crossorigin',
+        implode("\n", $headers),
+        'RuntimeService should expose Link header values for primary preload candidates.'
+    );
+    assertContainsValue(
+        '</wp-content/uploads/fonts/lora/Lora-400.woff2>; rel=preload; as=font; type="font/woff2"; crossorigin',
+        implode("\n", $headers),
+        'RuntimeService should build Link header values for both heading and body preload fonts.'
+    );
+};
+
 $tests['runtime_service_uses_saved_role_weight_overrides_for_primary_preloads'] = static function (): void {
     resetTestState();
 
@@ -3255,4 +3320,66 @@ $tests['runtime_service_inject_editor_font_presets_returns_unchanged_when_no_fam
     $result = $services['runtime']->injectEditorFontPresets($themeJson);
 
     assertSameValue($original, $result->get_data(), 'injectEditorFontPresets() should return the theme JSON unchanged when no managed font families are published.');
+};
+
+$tests['runtime_service_inject_editor_font_presets_preserves_existing_schema_version'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400.woff2'], 'paths' => ['woff2' => 'inter/Inter-400.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
+
+    $themeJson = new WP_Theme_JSON_Data(['version' => 4, 'settings' => []]);
+    $result = $services['runtime']->injectEditorFontPresets($themeJson);
+
+    assertSameValue(
+        4,
+        $result->get_data()['version'] ?? null,
+        'injectEditorFontPresets() should preserve an existing non-default theme JSON schema version.'
+    );
+};
+
+$tests['runtime_service_inject_editor_font_presets_does_not_force_legacy_schema_version_when_missing'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self_hosted',
+            'label' => 'Self-hosted',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['regular'],
+            'faces' => [
+                ['family' => 'Inter', 'slug' => 'inter', 'source' => 'local', 'weight' => '400', 'style' => 'normal', 'files' => ['woff2' => 'inter/Inter-400.woff2'], 'paths' => ['woff2' => 'inter/Inter-400.woff2']],
+            ],
+        ],
+        'published',
+        true
+    );
+
+    $themeJson = new WP_Theme_JSON_Data(['settings' => []]);
+    $result = $services['runtime']->injectEditorFontPresets($themeJson);
+    $data = $result->get_data();
+
+    assertFalseValue(
+        array_key_exists('version', $data),
+        'injectEditorFontPresets() should not inject a fallback schema version when the incoming theme JSON data omits one.'
+    );
 };

@@ -13,11 +13,15 @@ use WP_Error;
 
 final class GoogleFontsClient
 {
+    public const ACTION_REVALIDATE_API_KEY = 'tasty_fonts_revalidate_google_api_key';
     public const TRANSIENT_CATALOG = 'tasty_fonts_google_catalog_v2';
     public const LEGACY_TRANSIENT_CATALOG = 'tasty_fonts_google_catalog_v1';
     public const TRANSIENT_METADATA = 'tasty_fonts_google_metadata_v1';
+    public const TRANSIENT_API_KEY_REVALIDATION_QUEUED = 'tasty_fonts_google_api_key_revalidation_queued_v1';
     private const CATALOG_TTL = 12 * HOUR_IN_SECONDS;
     private const METADATA_TTL = 12 * HOUR_IN_SECONDS;
+    private const API_KEY_REVALIDATION_INTERVAL = DAY_IN_SECONDS;
+    private const API_KEY_REVALIDATION_QUEUE_TTL = HOUR_IN_SECONDS;
     private const METADATA_URL = 'https://fonts.google.com/metadata/fonts';
     private const REQUEST_TIMEOUT = 20;
 
@@ -36,14 +40,17 @@ final class GoogleFontsClient
 
     public function canSearch(): bool
     {
-        $status = $this->settings->getGoogleApiKeyStatus();
+        $status = $this->getApiKeyStatus();
 
         return $this->hasApiKey() && ($status['state'] ?? 'empty') === 'valid';
     }
 
     public function getApiKeyStatus(): array
     {
-        return $this->settings->getGoogleApiKeyStatus();
+        $status = $this->settings->getGoogleApiKeyStatus();
+        $this->maybeScheduleApiKeyRevalidation($status);
+
+        return $status;
     }
 
     public function clearCatalogCache(): void
@@ -108,6 +115,24 @@ final class GoogleFontsClient
             'state' => 'unknown',
             'message' => __('Google Fonts API key could not be verified because Google returned an unexpected response.', 'tasty-fonts'),
         ];
+    }
+
+    public function revalidateStoredApiKeyStatus(): array
+    {
+        delete_transient(TransientKey::forSite(self::TRANSIENT_API_KEY_REVALIDATION_QUEUED));
+
+        $apiKey = $this->getApiKey();
+
+        if ($apiKey === '') {
+            return $this->settings->saveGoogleApiKeyStatus('empty');
+        }
+
+        $validation = $this->validateApiKey($apiKey);
+
+        return $this->settings->saveGoogleApiKeyStatus(
+            (string) ($validation['state'] ?? 'unknown'),
+            (string) ($validation['message'] ?? '')
+        );
     }
 
     public function searchFamilies(string $query, int $limit = 20): array
@@ -398,6 +423,35 @@ final class GoogleFontsClient
     private function getApiKey(): string
     {
         return trim((string) $this->settings->getSettings()['google_api_key']);
+    }
+
+    private function maybeScheduleApiKeyRevalidation(array $status): void
+    {
+        if (!$this->hasApiKey()) {
+            return;
+        }
+
+        $checkedAt = (int) ($status['checked_at'] ?? 0);
+
+        if ($checkedAt > 0 && (time() - $checkedAt) < self::API_KEY_REVALIDATION_INTERVAL) {
+            return;
+        }
+
+        if (get_transient(TransientKey::forSite(self::TRANSIENT_API_KEY_REVALIDATION_QUEUED)) !== false) {
+            return;
+        }
+
+        set_transient(
+            TransientKey::forSite(self::TRANSIENT_API_KEY_REVALIDATION_QUEUED),
+            ['queued' => 1],
+            self::API_KEY_REVALIDATION_QUEUE_TTL
+        );
+
+        $scheduled = wp_schedule_single_event(time(), self::ACTION_REVALIDATE_API_KEY);
+
+        if ($scheduled === false || is_wp_error($scheduled)) {
+            delete_transient(TransientKey::forSite(self::TRANSIENT_API_KEY_REVALIDATION_QUEUED));
+        }
     }
 
     private function fetchRemoteCatalogItems(): array

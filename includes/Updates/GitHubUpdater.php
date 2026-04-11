@@ -24,8 +24,10 @@ final class GitHubUpdater
     private const TRANSIENT_LEGACY_RELEASE = 'tasty_fonts_github_release_v1';
     private const TRANSIENT_RELEASE_MANIFEST = 'tasty_fonts_github_release_manifest_v1';
     private const TRANSIENT_INSTALLED_VERSION = 'tasty_fonts_github_release_version_v1';
+    private const TRANSIENT_RELEASE_BACKOFF = 'tasty_fonts_github_release_backoff_v1';
     private const CACHE_TTL = 6 * HOUR_IN_SECONDS;
     private const INSTALLED_VERSION_TTL = 30 * DAY_IN_SECONDS;
+    private const API_BACKOFF_TTL = 900;
     private const REQUEST_TIMEOUT = 20;
     private const PACKAGE_NAME_PATTERN = 'tasty-fonts-%s.zip';
     private const PACKAGE_CHECKSUM_NAME_PATTERN = 'tasty-fonts-%s.zip.sha256';
@@ -324,6 +326,7 @@ final class GitHubUpdater
     {
         delete_transient($this->legacyReleaseTransientKey());
         delete_transient($this->releaseManifestTransientKey());
+        delete_transient($this->releaseBackoffTransientKey());
     }
 
     private function getLatestReleaseForChannel(string $channel): ?array
@@ -345,26 +348,24 @@ final class GitHubUpdater
 
     private function getReleaseManifest(): ?array
     {
+        if ($this->isApiBackoffActive()) {
+            return null;
+        }
+
         $cached = get_transient($this->releaseManifestTransientKey());
 
         if (is_array($cached)) {
             return $cached;
         }
 
-        $response = wp_remote_get(
-            self::API_RELEASES_URL,
-            [
-                'timeout' => self::REQUEST_TIMEOUT,
-                'headers' => [
-                    'Accept' => 'application/vnd.github+json',
-                    'User-Agent' => 'Tasty-Custom-Fonts/' . TASTY_FONTS_VERSION,
-                ],
-            ]
-        );
+        $response = $this->performGitHubGet(self::API_RELEASES_URL, 'application/vnd.github+json');
 
         if (is_wp_error($response) || (int) wp_remote_retrieve_response_code($response) !== 200) {
+            $this->cacheApiBackoffFromResponse($response);
             return null;
         }
+
+        delete_transient($this->releaseBackoffTransientKey());
 
         $payload = json_decode((string) wp_remote_retrieve_body($response), true);
 
@@ -524,16 +525,7 @@ final class GitHubUpdater
 
     private function fetchExpectedChecksum(string $checksumUrl): string
     {
-        $response = wp_remote_get(
-            $checksumUrl,
-            [
-                'timeout' => self::REQUEST_TIMEOUT,
-                'headers' => [
-                    'Accept' => 'text/plain',
-                    'User-Agent' => 'Tasty-Custom-Fonts/' . TASTY_FONTS_VERSION,
-                ],
-            ]
-        );
+        $response = $this->performGitHubGet($checksumUrl, 'text/plain');
 
         if (is_wp_error($response) || (int) wp_remote_retrieve_response_code($response) !== 200) {
             return '';
@@ -590,6 +582,63 @@ final class GitHubUpdater
         }
 
         return '<p>' . nl2br(esc_html($content)) . '</p>';
+    }
+
+    private function performGitHubGet(string $url, string $accept): mixed
+    {
+        return wp_remote_get(
+            $url,
+            [
+                'timeout' => self::REQUEST_TIMEOUT,
+                'headers' => $this->buildGitHubRequestHeaders($accept),
+            ]
+        );
+    }
+
+    private function buildGitHubRequestHeaders(string $accept): array
+    {
+        $headers = [
+            'Accept' => $accept,
+            'User-Agent' => 'Tasty-Custom-Fonts/' . TASTY_FONTS_VERSION,
+        ];
+        $token = trim((string) apply_filters('tasty_fonts_github_api_token', ''));
+
+        if ($token !== '') {
+            $headers['Authorization'] = 'Bearer ' . $token;
+        }
+
+        return $headers;
+    }
+
+    private function isApiBackoffActive(): bool
+    {
+        return get_transient($this->releaseBackoffTransientKey()) !== false;
+    }
+
+    private function cacheApiBackoffFromResponse(mixed $response): void
+    {
+        if (is_wp_error($response)) {
+            return;
+        }
+
+        $statusCode = (int) wp_remote_retrieve_response_code($response);
+        $remaining = trim((string) wp_remote_retrieve_header($response, 'x-ratelimit-remaining'));
+
+        if (!in_array($statusCode, [403, 429], true) && $remaining !== '0') {
+            return;
+        }
+
+        $retryAfter = (int) trim((string) wp_remote_retrieve_header($response, 'retry-after'));
+        $ttl = $retryAfter > 0 ? max(60, $retryAfter) : self::API_BACKOFF_TTL;
+
+        set_transient(
+            $this->releaseBackoffTransientKey(),
+            [
+                'status_code' => $statusCode,
+                'remaining' => $remaining,
+            ],
+            $ttl
+        );
     }
 
     private function getPluginMetadata(): array
@@ -760,5 +809,10 @@ final class GitHubUpdater
     private function installedVersionTransientKey(): string
     {
         return TransientKey::forSite(self::TRANSIENT_INSTALLED_VERSION);
+    }
+
+    private function releaseBackoffTransientKey(): string
+    {
+        return TransientKey::forSite(self::TRANSIENT_RELEASE_BACKOFF);
     }
 }

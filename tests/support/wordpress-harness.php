@@ -731,6 +731,7 @@ $scriptTranslations = [];
 $loadedTextdomains = [];
 $redirectLocation = '';
 $isAdminRequest = false;
+$isDoingCron = false;
 $hookCallbacks = [];
 $actionCounts = [];
 $actionCalls = [];
@@ -1341,6 +1342,15 @@ if (!function_exists('current_user_can')) {
     }
 }
 
+if (!function_exists('wp_doing_cron')) {
+    function wp_doing_cron(): bool
+    {
+        global $isDoingCron;
+
+        return !empty($isDoingCron);
+    }
+}
+
 if (!function_exists('register_rest_route')) {
     function register_rest_route(string $namespace, string $route, array $args = [], bool $override = false): bool
     {
@@ -1643,6 +1653,7 @@ function resetTestState(): void
     global $wpdbQueries;
     global $wp_filesystem;
     global $uploadBaseDir;
+    global $isDoingCron;
 
     $filesystemMethod = 'direct';
     $downloadUrlCalls = [];
@@ -1676,6 +1687,7 @@ function resetTestState(): void
     $scriptTranslations = [];
     $redirectLocation = '';
     $isAdminRequest = false;
+    $isDoingCron = false;
     $isUserLoggedIn = true;
     $hookCallbacks = [];
     $actionCounts = [];

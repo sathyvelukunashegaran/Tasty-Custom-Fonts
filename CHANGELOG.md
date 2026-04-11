@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Added a WordPress-style `readme.txt` with distribution metadata, FAQs, screenshots references, and a clearer multisite stance for plugin installs outside the GitHub-only README flow.
+- Added scheduled Google Fonts API key revalidation so stale saved key status now queues a lightweight cron recheck instead of remaining indefinitely stale.
+
+### Changed
+
+- Hardened editor theme JSON preset injection so the plugin preserves valid incoming schema versions and stops forcing a fallback schema version when the source data omits one.
+- Clarified optional integration messaging for Etch, Automatic.css, Bricks, and Oxygen, and explicitly blocked network-wide activation in favor of per-site activation on multisite installs.
+- Added optional preload `Link` header generation behind a filter for advanced performance setups while keeping HTML preload hints as the default delivery mode.
+- Updated the GitHub updater to support an optional token-backed API request header and to back off temporarily after GitHub rate-limit responses.
+
+### Fixed
+
+- Restricted deferred generated CSS regeneration to cron execution contexts so the scheduled action no longer runs when triggered from unintended request paths.
+
 ## [1.10.0-beta.1] - 2026-04-11
 
 ### Fixed

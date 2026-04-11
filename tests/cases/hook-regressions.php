@@ -37,6 +37,24 @@ $tests['plugin_activation_creates_provider_index_files_and_generated_css'] = sta
     resetPluginSingleton();
 };
 
+$tests['plugin_activation_rejects_network_wide_activation'] = static function (): void {
+    resetTestState();
+    resetPluginSingleton();
+
+    try {
+        Plugin::activate(true);
+        assertTrueValue(false, 'Plugin::activate() should stop network-wide activation.');
+    } catch (WpDieException $exception) {
+        assertContainsValue(
+            'does not support network-wide activation',
+            $exception->getMessage(),
+            'Plugin::activate() should explain that network-wide activation is unsupported.'
+        );
+    }
+
+    resetPluginSingleton();
+};
+
 $tests['plugin_boot_loads_the_textdomain_immediately'] = static function (): void {
     global $hookCallbacks;
     global $loadedTextdomains;
@@ -111,6 +129,82 @@ $tests['plugin_attachment_hooks_only_invalidate_catalog_for_files_within_font_st
         'Font attachment changed. Catalog cache cleared.',
         wp_json_encode($optionStore['tasty_fonts_log'] ?? []),
         'Attachment invalidation should leave an audit log entry for the cache clear.'
+    );
+
+    resetPluginSingleton();
+};
+
+$tests['plugin_generated_css_regeneration_action_runs_only_during_cron'] = static function (): void {
+    resetTestState();
+    resetPluginSingleton();
+
+    global $isDoingCron;
+
+    $storage = new Storage();
+    $path = $storage->getGeneratedCssPath();
+
+    assertTrueValue(is_string($path) && $path !== '', 'The generated CSS path should resolve for cron hook testing.');
+
+    Plugin::instance()->boot();
+
+    if (is_file($path)) {
+        unlink($path);
+    }
+
+    do_action(AssetService::ACTION_REGENERATE_CSS);
+
+    assertFalseValue(
+        is_file($path),
+        'The scheduled CSS regeneration action should ignore non-cron executions.'
+    );
+
+    $isDoingCron = true;
+    do_action(AssetService::ACTION_REGENERATE_CSS);
+    $isDoingCron = false;
+
+    assertTrueValue(
+        is_file($path),
+        'The scheduled CSS regeneration action should rebuild the stylesheet during cron execution.'
+    );
+
+    resetPluginSingleton();
+};
+
+$tests['plugin_google_api_key_revalidation_runs_only_during_cron'] = static function (): void {
+    resetTestState();
+    resetPluginSingleton();
+
+    global $isDoingCron;
+    global $optionStore;
+    global $remoteGetResponses;
+
+    $settings = new TastyFonts\Repository\SettingsRepository();
+    $settings->saveSettings(['google_api_key' => 'api-key']);
+    $settings->saveGoogleApiKeyStatus('unknown', 'Needs refresh');
+    $optionStore[TastyFonts\Repository\SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_checked_at'] = time() - (2 * DAY_IN_SECONDS);
+    $remoteGetResponses['https://www.googleapis.com/webfonts/v1/webfonts?sort=popularity&key=api-key'] = [
+        'response' => ['code' => 200],
+        'headers' => ['content-type' => 'application/json'],
+        'body' => json_encode(['items' => []]),
+    ];
+
+    Plugin::instance()->boot();
+    do_action(TastyFonts\Google\GoogleFontsClient::ACTION_REVALIDATE_API_KEY);
+
+    assertSameValue(
+        'unknown',
+        (string) ($settings->getGoogleApiKeyStatus()['state'] ?? ''),
+        'Google API key revalidation should ignore non-cron executions.'
+    );
+
+    $isDoingCron = true;
+    do_action(TastyFonts\Google\GoogleFontsClient::ACTION_REVALIDATE_API_KEY);
+    $isDoingCron = false;
+
+    assertSameValue(
+        'valid',
+        (string) ($settings->getGoogleApiKeyStatus()['state'] ?? ''),
+        'Google API key revalidation should refresh the saved status during cron execution.'
     );
 
     resetPluginSingleton();

@@ -812,6 +812,85 @@ $tests['github_updater_handles_network_and_response_failures_quietly'] = static 
     assertSameValue([], $malformedResult->response ?? [], 'Updater should leave the update transient unchanged when GitHub returns malformed JSON.');
 };
 
+$tests['github_updater_adds_an_optional_authorization_header'] = static function () use ($nextPatchVersion, $releaseAssets): void {
+    resetTestState();
+    resetPluginSingleton();
+
+    global $remoteGetCalls;
+    global $remoteGetResponses;
+
+    $releaseVersion = $nextPatchVersion(TASTY_FONTS_VERSION);
+    $endpoint = 'https://api.github.com/repos/sathyvelukunashegaran/Tasty-Custom-Fonts/releases';
+
+    $remoteGetResponses[$endpoint] = [
+        'response' => ['code' => 200],
+        'body' => json_encode(
+            [
+                [
+                    'tag_name' => $releaseVersion,
+                    'draft' => false,
+                    'prerelease' => false,
+                    'body' => '',
+                    'published_at' => '2026-04-08T00:00:00Z',
+                    'assets' => $releaseAssets($releaseVersion, 'https://example.test/' . $releaseVersion . '.zip'),
+                ],
+            ]
+        ),
+    ];
+
+    add_filter('tasty_fonts_github_api_token', static fn (): string => 'test-token');
+
+    Plugin::instance()->boot();
+    apply_filters(
+        'pre_set_site_transient_update_plugins',
+        (object) [
+            'checked' => [plugin_basename(TASTY_FONTS_FILE) => TASTY_FONTS_VERSION],
+            'response' => [],
+        ]
+    );
+
+    assertSameValue(
+        'Bearer test-token',
+        (string) ($remoteGetCalls[0]['args']['headers']['Authorization'] ?? ''),
+        'Updater should add a bearer authorization header when a GitHub API token is provided through the filter.'
+    );
+};
+
+$tests['github_updater_backs_off_after_rate_limit_responses'] = static function (): void {
+    resetTestState();
+    resetPluginSingleton();
+
+    global $remoteGetCalls;
+    global $remoteGetResponses;
+
+    $endpoint = 'https://api.github.com/repos/sathyvelukunashegaran/Tasty-Custom-Fonts/releases';
+    $transient = (object) [
+        'checked' => [plugin_basename(TASTY_FONTS_FILE) => TASTY_FONTS_VERSION],
+        'response' => [],
+    ];
+
+    $remoteGetResponses[$endpoint] = [
+        'response' => ['code' => 403],
+        'headers' => [
+            'x-ratelimit-remaining' => '0',
+            'retry-after' => '120',
+        ],
+        'body' => '',
+    ];
+
+    Plugin::instance()->boot();
+    $firstResult = apply_filters('pre_set_site_transient_update_plugins', $transient);
+    $secondResult = apply_filters('pre_set_site_transient_update_plugins', $transient);
+
+    assertSameValue([], $firstResult->response ?? [], 'Updater should leave the update transient unchanged when GitHub rate limits the request.');
+    assertSameValue([], $secondResult->response ?? [], 'Updater should continue leaving the update transient unchanged while the backoff transient is active.');
+    assertSameValue(1, count($remoteGetCalls), 'Updater should avoid repeated GitHub API requests while the rate-limit backoff transient is active.');
+    assertTrueValue(
+        is_array(get_transient(TransientKey::forSite('tasty_fonts_github_release_backoff_v1'))),
+        'Updater should cache a short-lived backoff marker after GitHub rate limits the API request.'
+    );
+};
+
 $tests['github_updater_clears_cached_release_data_when_the_installed_version_changes'] = static function () use ($nextPatchVersion): void {
     resetTestState();
 

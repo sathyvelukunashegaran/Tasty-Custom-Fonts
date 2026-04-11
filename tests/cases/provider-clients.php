@@ -383,6 +383,34 @@ $tests['google_fonts_client_uses_compact_catalog_cache_for_search_and_refetches_
     );
 };
 
+$tests['google_fonts_client_schedules_api_key_revalidation_when_status_is_stale'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+    global $scheduledEvents;
+    global $transientStore;
+
+    $settings = new SettingsRepository();
+    $settings->saveSettings(['google_api_key' => 'api-key']);
+    $settings->saveGoogleApiKeyStatus('valid', 'Ready');
+    $optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_checked_at'] = time() - (2 * DAY_IN_SECONDS);
+
+    $client = new GoogleFontsClient($settings);
+    $status = $client->getApiKeyStatus();
+
+    assertSameValue('valid', (string) ($status['state'] ?? ''), 'Loading stale Google API key status should preserve the stored state while revalidation is queued.');
+    assertSameValue(
+        GoogleFontsClient::ACTION_REVALIDATE_API_KEY,
+        (string) ($scheduledEvents[0]['hook'] ?? ''),
+        'Stale Google API key status should queue a lightweight revalidation event.'
+    );
+    assertSameValue(
+        ['queued' => 1],
+        $transientStore[TransientKey::forSite(GoogleFontsClient::TRANSIENT_API_KEY_REVALIDATION_QUEUED)] ?? null,
+        'Stale Google API key status should set a short-lived queue guard transient.'
+    );
+};
+
 $tests['google_fonts_client_clears_catalog_cache'] = static function (): void {
     resetTestState();
 

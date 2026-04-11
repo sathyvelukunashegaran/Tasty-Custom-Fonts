@@ -216,8 +216,14 @@ final class Plugin
         return self::$instance;
     }
 
-    public static function activate(): void
+    public static function activate(bool $networkWide = false): void
     {
+        if ($networkWide) {
+            wp_die(
+                esc_html__('Tasty Custom Fonts does not support network-wide activation. Activate it on each site that should manage its own font library.', 'tasty-fonts')
+            );
+        }
+
         self::instance()->onActivate();
     }
 
@@ -251,7 +257,8 @@ final class Plugin
 
     private function registerRuntimeHooks(): void
     {
-        add_action(AssetService::ACTION_REGENERATE_CSS, [$this->assets, 'ensureGeneratedCssFile']);
+        add_action(AssetService::ACTION_REGENERATE_CSS, [$this, 'handleGeneratedCssRegeneration']);
+        add_action(GoogleFontsClient::ACTION_REVALIDATE_API_KEY, [$this, 'handleGoogleApiKeyRevalidation']);
         add_action('wp_enqueue_scripts', [$this->runtime, 'enqueueFrontend']);
         add_action('wp_head', [$this->runtime, 'outputPreloadHints'], 1);
         add_action('etch/canvas/enqueue_assets', [$this->runtime, 'enqueueEtchCanvas']);
@@ -326,5 +333,32 @@ final class Plugin
     {
         $this->developerTools->ensureStorageScaffolding();
         $this->assets->ensureGeneratedCssFile();
+    }
+
+    public function handleGeneratedCssRegeneration(): void
+    {
+        if (!$this->isCronExecutionContext()) {
+            return;
+        }
+
+        $this->assets->ensureGeneratedCssFile();
+    }
+
+    public function handleGoogleApiKeyRevalidation(): void
+    {
+        if (!$this->isCronExecutionContext()) {
+            return;
+        }
+
+        $this->googleClient->revalidateStoredApiKeyStatus();
+    }
+
+    private function isCronExecutionContext(): bool
+    {
+        if (function_exists('wp_doing_cron')) {
+            return wp_doing_cron();
+        }
+
+        return defined('DOING_CRON') && DOING_CRON;
     }
 }

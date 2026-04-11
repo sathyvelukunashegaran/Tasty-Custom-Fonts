@@ -25,6 +25,8 @@ Tasty Custom Fonts lets you upload local font files, import Google Fonts or Bunn
 
 **Works especially well with [EtchWP](https://etch.com), [Automatic CSS](https://automaticcss.com), Bricks, and Oxygen.**
 
+These integrations are optional. The plugin does not declare any required companion plugins because the core workflow works on a standard WordPress site without Etch, Automatic.css, Bricks, or Oxygen.
+
 ## Documentation
 
 Use the repo-native docs for the full knowledge base:
@@ -208,6 +210,10 @@ When the draft looks right, use `Apply Sitewide` to serve the current role CSS a
 | Etch | Optional |
 
 The plugin works without Etch, but the Etch canvas bridge is most useful when you build with Etch.
+
+## Multisite
+
+Tasty Custom Fonts is intended for single-site use and per-site activation inside multisite networks. Network-wide activation is not supported because the plugin stores and generates font assets per site.
 
 ## Development
 

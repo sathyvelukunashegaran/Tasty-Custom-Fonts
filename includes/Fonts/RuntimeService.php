@@ -77,7 +77,18 @@ final class RuntimeService
             return;
         }
 
-        foreach ($this->assets->getPrimaryFontPreloadUrls() as $url) {
+        $preloadMode = $this->preloadLinkDeliveryMode();
+        $preloadUrls = $this->assets->getPrimaryFontPreloadUrls();
+
+        if (in_array($preloadMode, ['headers', 'both'], true)) {
+            $this->sendPreloadLinkHeaders($this->getPreloadLinkHeaderValues($preloadUrls));
+        }
+
+        if ($preloadMode === 'headers') {
+            return;
+        }
+
+        foreach ($preloadUrls as $url) {
             if (!is_string($url) || trim($url) === '') {
                 continue;
             }
@@ -163,19 +174,21 @@ final class RuntimeService
             return $themeJson;
         }
 
-        $existingData = $themeJson->get_data();
-        $schemaVersion = (int) ($existingData['version'] ?? 3);
-
-        return $themeJson->update_with(
-            [
-                'version' => $schemaVersion,
-                'settings' => [
-                    'typography' => [
-                        'fontFamilies' => $fontFamilies,
-                    ],
+        $themeJsonUpdate = [
+            'settings' => [
+                'typography' => [
+                    'fontFamilies' => $fontFamilies,
                 ],
-            ]
-        );
+            ],
+        ];
+
+        $schemaVersion = $this->resolveThemeJsonSchemaVersion($themeJson);
+
+        if ($schemaVersion !== null) {
+            $themeJsonUpdate['version'] = $schemaVersion;
+        }
+
+        return $themeJson->update_with($themeJsonUpdate);
     }
 
     public function filterBlockEditorSettings(array $editorSettings, mixed $editorContext = null): array
@@ -238,6 +251,33 @@ final class RuntimeService
         }
 
         return preg_replace('/(?=\s*\/?>$)/', ' crossorigin="anonymous"', $html, 1) ?: $html;
+    }
+
+    /**
+     * Build HTTP Link header values for the current primary font preload candidates.
+     *
+     * @since 1.10.0
+     *
+     * @param array<int, string>|null $preloadUrls Optional preload URLs to convert into Link header values.
+     * @return array<int, string> Link header values for the configured preload assets.
+     */
+    public function getPreloadLinkHeaderValues(?array $preloadUrls = null): array
+    {
+        $preloadUrls = is_array($preloadUrls) ? $preloadUrls : $this->assets->getPrimaryFontPreloadUrls();
+        $headers = [];
+
+        foreach ($preloadUrls as $url) {
+            if (!is_string($url) || trim($url) === '') {
+                continue;
+            }
+
+            $headers[] = sprintf(
+                '<%s>; rel=preload; as=font; type="font/woff2"; crossorigin',
+                esc_url_raw($url)
+            );
+        }
+
+        return array_values(array_unique($headers));
     }
 
     private function enqueueEtchCanvasBridge(): void
@@ -385,5 +425,39 @@ final class RuntimeService
     private function canUseEtchCanvasQueryParameter(): bool
     {
         return is_user_logged_in() && current_user_can('edit_posts');
+    }
+
+    private function preloadLinkDeliveryMode(): string
+    {
+        $mode = strtolower(trim((string) apply_filters('tasty_fonts_preload_link_delivery_mode', 'html')));
+
+        return in_array($mode, ['html', 'headers', 'both'], true) ? $mode : 'html';
+    }
+
+    private function sendPreloadLinkHeaders(array $headers): void
+    {
+        if ($headers === [] || headers_sent()) {
+            return;
+        }
+
+        foreach ($headers as $value) {
+            header('Link: ' . $value, false);
+        }
+    }
+
+    private function resolveThemeJsonSchemaVersion(WP_Theme_JSON_Data $themeJson): ?int
+    {
+        $existingData = $themeJson->get_data();
+        $schemaVersion = $existingData['version'] ?? null;
+
+        if (is_int($schemaVersion) && $schemaVersion > 0) {
+            return $schemaVersion;
+        }
+
+        if (is_string($schemaVersion) && ctype_digit($schemaVersion) && (int) $schemaVersion > 0) {
+            return (int) $schemaVersion;
+        }
+
+        return null;
     }
 }

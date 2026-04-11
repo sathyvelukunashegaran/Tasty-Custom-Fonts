@@ -163,6 +163,7 @@ HTACCESS;
 
         if (function_exists('wp_clear_scheduled_hook')) {
             wp_clear_scheduled_hook(AssetService::ACTION_REGENERATE_CSS);
+            wp_clear_scheduled_hook(GoogleFontsClient::ACTION_REVALIDATE_API_KEY);
         }
 
         $this->assets->refreshGeneratedAssets(true, false);
@@ -204,6 +205,7 @@ HTACCESS;
 
         if (function_exists('wp_clear_scheduled_hook')) {
             wp_clear_scheduled_hook(AssetService::ACTION_REGENERATE_CSS);
+            wp_clear_scheduled_hook(GoogleFontsClient::ACTION_REVALIDATE_API_KEY);
         }
     }
 
@@ -221,6 +223,7 @@ HTACCESS;
 
         if (function_exists('wp_clear_scheduled_hook')) {
             wp_clear_scheduled_hook(AssetService::ACTION_REGENERATE_CSS);
+            wp_clear_scheduled_hook(GoogleFontsClient::ACTION_REVALIDATE_API_KEY);
         }
 
         $this->assets->refreshGeneratedAssets(true, false);
@@ -238,6 +241,7 @@ HTACCESS;
                 AssetService::TRANSIENT_CSS,
                 AssetService::TRANSIENT_HASH,
                 AssetService::TRANSIENT_REGENERATE_CSS_QUEUED,
+                GoogleFontsClient::TRANSIENT_API_KEY_REVALIDATION_QUEUED,
                 BunnyFontsClient::TRANSIENT_CATALOG,
                 self::UPDATER_LEGACY_RELEASE_TRANSIENT,
                 self::UPDATER_RELEASE_TRANSIENT,
