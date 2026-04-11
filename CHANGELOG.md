@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Rewrote the GitHub README to lead with product benefits, workflow clarity, and integration value so the project presents more like a polished plugin landing page than a developer-first repository overview.
+
 ## [1.10.0-beta.3] - 2026-04-12
 
 ### Changed
