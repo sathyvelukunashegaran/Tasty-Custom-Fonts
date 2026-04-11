@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-04-12
+
 ### Added
 
 - Added Automatic.css font-weight sync alongside the managed heading/body font-family mapping, including stored restore points plus Gutenberg and Etch canvas bridges for the active Automatic.css runtime stylesheet and editor-safe inline CSS.
