@@ -132,6 +132,10 @@ if (!class_exists('WP_Error')) {
     }
 }
 
+if (!class_exists('WpDieException')) {
+    class WpDieException extends RuntimeException {}
+}
+
 if (!class_exists('WP_REST_Response')) {
     class WP_REST_Response
     {
@@ -252,6 +256,30 @@ if (!class_exists('Plugin_Upgrader')) {
             }
 
             return $pluginUpgraderInstallResult;
+        }
+    }
+}
+
+if (!class_exists('WP_Theme_JSON_Data')) {
+    class WP_Theme_JSON_Data
+    {
+        private array $data;
+
+        public function __construct(array $data = [])
+        {
+            $this->data = $data;
+        }
+
+        public function get_data(): array
+        {
+            return $this->data;
+        }
+
+        public function update_with(array $theme_json): static
+        {
+            $this->data = array_replace_recursive($this->data, $theme_json);
+
+            return $this;
         }
     }
 }
@@ -1190,6 +1218,13 @@ if (!function_exists('wp_safe_redirect')) {
         $redirectLocation = $location;
 
         return true;
+    }
+}
+
+if (!function_exists('wp_die')) {
+    function wp_die(mixed $message = '', mixed $title = '', mixed $args = []): never
+    {
+        throw new WpDieException((string) $message);
     }
 }
 

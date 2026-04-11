@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use TastyFonts\Admin\FontTypeHelper;
 use TastyFonts\Fonts\FontFilenameParser;
 use TastyFonts\Fonts\HostedImportSupport;
 use TastyFonts\Support\FontUtils;
@@ -225,8 +226,8 @@ $tests['font_utils_variant_key_builds_dedupe_key_from_weight_style_and_range'] =
     assertSameValue('400|normal|none', FontUtils::variantKey('400', 'normal'), 'Variant key without a unicode range should use "none" as the range segment.');
     assertSameValue('700|italic|none', FontUtils::variantKey('700', 'italic'), 'Variant key should normalize the style segment.');
     $rangeKey = FontUtils::variantKey('400', 'normal', 'U+0000-00FF');
-    assertTrueValue(str_contains($rangeKey, '400|normal|'), 'Variant key with a unicode range should embed the weight and style segments.');
-    assertFalseValue(str_contains($rangeKey, 'none'), 'Variant key with a unicode range should not use the "none" placeholder.');
+    assertContainsValue('400|normal|', $rangeKey, 'Variant key with a unicode range should embed the weight and style segments.');
+    assertNotContainsValue('none', $rangeKey, 'Variant key with a unicode range should not use the "none" placeholder.');
 };
 
 // ---------------------------------------------------------------------------
@@ -461,4 +462,172 @@ $tests['hosted_import_support_merge_manifest_faces_preserves_existing_faces_not_
     $merged = HostedImportSupport::mergeManifestFaces($existing, $new);
 
     assertSameValue(3, count($merged), 'mergeManifestFaces should keep all existing faces when new faces do not conflict.');
+};
+
+// ---------------------------------------------------------------------------
+// FontTypeHelper – entryHasVariableMetadata
+// ---------------------------------------------------------------------------
+
+$tests['font_type_helper_entry_has_variable_metadata_detects_has_variable_faces_flag'] = static function (): void {
+    assertTrueValue(FontTypeHelper::entryHasVariableMetadata(['has_variable_faces' => true]), 'has_variable_faces flag should be recognised as variable metadata.');
+    assertFalseValue(FontTypeHelper::entryHasVariableMetadata(['has_variable_faces' => false]), 'has_variable_faces=false should not be treated as variable metadata.');
+};
+
+$tests['font_type_helper_entry_has_variable_metadata_detects_variation_axes'] = static function (): void {
+    assertTrueValue(
+        FontTypeHelper::entryHasVariableMetadata(['variation_axes' => ['WGHT' => ['min' => 100, 'max' => 900]]]),
+        'A valid variation_axes map should be recognised as variable metadata.'
+    );
+    assertFalseValue(
+        FontTypeHelper::entryHasVariableMetadata(['variation_axes' => []]),
+        'An empty variation_axes map should not be treated as variable metadata.'
+    );
+};
+
+$tests['font_type_helper_entry_has_variable_metadata_detects_face_level_flags'] = static function (): void {
+    assertTrueValue(
+        FontTypeHelper::entryHasVariableMetadata(['faces' => [['is_variable' => true]]]),
+        'A face with is_variable=true should be recognised as variable metadata.'
+    );
+    assertTrueValue(
+        FontTypeHelper::entryHasVariableMetadata(['faces' => [['axes' => ['WGHT' => ['min' => 100, 'max' => 900]]]]]),
+        'A face with a valid axes map should be recognised as variable metadata.'
+    );
+    assertFalseValue(
+        FontTypeHelper::entryHasVariableMetadata(['faces' => [['weight' => '400', 'style' => 'normal']]]),
+        'A static face without variable markers should not be treated as variable metadata.'
+    );
+    assertFalseValue(
+        FontTypeHelper::entryHasVariableMetadata([]),
+        'An empty entry should not be treated as variable metadata.'
+    );
+};
+
+// ---------------------------------------------------------------------------
+// FontTypeHelper – describe
+// ---------------------------------------------------------------------------
+
+$tests['font_type_helper_describe_returns_mixed_for_variable_and_static'] = static function (): void {
+    $result = FontTypeHelper::describe(true, 'library', true);
+
+    assertSameValue('mixed', (string) ($result['type'] ?? ''), 'describe() should return "mixed" when both variable and static metadata are present.');
+    assertSameValue(true, (bool) ($result['has_variable'] ?? false), 'Mixed descriptor should mark has_variable=true.');
+    assertSameValue(true, (bool) ($result['has_static'] ?? false), 'Mixed descriptor should mark has_static=true.');
+    assertSameValue(false, (bool) ($result['is_source_only'] ?? true), 'Mixed descriptor should mark is_source_only=false.');
+};
+
+$tests['font_type_helper_describe_returns_static_when_no_variable_metadata'] = static function (): void {
+    $result = FontTypeHelper::describe(false, 'library', true);
+
+    assertSameValue('static', (string) ($result['type'] ?? ''), 'describe() should return "static" when only static metadata is present.');
+    assertSameValue(false, (bool) ($result['has_variable'] ?? true), 'Static descriptor should mark has_variable=false.');
+    assertSameValue(true, (bool) ($result['has_static'] ?? false), 'Static descriptor should mark has_static=true.');
+};
+
+$tests['font_type_helper_describe_returns_variable_source_only_for_bunny_context'] = static function (): void {
+    $result = FontTypeHelper::describe(true, 'bunny', false);
+
+    assertSameValue('variable', (string) ($result['type'] ?? ''), 'describe() should return "variable" for bunny context with variable-only metadata.');
+    assertSameValue(true, (bool) ($result['is_source_only'] ?? false), 'Bunny variable descriptor should mark is_source_only=true.');
+};
+
+$tests['font_type_helper_describe_returns_plain_variable_for_non_bunny_context'] = static function (): void {
+    $result = FontTypeHelper::describe(true, 'library', false);
+
+    assertSameValue('variable', (string) ($result['type'] ?? ''), 'describe() should return "variable" for library context with variable-only metadata.');
+    assertSameValue(false, (bool) ($result['is_source_only'] ?? true), 'Library variable descriptor should mark is_source_only=false.');
+};
+
+$tests['font_type_helper_describe_is_case_insensitive_for_context'] = static function (): void {
+    $lower = FontTypeHelper::describe(true, 'bunny', false);
+    $upper = FontTypeHelper::describe(true, 'BUNNY', false);
+    $mixed = FontTypeHelper::describe(true, 'Bunny', false);
+
+    assertSameValue((bool) ($lower['is_source_only'] ?? false), (bool) ($upper['is_source_only'] ?? false), 'describe() context should be case-insensitive (BUNNY vs bunny).');
+    assertSameValue((bool) ($lower['is_source_only'] ?? false), (bool) ($mixed['is_source_only'] ?? false), 'describe() context should be case-insensitive (Bunny vs bunny).');
+};
+
+// ---------------------------------------------------------------------------
+// FontTypeHelper – describeEntry
+// ---------------------------------------------------------------------------
+
+$tests['font_type_helper_describe_entry_returns_mixed_for_entry_with_both_format_types'] = static function (): void {
+    $entry = [
+        'formats' => [
+            'static' => ['available' => true],
+            'variable' => ['available' => true],
+        ],
+    ];
+
+    $result = FontTypeHelper::describeEntry($entry);
+
+    assertSameValue('mixed', (string) ($result['type'] ?? ''), 'describeEntry() should return "mixed" when the entry has both static and variable formats available.');
+};
+
+$tests['font_type_helper_describe_entry_returns_static_for_entry_without_variable_formats'] = static function (): void {
+    $entry = [
+        'formats' => [
+            'static' => ['available' => true],
+            'variable' => ['available' => false],
+        ],
+    ];
+
+    $result = FontTypeHelper::describeEntry($entry);
+
+    assertSameValue('static', (string) ($result['type'] ?? ''), 'describeEntry() should return "static" when only the static format is available.');
+};
+
+$tests['font_type_helper_describe_entry_returns_variable_source_only_for_bunny_context'] = static function (): void {
+    $entry = [
+        'variation_axes' => ['WGHT' => ['min' => 100, 'max' => 900]],
+        'formats' => [
+            'variable' => ['available' => true, 'source_only' => true],
+        ],
+    ];
+
+    $result = FontTypeHelper::describeEntry($entry, 'bunny');
+
+    assertSameValue('variable', (string) ($result['type'] ?? ''), 'describeEntry() should identify a Bunny variable-source family as "variable".');
+    assertSameValue(true, (bool) ($result['is_source_only'] ?? false), 'A Bunny variable-only descriptor should expose is_source_only=true.');
+};
+
+// ---------------------------------------------------------------------------
+// FontTypeHelper – buildSelectorOptionLabel
+// ---------------------------------------------------------------------------
+
+$tests['font_type_helper_build_selector_option_label_returns_family_name_without_entry'] = static function (): void {
+    assertSameValue('Inter', FontTypeHelper::buildSelectorOptionLabel('Inter'), 'buildSelectorOptionLabel() should return the family name unchanged when no entry is provided.');
+    assertSameValue('', FontTypeHelper::buildSelectorOptionLabel(''), 'buildSelectorOptionLabel() should return an empty string for an empty family name.');
+    assertSameValue('Inter', FontTypeHelper::buildSelectorOptionLabel('Inter', null), 'buildSelectorOptionLabel() should return the family name when entry is null.');
+    assertSameValue('Inter', FontTypeHelper::buildSelectorOptionLabel('Inter', []), 'buildSelectorOptionLabel() should return the family name when entry is an empty array.');
+};
+
+$tests['font_type_helper_build_selector_option_label_appends_descriptor_label_for_variable_entry'] = static function (): void {
+    $entry = ['variation_axes' => ['WGHT' => ['min' => 100, 'max' => 900]]];
+
+    $label = FontTypeHelper::buildSelectorOptionLabel('Inter', $entry, 'library');
+
+    assertContainsValue('Inter', $label, 'Selector option label should include the family name for variable entries.');
+    assertContainsValue(' · ', $label, 'Selector option label should use the middle-dot separator.');
+    assertContainsValue('Variable', $label, 'Selector option label should append the descriptor label for variable entries.');
+};
+
+$tests['font_type_helper_build_selector_option_label_appends_static_descriptor_for_plain_entry'] = static function (): void {
+    $entry = ['formats' => ['static' => ['available' => true], 'variable' => ['available' => false]]];
+
+    $label = FontTypeHelper::buildSelectorOptionLabel('Lora', $entry);
+
+    assertContainsValue('Lora', $label, 'Selector option label should include the family name for static entries.');
+    assertContainsValue('Static', $label, 'Selector option label should append the Static descriptor for plain static entries.');
+};
+
+$tests['font_type_helper_build_selector_option_label_uses_bunny_context_for_source_only_variable'] = static function (): void {
+    $entry = [
+        'variation_axes' => ['WGHT' => ['min' => 100, 'max' => 900]],
+        'formats' => ['variable' => ['available' => true, 'source_only' => true]],
+    ];
+
+    $label = FontTypeHelper::buildSelectorOptionLabel('Raleway', $entry, 'bunny');
+
+    assertContainsValue('Variable Source', $label, 'buildSelectorOptionLabel() should reflect the bunny source-only label in the bunny context.');
 };

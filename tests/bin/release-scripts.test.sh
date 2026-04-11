@@ -202,6 +202,22 @@ else
     _fail "set-version rejects empty version argument" "should have failed"
 fi
 
+seed_plugin "6.0.1-beta.2"
+if "${test_repo}/bin/set-version" "6.0.1" >/dev/null 2>&1; then
+    _pass "set-version replaces pre-release dev version string"
+    version_header="$(sed -n 's/^Version: //p' "${test_repo}/plugin.php")"
+    const_version="$(grep "define('TASTY_FONTS_VERSION'" "${test_repo}/plugin.php" \
+        | sed "s/.*'TASTY_FONTS_VERSION', '//;s/').*//")"
+    if [[ "$version_header" == "6.0.1" && "$const_version" == "6.0.1" ]]; then
+        _pass "set-version replaces full pre-release token including suffix"
+    else
+        _fail "set-version replaces full pre-release token including suffix" \
+            "header=${version_header}, const=${const_version}"
+    fi
+else
+    _fail "set-version replaces pre-release dev version string" "command exited non-zero"
+fi
+
 # ── release-notes ─────────────────────────────────────────────────────────────
 
 seed_changelog
@@ -241,6 +257,17 @@ if ! "${test_repo}/bin/release-notes" "2.0.0" >/dev/null 2>&1; then
     _pass "release-notes fails when the matched section body is empty"
 else
     _fail "release-notes fails when the matched section body is empty" "should have failed"
+fi
+
+# Write a changelog with Windows-style CRLF line endings.
+printf '# Changelog\r\n\r\n## [3.0.0] - 2026-04-11\r\n\r\n### Added\r\n\r\n- CRLF feature.\r\n\r\n## [2.0.0] - 2026-01-01\r\n\r\n### Added\r\n\r\n- Earlier release.\r\n' \
+    > "${test_repo}/CHANGELOG.md"
+
+crlf_notes="$("${test_repo}/bin/release-notes" "3.0.0" 2>/dev/null)"
+if [[ "$crlf_notes" == *"CRLF feature"* ]]; then
+    _pass "release-notes handles Windows CRLF line endings"
+else
+    _fail "release-notes handles Windows CRLF line endings" "output: ${crlf_notes}"
 fi
 
 # ── promote-changelog ─────────────────────────────────────────────────────────
@@ -293,6 +320,16 @@ if ! "${test_repo}/bin/promote-changelog" "1.1.0" "2026-04-08" >/dev/null 2>&1; 
     _pass "promote-changelog fails when there is no Unreleased section"
 else
     _fail "promote-changelog fails when there is no Unreleased section" "should have failed"
+fi
+
+# A second promote-changelog call for the same version should fail because the
+# versioned section [1.1.0] already exists in the file.
+seed_changelog
+"${test_repo}/bin/promote-changelog" "1.1.0" "2026-04-08" >/dev/null 2>&1 || true
+if ! "${test_repo}/bin/promote-changelog" "1.1.0" "2026-04-08" >/dev/null 2>&1; then
+    _pass "promote-changelog rejects duplicate versioned section"
+else
+    _fail "promote-changelog rejects duplicate versioned section" "should have failed on second call"
 fi
 
 # ── nightly-version ───────────────────────────────────────────────────────────

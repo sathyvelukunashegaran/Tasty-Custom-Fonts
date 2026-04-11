@@ -61,22 +61,27 @@ $tests['admin_page_renderer_uses_inline_delivery_badge_for_single_delivery_famil
     ];
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFamilyRow',
-        [
-            $family,
-            ['heading' => '', 'body' => ''],
-            [],
-            [],
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFamilyRow',
             [
-                ['value' => 'inherit', 'label' => 'Use plugin default'],
-                ['value' => 'swap', 'label' => 'swap'],
-            ],
-            'The quick brown fox jumps over the lazy dog.',
-            [],
-        ]
-    );
+                $family,
+                ['heading' => '', 'body' => ''],
+                [],
+                [],
+                [
+                    ['value' => 'inherit', 'label' => 'Use plugin default'],
+                    ['value' => 'swap', 'label' => 'swap'],
+                ],
+                'The quick brown fox jumps over the lazy dog.',
+                [],
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('data-font-slug="inter"', $output, 'Library family rows should expose the normalized slug for client-side matching and post-import highlighting.');
@@ -141,22 +146,27 @@ $tests['admin_page_renderer_hides_collapsed_delivery_notes_for_multi_delivery_fa
     ];
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFamilyRow',
-        [
-            $family,
-            ['heading' => '', 'body' => ''],
-            [],
-            [],
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFamilyRow',
             [
-                ['value' => 'inherit', 'label' => 'Use plugin default'],
-                ['value' => 'swap', 'label' => 'swap'],
-            ],
-            'The quick brown fox jumps over the lazy dog.',
-            [],
-        ]
-    );
+                $family,
+                ['heading' => '', 'body' => ''],
+                [],
+                [],
+                [
+                    ['value' => 'inherit', 'label' => 'Use plugin default'],
+                    ['value' => 'swap', 'label' => 'swap'],
+                ],
+                'The quick brown fox jumps over the lazy dog.',
+                [],
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertNotContainsValue('Available delivery profiles', $output, 'Multi-delivery families should not repeat the saved delivery list in the collapsed card.');
@@ -170,86 +180,91 @@ $tests['admin_page_renderer_renders_library_type_filter_and_category_tokens'] = 
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [
-            'JetBrains Mono' => [
-                'family' => 'JetBrains Mono',
-                'slug' => 'jetbrains-mono',
-                'delivery_filter_tokens' => ['published', 'same-origin'],
-                'font_category' => 'monospace',
-                'font_category_tokens' => ['monospace'],
-                'publish_state' => 'published',
-                'active_delivery_id' => 'local-self-hosted',
-                'active_delivery' => [
-                    'id' => 'local-self-hosted',
-                    'label' => 'Self-hosted',
-                    'provider' => 'local',
-                    'type' => 'self_hosted',
-                    'variants' => ['regular'],
-                ],
-                'available_deliveries' => [
-                    [
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [
+                'JetBrains Mono' => [
+                    'family' => 'JetBrains Mono',
+                    'slug' => 'jetbrains-mono',
+                    'delivery_filter_tokens' => ['published', 'same-origin'],
+                    'font_category' => 'monospace',
+                    'font_category_tokens' => ['monospace'],
+                    'publish_state' => 'published',
+                    'active_delivery_id' => 'local-self-hosted',
+                    'active_delivery' => [
                         'id' => 'local-self-hosted',
                         'label' => 'Self-hosted',
                         'provider' => 'local',
                         'type' => 'self_hosted',
                         'variants' => ['regular'],
                     ],
-                ],
-                'delivery_badges' => [
-                    [
-                        'label' => 'Published',
-                        'class' => 'is-success',
-                        'copy' => 'Published',
+                    'available_deliveries' => [
+                        [
+                            'id' => 'local-self-hosted',
+                            'label' => 'Self-hosted',
+                            'provider' => 'local',
+                            'type' => 'self_hosted',
+                            'variants' => ['regular'],
+                        ],
                     ],
-                ],
-                'faces' => [
-                    [
-                        'weight' => '400',
-                        'style' => 'normal',
-                        'source' => 'local',
-                        'files' => ['woff2' => 'jetbrains-mono/JetBrainsMono-400-normal.woff2'],
-                        'paths' => ['woff2' => 'jetbrains-mono/JetBrainsMono-400-normal.woff2'],
+                    'delivery_badges' => [
+                        [
+                            'label' => 'Published',
+                            'class' => 'is-success',
+                            'copy' => 'Published',
+                        ],
+                    ],
+                    'faces' => [
+                        [
+                            'weight' => '400',
+                            'style' => 'normal',
+                            'source' => 'local',
+                            'files' => ['woff2' => 'jetbrains-mono/JetBrainsMono-400-normal.woff2'],
+                            'paths' => ['woff2' => 'jetbrains-mono/JetBrainsMono-400-normal.woff2'],
+                        ],
                     ],
                 ],
             ],
-        ],
-        'available_families' => ['JetBrains Mono'],
-        'roles' => [
-            'heading' => '',
-            'body' => '',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'sans-serif',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [
-            ['value' => 'inherit', 'label' => 'Use plugin default'],
-            ['value' => 'swap', 'label' => 'swap'],
-        ],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [['key' => 'code', 'label' => 'Code', 'active' => true]],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+            'available_families' => ['JetBrains Mono'],
+            'roles' => [
+                'heading' => '',
+                'body' => '',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'sans-serif',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [
+                ['value' => 'inherit', 'label' => 'Use plugin default'],
+                ['value' => 'swap', 'label' => 'swap'],
+            ],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [['key' => 'code', 'label' => 'Code', 'active' => true]],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('data-library-category-filter', $output, 'The Font Library toolbar should render a dedicated type filter control.');
@@ -266,70 +281,75 @@ $tests['admin_page_renderer_renders_single_page_tabs_with_settings_active'] = st
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'current_page' => 'settings',
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'css_delivery_mode' => 'file',
-        'css_delivery_mode_options' => [
-            ['value' => 'file', 'label' => 'Generated file'],
-            ['value' => 'inline', 'label' => 'Inline in page head'],
-        ],
-        'font_display' => 'optional',
-        'font_display_options' => [
-            ['value' => 'optional', 'label' => 'Optional'],
-            ['value' => 'swap', 'label' => 'Swap'],
-        ],
-        'minify_css_output' => true,
-        'per_variant_font_variables_enabled' => true,
-        'extended_variable_weight_tokens_enabled' => true,
-        'extended_variable_role_aliases_enabled' => true,
-        'extended_variable_category_sans_enabled' => true,
-        'extended_variable_category_serif_enabled' => true,
-        'extended_variable_category_mono_enabled' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'monospace_role_enabled' => true,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [
-            [
-                'key' => 'variables',
-                'label' => 'Variables',
-                'target' => 'tasty-fonts-output-vars',
-                'value' => ':root{--font-heading:"Inter",serif;}',
-                'active' => true,
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'current_page' => 'settings',
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'css_delivery_mode' => 'file',
+            'css_delivery_mode_options' => [
+                ['value' => 'file', 'label' => 'Generated file'],
+                ['value' => 'inline', 'label' => 'Inline in page head'],
             ],
-            [
-                'key' => 'usage',
-                'label' => 'Usage',
-                'target' => 'tasty-fonts-output-usage',
-                'value' => 'body{font-family:var(--font-heading);}',
-                'active' => false,
+            'font_display' => 'optional',
+            'font_display_options' => [
+                ['value' => 'optional', 'label' => 'Optional'],
+                ['value' => 'swap', 'label' => 'Swap'],
             ],
-        ],
-        'generated_css_panel' => [],
-        'preview_panels' => [
-            ['key' => 'specimen', 'label' => 'Specimen', 'active' => true],
-            ['key' => 'code', 'label' => 'Code', 'active' => false],
-        ],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+            'minify_css_output' => true,
+            'per_variant_font_variables_enabled' => true,
+            'extended_variable_weight_tokens_enabled' => true,
+            'extended_variable_role_aliases_enabled' => true,
+            'extended_variable_category_sans_enabled' => true,
+            'extended_variable_category_serif_enabled' => true,
+            'extended_variable_category_mono_enabled' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'monospace_role_enabled' => true,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [
+                [
+                    'key' => 'variables',
+                    'label' => 'Variables',
+                    'target' => 'tasty-fonts-output-vars',
+                    'value' => ':root{--font-heading:"Inter",serif;}',
+                    'active' => true,
+                ],
+                [
+                    'key' => 'usage',
+                    'label' => 'Usage',
+                    'target' => 'tasty-fonts-output-usage',
+                    'value' => 'body{font-family:var(--font-heading);}',
+                    'active' => false,
+                ],
+            ],
+            'generated_css_panel' => [],
+            'preview_panels' => [
+                ['key' => 'specimen', 'label' => 'Specimen', 'active' => true],
+                ['key' => 'code', 'label' => 'Code', 'active' => false],
+            ],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('data-tab-group="page"', $output, 'The unified admin page should render the top-level horizontal tab group.');
@@ -363,118 +383,128 @@ $tests['admin_page_renderer_renders_single_page_library_tab_for_empty_and_popula
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'current_page' => 'library',
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'current_page' => 'library',
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $emptyOutput = (string) ob_get_clean();
 
     assertContainsValue('Your Library Is Empty', $emptyOutput, 'The unified Library tab should preserve the empty-library state.');
     assertContainsValue('<h2 class="tasty-fonts-section-title">Font Library</h2>', $emptyOutput, 'The library panel should keep a stable section heading regardless of tab activation order.');
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'current_page' => 'library',
-        'catalog' => [
-            'Inter' => [
-                'family' => 'Inter',
-                'slug' => 'inter',
-                'delivery_filter_tokens' => ['published', 'same-origin'],
-                'font_category' => 'sans-serif',
-                'font_category_tokens' => ['sans-serif'],
-                'publish_state' => 'published',
-                'active_delivery_id' => 'local-self-hosted',
-                'active_delivery' => [
-                    'id' => 'local-self-hosted',
-                    'label' => 'Self-hosted',
-                    'provider' => 'local',
-                    'type' => 'self_hosted',
-                    'variants' => ['regular'],
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'current_page' => 'library',
+            'catalog' => [
+                'Inter' => [
+                    'family' => 'Inter',
+                    'slug' => 'inter',
+                    'delivery_filter_tokens' => ['published', 'same-origin'],
+                    'font_category' => 'sans-serif',
+                    'font_category_tokens' => ['sans-serif'],
+                    'publish_state' => 'published',
+                    'active_delivery_id' => 'local-self-hosted',
+                    'active_delivery' => [
+                        'id' => 'local-self-hosted',
+                        'label' => 'Self-hosted',
+                        'provider' => 'local',
+                        'type' => 'self_hosted',
+                        'variants' => ['regular'],
+                    ],
+                    'available_deliveries' => [[
+                        'id' => 'local-self-hosted',
+                        'label' => 'Self-hosted',
+                        'provider' => 'local',
+                        'type' => 'self_hosted',
+                        'variants' => ['regular'],
+                    ]],
+                    'delivery_badges' => [[
+                        'label' => 'Published',
+                        'class' => 'is-success',
+                        'copy' => 'Published',
+                    ]],
+                    'faces' => [[
+                        'weight' => '400',
+                        'style' => 'normal',
+                        'source' => 'local',
+                        'files' => ['woff2' => 'inter/Inter-400-normal.woff2'],
+                        'paths' => ['woff2' => 'inter/Inter-400-normal.woff2'],
+                    ]],
                 ],
-                'available_deliveries' => [[
-                    'id' => 'local-self-hosted',
-                    'label' => 'Self-hosted',
-                    'provider' => 'local',
-                    'type' => 'self_hosted',
-                    'variants' => ['regular'],
-                ]],
-                'delivery_badges' => [[
-                    'label' => 'Published',
-                    'class' => 'is-success',
-                    'copy' => 'Published',
-                ]],
-                'faces' => [[
-                    'weight' => '400',
-                    'style' => 'normal',
-                    'source' => 'local',
-                    'files' => ['woff2' => 'inter/Inter-400-normal.woff2'],
-                    'paths' => ['woff2' => 'inter/Inter-400-normal.woff2'],
-                ]],
             ],
-        ],
-        'available_families' => ['Inter'],
-        'roles' => [
-            'heading' => '',
-            'body' => '',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'sans-serif',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [
-            ['value' => 'inherit', 'label' => 'Use plugin default'],
-            ['value' => 'swap', 'label' => 'swap'],
-        ],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+            'available_families' => ['Inter'],
+            'roles' => [
+                'heading' => '',
+                'body' => '',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'sans-serif',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [
+                ['value' => 'inherit', 'label' => 'Use plugin default'],
+                ['value' => 'swap', 'label' => 'swap'],
+            ],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $populatedOutput = (string) ob_get_clean();
 
     assertContainsValue('data-font-slug="inter"', $populatedOutput, 'The unified Library tab should still render populated library cards.');
@@ -518,14 +548,24 @@ $tests['admin_page_renderer_only_shows_upload_variable_controls_when_variable_fo
     ];
 
     ob_start();
-    $renderer->renderPage($baseContext + ['variable_fonts_enabled' => false]);
+    try {
+        $renderer->renderPage($baseContext + ['variable_fonts_enabled' => false]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $disabledOutput = (string) ob_get_clean();
 
     assertContainsValue('tasty-fonts-upload-face-shell--static-only', $disabledOutput, 'The upload builder should switch to the static-only layout when variable font support is off.');
     assertNotContainsValue('data-upload-field="is-variable"', $disabledOutput, 'The upload builder should not render variable upload toggles when variable font support is off.');
 
     ob_start();
-    $renderer->renderPage($baseContext + ['variable_fonts_enabled' => true]);
+    try {
+        $renderer->renderPage($baseContext + ['variable_fonts_enabled' => true]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $enabledOutput = (string) ob_get_clean();
 
     assertNotContainsValue('tasty-fonts-upload-face-shell--static-only', $enabledOutput, 'The upload builder should keep the full upload grid when variable font support is on.');
@@ -538,42 +578,47 @@ $tests['admin_page_renderer_renders_extended_variable_submenu_controls'] = stati
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'per_variant_font_variables_enabled' => true,
-        'extended_variable_weight_tokens_enabled' => true,
-        'extended_variable_role_aliases_enabled' => true,
-        'extended_variable_category_sans_enabled' => true,
-        'extended_variable_category_serif_enabled' => true,
-        'extended_variable_category_mono_enabled' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'per_variant_font_variables_enabled' => true,
+            'extended_variable_weight_tokens_enabled' => true,
+            'extended_variable_role_aliases_enabled' => true,
+            'extended_variable_category_sans_enabled' => true,
+            'extended_variable_category_serif_enabled' => true,
+            'extended_variable_category_mono_enabled' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('Variable Controls', $output, 'Output Settings should render a nested submenu for variable controls.');
@@ -591,63 +636,68 @@ $tests['admin_page_renderer_renders_unified_output_controls'] = static function 
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'css_delivery_mode' => 'inline',
-        'css_delivery_mode_options' => [
-            ['value' => 'file', 'label' => 'Generated file'],
-            ['value' => 'inline', 'label' => 'Inline in page head'],
-        ],
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'unicode_range_mode' => 'custom',
-        'unicode_range_custom_value' => 'U+0000-00FF,U+0100-024F',
-        'unicode_range_mode_options' => [
-            ['value' => 'off', 'label' => 'Off'],
-            ['value' => 'preserve', 'label' => 'Keep Imported Ranges'],
-            ['value' => 'latin_basic', 'label' => 'Basic Latin'],
-            ['value' => 'latin_extended', 'label' => 'Latin Extended'],
-            ['value' => 'custom', 'label' => 'Custom'],
-        ],
-        'unicode_range_custom_visible' => true,
-        'output_quick_mode_preference' => 'custom',
-        'class_output_enabled' => true,
-        'class_output_role_heading_enabled' => false,
-        'class_output_role_body_enabled' => false,
-        'class_output_role_monospace_enabled' => false,
-        'class_output_role_alias_interface_enabled' => false,
-        'class_output_role_alias_ui_enabled' => false,
-        'class_output_role_alias_code_enabled' => false,
-        'class_output_category_sans_enabled' => false,
-        'class_output_category_serif_enabled' => false,
-        'class_output_category_mono_enabled' => false,
-        'class_output_families_enabled' => true,
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'css_delivery_mode' => 'inline',
+            'css_delivery_mode_options' => [
+                ['value' => 'file', 'label' => 'Generated file'],
+                ['value' => 'inline', 'label' => 'Inline in page head'],
+            ],
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'unicode_range_mode' => 'custom',
+            'unicode_range_custom_value' => 'U+0000-00FF,U+0100-024F',
+            'unicode_range_mode_options' => [
+                ['value' => 'off', 'label' => 'Off'],
+                ['value' => 'preserve', 'label' => 'Keep Imported Ranges'],
+                ['value' => 'latin_basic', 'label' => 'Basic Latin'],
+                ['value' => 'latin_extended', 'label' => 'Latin Extended'],
+                ['value' => 'custom', 'label' => 'Custom'],
+            ],
+            'unicode_range_custom_visible' => true,
+            'output_quick_mode_preference' => 'custom',
+            'class_output_enabled' => true,
+            'class_output_role_heading_enabled' => false,
+            'class_output_role_body_enabled' => false,
+            'class_output_role_monospace_enabled' => false,
+            'class_output_role_alias_interface_enabled' => false,
+            'class_output_role_alias_ui_enabled' => false,
+            'class_output_role_alias_code_enabled' => false,
+            'class_output_category_sans_enabled' => false,
+            'class_output_category_serif_enabled' => false,
+            'class_output_category_mono_enabled' => false,
+            'class_output_families_enabled' => true,
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('CSS Delivery', $output, 'Output Settings should render the CSS delivery control.');
@@ -961,36 +1011,41 @@ $tests['admin_page_renderer_balances_div_wrappers'] = static function (): void {
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertSameValue(substr_count($output, '<div'), substr_count($output, '</div>'), 'Admin page renderer should balance div wrappers so WordPress admin footer markup stays outside the plugin page shell.');
@@ -1002,43 +1057,48 @@ $tests['admin_page_renderer_shows_mono_extended_variable_controls_when_monospace
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'per_variant_font_variables_enabled' => true,
-        'extended_variable_weight_tokens_enabled' => true,
-        'extended_variable_role_aliases_enabled' => true,
-        'extended_variable_category_sans_enabled' => true,
-        'extended_variable_category_serif_enabled' => true,
-        'extended_variable_category_mono_enabled' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'monospace_role_enabled' => true,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'per_variant_font_variables_enabled' => true,
+            'extended_variable_weight_tokens_enabled' => true,
+            'extended_variable_role_aliases_enabled' => true,
+            'extended_variable_category_sans_enabled' => true,
+            'extended_variable_category_serif_enabled' => true,
+            'extended_variable_category_mono_enabled' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'monospace_role_enabled' => true,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('Mono Alias', $output, 'The submenu should show the mono-category toggle when the monospace feature is enabled.');
@@ -1051,71 +1111,76 @@ $tests['admin_page_renderer_renders_font_classes_output_tab_content'] = static f
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Inter'],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'class_output_enabled' => false,
-        'minify_css_output' => false,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [
-            [
-                'key' => 'usage',
-                'label' => 'Site Snippet',
-                'target' => 'tasty-fonts-output-usage',
-                'value' => 'body { font-family: var(--font-body); }',
-                'active' => true,
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Inter'],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'class_output_enabled' => false,
+            'minify_css_output' => false,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [
+                [
+                    'key' => 'usage',
+                    'label' => 'Site Snippet',
+                    'target' => 'tasty-fonts-output-usage',
+                    'value' => 'body { font-family: var(--font-body); }',
+                    'active' => true,
+                ],
+                [
+                    'key' => 'classes',
+                    'label' => 'Font Classes',
+                    'target' => 'tasty-fonts-output-classes',
+                    'value' => 'Class output is off. Turn on Classes in Output Settings to generate utility classes.',
+                    'active' => false,
+                ],
+                [
+                    'key' => 'classes-roles',
+                    'label' => 'Font Classes Roles',
+                    'target' => 'tasty-fonts-output-classes-roles',
+                    'value' => ".font-heading {\n  font-family: \"Inter\", sans-serif;\n}",
+                    'active' => false,
+                ],
+                [
+                    'key' => 'classes-families',
+                    'label' => 'Font Classes Families',
+                    'target' => 'tasty-fonts-output-classes-families',
+                    'value' => ".font-inter {\n  font-family: \"Inter\", sans-serif;\n}",
+                    'active' => false,
+                ],
+                [
+                    'key' => 'classes-all',
+                    'label' => 'Font Classes All',
+                    'target' => 'tasty-fonts-output-classes-all',
+                    'value' => ".font-heading {\n  font-family: \"Inter\", sans-serif;\n}\n\n.font-inter {\n  font-family: \"Inter\", sans-serif;\n}",
+                    'active' => false,
+                ],
             ],
-            [
-                'key' => 'classes',
-                'label' => 'Font Classes',
-                'target' => 'tasty-fonts-output-classes',
-                'value' => 'Class output is off. Turn on Classes in Output Settings to generate utility classes.',
-                'active' => false,
-            ],
-            [
-                'key' => 'classes-roles',
-                'label' => 'Font Classes Roles',
-                'target' => 'tasty-fonts-output-classes-roles',
-                'value' => ".font-heading {\n  font-family: \"Inter\", sans-serif;\n}",
-                'active' => false,
-            ],
-            [
-                'key' => 'classes-families',
-                'label' => 'Font Classes Families',
-                'target' => 'tasty-fonts-output-classes-families',
-                'value' => ".font-inter {\n  font-family: \"Inter\", sans-serif;\n}",
-                'active' => false,
-            ],
-            [
-                'key' => 'classes-all',
-                'label' => 'Font Classes All',
-                'target' => 'tasty-fonts-output-classes-all',
-                'value' => ".font-heading {\n  font-family: \"Inter\", sans-serif;\n}\n\n.font-inter {\n  font-family: \"Inter\", sans-serif;\n}",
-                'active' => false,
-            ],
-        ],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('>Font Classes<', $output, 'The snippets tab list should include the Font Classes output tab.');
@@ -1163,21 +1228,26 @@ $tests['admin_page_renderer_outputs_migrate_shortcuts_for_cdn_deliveries'] = sta
     ];
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFamilyRow',
-        [
-            $family,
-            ['heading' => '', 'body' => ''],
-            [],
-            [],
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFamilyRow',
             [
-                ['value' => 'inherit', 'label' => 'Use plugin default'],
-            ],
-            'The quick brown fox jumps over the lazy dog.',
-            [],
-        ]
-    );
+                $family,
+                ['heading' => '', 'body' => ''],
+                [],
+                [],
+                [
+                    ['value' => 'inherit', 'label' => 'Use plugin default'],
+                ],
+                'The quick brown fox jumps over the lazy dog.',
+                [],
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertSameValue(1, substr_count($output, 'data-migrate-delivery'), 'CDN-backed library families should expose the self-host migration shortcut only in the saved delivery profile details.');
@@ -1242,22 +1312,27 @@ $tests['admin_page_renderer_marks_variable_library_families_with_type_badges'] =
     ];
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFamilyRow',
-        [
-            $family,
-            ['heading' => '', 'body' => ''],
-            [],
-            [],
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFamilyRow',
             [
-                ['value' => 'inherit', 'label' => 'Use plugin default'],
-            ],
-            'The quick brown fox jumps over the lazy dog.',
-            [],
-            ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
-        ]
-    );
+                $family,
+                ['heading' => '', 'body' => ''],
+                [],
+                [],
+                [
+                    ['value' => 'inherit', 'label' => 'Use plugin default'],
+                ],
+                'The quick brown fox jumps over the lazy dog.',
+                [],
+                ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertSameValue(1, preg_match('/class="tasty-fonts-badge is-role"[\s\S]*?Variable/', $output), 'Variable library family rows should expose a Variable badge in the saved library card.');
@@ -1269,30 +1344,35 @@ $tests['admin_page_renderer_renders_copy_ready_face_variant_variables'] = static
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFaceDetailCard',
-        [
-            'Inter',
-            'inter',
-            '"Inter", sans-serif',
-            'The quick brown fox jumps over the lazy dog.',
-            2,
-            ['body'],
-            'sans-serif',
-            ['--font-sans' => 'Inter'],
-            ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
-            ['provider' => 'local', 'type' => 'self_hosted'],
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFaceDetailCard',
             [
-                'weight' => '700',
-                'style' => 'italic',
-                'source' => 'local',
-                'files' => ['woff2' => 'inter/Inter-700-italic.woff2'],
-                'paths' => ['woff2' => 'inter/Inter-700-italic.woff2'],
-            ],
-            false,
-        ]
-    );
+                'Inter',
+                'inter',
+                '"Inter", sans-serif',
+                'The quick brown fox jumps over the lazy dog.',
+                2,
+                ['body'],
+                'sans-serif',
+                ['--font-sans' => 'Inter'],
+                ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
+                ['provider' => 'local', 'type' => 'self_hosted'],
+                [
+                    'weight' => '700',
+                    'style' => 'italic',
+                    'source' => 'local',
+                    'files' => ['woff2' => 'inter/Inter-700-italic.woff2'],
+                    'paths' => ['woff2' => 'inter/Inter-700-italic.woff2'],
+                ],
+                false,
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('>CSS<', $output, 'Face detail cards should render a dedicated CSS area.');
@@ -1346,23 +1426,28 @@ $tests['admin_page_renderer_renders_copy_ready_family_css_variables'] = static f
     ];
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFamilyRow',
-        [
-            $family,
-            ['heading' => '', 'body' => '', 'monospace' => 'JetBrains Mono', 'monospace_fallback' => 'monospace'],
-            [],
-            [],
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFamilyRow',
             [
-                ['value' => 'inherit', 'label' => 'Use plugin default'],
-            ],
-            'The quick brown fox jumps over the lazy dog.',
-            ['--font-mono' => 'JetBrains Mono'],
-            ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
-            true,
-        ]
-    );
+                $family,
+                ['heading' => '', 'body' => '', 'monospace' => 'JetBrains Mono', 'monospace_fallback' => 'monospace'],
+                [],
+                [],
+                [
+                    ['value' => 'inherit', 'label' => 'Use plugin default'],
+                ],
+                'The quick brown fox jumps over the lazy dog.',
+                ['--font-mono' => 'JetBrains Mono'],
+                ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
+                true,
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('>CSS Variables<', $output, 'Family details should render a dedicated CSS Variables section.');
@@ -1415,24 +1500,29 @@ $tests['admin_page_renderer_renders_copy_ready_family_font_classes'] = static fu
     ];
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFamilyRow',
-        [
-            $family,
-            ['heading' => '', 'body' => 'Inter', 'body_fallback' => 'sans-serif'],
-            [],
-            [],
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFamilyRow',
             [
-                ['value' => 'inherit', 'label' => 'Use plugin default'],
-            ],
-            'The quick brown fox jumps over the lazy dog.',
-            ['--font-sans' => 'Inter'],
-            ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true],
-            false,
-            ['enabled' => true, 'role_body' => true, 'role_alias_interface' => true, 'role_alias_ui' => true, 'category_sans' => true, 'families' => true],
-        ]
-    );
+                $family,
+                ['heading' => '', 'body' => 'Inter', 'body_fallback' => 'sans-serif'],
+                [],
+                [],
+                [
+                    ['value' => 'inherit', 'label' => 'Use plugin default'],
+                ],
+                'The quick brown fox jumps over the lazy dog.',
+                ['--font-sans' => 'Inter'],
+                ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true],
+                false,
+                ['enabled' => true, 'role_body' => true, 'role_alias_interface' => true, 'role_alias_ui' => true, 'category_sans' => true, 'families' => true],
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('>Font Classes<', $output, 'Family details should render a dedicated Font Classes section when class output is enabled.');
@@ -1487,23 +1577,28 @@ $tests['admin_page_renderer_hides_extended_family_css_variables_when_disabled'] 
     ];
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFamilyRow',
-        [
-            $family,
-            ['heading' => '', 'body' => '', 'monospace' => 'JetBrains Mono', 'monospace_fallback' => 'monospace'],
-            [],
-            [],
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFamilyRow',
             [
-                ['value' => 'inherit', 'label' => 'Use plugin default'],
-            ],
-            'The quick brown fox jumps over the lazy dog.',
-            ['--font-mono' => 'JetBrains Mono'],
-            ['enabled' => false, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
-            true,
-        ]
-    );
+                $family,
+                ['heading' => '', 'body' => '', 'monospace' => 'JetBrains Mono', 'monospace_fallback' => 'monospace'],
+                [],
+                [],
+                [
+                    ['value' => 'inherit', 'label' => 'Use plugin default'],
+                ],
+                'The quick brown fox jumps over the lazy dog.',
+                ['--font-mono' => 'JetBrains Mono'],
+                ['enabled' => false, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
+                true,
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('data-copy-text="--font-jetbrains-mono: &quot;JetBrains Mono&quot;, monospace;"', $output, 'Family details should still expose the base family variable when extended output is disabled.');
@@ -1552,23 +1647,28 @@ $tests['admin_page_renderer_hides_mono_alias_when_monospace_feature_is_disabled'
     ];
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFamilyRow',
-        [
-            $family,
-            ['heading' => '', 'body' => '', 'monospace' => ''],
-            [],
-            [],
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFamilyRow',
             [
-                ['value' => 'inherit', 'label' => 'Use plugin default'],
-            ],
-            'The quick brown fox jumps over the lazy dog.',
-            [],
-            ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => false],
-            false,
-        ]
-    );
+                $family,
+                ['heading' => '', 'body' => '', 'monospace' => ''],
+                [],
+                [],
+                [
+                    ['value' => 'inherit', 'label' => 'Use plugin default'],
+                ],
+                'The quick brown fox jumps over the lazy dog.',
+                [],
+                ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => false],
+                false,
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertNotContainsValue('data-copy-text="--font-mono: var(--font-jetbrains-mono);"', $output, 'Family details should not expose the mono alias when the monospace feature is disabled.');
@@ -1581,30 +1681,35 @@ $tests['admin_page_renderer_uses_raw_face_weights_when_extended_variables_are_di
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFaceDetailCard',
-        [
-            'Inter',
-            'inter',
-            '"Inter", sans-serif',
-            'The quick brown fox jumps over the lazy dog.',
-            2,
-            ['body'],
-            'sans-serif',
-            ['--font-sans' => 'Inter'],
-            ['enabled' => false, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
-            ['provider' => 'local', 'type' => 'self_hosted'],
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFaceDetailCard',
             [
-                'weight' => '700',
-                'style' => 'italic',
-                'source' => 'local',
-                'files' => ['woff2' => 'inter/Inter-700-italic.woff2'],
-                'paths' => ['woff2' => 'inter/Inter-700-italic.woff2'],
-            ],
-            false,
-        ]
-    );
+                'Inter',
+                'inter',
+                '"Inter", sans-serif',
+                'The quick brown fox jumps over the lazy dog.',
+                2,
+                ['body'],
+                'sans-serif',
+                ['--font-sans' => 'Inter'],
+                ['enabled' => false, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
+                ['provider' => 'local', 'type' => 'self_hosted'],
+                [
+                    'weight' => '700',
+                    'style' => 'italic',
+                    'source' => 'local',
+                    'files' => ['woff2' => 'inter/Inter-700-italic.woff2'],
+                    'paths' => ['woff2' => 'inter/Inter-700-italic.woff2'],
+                ],
+                false,
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('data-copy-text="font-weight: 700;"', $output, 'Face detail cards should fall back to raw numeric weights when extended output is disabled.');
@@ -1618,30 +1723,35 @@ $tests['admin_page_renderer_hides_category_alias_when_the_family_does_not_win_it
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFaceDetailCard',
-        [
-            'Inter',
-            'inter',
-            '"Inter", sans-serif',
-            'The quick brown fox jumps over the lazy dog.',
-            2,
-            [],
-            'sans-serif',
-            ['--font-sans' => 'Noto Sans'],
-            ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
-            ['provider' => 'local', 'type' => 'self_hosted'],
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFaceDetailCard',
             [
-                'weight' => '400',
-                'style' => 'normal',
-                'source' => 'local',
-                'files' => ['woff2' => 'inter/Inter-400-normal.woff2'],
-                'paths' => ['woff2' => 'inter/Inter-400-normal.woff2'],
-            ],
-            false,
-        ]
-    );
+                'Inter',
+                'inter',
+                '"Inter", sans-serif',
+                'The quick brown fox jumps over the lazy dog.',
+                2,
+                [],
+                'sans-serif',
+                ['--font-sans' => 'Noto Sans'],
+                ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
+                ['provider' => 'local', 'type' => 'self_hosted'],
+                [
+                    'weight' => '400',
+                    'style' => 'normal',
+                    'source' => 'local',
+                    'files' => ['woff2' => 'inter/Inter-400-normal.woff2'],
+                    'paths' => ['woff2' => 'inter/Inter-400-normal.woff2'],
+                ],
+                false,
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertNotContainsValue('data-copy-text="--font-sans: var(--font-inter);"', $output, 'Face detail cards should not show category aliases now that family-scoped variables live in the family detail section.');
@@ -1687,23 +1797,28 @@ $tests['admin_page_renderer_uses_category_aware_family_preview_fallbacks'] = sta
     ];
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFamilyRow',
-        [
-            $family,
-            ['heading' => '', 'body' => '', 'monospace' => ''],
-            [],
-            [],
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFamilyRow',
             [
-                ['value' => 'inherit', 'label' => 'Use plugin default'],
-            ],
-            'The quick brown fox jumps over the lazy dog.',
-            [],
-            ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
-            true,
-        ]
-    );
+                $family,
+                ['heading' => '', 'body' => '', 'monospace' => ''],
+                [],
+                [],
+                [
+                    ['value' => 'inherit', 'label' => 'Use plugin default'],
+                ],
+                'The quick brown fox jumps over the lazy dog.',
+                [],
+                ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
+                true,
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('data-copy-text="&quot;JetBrains Mono&quot;, monospace"', $output, 'Family preview stacks should default monospace catalog families to the monospace generic fallback.');
@@ -1763,22 +1878,27 @@ $tests['admin_page_renderer_translates_stored_delivery_profile_labels_at_output'
     ];
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFamilyRow',
-        [
-            $family,
-            ['heading' => '', 'body' => ''],
-            [],
-            [],
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFamilyRow',
             [
-                ['value' => 'inherit', 'label' => 'Use plugin default'],
-            ],
-            'The quick brown fox jumps over the lazy dog.',
-            [],
-            ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
-        ]
-    );
+                $family,
+                ['heading' => '', 'body' => ''],
+                [],
+                [],
+                [
+                    ['value' => 'inherit', 'label' => 'Use plugin default'],
+                ],
+                'The quick brown fox jumps over the lazy dog.',
+                [],
+                ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('Import Google auto-heberge', $output, 'Stored English delivery labels should be translated when rendered in the family card.');
@@ -1795,61 +1915,66 @@ $tests['admin_page_renderer_renders_type_badges_for_adobe_delivery_and_face_card
     $renderer = new FamilyCardRenderer(new Storage());
 
     ob_start();
-    $renderer->renderAdobeFamilyCard([
-        'family' => 'Source Sans 3',
-        'has_variable_faces' => true,
-        'faces' => [
-            [
-                'is_variable' => true,
-                'axes' => [
-                    'WGHT' => ['min' => 200, 'max' => 900],
+    try {
+        $renderer->renderAdobeFamilyCard([
+            'family' => 'Source Sans 3',
+            'has_variable_faces' => true,
+            'faces' => [
+                [
+                    'is_variable' => true,
+                    'axes' => [
+                        'WGHT' => ['min' => 200, 'max' => 900],
+                    ],
                 ],
             ],
-        ],
-    ]);
-    $renderer->renderAdobeFamilyCard([
-        'family' => 'Merriweather',
-        'faces' => [
+        ]);
+        $renderer->renderAdobeFamilyCard([
+            'family' => 'Merriweather',
+            'faces' => [
+                [
+                    'weight' => '400',
+                    'style' => 'normal',
+                ],
+            ],
+        ]);
+        $renderer->renderDeliveryProfileCard(
+            'Inter Variable',
+            'inter-variable',
+            'google-cdn',
+            'published',
+            [
+                'id' => 'google-cdn',
+                'label' => 'Google CDN',
+                'provider' => 'google',
+                'type' => 'cdn',
+                'variants' => ['regular'],
+                'has_variable_faces' => true,
+            ]
+        );
+        $renderer->renderFaceDetailCard(
+            'Lora',
+            'lora',
+            '"Lora", serif',
+            'The quick brown fox jumps over the lazy dog.',
+            1,
+            [],
+            'serif',
+            [],
+            ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
+            ['provider' => 'local', 'type' => 'self_hosted'],
             [
                 'weight' => '400',
                 'style' => 'normal',
+                'source' => 'local',
+                'files' => ['woff2' => 'lora/Lora-400-normal.woff2'],
+                'paths' => ['woff2' => 'lora/Lora-400-normal.woff2'],
             ],
-        ],
-    ]);
-    $renderer->renderDeliveryProfileCard(
-        'Inter Variable',
-        'inter-variable',
-        'google-cdn',
-        'published',
-        [
-            'id' => 'google-cdn',
-            'label' => 'Google CDN',
-            'provider' => 'google',
-            'type' => 'cdn',
-            'variants' => ['regular'],
-            'has_variable_faces' => true,
-        ]
-    );
-    $renderer->renderFaceDetailCard(
-        'Lora',
-        'lora',
-        '"Lora", serif',
-        'The quick brown fox jumps over the lazy dog.',
-        1,
-        [],
-        'serif',
-        [],
-        ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
-        ['provider' => 'local', 'type' => 'self_hosted'],
-        [
-            'weight' => '400',
-            'style' => 'normal',
-            'source' => 'local',
-            'files' => ['woff2' => 'lora/Lora-400-normal.woff2'],
-            'paths' => ['woff2' => 'lora/Lora-400-normal.woff2'],
-        ],
-        false
-    );
+            false
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertSameValue(1, preg_match('/Source Sans 3[\s\S]*?Variable/', $output), 'Adobe family cards should render Variable badges when their metadata indicates variable support.');
@@ -1866,58 +1991,63 @@ $tests['admin_page_renderer_exposes_behavior_tab_and_can_hide_help_ui'] = static
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'update_channel' => 'beta',
-        'update_channel_options' => [
-            ['value' => 'stable', 'label' => 'Stable'],
-            ['value' => 'beta', 'label' => 'Beta'],
-            ['value' => 'nightly', 'label' => 'Nightly'],
-        ],
-        'update_channel_status' => [
-            'selected_channel' => 'beta',
-            'selected_channel_label' => 'Beta',
-            'installed_version' => '1.7.0',
-            'latest_version' => '1.7.1-beta.2',
-            'state_label' => 'Upgrade Available',
-            'state_class' => 'is-success',
-            'state_copy' => 'A newer package is available for the selected channel through the normal WordPress updates flow.',
-            'can_reinstall' => false,
-        ],
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => true,
-        'variable_fonts_enabled' => true,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [
-            'badge' => 'Live',
-            'badge_class' => 'is-success',
-            'title' => 'Live',
-            'copy' => 'Current selections are being served sitewide.',
-        ],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'update_channel' => 'beta',
+            'update_channel_options' => [
+                ['value' => 'stable', 'label' => 'Stable'],
+                ['value' => 'beta', 'label' => 'Beta'],
+                ['value' => 'nightly', 'label' => 'Nightly'],
+            ],
+            'update_channel_status' => [
+                'selected_channel' => 'beta',
+                'selected_channel_label' => 'Beta',
+                'installed_version' => '1.7.0',
+                'latest_version' => '1.7.1-beta.2',
+                'state_label' => 'Upgrade Available',
+                'state_class' => 'is-success',
+                'state_copy' => 'A newer package is available for the selected channel through the normal WordPress updates flow.',
+                'can_reinstall' => false,
+            ],
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => true,
+            'variable_fonts_enabled' => true,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [
+                'badge' => 'Live',
+                'badge_class' => 'is-success',
+                'title' => 'Live',
+                'copy' => 'Current selections are being served sitewide.',
+            ],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('Behavior', $output, 'The settings switcher should expose the dedicated Behavior tab.');
@@ -1976,57 +2106,62 @@ $tests['admin_page_renderer_attaches_update_channel_rollback_action_to_the_field
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'update_channel' => 'stable',
-        'update_channel_options' => [
-            ['value' => 'stable', 'label' => 'Stable'],
-            ['value' => 'beta', 'label' => 'Beta'],
-            ['value' => 'nightly', 'label' => 'Nightly'],
-        ],
-        'update_channel_status' => [
-            'selected_channel' => 'stable',
-            'selected_channel_label' => 'Stable',
-            'installed_version' => '1.8.0-dev',
-            'latest_version' => '1.7.0',
-            'state_label' => 'Rollback Available',
-            'state_class' => 'is-warning',
-            'state_copy' => 'The selected channel points to an older package than the one installed now. Use the reinstall action below to switch immediately.',
-            'can_reinstall' => true,
-        ],
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [
-            'badge' => 'Live',
-            'badge_class' => 'is-success',
-            'title' => 'Live',
-            'copy' => 'Current selections are being served sitewide.',
-        ],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'update_channel' => 'stable',
+            'update_channel_options' => [
+                ['value' => 'stable', 'label' => 'Stable'],
+                ['value' => 'beta', 'label' => 'Beta'],
+                ['value' => 'nightly', 'label' => 'Nightly'],
+            ],
+            'update_channel_status' => [
+                'selected_channel' => 'stable',
+                'selected_channel_label' => 'Stable',
+                'installed_version' => '1.8.0-dev',
+                'latest_version' => '1.7.0',
+                'state_label' => 'Rollback Available',
+                'state_class' => 'is-warning',
+                'state_copy' => 'The selected channel points to an older package than the one installed now. Use the reinstall action below to switch immediately.',
+                'can_reinstall' => true,
+            ],
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [
+                'badge' => 'Live',
+                'badge_class' => 'is-success',
+                'title' => 'Live',
+                'copy' => 'Current selections are being served sitewide.',
+            ],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('Rollback Available', $output, 'The Behavior tab should render rollback state copy inline with the update channel field.');
@@ -2044,61 +2179,66 @@ $tests['admin_page_renderer_keeps_integration_toggle_copy_single_line'] = static
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => true,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'gutenberg_integration' => [
-            'title' => 'Gutenberg Font Library',
-            'description' => 'Mirror imported families into WordPress typography controls so the block editor and site editor can use the same fonts managed by Tasty Fonts.',
-            'status_label' => 'On',
-            'enabled' => true,
-        ],
-        'acss_integration' => [
-            'title' => 'Automatic.css',
-            'description' => 'Sync ACSS heading and body font-family settings to Tasty Fonts role variables for clean interoperability.',
-            'status_label' => 'Synced',
-            'enabled' => true,
-            'current' => [
-                'heading' => 'Inter, sans-serif',
-                'body' => 'System UI, sans-serif',
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => true,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'gutenberg_integration' => [
+                'title' => 'Gutenberg Font Library',
+                'description' => 'Mirror imported families into WordPress typography controls so the block editor and site editor can use the same fonts managed by Tasty Fonts.',
+                'status_label' => 'On',
+                'enabled' => true,
             ],
-            'desired' => [
-                \TastyFonts\Integrations\AcssIntegrationService::OPTION_HEADING_FONT_FAMILY => 'var(--font-heading)',
-                \TastyFonts\Integrations\AcssIntegrationService::OPTION_TEXT_FONT_FAMILY => 'var(--font-body)',
+            'acss_integration' => [
+                'title' => 'Automatic.css',
+                'description' => 'Sync ACSS heading and body font-family settings to Tasty Fonts role variables for clean interoperability.',
+                'status_label' => 'Synced',
+                'enabled' => true,
+                'current' => [
+                    'heading' => 'Inter, sans-serif',
+                    'body' => 'System UI, sans-serif',
+                ],
+                'desired' => [
+                    \TastyFonts\Integrations\AcssIntegrationService::OPTION_HEADING_FONT_FAMILY => 'var(--font-heading)',
+                    \TastyFonts\Integrations\AcssIntegrationService::OPTION_TEXT_FONT_FAMILY => 'var(--font-body)',
+                ],
             ],
-        ],
-        'role_deployment' => [
-            'badge' => 'Live',
-            'badge_class' => 'is-success',
-            'title' => 'Live',
-            'copy' => 'Current selections are being served sitewide.',
-        ],
-    ]);
+            'role_deployment' => [
+                'badge' => 'Live',
+                'badge_class' => 'is-success',
+                'title' => 'Live',
+                'copy' => 'Current selections are being served sitewide.',
+            ],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('Mirror imported families into WordPress typography controls so the block editor and site editor can use the same fonts managed by Tasty Fonts.', $output, 'The Gutenberg integration summary should still explain the integration.');
@@ -2119,61 +2259,71 @@ $tests['admin_page_renderer_keeps_dashboard_titles_and_buttons_in_title_case'] =
     $previewRenderer = new PreviewSectionRenderer($storage);
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Inter', 'Lora'],
-        'roles' => [
-            'heading' => 'Inter',
-            'body' => '',
-            'monospace' => '',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'serif',
-            'monospace_fallback' => 'monospace',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [
-            ['value' => 'inherit', 'label' => 'Use Plugin Default'],
-        ],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [
-            ['value' => 'optional', 'label' => 'Optional'],
-            ['value' => 'swap', 'label' => 'Swap'],
-        ],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => true,
-        'monospace_role_enabled' => true,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [
-            'key' => 'generated',
-            'label' => 'Generated CSS',
-            'target' => 'tasty-fonts-output-generated',
-            'value' => ':root{--font-heading:"Inter",serif}body{font-family:var(--font-heading)}',
-        ],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Inter', 'Lora'],
+            'roles' => [
+                'heading' => 'Inter',
+                'body' => '',
+                'monospace' => '',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'serif',
+                'monospace_fallback' => 'monospace',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [
+                ['value' => 'inherit', 'label' => 'Use Plugin Default'],
+            ],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [
+                ['value' => 'optional', 'label' => 'Optional'],
+                ['value' => 'swap', 'label' => 'Swap'],
+            ],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => true,
+            'monospace_role_enabled' => true,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [
+                'key' => 'generated',
+                'label' => 'Generated CSS',
+                'target' => 'tasty-fonts-output-generated',
+                'value' => ':root{--font-heading:"Inter",serif}body{font-family:var(--font-heading)}',
+            ],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     ob_start();
-    $previewRenderer->renderPreviewScene('editorial', 'The quick brown fox jumps over the lazy dog. 1234567890', ['heading' => 'Inter', 'body' => 'Lora', 'monospace' => 'JetBrains Mono'], true);
-    $previewRenderer->renderPreviewScene('card', 'The quick brown fox jumps over the lazy dog. 1234567890', ['heading' => 'Inter', 'body' => 'Lora', 'monospace' => 'JetBrains Mono'], true);
-    $previewRenderer->renderPreviewScene('reading', 'The quick brown fox jumps over the lazy dog. 1234567890', ['heading' => 'Inter', 'body' => 'Lora', 'monospace' => 'JetBrains Mono'], true);
-    $previewRenderer->renderCodePreviewScene('The quick brown fox jumps over the lazy dog. 1234567890', ['heading' => 'Inter', 'body' => 'Lora', 'monospace' => 'JetBrains Mono'], true);
+    try {
+        $previewRenderer->renderPreviewScene('editorial', 'The quick brown fox jumps over the lazy dog. 1234567890', ['heading' => 'Inter', 'body' => 'Lora', 'monospace' => 'JetBrains Mono'], true);
+        $previewRenderer->renderPreviewScene('card', 'The quick brown fox jumps over the lazy dog. 1234567890', ['heading' => 'Inter', 'body' => 'Lora', 'monospace' => 'JetBrains Mono'], true);
+        $previewRenderer->renderPreviewScene('reading', 'The quick brown fox jumps over the lazy dog. 1234567890', ['heading' => 'Inter', 'body' => 'Lora', 'monospace' => 'JetBrains Mono'], true);
+        $previewRenderer->renderCodePreviewScene('The quick brown fox jumps over the lazy dog. 1234567890', ['heading' => 'Inter', 'body' => 'Lora', 'monospace' => 'JetBrains Mono'], true);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output .= (string) ob_get_clean();
 
     foreach ([
@@ -2239,62 +2389,67 @@ $tests['admin_page_renderer_hides_acss_managed_mapping_when_sync_is_not_enabled'
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => true,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'gutenberg_integration' => [
-            'title' => 'Gutenberg Font Library',
-            'description' => 'Mirror imported families into WordPress typography controls so the block editor and site editor can use the same fonts managed by Tasty Fonts.',
-            'status_label' => 'On',
-            'enabled' => true,
-        ],
-        'acss_integration' => [
-            'title' => 'Automatic.css',
-            'description' => 'Sync ACSS heading and body font-family settings to Tasty Fonts role variables for clean interoperability.',
-            'status_label' => 'Off',
-            'enabled' => false,
-            'available' => false,
-            'current' => [
-                'heading' => '',
-                'body' => '',
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => true,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'gutenberg_integration' => [
+                'title' => 'Gutenberg Font Library',
+                'description' => 'Mirror imported families into WordPress typography controls so the block editor and site editor can use the same fonts managed by Tasty Fonts.',
+                'status_label' => 'On',
+                'enabled' => true,
             ],
-            'desired' => [
-                \TastyFonts\Integrations\AcssIntegrationService::OPTION_HEADING_FONT_FAMILY => 'var(--font-heading)',
-                \TastyFonts\Integrations\AcssIntegrationService::OPTION_TEXT_FONT_FAMILY => 'var(--font-body)',
+            'acss_integration' => [
+                'title' => 'Automatic.css',
+                'description' => 'Sync ACSS heading and body font-family settings to Tasty Fonts role variables for clean interoperability.',
+                'status_label' => 'Off',
+                'enabled' => false,
+                'available' => false,
+                'current' => [
+                    'heading' => '',
+                    'body' => '',
+                ],
+                'desired' => [
+                    \TastyFonts\Integrations\AcssIntegrationService::OPTION_HEADING_FONT_FAMILY => 'var(--font-heading)',
+                    \TastyFonts\Integrations\AcssIntegrationService::OPTION_TEXT_FONT_FAMILY => 'var(--font-body)',
+                ],
             ],
-        ],
-        'role_deployment' => [
-            'badge' => 'Draft',
-            'badge_class' => '',
-            'title' => 'Draft',
-            'copy' => 'Current selections are not being served sitewide.',
-        ],
-    ]);
+            'role_deployment' => [
+                'badge' => 'Draft',
+                'badge_class' => '',
+                'title' => 'Draft',
+                'copy' => 'Current selections are not being served sitewide.',
+            ],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('Automatic.css', $output, 'The Automatic.css integration row should still render when the integration is unavailable or disabled.');
@@ -2309,76 +2464,81 @@ $tests['admin_page_renderer_disables_unavailable_plugin_integrations'] = static 
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => true,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'bricks_integration' => [
-            'title' => 'Bricks Builder',
-            'description' => 'Expose published Tasty Fonts families inside Bricks selectors and mirror Bricks theme font families into Gutenberg.',
-            'status_label' => 'Not Active',
-            'enabled' => false,
-            'available' => false,
-        ],
-        'oxygen_integration' => [
-            'title' => 'Oxygen Builder',
-            'description' => 'Expose published Tasty Fonts families through Oxygen’s custom-font compatibility layer and mirror Oxygen global font families into Gutenberg.',
-            'status_label' => 'Not Active',
-            'enabled' => false,
-            'available' => false,
-        ],
-        'gutenberg_integration' => [
-            'title' => 'Gutenberg Font Library',
-            'description' => 'Mirror imported families into WordPress typography controls so the block editor and site editor can use the same fonts managed by Tasty Fonts.',
-            'status_label' => 'On',
-            'enabled' => true,
-        ],
-        'acss_integration' => [
-            'title' => 'Automatic.css',
-            'description' => 'Sync ACSS heading and body font-family settings to Tasty Fonts role variables for clean interoperability.',
-            'status_label' => 'Not Active',
-            'enabled' => false,
-            'available' => false,
-            'current' => [
-                'heading' => '',
-                'body' => '',
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => true,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'bricks_integration' => [
+                'title' => 'Bricks Builder',
+                'description' => 'Expose published Tasty Fonts families inside Bricks selectors and mirror Bricks theme font families into Gutenberg.',
+                'status_label' => 'Not Active',
+                'enabled' => false,
+                'available' => false,
             ],
-            'desired' => [
-                \TastyFonts\Integrations\AcssIntegrationService::OPTION_HEADING_FONT_FAMILY => 'var(--font-heading)',
-                \TastyFonts\Integrations\AcssIntegrationService::OPTION_TEXT_FONT_FAMILY => 'var(--font-body)',
+            'oxygen_integration' => [
+                'title' => 'Oxygen Builder',
+                'description' => 'Expose published Tasty Fonts families through Oxygen’s custom-font compatibility layer and mirror Oxygen global font families into Gutenberg.',
+                'status_label' => 'Not Active',
+                'enabled' => false,
+                'available' => false,
             ],
-        ],
-        'role_deployment' => [
-            'badge' => 'Draft',
-            'badge_class' => '',
-            'title' => 'Draft',
-            'copy' => 'Current selections are not being served sitewide.',
-        ],
-    ]);
+            'gutenberg_integration' => [
+                'title' => 'Gutenberg Font Library',
+                'description' => 'Mirror imported families into WordPress typography controls so the block editor and site editor can use the same fonts managed by Tasty Fonts.',
+                'status_label' => 'On',
+                'enabled' => true,
+            ],
+            'acss_integration' => [
+                'title' => 'Automatic.css',
+                'description' => 'Sync ACSS heading and body font-family settings to Tasty Fonts role variables for clean interoperability.',
+                'status_label' => 'Not Active',
+                'enabled' => false,
+                'available' => false,
+                'current' => [
+                    'heading' => '',
+                    'body' => '',
+                ],
+                'desired' => [
+                    \TastyFonts\Integrations\AcssIntegrationService::OPTION_HEADING_FONT_FAMILY => 'var(--font-heading)',
+                    \TastyFonts\Integrations\AcssIntegrationService::OPTION_TEXT_FONT_FAMILY => 'var(--font-body)',
+                ],
+            ],
+            'role_deployment' => [
+                'badge' => 'Draft',
+                'badge_class' => '',
+                'title' => 'Draft',
+                'copy' => 'Current selections are not being served sitewide.',
+            ],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('name="bricks_integration_enabled"', $output, 'The Bricks integration toggle should still render when the plugin is unavailable.');
@@ -2398,36 +2558,41 @@ $tests['admin_page_renderer_omits_deprecated_inline_help_buttons_when_training_w
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertNotContainsValue('tasty-fonts-help-button', $output, 'The deprecated inline help buttons should no longer render when Training Wheels is on.');
@@ -2440,46 +2605,51 @@ $tests['admin_page_renderer_restructures_role_toolbar_with_explicit_actions'] = 
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Inter'],
-        'roles' => [
-            'heading' => 'Inter',
-            'body' => 'Inter',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'sans-serif',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => true,
-        'role_deployment' => [
-            'badge' => 'Live',
-            'badge_class' => 'is-success',
-            'title' => 'Live',
-            'copy' => 'Current selections are being served sitewide.',
-        ],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Inter'],
+            'roles' => [
+                'heading' => 'Inter',
+                'body' => 'Inter',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'sans-serif',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => true,
+            'role_deployment' => [
+                'badge' => 'Live',
+                'badge_class' => 'is-success',
+                'title' => 'Live',
+                'copy' => 'Current selections are being served sitewide.',
+            ],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
     $deploymentPosition = strpos($output, 'Publish Workflow');
     $selectionPosition = strpos($output, 'Role Selection');
@@ -2514,90 +2684,100 @@ $tests['admin_page_renderer_only_highlights_publish_roles_when_changes_are_pendi
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Inter', 'Lora'],
-        'roles' => [
-            'heading' => 'Inter',
-            'body' => 'Lora',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'serif',
-        ],
-        'applied_roles' => [
-            'heading' => 'Inter',
-            'body' => 'Inter',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'sans-serif',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'toasts' => [],
-        'apply_everywhere' => true,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Inter', 'Lora'],
+            'roles' => [
+                'heading' => 'Inter',
+                'body' => 'Lora',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'serif',
+            ],
+            'applied_roles' => [
+                'heading' => 'Inter',
+                'body' => 'Inter',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'sans-serif',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'toasts' => [],
+            'apply_everywhere' => true,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $pendingOutput = (string) ob_get_clean();
 
     assertContainsValue('button button-primary is-pending-live-change tasty-fonts-scope-button tasty-fonts-scope-button--apply', $pendingOutput, 'Publish Roles should stay highlighted when the draft differs from the live applied roles.');
     assertContainsValue('data-role-apply-live aria-disabled="false"', $pendingOutput, 'Publish Roles should remain active when there are live changes pending.');
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Inter', 'Lora'],
-        'roles' => [
-            'heading' => 'Inter',
-            'body' => 'Lora',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'serif',
-        ],
-        'applied_roles' => [
-            'heading' => 'Inter',
-            'body' => 'Lora',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'serif',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'toasts' => [],
-        'apply_everywhere' => true,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Inter', 'Lora'],
+            'roles' => [
+                'heading' => 'Inter',
+                'body' => 'Lora',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'serif',
+            ],
+            'applied_roles' => [
+                'heading' => 'Inter',
+                'body' => 'Lora',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'serif',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'toasts' => [],
+            'apply_everywhere' => true,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $matchedOutput = (string) ob_get_clean();
 
     assertContainsValue('class="button tasty-fonts-scope-button tasty-fonts-scope-button--apply"', $matchedOutput, 'Publish Roles should fall back to the shared neutral button styling when the draft already matches the live applied roles.');
@@ -2613,75 +2793,80 @@ $tests['admin_page_renderer_ignores_legacy_delivery_ids_when_comparing_role_chan
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [
-            'Lora' => [
-                'family' => 'Lora',
-                'active_delivery_id' => 'bunny-cdn-static',
-                'available_deliveries' => [
-                    [
-                        'id' => 'bunny-cdn-static',
-                        'label' => 'Bunny CDN',
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [
+                'Lora' => [
+                    'family' => 'Lora',
+                    'active_delivery_id' => 'bunny-cdn-static',
+                    'available_deliveries' => [
+                        [
+                            'id' => 'bunny-cdn-static',
+                            'label' => 'Bunny CDN',
+                        ],
+                        [
+                            'id' => 'self-hosted-static',
+                            'label' => 'Self-hosted',
+                        ],
                     ],
-                    [
-                        'id' => 'self-hosted-static',
-                        'label' => 'Self-hosted',
+                ],
+                'Inter' => [
+                    'family' => 'Inter',
+                    'active_delivery_id' => 'inter-static',
+                    'available_deliveries' => [
+                        [
+                            'id' => 'inter-static',
+                            'label' => 'Self-hosted',
+                        ],
                     ],
                 ],
             ],
-            'Inter' => [
-                'family' => 'Inter',
-                'active_delivery_id' => 'inter-static',
-                'available_deliveries' => [
-                    [
-                        'id' => 'inter-static',
-                        'label' => 'Self-hosted',
-                    ],
-                ],
+            'available_families' => ['Inter', 'Lora'],
+            'roles' => [
+                'heading' => 'Lora',
+                'body' => 'Inter',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'sans-serif',
+                'heading_delivery_id' => 'bunny-cdn-static',
+                'body_delivery_id' => 'inter-static',
             ],
-        ],
-        'available_families' => ['Inter', 'Lora'],
-        'roles' => [
-            'heading' => 'Lora',
-            'body' => 'Inter',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'sans-serif',
-            'heading_delivery_id' => 'bunny-cdn-static',
-            'body_delivery_id' => 'inter-static',
-        ],
-        'applied_roles' => [
-            'heading' => 'Lora',
-            'body' => 'Inter',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'sans-serif',
-            'heading_delivery_id' => '',
-            'body_delivery_id' => '',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'toasts' => [],
-        'apply_everywhere' => true,
-        'variable_fonts_enabled' => true,
-        'role_deployment' => [],
-    ]);
+            'applied_roles' => [
+                'heading' => 'Lora',
+                'body' => 'Inter',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'sans-serif',
+                'heading_delivery_id' => '',
+                'body_delivery_id' => '',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'toasts' => [],
+            'apply_everywhere' => true,
+            'variable_fonts_enabled' => true,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('data-role-apply-live aria-disabled="true" disabled', $output, 'Publish Roles should stay disabled when legacy role delivery IDs are the only difference from the live roles.');
@@ -2694,94 +2879,99 @@ $tests['admin_page_renderer_keeps_deployment_and_role_selection_ahead_of_library
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [
-            'Lora' => [
-                'family' => 'Lora',
-                'slug' => 'lora',
-                'faces' => [],
-                'sources' => ['local'],
-                'delivery_badges' => [],
-                'font_category' => 'serif',
-                'font_category_tokens' => ['serif'],
-                'delivery_filter_tokens' => ['published', 'same-origin'],
-                'publish_state' => 'published',
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [
+                'Lora' => [
+                    'family' => 'Lora',
+                    'slug' => 'lora',
+                    'faces' => [],
+                    'sources' => ['local'],
+                    'delivery_badges' => [],
+                    'font_category' => 'serif',
+                    'font_category_tokens' => ['serif'],
+                    'delivery_filter_tokens' => ['published', 'same-origin'],
+                    'publish_state' => 'published',
+                ],
             ],
-        ],
-        'available_families' => ['Lora'],
-        'roles' => [
-            'heading' => 'Lora',
-            'heading_fallback' => 'serif',
-            'body' => '',
-            'body_fallback' => 'sans-serif',
-        ],
-        'applied_roles' => [
-            'heading' => 'Lora',
-            'heading_fallback' => 'serif',
-            'body' => '',
-            'body_fallback' => 'sans-serif',
-        ],
-        'logs' => [
-            ['time' => '2026-04-07 09:20:40', 'actor' => 'root', 'message' => 'Fonts rescanned.'],
-        ],
-        'activity_actor_options' => ['root'],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'google_api_state' => 'empty',
-        'google_api_enabled' => false,
-        'google_api_saved' => false,
-        'google_access_expanded' => false,
-        'adobe_project_state' => 'empty',
-        'google_status_label' => '',
-        'google_status_class' => '',
-        'google_access_copy' => '',
-        'google_search_disabled_copy' => '',
-        'adobe_project_enabled' => false,
-        'adobe_project_saved' => false,
-        'adobe_access_expanded' => false,
-        'adobe_project_id' => '',
-        'adobe_status_label' => '',
-        'adobe_status_class' => '',
-        'adobe_access_copy' => '',
-        'adobe_project_link' => 'https://fonts.adobe.com/',
-        'adobe_detected_families' => [],
-        'css_delivery_mode' => 'file',
-        'css_delivery_mode_options' => [],
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'class_output_enabled' => false,
-        'minify_css_output' => true,
-        'per_variant_font_variables_enabled' => true,
-        'extended_variable_weight_tokens_enabled' => true,
-        'extended_variable_role_aliases_enabled' => true,
-        'extended_variable_category_sans_enabled' => true,
-        'extended_variable_category_serif_enabled' => true,
-        'extended_variable_category_mono_enabled' => false,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'monospace_role_enabled' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => true,
-        'role_deployment' => [
-            'badge' => 'Live',
-            'badge_class' => 'is-success',
-            'title' => 'Live',
-            'copy' => 'Current selections are being served sitewide.',
-        ],
-    ]);
+            'available_families' => ['Lora'],
+            'roles' => [
+                'heading' => 'Lora',
+                'heading_fallback' => 'serif',
+                'body' => '',
+                'body_fallback' => 'sans-serif',
+            ],
+            'applied_roles' => [
+                'heading' => 'Lora',
+                'heading_fallback' => 'serif',
+                'body' => '',
+                'body_fallback' => 'sans-serif',
+            ],
+            'logs' => [
+                ['time' => '2026-04-07 09:20:40', 'actor' => 'root', 'message' => 'Fonts rescanned.'],
+            ],
+            'activity_actor_options' => ['root'],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'google_api_state' => 'empty',
+            'google_api_enabled' => false,
+            'google_api_saved' => false,
+            'google_access_expanded' => false,
+            'adobe_project_state' => 'empty',
+            'google_status_label' => '',
+            'google_status_class' => '',
+            'google_access_copy' => '',
+            'google_search_disabled_copy' => '',
+            'adobe_project_enabled' => false,
+            'adobe_project_saved' => false,
+            'adobe_access_expanded' => false,
+            'adobe_project_id' => '',
+            'adobe_status_label' => '',
+            'adobe_status_class' => '',
+            'adobe_access_copy' => '',
+            'adobe_project_link' => 'https://fonts.adobe.com/',
+            'adobe_detected_families' => [],
+            'css_delivery_mode' => 'file',
+            'css_delivery_mode_options' => [],
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'class_output_enabled' => false,
+            'minify_css_output' => true,
+            'per_variant_font_variables_enabled' => true,
+            'extended_variable_weight_tokens_enabled' => true,
+            'extended_variable_role_aliases_enabled' => true,
+            'extended_variable_category_sans_enabled' => true,
+            'extended_variable_category_serif_enabled' => true,
+            'extended_variable_category_mono_enabled' => false,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'monospace_role_enabled' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => true,
+            'role_deployment' => [
+                'badge' => 'Live',
+                'badge_class' => 'is-success',
+                'title' => 'Live',
+                'copy' => 'Current selections are being served sitewide.',
+            ],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     $deploymentPosition = strpos($output, 'Publish Workflow');
@@ -2800,36 +2990,41 @@ $tests['admin_page_renderer_closes_the_shell_wrapper_after_rendering_sections'] 
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertSameValue(1, substr_count($output, '<div class="tasty-fonts-shell"'), 'The page should open the shell wrapper once.');
@@ -2846,44 +3041,49 @@ $tests['admin_page_renderer_renders_preview_and_advanced_panels_inside_deploymen
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Lora', 'Noto Sans'],
-        'roles' => [
-            'heading' => 'Lora',
-            'heading_fallback' => 'serif',
-            'body' => 'Noto Sans',
-            'body_fallback' => 'sans-serif',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'preview_panels' => [
-            ['key' => 'editorial', 'label' => 'Editorial', 'active' => true],
-        ],
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'monospace_role_enabled' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Lora', 'Noto Sans'],
+            'roles' => [
+                'heading' => 'Lora',
+                'heading_fallback' => 'serif',
+                'body' => 'Noto Sans',
+                'body_fallback' => 'sans-serif',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'preview_panels' => [
+                ['key' => 'editorial', 'label' => 'Editorial', 'active' => true],
+            ],
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'monospace_role_enabled' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     $deploymentPosition = strpos($output, 'Publish Workflow');
@@ -2966,27 +3166,32 @@ $tests['admin_page_renderer_keeps_library_identity_and_preview_ahead_of_family_c
     ];
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFamilyRow',
-        [
-            $family,
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFamilyRow',
             [
-                'heading' => 'Lora',
-                'body' => '',
-                'heading_fallback' => 'serif',
-                'body_fallback' => 'sans-serif',
-            ],
-            [],
-            [],
-            [
-                ['value' => 'inherit', 'label' => 'Inherit Global (Optional)'],
-                ['value' => 'swap', 'label' => 'swap'],
-            ],
-            'The quick brown fox jumps over the lazy dog.',
-            [],
-        ]
-    );
+                $family,
+                [
+                    'heading' => 'Lora',
+                    'body' => '',
+                    'heading_fallback' => 'serif',
+                    'body_fallback' => 'sans-serif',
+                ],
+                [],
+                [],
+                [
+                    ['value' => 'inherit', 'label' => 'Inherit Global (Optional)'],
+                    ['value' => 'swap', 'label' => 'swap'],
+                ],
+                'The quick brown fox jumps over the lazy dog.',
+                [],
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     $titlePosition = strpos($output, '<h3>Lora</h3>');
@@ -3013,52 +3218,57 @@ $tests['admin_page_renderer_renders_highlighted_snippet_panels_with_icon_copy_bu
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Inter'],
-        'roles' => [
-            'heading' => 'Inter',
-            'body' => '',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'serif',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => false,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [
-            [
-                'key' => 'usage',
-                'label' => 'Site Snippet',
-                'target' => 'tasty-fonts-output-usage',
-                'value' => ":root {\n    --font-heading: \"Inter\", sans-serif;\n}\nbody {\n    font-family: var(--font-heading);\n}",
-                'active' => true,
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Inter'],
+            'roles' => [
+                'heading' => 'Inter',
+                'body' => '',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'serif',
             ],
-        ],
-        'generated_css_panel' => [
-            'key' => 'generated',
-            'label' => 'Generated CSS',
-            'target' => 'tasty-fonts-output-generated',
-            'value' => "@font-face {\n    font-family: \"Inter\";\n}",
-        ],
-        'preview_panels' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => false,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [
+                [
+                    'key' => 'usage',
+                    'label' => 'Site Snippet',
+                    'target' => 'tasty-fonts-output-usage',
+                    'value' => ":root {\n    --font-heading: \"Inter\", sans-serif;\n}\nbody {\n    font-family: var(--font-heading);\n}",
+                    'active' => true,
+                ],
+            ],
+            'generated_css_panel' => [
+                'key' => 'generated',
+                'label' => 'Generated CSS',
+                'target' => 'tasty-fonts-output-generated',
+                'value' => "@font-face {\n    font-family: \"Inter\";\n}",
+            ],
+            'preview_panels' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('class="button tasty-fonts-output-copy-button"', $output, 'Snippet panels should render the shared icon-only copy button.');
@@ -3078,49 +3288,54 @@ $tests['admin_page_renderer_pretty_prints_minified_snippets_for_highlighted_disp
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Inter', 'Noto Sans', 'JetBrains Mono'],
-        'roles' => [
-            'heading' => 'Inter',
-            'body' => 'Noto Sans',
-            'monospace' => 'JetBrains Mono',
-            'heading_fallback' => 'serif',
-            'body_fallback' => 'sans-serif',
-            'monospace_fallback' => 'monospace',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [
-            [
-                'key' => 'usage',
-                'label' => 'Site Snippet',
-                'target' => 'tasty-fonts-output-usage',
-                'value' => ':root{--font-heading:"Inter",serif;--font-body:"Noto Sans",sans-serif}body{font-family:var(--font-body)}',
-                'active' => true,
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Inter', 'Noto Sans', 'JetBrains Mono'],
+            'roles' => [
+                'heading' => 'Inter',
+                'body' => 'Noto Sans',
+                'monospace' => 'JetBrains Mono',
+                'heading_fallback' => 'serif',
+                'body_fallback' => 'sans-serif',
+                'monospace_fallback' => 'monospace',
             ],
-        ],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [
+                [
+                    'key' => 'usage',
+                    'label' => 'Site Snippet',
+                    'target' => 'tasty-fonts-output-usage',
+                    'value' => ':root{--font-heading:"Inter",serif;--font-body:"Noto Sans",sans-serif}body{font-family:var(--font-body)}',
+                    'active' => true,
+                ],
+            ],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('<span class="tasty-fonts-syntax-selector">:root</span>', $output, 'Minified snippet selectors should still be highlighted after display formatting.');
@@ -3134,15 +3349,20 @@ $tests['admin_page_renderer_pretty_prints_minified_variable_declaration_lists_fo
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderCodeEditor',
-        [[
-            'label' => 'CSS Variables',
-            'target' => 'tasty-fonts-output-vars',
-            'value' => '--font-heading:"Inter",serif;--font-body:"Noto Sans",sans-serif;',
-        ]]
-    );
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderCodeEditor',
+            [[
+                'label' => 'CSS Variables',
+                'target' => 'tasty-fonts-output-vars',
+                'value' => '--font-heading:"Inter",serif;--font-body:"Noto Sans",sans-serif;',
+            ]]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue("<span class=\"tasty-fonts-syntax-property\">--font-heading</span>", $output, 'Minified variable lists should still highlight the first declaration.');
@@ -3156,16 +3376,21 @@ $tests['admin_page_renderer_prefers_explicit_display_values_for_snippet_panels']
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderCodeEditor',
-        [[
-            'label' => 'CSS Variables',
-            'target' => 'tasty-fonts-output-vars',
-            'value' => '--font-heading:"Inter",serif;--font-body:"Noto Sans",sans-serif;',
-            'display_value' => "/* Role font stacks */\n--font-heading: \"Inter\", serif;\n--font-body: \"Noto Sans\", sans-serif;",
-        ]]
-    );
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderCodeEditor',
+            [[
+                'label' => 'CSS Variables',
+                'target' => 'tasty-fonts-output-vars',
+                'value' => '--font-heading:"Inter",serif;--font-body:"Noto Sans",sans-serif;',
+                'display_value' => "/* Role font stacks */\n--font-heading: \"Inter\", serif;\n--font-body: \"Noto Sans\", sans-serif;",
+            ]]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('tasty-fonts-syntax-comment', $output, 'Snippet panels should render explicit display comments when provided.');
@@ -3179,44 +3404,49 @@ $tests['admin_page_renderer_generated_css_defaults_to_actual_minified_output_wit
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Inter'],
-        'roles' => [
-            'heading' => 'Inter',
-            'body' => '',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'serif',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [
-            'key' => 'generated',
-            'label' => 'Generated CSS',
-            'target' => 'tasty-fonts-output-generated',
-            'value' => ':root{--font-heading:"Inter",serif}body{font-family:var(--font-heading)}',
-        ],
-        'preview_panels' => [],
-        'toasts' => [],
-        'apply_everywhere' => true,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Inter'],
+            'roles' => [
+                'heading' => 'Inter',
+                'body' => '',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'serif',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [
+                'key' => 'generated',
+                'label' => 'Generated CSS',
+                'target' => 'tasty-fonts-output-generated',
+                'value' => ':root{--font-heading:"Inter",serif}body{font-family:var(--font-heading)}',
+            ],
+            'preview_panels' => [],
+            'toasts' => [],
+            'apply_everywhere' => true,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('data-snippet-display-toggle', $output, 'Generated CSS should expose a display-only toggle when minified output is enabled.');
@@ -3235,44 +3465,49 @@ $tests['admin_page_renderer_generated_css_omits_readable_toggle_when_output_is_a
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Inter'],
-        'roles' => [
-            'heading' => 'Inter',
-            'body' => '',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'serif',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => false,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [
-            'key' => 'generated',
-            'label' => 'Generated CSS',
-            'target' => 'tasty-fonts-output-generated',
-            'value' => "@font-face {\n    font-family: \"Inter\";\n}",
-        ],
-        'preview_panels' => [],
-        'toasts' => [],
-        'apply_everywhere' => true,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Inter'],
+            'roles' => [
+                'heading' => 'Inter',
+                'body' => '',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'serif',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => false,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [
+                'key' => 'generated',
+                'label' => 'Generated CSS',
+                'target' => 'tasty-fonts-output-generated',
+                'value' => "@font-face {\n    font-family: \"Inter\";\n}",
+            ],
+            'preview_panels' => [],
+            'toasts' => [],
+            'apply_everywhere' => true,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertNotContainsValue('data-snippet-display-toggle', $output, 'Generated CSS should not render a readable toggle when the saved output is already readable.');
@@ -3285,48 +3520,53 @@ $tests['admin_page_renderer_makes_copyable_diagnostic_values_click_to_copy'] = s
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [
-            [
-                'label' => 'CSS Request URL',
-                'value' => 'https://example.test/wp-content/uploads/fonts/tasty-fonts.css',
-                'code' => true,
-                'copyable' => true,
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [
+                [
+                    'label' => 'CSS Request URL',
+                    'value' => 'https://example.test/wp-content/uploads/fonts/tasty-fonts.css',
+                    'code' => true,
+                    'copyable' => true,
+                ],
+                [
+                    'label' => 'Stylesheet Size',
+                    'value' => '4 KB',
+                    'code' => false,
+                    'copyable' => false,
+                ],
             ],
-            [
-                'label' => 'Stylesheet Size',
-                'value' => '4 KB',
-                'code' => false,
-                'copyable' => false,
-            ],
-        ],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('class="tasty-fonts-diagnostic-item tasty-fonts-diagnostic-item--copyable"', $output, 'Copyable diagnostic values should mark the card so the copy action can be positioned cleanly.');
@@ -3343,42 +3583,47 @@ $tests['admin_page_renderer_renders_local_environment_notice_at_the_end_of_deplo
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [
-            'tone' => 'warning',
-            'title' => 'Local environment detected',
-            'message' => 'Turn this on when your local setup trusts this site\'s certificate.',
-            'settings_label' => 'Open Integrations',
-            'settings_url' => 'https://example.test/wp-admin/admin.php?page=tasty-custom-fonts&tf_page=settings&tf_studio=integrations',
-        ],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [
+                'tone' => 'warning',
+                'title' => 'Local environment detected',
+                'message' => 'Turn this on when your local setup trusts this site\'s certificate.',
+                'settings_label' => 'Open Integrations',
+                'settings_url' => 'https://example.test/wp-admin/admin.php?page=tasty-custom-fonts&tf_page=settings&tf_studio=integrations',
+            ],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
     $noticePosition = strpos($output, 'Local environment detected');
     $deploymentPosition = strpos($output, 'Publish Workflow');
@@ -3406,30 +3651,35 @@ $tests['admin_page_renderer_associates_code_previews_and_snippet_panels_with_vis
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderCodePreviewScene',
-        [
-            'The quick brown fox jumps over the lazy dog. 1234567890',
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderCodePreviewScene',
             [
-                'heading' => 'Inter',
-                'body' => 'Inter',
-                'monospace' => 'JetBrains Mono',
-            ],
-            true,
-        ]
-    );
-    invokePrivateMethod(
-        $renderer,
-        'renderCodeEditor',
-        [
+                'The quick brown fox jumps over the lazy dog. 1234567890',
+                [
+                    'heading' => 'Inter',
+                    'body' => 'Inter',
+                    'monospace' => 'JetBrains Mono',
+                ],
+                true,
+            ]
+        );
+        invokePrivateMethod(
+            $renderer,
+            'renderCodeEditor',
             [
-                'label' => 'CSS Variables',
-                'target' => 'tasty-fonts-output-vars',
-                'value' => '--font-body: "Inter", sans-serif;',
-            ],
-        ]
-    );
+                [
+                    'label' => 'CSS Variables',
+                    'target' => 'tasty-fonts-output-vars',
+                    'value' => '--font-body: "Inter", sans-serif;',
+                ],
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('id="tasty-fonts-preview-code-editor-heading"', $output, 'The editor preview should expose a stable visible heading ID.');
@@ -3446,42 +3696,47 @@ $tests['admin_page_renderer_renders_activity_log_action_links'] = static functio
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => [],
-        'roles' => [],
-        'logs' => [[
-            'time' => '2026-04-06 15:00:00',
-            'message' => 'Block Editor Font Library sync failed.',
-            'actor' => 'System',
-            'action_label' => 'Open Integrations',
-            'action_url' => 'https://example.test/wp-admin/admin.php?page=tasty-custom-fonts&tf_page=settings&tf_studio=integrations',
-        ]],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'block_editor_font_library_sync_enabled' => false,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [],
-        'local_environment_notice' => [],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [[
+                'time' => '2026-04-06 15:00:00',
+                'message' => 'Block Editor Font Library sync failed.',
+                'actor' => 'System',
+                'action_label' => 'Open Integrations',
+                'action_url' => 'https://example.test/wp-admin/admin.php?page=tasty-custom-fonts&tf_page=settings&tf_studio=integrations',
+            ]],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => false,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('Open Integrations', $output, 'Activity log entries should render an inline action link when one is provided.');
@@ -3496,42 +3751,47 @@ $tests['admin_page_renderer_renders_monospace_role_ui_when_enabled'] = static fu
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Inter', 'JetBrains Mono'],
-        'roles' => [
-            'heading' => 'Inter',
-            'body' => 'Inter',
-            'monospace' => '',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'sans-serif',
-            'monospace_fallback' => 'monospace',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'training_wheels_off' => false,
-        'monospace_role_enabled' => true,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [['key' => 'editorial', 'label' => 'Specimen', 'active' => true]],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Inter', 'JetBrains Mono'],
+            'roles' => [
+                'heading' => 'Inter',
+                'body' => 'Inter',
+                'monospace' => '',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'sans-serif',
+                'monospace_fallback' => 'monospace',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'training_wheels_off' => false,
+            'monospace_role_enabled' => true,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [['key' => 'editorial', 'label' => 'Specimen', 'active' => true]],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('Monospace Font', $output, 'Enabled monospace support should render the third role box in the main Font Roles form.');
@@ -3546,40 +3806,45 @@ $tests['admin_page_renderer_allows_fallback_only_heading_and_body_roles'] = stat
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Inter', 'Lora'],
-        'roles' => [
-            'heading' => '',
-            'body' => '',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'serif',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'training_wheels_off' => false,
-        'monospace_role_enabled' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [['key' => 'editorial', 'label' => 'Specimen', 'active' => true]],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Inter', 'Lora'],
+            'roles' => [
+                'heading' => '',
+                'body' => '',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'serif',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'training_wheels_off' => false,
+            'monospace_role_enabled' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [['key' => 'editorial', 'label' => 'Specimen', 'active' => true]],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('name="tasty_fonts_heading_font"', $output, 'The role form should render the heading family selector.');
@@ -3606,52 +3871,57 @@ $tests['admin_page_renderer_preview_workspace_defaults_to_live_sitewide_baseline
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Inter', 'Lora', 'JetBrains Mono'],
-        'roles' => [
-            'heading' => 'Inter',
-            'body' => 'Inter',
-            'monospace' => 'JetBrains Mono',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'sans-serif',
-            'monospace_fallback' => 'monospace',
-        ],
-        'applied_roles' => [
-            'heading' => 'Lora',
-            'body' => 'Inter',
-            'monospace' => 'JetBrains Mono',
-            'heading_fallback' => 'serif',
-            'body_fallback' => 'sans-serif',
-            'monospace_fallback' => 'monospace',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'training_wheels_off' => false,
-        'monospace_role_enabled' => true,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [['key' => 'editorial', 'label' => 'Specimen', 'active' => true]],
-        'toasts' => [],
-        'apply_everywhere' => true,
-        'preview_baseline_source' => 'live_sitewide',
-        'preview_baseline_label' => 'Live sitewide',
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Inter', 'Lora', 'JetBrains Mono'],
+            'roles' => [
+                'heading' => 'Inter',
+                'body' => 'Inter',
+                'monospace' => 'JetBrains Mono',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'sans-serif',
+                'monospace_fallback' => 'monospace',
+            ],
+            'applied_roles' => [
+                'heading' => 'Lora',
+                'body' => 'Inter',
+                'monospace' => 'JetBrains Mono',
+                'heading_fallback' => 'serif',
+                'body_fallback' => 'sans-serif',
+                'monospace_fallback' => 'monospace',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'training_wheels_off' => false,
+            'monospace_role_enabled' => true,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [['key' => 'editorial', 'label' => 'Specimen', 'active' => true]],
+            'toasts' => [],
+            'apply_everywhere' => true,
+            'preview_baseline_source' => 'live_sitewide',
+            'preview_baseline_label' => 'Live sitewide',
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('Previewing:', $output, 'The preview workspace should render a visible source label.');
@@ -3678,47 +3948,52 @@ $tests['admin_page_renderer_preview_workspace_defaults_to_draft_baseline'] = sta
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Inter', 'Lora'],
-        'roles' => [
-            'heading' => 'Inter',
-            'body' => 'Lora',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'serif',
-        ],
-        'applied_roles' => [
-            'heading' => 'Lora',
-            'body' => 'Inter',
-            'heading_fallback' => 'serif',
-            'body_fallback' => 'sans-serif',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'training_wheels_off' => false,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [['key' => 'editorial', 'label' => 'Specimen', 'active' => true]],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'preview_baseline_source' => 'draft',
-        'preview_baseline_label' => 'Current draft',
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Inter', 'Lora'],
+            'roles' => [
+                'heading' => 'Inter',
+                'body' => 'Lora',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'serif',
+            ],
+            'applied_roles' => [
+                'heading' => 'Lora',
+                'body' => 'Inter',
+                'heading_fallback' => 'serif',
+                'body_fallback' => 'sans-serif',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [['key' => 'editorial', 'label' => 'Specimen', 'active' => true]],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'preview_baseline_source' => 'draft',
+            'preview_baseline_label' => 'Current draft',
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('Current draft', $output, 'The preview workspace should disclose when it is seeded from the draft role selections.');
@@ -3734,65 +4009,70 @@ $tests['admin_page_renderer_renders_typed_family_labels_in_role_and_preview_sele
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [
-            'Inter' => [
-                'family' => 'Inter',
-                'has_variable_faces' => true,
-            ],
-            'Lora' => [
-                'family' => 'Lora',
-                'faces' => [
-                    [
-                        'weight' => '400',
-                        'style' => 'normal',
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [
+                'Inter' => [
+                    'family' => 'Inter',
+                    'has_variable_faces' => true,
+                ],
+                'Lora' => [
+                    'family' => 'Lora',
+                    'faces' => [
+                        [
+                            'weight' => '400',
+                            'style' => 'normal',
+                        ],
+                    ],
+                ],
+                'JetBrains Mono' => [
+                    'family' => 'JetBrains Mono',
+                    'faces' => [
+                        [
+                            'weight' => '400',
+                            'style' => 'normal',
+                        ],
                     ],
                 ],
             ],
-            'JetBrains Mono' => [
-                'family' => 'JetBrains Mono',
-                'faces' => [
-                    [
-                        'weight' => '400',
-                        'style' => 'normal',
-                    ],
-                ],
+            'available_families' => ['Inter', 'Lora', 'JetBrains Mono', 'Legacy Stack'],
+            'roles' => [
+                'heading' => 'Inter',
+                'body' => 'Lora',
+                'monospace' => 'JetBrains Mono',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'serif',
+                'monospace_fallback' => 'monospace',
             ],
-        ],
-        'available_families' => ['Inter', 'Lora', 'JetBrains Mono', 'Legacy Stack'],
-        'roles' => [
-            'heading' => 'Inter',
-            'body' => 'Lora',
-            'monospace' => 'JetBrains Mono',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'serif',
-            'monospace_fallback' => 'monospace',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'training_wheels_off' => false,
-        'monospace_role_enabled' => true,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [['key' => 'editorial', 'label' => 'Specimen', 'active' => true]],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'training_wheels_off' => false,
+            'monospace_role_enabled' => true,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [['key' => 'editorial', 'label' => 'Specimen', 'active' => true]],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('>Inter · Variable<', $output, 'Role and preview selectors should suffix variable families with a Variable label.');
@@ -3810,48 +4090,53 @@ $tests['admin_page_renderer_uses_a_dedicated_code_preview_scene'] = static funct
     $renderer = new AdminPageRenderer(new Storage());
 
     ob_start();
-    $renderer->renderPage([
-        'storage' => ['root' => '/tmp/uploads/fonts'],
-        'catalog' => [],
-        'available_families' => ['Inter', 'JetBrains Mono'],
-        'roles' => [
-            'heading' => 'Inter',
-            'body' => 'Inter',
-            'monospace' => 'JetBrains Mono',
-            'heading_fallback' => 'sans-serif',
-            'body_fallback' => 'sans-serif',
-            'monospace_fallback' => 'monospace',
-        ],
-        'logs' => [],
-        'activity_actor_options' => [],
-        'family_fallbacks' => [],
-        'family_font_displays' => [],
-        'family_font_display_options' => [],
-        'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
-        'preview_size' => 32,
-        'font_display' => 'optional',
-        'font_display_options' => [],
-        'minify_css_output' => true,
-        'preload_primary_fonts' => true,
-        'remote_connection_hints' => true,
-        'training_wheels_off' => false,
-        'monospace_role_enabled' => true,
-        'delete_uploaded_files_on_uninstall' => false,
-        'diagnostic_items' => [],
-        'overview_metrics' => [],
-        'output_panels' => [],
-        'generated_css_panel' => [],
-        'preview_panels' => [
-            ['key' => 'editorial', 'label' => 'Specimen', 'active' => false],
-            ['key' => 'card', 'label' => 'Card', 'active' => false],
-            ['key' => 'reading', 'label' => 'Reading', 'active' => false],
-            ['key' => 'interface', 'label' => 'Interface', 'active' => false],
-            ['key' => 'code', 'label' => 'Code', 'active' => true],
-        ],
-        'toasts' => [],
-        'apply_everywhere' => false,
-        'role_deployment' => [],
-    ]);
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => ['Inter', 'JetBrains Mono'],
+            'roles' => [
+                'heading' => 'Inter',
+                'body' => 'Inter',
+                'monospace' => 'JetBrains Mono',
+                'heading_fallback' => 'sans-serif',
+                'body_fallback' => 'sans-serif',
+                'monospace_fallback' => 'monospace',
+            ],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'training_wheels_off' => false,
+            'monospace_role_enabled' => true,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [
+                ['key' => 'editorial', 'label' => 'Specimen', 'active' => false],
+                ['key' => 'card', 'label' => 'Card', 'active' => false],
+                ['key' => 'reading', 'label' => 'Reading', 'active' => false],
+                ['key' => 'interface', 'label' => 'Interface', 'active' => false],
+                ['key' => 'code', 'label' => 'Code', 'active' => true],
+            ],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'role_deployment' => [],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('tasty-fonts-preview-scene--code', $output, 'The preview renderer should expose a dedicated Code scene.');
@@ -3903,24 +4188,29 @@ $tests['admin_page_renderer_family_cards_expose_monospace_assignments_and_varian
     ];
 
     ob_start();
-    invokePrivateMethod(
-        $renderer,
-        'renderFamilyRow',
-        [
-            $family,
-            ['heading' => 'Inter', 'body' => 'Inter', 'monospace' => 'JetBrains Mono'],
-            [],
-            [],
+    try {
+        invokePrivateMethod(
+            $renderer,
+            'renderFamilyRow',
             [
-                ['value' => 'inherit', 'label' => 'Use plugin default'],
-                ['value' => 'swap', 'label' => 'swap'],
-            ],
-            'The quick brown fox jumps over the lazy dog.',
-            [],
-            ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
-            true,
-        ]
-    );
+                $family,
+                ['heading' => 'Inter', 'body' => 'Inter', 'monospace' => 'JetBrains Mono'],
+                [],
+                [],
+                [
+                    ['value' => 'inherit', 'label' => 'Use plugin default'],
+                    ['value' => 'swap', 'label' => 'swap'],
+                ],
+                'The quick brown fox jumps over the lazy dog.',
+                [],
+                ['enabled' => true, 'weight_tokens' => true, 'role_aliases' => true, 'category_sans' => true, 'category_serif' => true, 'category_mono' => true],
+                true,
+            ]
+        );
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
     $output = (string) ob_get_clean();
 
     assertContainsValue('data-role-assign="monospace"', $output, 'Enabled family cards should expose the monospace quick-assign control.');
