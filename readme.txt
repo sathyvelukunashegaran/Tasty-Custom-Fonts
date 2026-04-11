@@ -36,6 +36,16 @@ The plugin is designed for single-site activation and per-site activation inside
 
 The latest stable release is 1.9.0. Beta and nightly builds are published from GitHub releases for sites that want to test the upcoming line before it becomes stable.
 
+= What is planned after 2.0.0 stable? =
+
+The immediate post-2.0 line is aimed at power-user and agency workflows. That includes command-line maintenance tools, portable export/import flows, stronger bulk management for larger libraries, richer diagnostics, scheduled Adobe project refreshes, and more polished distribution surfaces such as plugin screenshots.
+
+The team is also planning deeper platform-alignment work, including Composer-based autoloading and evaluation of targeted Interactivity API adoption where it improves the admin experience without adding unnecessary complexity.
+
+If you want to help shape that roadmap, open a feature request or feedback issue on GitHub:
+
+https://github.com/sathyvelukunashegaran/Tasty-Custom-Fonts/issues
+
 == Installation ==
 
 1. Upload the `etch-fonts` folder to `/wp-content/plugins/`, or install a packaged ZIP from GitHub releases.

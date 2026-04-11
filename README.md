@@ -27,6 +27,21 @@ Tasty Custom Fonts lets you upload local font files, import Google Fonts or Bunn
 
 These integrations are optional. The plugin does not declare any required companion plugins because the core workflow works on a standard WordPress site without Etch, Automatic.css, Bricks, or Oxygen.
 
+## What We’re Preparing After 2.0.0 Stable
+
+The 2.0.0 stable release is focused on locking in the current foundation. The work immediately after that release is aimed at making Tasty Custom Fonts even more capable for agencies, product teams, and high-volume WordPress operators.
+
+Planned post-2.0 improvements include:
+
+- richer operator tooling, including WP-CLI commands for maintenance, cache management, CSS regeneration, rescans, and diagnostics
+- portable site-to-site workflows with secure export and import for settings and library metadata
+- faster large-library management with bulk actions, broader search result flows, and better high-volume browsing
+- more flexible ingestion paths, including remote CSS or URL-based import flows for custom hosted font sources
+- smarter background upkeep such as scheduled Adobe project refreshes and deeper runtime diagnostics, including font-loading performance visibility and downloadable activity logs
+- stronger platform alignment through Composer-based autoloading, evaluation of targeted Interactivity API adoption, and polished plugin screenshots for distribution surfaces
+
+If there is a workflow you want to see prioritized after 2.0.0, open an issue or feature request on [GitHub Issues](https://github.com/sathyvelukunashegaran/Tasty-Custom-Fonts/issues). Feedback on real-world agency, client, and editorial use cases is especially useful when shaping the next release line.
+
 ## Documentation
 
 Use the repo-native docs for the full knowledge base:
@@ -240,6 +255,8 @@ The translation template is included at `languages/tasty-fonts.pot`.
 ## Contributing
 
 Pull requests are welcome. For larger changes, open an issue first so the direction is clear before implementation starts.
+
+Feature ideas, workflow requests, and usability feedback are also welcome through [GitHub Issues](https://github.com/sathyvelukunashegaran/Tasty-Custom-Fonts/issues).
 
 - Match the WordPress conventions already used in the plugin.
 - Run `php tests/run.php` before submitting changes.
