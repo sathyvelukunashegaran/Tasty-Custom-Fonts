@@ -90,20 +90,41 @@ $tests['settings_repository_persists_google_api_key_data_in_dedicated_option'] =
         'The main settings option should no longer persist the Google API key.'
     );
     assertSameValue(
-        [
-            'google_api_key' => 'live-key',
-            'google_api_key_status' => 'unknown',
-            'google_api_key_status_message' => '',
-            'google_api_key_checked_at' => 0,
-        ],
-        $optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA] ?? null,
-        'Google API key data should be stored in its dedicated option row.'
+        false,
+        array_key_exists('google_api_key', (array) ($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA] ?? [])),
+        'The dedicated Google API key option should not store the plaintext key once encryption at rest is available.'
+    );
+    assertTrueValue(
+        is_string($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_encrypted'] ?? null)
+        && $optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_encrypted'] !== '',
+        'Google API key data should store an encrypted ciphertext in its dedicated option row.'
+    );
+    assertSameValue(
+        'unknown',
+        (string) ($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_status'] ?? ''),
+        'Google API key encryption should preserve the validation state alongside the ciphertext.'
+    );
+    assertSameValue(
+        '',
+        (string) ($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_status_message'] ?? ''),
+        'Google API key encryption should preserve the status message alongside the ciphertext.'
+    );
+    assertSameValue(
+        0,
+        (int) ($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_checked_at'] ?? -1),
+        'Google API key encryption should preserve the checked-at timestamp alongside the ciphertext.'
+    );
+    assertSameValue(
+        false,
+        str_contains((string) ($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_encrypted'] ?? ''), 'live-key'),
+        'Google API key ciphertext should not contain the plaintext key.'
     );
     assertSameValue(
         false,
         $optionAutoload[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA] ?? null,
         'The dedicated Google API key option should be saved with autoload disabled.'
     );
+    assertSameValue('live-key', $settings->getSettings()['google_api_key'] ?? '', 'Google API key reads should transparently decrypt the stored ciphertext.');
 };
 
 $tests['settings_repository_migrates_legacy_google_api_key_data_when_saving_other_settings'] = static function (): void {
@@ -130,14 +151,29 @@ $tests['settings_repository_migrates_legacy_google_api_key_data_when_saving_othe
     );
     assertSameValue('Updated preview', (string) ($optionStore[SettingsRepository::OPTION_SETTINGS]['preview_sentence'] ?? ''), 'Unrelated settings should still save into the main settings option.');
     assertSameValue(
-        [
-            'google_api_key' => 'legacy-key',
-            'google_api_key_status' => 'valid',
-            'google_api_key_status_message' => 'Ready',
-            'google_api_key_checked_at' => 123,
-        ],
-        $optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA] ?? null,
-        'Saving unrelated settings should migrate legacy Google API key data into the dedicated option.'
+        false,
+        array_key_exists('google_api_key', (array) ($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA] ?? [])),
+        'Saving unrelated settings should migrate legacy Google API key data out of plaintext storage.'
+    );
+    assertTrueValue(
+        is_string($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_encrypted'] ?? null)
+        && $optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_encrypted'] !== '',
+        'Saving unrelated settings should migrate legacy Google API key data into encrypted dedicated storage.'
+    );
+    assertSameValue(
+        'valid',
+        (string) ($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_status'] ?? ''),
+        'Saving unrelated settings should preserve the migrated Google API key validation state.'
+    );
+    assertSameValue(
+        'Ready',
+        (string) ($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_status_message'] ?? ''),
+        'Saving unrelated settings should preserve the migrated Google API key validation message.'
+    );
+    assertSameValue(
+        123,
+        (int) ($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_checked_at'] ?? 0),
+        'Saving unrelated settings should preserve the migrated Google API key validation timestamp.'
     );
 };
 
@@ -168,6 +204,44 @@ $tests['settings_repository_updates_google_key_status_without_rewriting_main_set
         'valid',
         (string) ($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_status'] ?? ''),
         'Updating Google API key validation state should only touch the dedicated option.'
+    );
+    assertSameValue(
+        false,
+        array_key_exists('google_api_key', (array) ($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA] ?? [])),
+        'Updating Google API key validation state should migrate any remaining plaintext Google API key storage to ciphertext.'
+    );
+    assertTrueValue(
+        is_string($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_encrypted'] ?? null)
+        && $optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_encrypted'] !== '',
+        'Updating Google API key validation state should preserve the API key in encrypted dedicated storage.'
+    );
+};
+
+$tests['settings_repository_decrypts_and_rewrites_plaintext_google_key_option_rows'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA] = [
+        'google_api_key' => 'live-key',
+        'google_api_key_status' => 'valid',
+        'google_api_key_status_message' => 'Ready',
+        'google_api_key_checked_at' => 123,
+    ];
+
+    $settings = new SettingsRepository();
+    $loaded = $settings->getSettings();
+
+    assertSameValue('live-key', (string) ($loaded['google_api_key'] ?? ''), 'Reading Google API key settings should transparently decrypt or migrate stored key material.');
+    assertSameValue(
+        false,
+        array_key_exists('google_api_key', (array) ($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA] ?? [])),
+        'Reading legacy plaintext Google API key option rows should rewrite them without the plaintext key.'
+    );
+    assertTrueValue(
+        is_string($optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_encrypted'] ?? null)
+        && $optionStore[SettingsRepository::OPTION_GOOGLE_API_KEY_DATA]['google_api_key_encrypted'] !== '',
+        'Reading legacy plaintext Google API key option rows should migrate them to encrypted storage.'
     );
 };
 
@@ -409,6 +483,22 @@ $tests['developer_tools_wipe_managed_font_library_rebuilds_empty_storage'] = sta
     assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('upload/index.php')), 'Wiping the managed library should restore the uploads storage stub.');
     assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('adobe/index.php')), 'Wiping the managed library should restore the Adobe storage stub.');
     assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('.generated/index.php')), 'Wiping the managed library should restore the generated-assets storage stub.');
+    assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('.htaccess')), 'Wiping the managed library should restore the root .htaccess hardening stub.');
+    assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('google/.htaccess')), 'Wiping the managed library should restore the Google .htaccess hardening stub.');
+    assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('bunny/.htaccess')), 'Wiping the managed library should restore the Bunny .htaccess hardening stub.');
+    assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('upload/.htaccess')), 'Wiping the managed library should restore the uploads .htaccess hardening stub.');
+    assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('adobe/.htaccess')), 'Wiping the managed library should restore the Adobe .htaccess hardening stub.');
+    assertSameValue(true, file_exists((string) $services['storage']->pathForRelativePath('.generated/.htaccess')), 'Wiping the managed library should restore the generated-assets .htaccess hardening stub.');
+    assertContainsValue(
+        'Options -Indexes',
+        (string) file_get_contents((string) $services['storage']->pathForRelativePath('.htaccess')),
+        'Wiping the managed library should restore Apache directory-listing hardening in the font storage root.'
+    );
+    assertContainsValue(
+        'Require all denied',
+        (string) file_get_contents((string) $services['storage']->pathForRelativePath('.htaccess')),
+        'Wiping the managed library should restore Apache PHP-request blocking in the font storage root.'
+    );
     assertSameValue(1, did_action('tasty_fonts_before_wipe_font_library'), 'Wiping the managed library should emit a before hook.');
     assertSameValue(1, did_action('tasty_fonts_after_wipe_font_library'), 'Wiping the managed library should emit an after hook.');
     assertSameValue(true, isset($actionCalls['tasty_fonts_after_wipe_font_library'][0][0]), 'Wiping the managed library should pass the restored settings into the after hook.');
@@ -1295,6 +1385,85 @@ $tests['asset_service_enqueues_inline_css_when_inline_delivery_mode_is_selected'
     assertSameValue(true, is_file((string) $services['storage']->getGeneratedCssPath()), 'Inline delivery should still keep the generated CSS file on disk.');
 };
 
+$tests['asset_service_can_inject_a_filtered_nonce_into_plugin_inline_style_tags'] = static function (): void {
+    resetTestState();
+
+    global $inlineStyles;
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings(['css_delivery_mode' => 'inline']);
+    add_filter(
+        'tasty_fonts_generated_css',
+        static fn (string $css): string => $css . "\nbody{color:blue;}"
+    );
+
+    add_filter(
+        'tasty_fonts_inline_style_nonce',
+        static function (string $nonce, string $handle, string $css, string $context): string {
+            assertSameValue('tasty-fonts-runtime', $handle, 'Inline style nonce filters should receive the enqueued handle.');
+            assertContainsValue('body{color:blue;}', $css, 'Inline style nonce filters should receive the CSS payload being printed.');
+            assertSameValue('runtime', $context, 'Inline style nonce filters should receive the runtime/admin-preview context.');
+
+            return 'csp-nonce-123';
+        },
+        10,
+        4
+    );
+
+    $services['assets']->enqueue('tasty-fonts-runtime');
+
+    $html = "<style id='tasty-fonts-runtime-inline-css'>\n"
+        . (string) ($inlineStyles['tasty-fonts-runtime'] ?? '')
+        . "\n</style>\n";
+    $filtered = $services['assets']->filterInlineStyleOutputBuffer($html);
+
+    assertContainsValue(
+        'nonce="csp-nonce-123"',
+        $filtered,
+        'Configured CSP nonces should be injected into this plugin\'s rendered inline style tags.'
+    );
+};
+
+$tests['asset_service_inline_style_nonce_filter_leaves_unknown_style_tags_unchanged'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    add_filter('tasty_fonts_inline_style_nonce', static fn (): string => 'csp-nonce-123');
+    $services['settings']->saveSettings(['css_delivery_mode' => 'inline']);
+    $services['assets']->enqueue('tasty-fonts-runtime');
+
+    $html = "<style id='someone-else-inline-css'>body{color:red;}</style>";
+
+    assertSameValue(
+        $html,
+        $services['assets']->filterInlineStyleOutputBuffer($html),
+        'The inline style nonce buffer should not rewrite unrelated inline style tags.'
+    );
+};
+
+$tests['asset_service_inline_style_nonce_strategy_can_be_switched_off'] = static function (): void {
+    resetTestState();
+
+    global $inlineStyles;
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings(['css_delivery_mode' => 'inline']);
+    add_filter('tasty_fonts_inline_style_nonce', static fn (): string => 'csp-nonce-123');
+    add_filter('tasty_fonts_inline_style_nonce_strategy', static fn (): string => 'off');
+
+    $services['assets']->enqueue('tasty-fonts-runtime');
+
+    $html = "<style id='tasty-fonts-runtime-inline-css'>\n"
+        . (string) ($inlineStyles['tasty-fonts-runtime'] ?? '')
+        . "\n</style>\n";
+
+    assertSameValue(
+        $html,
+        $services['assets']->filterInlineStyleOutputBuffer($html),
+        'Sites should be able to disable the plugin-managed inline style nonce strategy explicitly.'
+    );
+};
+
 $tests['asset_service_applies_generated_css_filter_before_caching'] = static function (): void {
     resetTestState();
 
@@ -1749,10 +1918,12 @@ $tests['runtime_service_enqueues_adobe_stylesheet_and_exposes_it_to_etch_canvas'
     resetTestState();
 
     global $enqueuedStyles;
+    global $currentUserCapabilities;
     global $localizedScripts;
     global $remoteGetResponses;
 
     $services = makeServiceGraph();
+    $currentUserCapabilities['edit_posts'] = true;
     $services['settings']->saveAdobeProject('abc1234', true);
     $services['settings']->saveAdobeProjectStatus('valid', 'Adobe project ready.');
     $remoteGetResponses['https://use.typekit.net/abc1234.css'] = [
@@ -1789,6 +1960,31 @@ CSS,
         true,
         in_array('https://use.typekit.net/abc1234.css', $canvasStylesheetUrls, true),
         'Etch canvas runtime data should include the Adobe stylesheet URL.'
+    );
+};
+
+$tests['runtime_service_ignores_public_etch_query_parameters_without_editor_access'] = static function (): void {
+    resetTestState();
+
+    global $enqueuedScripts;
+    global $isUserLoggedIn;
+    global $localizedScripts;
+
+    $services = makeServiceGraph();
+    $isUserLoggedIn = false;
+    $_GET['etch'] = '1';
+
+    $services['runtime']->enqueueFrontend();
+
+    assertSameValue(
+        false,
+        array_key_exists('tasty-fonts-canvas', $enqueuedScripts),
+        'Public requests should not be able to trigger Etch canvas bridge assets with the etch query parameter alone.'
+    );
+    assertSameValue(
+        false,
+        array_key_exists('tasty-fonts-canvas', $localizedScripts),
+        'Public requests should not receive Etch canvas runtime stylesheet URLs through the query parameter alone.'
     );
 };
 
@@ -2762,6 +2958,35 @@ $tests['asset_service_get_versioned_stylesheet_url_falls_back_to_plugin_version_
 
     assertSameValue(false, $url === null, 'getVersionedStylesheetUrl() should return a versioned URL even before the generated CSS file is written.');
     assertContainsValue(TASTY_FONTS_VERSION, (string) $url, 'getVersionedStylesheetUrl() should fall back to the plugin version string when no generated file exists.');
+};
+
+$tests['asset_service_uses_sha256_for_file_state_comparison_and_a_shorter_version_token'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['storage']->ensureRootDirectory();
+    $services['assets']->ensureGeneratedCssFile(false);
+
+    $status = $services['assets']->getStatus();
+    $url = (string) $services['assets']->getVersionedStylesheetUrl();
+    $query = (string) parse_url($url, PHP_URL_QUERY);
+    parse_str($query, $queryArgs);
+
+    assertSameValue(
+        64,
+        strlen((string) ($status['expected_hash'] ?? '')),
+        'Generated stylesheet state should use a full SHA-256 digest for file-state comparison.'
+    );
+    assertSameValue(
+        16,
+        strlen((string) ($status['expected_version'] ?? '')),
+        'Generated stylesheet state should expose a shorter version token for cache-busting URLs.'
+    );
+    assertSameValue(
+        (string) ($status['expected_version'] ?? ''),
+        (string) ($queryArgs['ver'] ?? ''),
+        'Versioned stylesheet URLs should use the shortened digest token instead of the full comparison hash.'
+    );
 };
 
 // ---------------------------------------------------------------------------

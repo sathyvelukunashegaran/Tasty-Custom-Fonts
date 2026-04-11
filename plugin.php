@@ -63,5 +63,5 @@ add_action(
     static function (): void {
         TastyFonts\Plugin::instance()->boot();
     },
-    0
+    10
 );

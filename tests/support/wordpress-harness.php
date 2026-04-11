@@ -34,6 +34,38 @@ if (!defined('TASTY_FONTS_FILE')) {
     define('TASTY_FONTS_FILE', dirname(__DIR__, 2) . '/plugin.php');
 }
 
+if (!defined('AUTH_KEY')) {
+    define('AUTH_KEY', 'test-auth-key');
+}
+
+if (!defined('SECURE_AUTH_KEY')) {
+    define('SECURE_AUTH_KEY', 'test-secure-auth-key');
+}
+
+if (!defined('LOGGED_IN_KEY')) {
+    define('LOGGED_IN_KEY', 'test-logged-in-key');
+}
+
+if (!defined('NONCE_KEY')) {
+    define('NONCE_KEY', 'test-nonce-key');
+}
+
+if (!defined('AUTH_SALT')) {
+    define('AUTH_SALT', 'test-auth-salt');
+}
+
+if (!defined('SECURE_AUTH_SALT')) {
+    define('SECURE_AUTH_SALT', 'test-secure-auth-salt');
+}
+
+if (!defined('LOGGED_IN_SALT')) {
+    define('LOGGED_IN_SALT', 'test-logged-in-salt');
+}
+
+if (!defined('NONCE_SALT')) {
+    define('NONCE_SALT', 'test-nonce-salt');
+}
+
 if (!defined('DAY_IN_SECONDS')) {
     define('DAY_IN_SECONDS', 86400);
 }
@@ -260,6 +292,48 @@ if (!class_exists('Plugin_Upgrader')) {
     }
 }
 
+if (!function_exists('download_url')) {
+    function download_url(string $url, int $timeout = 300, bool $signatureVerification = false): string|WP_Error
+    {
+        global $downloadUrlCalls;
+        global $downloadUrlResponses;
+
+        $downloadUrlCalls[] = [
+            'url' => $url,
+            'timeout' => $timeout,
+            'signature_verification' => $signatureVerification,
+        ];
+
+        $response = $downloadUrlResponses[$url] ?? null;
+
+        if ($response instanceof WP_Error) {
+            return $response;
+        }
+
+        if (is_array($response) && is_string($response['path'] ?? null) && $response['path'] !== '') {
+            return $response['path'];
+        }
+
+        if (is_array($response) && array_key_exists('body', $response)) {
+            $response = (string) $response['body'];
+        }
+
+        if (!is_string($response)) {
+            return new WP_Error('missing_mock', 'No download_url mock response for ' . $url);
+        }
+
+        $directory = uniqueTestDirectory('downloads');
+        wp_mkdir_p($directory);
+        $filename = $directory . '/' . md5($url . '|' . $response) . '.tmp';
+
+        if (file_put_contents($filename, $response) === false) {
+            return new WP_Error('download_write_failed', 'Could not write the downloaded mock payload.');
+        }
+
+        return $filename;
+    }
+}
+
 if (!class_exists('WP_Theme_JSON_Data')) {
     class WP_Theme_JSON_Data
     {
@@ -292,6 +366,18 @@ if (!function_exists('__')) {
         return is_array($translationMap) && array_key_exists($text, $translationMap)
             ? (string) $translationMap[$text]
             : $text;
+    }
+}
+
+if (!function_exists('wp_salt')) {
+    function wp_salt(string $scheme = 'auth'): string
+    {
+        return match ($scheme) {
+            'secure_auth' => SECURE_AUTH_KEY . SECURE_AUTH_SALT,
+            'logged_in' => LOGGED_IN_KEY . LOGGED_IN_SALT,
+            'nonce' => NONCE_KEY . NONCE_SALT,
+            default => AUTH_KEY . AUTH_SALT,
+        };
     }
 }
 
@@ -594,7 +680,14 @@ if (!function_exists('current_time')) {
 if (!function_exists('is_user_logged_in')) {
     function is_user_logged_in(): bool
     {
-        return false;
+        global $isUserLoggedIn;
+        global $currentUserId;
+
+        if (is_bool($isUserLoggedIn ?? null)) {
+            return $isUserLoggedIn;
+        }
+
+        return (int) ($currentUserId ?? 0) > 0;
     }
 }
 
@@ -1492,12 +1585,15 @@ function resetTestState(): void
     global $actionCalls;
     global $actionCounts;
     global $attachedFilePaths;
+    global $downloadUrlCalls;
+    global $downloadUrlResponses;
     global $filesystemMethod;
     global $enqueuedScripts;
     global $enqueuedStyles;
     global $hookCallbacks;
     global $inlineStyles;
     global $isAdminRequest;
+    global $isUserLoggedIn;
     global $localizedScripts;
     global $loadedTextdomains;
     global $menuPageCalls;
@@ -1539,6 +1635,8 @@ function resetTestState(): void
     global $uploadBaseDir;
 
     $filesystemMethod = 'direct';
+    $downloadUrlCalls = [];
+    $downloadUrlResponses = [];
     $optionAutoload = [];
     $optionStore = [];
     $optionDeleted = [];
@@ -1568,6 +1666,7 @@ function resetTestState(): void
     $scriptTranslations = [];
     $redirectLocation = '';
     $isAdminRequest = false;
+    $isUserLoggedIn = true;
     $hookCallbacks = [];
     $actionCounts = [];
     $actionCalls = [];

@@ -27,6 +27,7 @@ final class GitHubUpdater
     private const INSTALLED_VERSION_TTL = 30 * DAY_IN_SECONDS;
     private const REQUEST_TIMEOUT = 20;
     private const PACKAGE_NAME_PATTERN = 'tasty-fonts-%s.zip';
+    private const PACKAGE_CHECKSUM_NAME_PATTERN = 'tasty-fonts-%s.zip.sha256';
 
     private ?array $pluginMetadata = null;
 
@@ -40,6 +41,7 @@ final class GitHubUpdater
 
         add_filter('pre_set_site_transient_update_plugins', [$this, 'filterUpdateTransient']);
         add_filter('plugins_api', [$this, 'filterPluginInformation'], 10, 3);
+        add_filter('upgrader_pre_download', [$this, 'filterUpgraderPreDownload'], 10, 4);
         add_action('upgrader_process_complete', [$this, 'handleUpgraderProcessComplete'], 10, 2);
     }
 
@@ -250,6 +252,60 @@ final class GitHubUpdater
         set_transient(self::TRANSIENT_INSTALLED_VERSION, $this->installedVersion(), self::INSTALLED_VERSION_TTL);
     }
 
+    public function filterUpgraderPreDownload(mixed $reply, string $package, mixed $upgrader, array $hookExtra = []): mixed
+    {
+        if ($reply !== false) {
+            return $reply;
+        }
+
+        $release = $this->findReleaseByPackageUrl($package);
+
+        if (!is_array($release)) {
+            return $reply;
+        }
+
+        $checksumUrl = trim((string) ($release['checksum_url'] ?? ''));
+
+        if ($checksumUrl === '') {
+            return new WP_Error(
+                'tasty_fonts_release_checksum_missing',
+                __('The selected release cannot be verified because its published checksum is missing.', 'tasty-fonts')
+            );
+        }
+
+        $expectedChecksum = $this->fetchExpectedChecksum($checksumUrl);
+
+        if ($expectedChecksum === '') {
+            return new WP_Error(
+                'tasty_fonts_release_checksum_unavailable',
+                __('The selected release checksum could not be retrieved for verification.', 'tasty-fonts')
+            );
+        }
+
+        $downloadedPackage = download_url($package, self::REQUEST_TIMEOUT, false);
+
+        if (is_wp_error($downloadedPackage)) {
+            return $downloadedPackage;
+        }
+
+        $actualChecksum = is_string($downloadedPackage) && is_readable($downloadedPackage)
+            ? strtolower((string) hash_file('sha256', $downloadedPackage))
+            : '';
+
+        if ($actualChecksum !== $expectedChecksum) {
+            if (is_string($downloadedPackage) && $downloadedPackage !== '' && file_exists($downloadedPackage)) {
+                unlink($downloadedPackage);
+            }
+
+            return new WP_Error(
+                'tasty_fonts_release_checksum_mismatch',
+                __('The downloaded release package failed checksum verification.', 'tasty-fonts')
+            );
+        }
+
+        return $downloadedPackage;
+    }
+
     private function maybeRefreshInstalledVersion(): void
     {
         $cachedVersion = get_transient(self::TRANSIENT_INSTALLED_VERSION);
@@ -364,8 +420,9 @@ final class GitHubUpdater
         $version = $this->normalizeVersion((string) ($release['tag_name'] ?? ''));
         $channel = $this->classifyReleaseChannel($version);
         $packageUrl = $this->findPackageUrl($version, $release['assets'] ?? []);
+        $checksumUrl = $this->findChecksumUrl($version, $release['assets'] ?? []);
 
-        if ($version === '' || $channel === '' || $packageUrl === '') {
+        if ($version === '' || $channel === '' || $packageUrl === '' || $checksumUrl === '') {
             return null;
         }
 
@@ -373,6 +430,7 @@ final class GitHubUpdater
             'version' => $version,
             'channel' => $channel,
             'package_url' => $packageUrl,
+            'checksum_url' => $checksumUrl,
             'body' => (string) ($release['body'] ?? ''),
             'published_at' => (string) ($release['published_at'] ?? ''),
         ];
@@ -403,6 +461,88 @@ final class GitHubUpdater
         }
 
         return '';
+    }
+
+    private function findChecksumUrl(string $version, mixed $assets): string
+    {
+        if (!is_array($assets)) {
+            return '';
+        }
+
+        $expectedName = strtolower(sprintf(self::PACKAGE_CHECKSUM_NAME_PATTERN, $version));
+
+        foreach ($assets as $asset) {
+            if (!is_array($asset)) {
+                continue;
+            }
+
+            $name = strtolower((string) ($asset['name'] ?? ''));
+            $url = trim((string) ($asset['browser_download_url'] ?? ''));
+            $state = strtolower((string) ($asset['state'] ?? 'uploaded'));
+
+            if ($name !== $expectedName || $url === '' || $state !== 'uploaded') {
+                continue;
+            }
+
+            return $url;
+        }
+
+        return '';
+    }
+
+    private function findReleaseByPackageUrl(string $packageUrl): ?array
+    {
+        $packageUrl = trim($packageUrl);
+
+        if ($packageUrl === '') {
+            return null;
+        }
+
+        $manifest = $this->getReleaseManifest();
+
+        if (!is_array($manifest)) {
+            return null;
+        }
+
+        foreach ((array) ($manifest['latest_by_type'] ?? []) as $release) {
+            if (is_array($release) && (string) ($release['package_url'] ?? '') === $packageUrl) {
+                return $release;
+            }
+        }
+
+        foreach ((array) ($manifest['latest_for_channel'] ?? []) as $release) {
+            if (is_array($release) && (string) ($release['package_url'] ?? '') === $packageUrl) {
+                return $release;
+            }
+        }
+
+        return null;
+    }
+
+    private function fetchExpectedChecksum(string $checksumUrl): string
+    {
+        $response = wp_remote_get(
+            $checksumUrl,
+            [
+                'timeout' => self::REQUEST_TIMEOUT,
+                'headers' => [
+                    'Accept' => 'text/plain',
+                    'User-Agent' => 'Tasty-Custom-Fonts/' . TASTY_FONTS_VERSION,
+                ],
+            ]
+        );
+
+        if (is_wp_error($response) || (int) wp_remote_retrieve_response_code($response) !== 200) {
+            return '';
+        }
+
+        $body = trim((string) wp_remote_retrieve_body($response));
+
+        if ($body === '' || preg_match('/\b([a-f0-9]{64})\b/i', $body, $matches) !== 1) {
+            return '';
+        }
+
+        return strtolower((string) ($matches[1] ?? ''));
     }
 
     private function hasNewerVersion(string $version): bool

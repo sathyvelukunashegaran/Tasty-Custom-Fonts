@@ -24,7 +24,15 @@ $tests['plugin_activation_creates_provider_index_files_and_generated_css'] = sta
     assertTrueValue(is_file($root . '/upload/index.php'), 'Plugin activation should create the local upload index.php stub.');
     assertTrueValue(is_file($root . '/adobe/index.php'), 'Plugin activation should create the Adobe provider index.php stub.');
     assertTrueValue(is_file($root . '/.generated/index.php'), 'Plugin activation should create the generated-assets index.php stub.');
+    assertTrueValue(is_file($root . '/.htaccess'), 'Plugin activation should create the root .htaccess hardening stub.');
+    assertTrueValue(is_file($root . '/google/.htaccess'), 'Plugin activation should create the Google provider .htaccess hardening stub.');
+    assertTrueValue(is_file($root . '/bunny/.htaccess'), 'Plugin activation should create the Bunny provider .htaccess hardening stub.');
+    assertTrueValue(is_file($root . '/upload/.htaccess'), 'Plugin activation should create the local upload .htaccess hardening stub.');
+    assertTrueValue(is_file($root . '/adobe/.htaccess'), 'Plugin activation should create the Adobe provider .htaccess hardening stub.');
+    assertTrueValue(is_file($root . '/.generated/.htaccess'), 'Plugin activation should create the generated-assets .htaccess hardening stub.');
     assertContainsValue('Silence is golden', (string) file_get_contents($root . '/index.php'), 'Plugin activation should write the silence-is-golden index stub.');
+    assertContainsValue('Options -Indexes', (string) file_get_contents($root . '/.htaccess'), 'Plugin activation should disable directory listing in the font storage root.');
+    assertContainsValue('FilesMatch', (string) file_get_contents($root . '/.htaccess'), 'Plugin activation should block PHP requests inside the font storage root.');
 
     resetPluginSingleton();
 };
@@ -52,6 +60,20 @@ $tests['plugin_boot_loads_the_textdomain_immediately'] = static function (): voi
     assertTrueValue(isset($hookCallbacks['bricks/builder/standard_fonts']), 'Plugin boot should register the Bricks standard fonts filter.');
 
     resetPluginSingleton();
+};
+
+$tests['plugin_entrypoint_registers_boot_on_the_default_plugins_loaded_priority'] = static function (): void {
+    $pluginSource = file_get_contents(TASTY_FONTS_FILE);
+
+    assertTrueValue(is_string($pluginSource), 'The plugin entrypoint should be readable for bootstrap hook regression checks.');
+    assertSameValue(
+        1,
+        preg_match(
+            "/add_action\\(\\s*'plugins_loaded'\\s*,\\s*static function \\(\\): void \\{\\s*TastyFonts\\\\Plugin::instance\\(\\)->boot\\(\\);\\s*\\},\\s*10\\s*\\)/s",
+            $pluginSource
+        ),
+        'The plugin entrypoint should defer boot until the default plugins_loaded priority so peer plugins and host integrations can initialize first.'
+    );
 };
 
 $tests['plugin_attachment_hooks_only_invalidate_catalog_for_files_within_font_storage'] = static function (): void {

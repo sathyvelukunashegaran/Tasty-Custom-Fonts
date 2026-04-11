@@ -21,6 +21,18 @@ use WP_Error;
 final class DeveloperToolsService
 {
     private const STORAGE_INDEX_STUB = '<?php // Silence is golden.';
+    private const STORAGE_HTACCESS_STUB = <<<'HTACCESS'
+Options -Indexes
+<FilesMatch "(?i)\.(php|phtml|phar|php\d*)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+HTACCESS;
     private const UPDATER_LEGACY_RELEASE_TRANSIENT = 'tasty_fonts_github_release_v1';
     private const UPDATER_RELEASE_TRANSIENT = 'tasty_fonts_github_release_manifest_v1';
     private const UPDATER_INSTALLED_VERSION_TRANSIENT = 'tasty_fonts_github_release_version_v1';
@@ -63,12 +75,12 @@ final class DeveloperToolsService
             }
         }
 
-        foreach ($this->scaffoldIndexPaths($root) as $path) {
+        foreach ($this->scaffoldStorageFiles($root) as $path => $contents) {
             if (file_exists($path)) {
                 continue;
             }
 
-            if (!$this->storage->writeAbsoluteFile($path, self::STORAGE_INDEX_STUB)) {
+            if (!$this->storage->writeAbsoluteFile($path, $contents)) {
                 return false;
             }
         }
@@ -280,16 +292,25 @@ final class DeveloperToolsService
         delete_transient(AdobeProjectClient::TRANSIENT_PREFIX . md5($projectId));
     }
 
-    private function scaffoldIndexPaths(string $root): array
+    private function scaffoldStorageFiles(string $root): array
     {
-        return [
-            trailingslashit($root) . 'index.php',
-            trailingslashit($root) . 'google/index.php',
-            trailingslashit($root) . 'bunny/index.php',
-            trailingslashit($root) . 'upload/index.php',
-            trailingslashit($root) . 'adobe/index.php',
-            trailingslashit($root) . '.generated/index.php',
+        $directories = [
+            trailingslashit($root),
+            trailingslashit($root) . 'google/',
+            trailingslashit($root) . 'bunny/',
+            trailingslashit($root) . 'upload/',
+            trailingslashit($root) . 'adobe/',
+            trailingslashit($root) . '.generated/',
         ];
+
+        $files = [];
+
+        foreach ($directories as $directory) {
+            $files[$directory . 'index.php'] = self::STORAGE_INDEX_STUB;
+            $files[$directory . '.htaccess'] = self::STORAGE_HTACCESS_STUB;
+        }
+
+        return $files;
     }
 
     private function maintenanceError(string $fallbackMessage): WP_Error

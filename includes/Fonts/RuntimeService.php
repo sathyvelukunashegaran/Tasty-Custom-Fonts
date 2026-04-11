@@ -375,6 +375,15 @@ final class RuntimeService
 
         $etch = isset($_GET['etch']) ? sanitize_text_field(wp_unslash((string) $_GET['etch'])) : '';
 
-        return $etch !== '';
+        if ($etch === '' || !$this->canUseEtchCanvasQueryParameter()) {
+            return false;
+        }
+
+        return (bool) apply_filters('tasty_fonts_allow_etch_canvas_query', true, $etch);
+    }
+
+    private function canUseEtchCanvasQueryParameter(): bool
+    {
+        return is_user_logged_in() && current_user_can('edit_posts');
     }
 }

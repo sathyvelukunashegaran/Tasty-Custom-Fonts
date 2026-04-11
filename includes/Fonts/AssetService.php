@@ -16,10 +16,17 @@ final class AssetService
     public const TRANSIENT_CSS = 'tasty_fonts_css_v2';
     public const TRANSIENT_HASH = 'tasty_fonts_css_hash_v2';
     public const TRANSIENT_REGENERATE_CSS_QUEUED = 'tasty_fonts_regenerate_css_queued';
+    private const CONTENT_HASH_ALGORITHM = 'sha256';
+    private const VERSION_HASH_LENGTH = 16;
     private const REGENERATE_CSS_QUEUE_TTL = 30;
+    private const INLINE_STYLE_CONTEXT_RUNTIME = 'runtime';
+    private const INLINE_STYLE_CONTEXT_ADMIN_PREVIEW = 'admin_preview';
 
     private ?string $css = null;
     private ?string $hash = null;
+    /** @var array<string, string> */
+    private array $inlineStyleNonces = [];
+    private bool $inlineStyleOutputBufferStarted = false;
 
     /**
      * Create the asset service.
@@ -91,7 +98,7 @@ final class AssetService
 
         $this->css = $this->cssBuilder->build($localCatalog, $roles, $settings, $variableFamilies);
         $this->css = (string) apply_filters('tasty_fonts_generated_css', $this->css, $localCatalog, $roles, $settings);
-        $this->hash = hash('crc32b', $this->css);
+        $this->hash = $this->hashContents($this->css);
 
         set_transient(self::TRANSIENT_CSS, $this->css, DAY_IN_SECONDS);
         set_transient(self::TRANSIENT_HASH, $this->hash, DAY_IN_SECONDS);
@@ -104,7 +111,7 @@ final class AssetService
      *
      * @since 1.4.0
      *
-     * @return string CRC32b hash for the generated CSS.
+     * @return string SHA-256 hash for the generated CSS.
      */
     public function getCssHash(): string
     {
@@ -122,11 +129,11 @@ final class AssetService
      *
      * @since 1.4.0
      *
-     * @return string CRC32b hash for the version-prefixed generated stylesheet contents.
+     * @return string SHA-256 hash for the version-prefixed generated stylesheet contents.
      */
     public function expectedFileHash(): string
     {
-        return hash('crc32b', $this->getVersionedCss());
+        return $this->hashContents($this->getVersionedCss());
     }
 
     /**
@@ -199,10 +206,10 @@ final class AssetService
         }
 
         $url = (string) $state['url'];
-        $expectedHash = (string) $state['expected_hash'];
+        $expectedVersion = (string) $state['expected_version'];
 
         if (!$this->isInlineDeliveryEnabled() && !empty($state['is_current']) && $url !== '') {
-            wp_enqueue_style($handle, $url, [], $expectedHash);
+            wp_enqueue_style($handle, $url, [], $expectedVersion);
             return;
         }
 
@@ -211,6 +218,7 @@ final class AssetService
 
         if ($css !== '') {
             wp_add_inline_style($handle, $css);
+            $this->armInlineStyleNonceHandling($handle, $css, self::INLINE_STYLE_CONTEXT_RUNTIME);
         }
 
         $this->writeGeneratedCssFile($state);
@@ -235,6 +243,7 @@ final class AssetService
 
         if ($css !== '') {
             wp_add_inline_style($handle, $css);
+            $this->armInlineStyleNonceHandling($handle, $css, self::INLINE_STYLE_CONTEXT_ADMIN_PREVIEW);
         }
     }
 
@@ -249,7 +258,8 @@ final class AssetService
      *     exists: bool,
      *     size: int,
      *     last_modified: int,
-     *     expected_hash: string
+     *     expected_hash: string,
+     *     expected_version: string
      * } Generated stylesheet status payload.
      */
     public function getStatus(): array
@@ -263,6 +273,7 @@ final class AssetService
             'size' => $state['size'],
             'last_modified' => $state['last_modified'],
             'expected_hash' => $state['expected_hash'],
+            'expected_version' => $state['expected_version'],
         ];
     }
 
@@ -282,7 +293,7 @@ final class AssetService
             return null;
         }
 
-        $version = !empty($state['exists']) ? (string) $state['expected_hash'] : TASTY_FONTS_VERSION;
+        $version = !empty($state['exists']) ? (string) $state['expected_version'] : TASTY_FONTS_VERSION;
 
         return add_query_arg('ver', $version, $url);
     }
@@ -306,9 +317,132 @@ final class AssetService
         return ($settings['css_delivery_mode'] ?? 'file') === 'inline';
     }
 
+    /**
+     * Add configured nonce attributes to this plugin's rendered inline style tags.
+     *
+     * When WordPress core gains first-class inline style nonce support, the
+     * default "auto" strategy can switch to delegating to core without
+     * changing the plugin API exposed to sites today.
+     *
+     * @since 6.0.2
+     *
+     * @param string $html HTML fragment that may contain plugin inline style tags.
+     * @return string HTML with nonce-bearing inline style tags when configured.
+     */
+    public function filterInlineStyleOutputBuffer(string $html): string
+    {
+        if ($html === '' || $this->inlineStyleNonces === [] || !str_contains($html, '<style')) {
+            return $html;
+        }
+
+        $styleIds = array_keys($this->inlineStyleNonces);
+        $pattern = '/<style\b(?P<before>[^>]*)\bid=(["\'])(?P<id>' . implode('|', array_map('preg_quote', $styleIds)) . ')\2(?P<after>[^>]*)>/i';
+        $filtered = preg_replace_callback(
+            $pattern,
+            function (array $matches): string {
+                $styleId = (string) ($matches['id'] ?? '');
+                $nonce = (string) ($this->inlineStyleNonces[$styleId] ?? '');
+
+                if ($nonce === '') {
+                    return (string) $matches[0];
+                }
+
+                $attributes = (string) ($matches['before'] ?? '') . ' ' . (string) ($matches['after'] ?? '');
+
+                if (preg_match('/\snonce\s*=/i', $attributes) === 1) {
+                    return (string) $matches[0];
+                }
+
+                $tag = (string) $matches[0];
+                $position = strrpos($tag, '>');
+
+                if ($position === false) {
+                    return $tag;
+                }
+
+                return substr($tag, 0, $position)
+                    . ' nonce="' . esc_attr($nonce) . '"'
+                    . substr($tag, $position);
+            },
+            $html
+        );
+
+        return is_string($filtered) ? $filtered : $html;
+    }
+
     private function getVersionedCss(): string
     {
         return "/* Version: " . TASTY_FONTS_VERSION . " */\n" . $this->getCss();
+    }
+
+    private function hashContents(string $contents): string
+    {
+        return hash(self::CONTENT_HASH_ALGORITHM, $contents);
+    }
+
+    private function hashFile(string $path): string
+    {
+        return (string) hash_file(self::CONTENT_HASH_ALGORITHM, $path);
+    }
+
+    private function versionTokenFromHash(string $hash): string
+    {
+        return substr($hash, 0, self::VERSION_HASH_LENGTH);
+    }
+
+    private function armInlineStyleNonceHandling(string $handle, string $css, string $context): void
+    {
+        $nonce = $this->getInlineStyleNonce($handle, $css, $context);
+
+        if ($nonce === '' || !$this->shouldUsePluginInlineStyleNonceStrategy($handle, $css, $context)) {
+            return;
+        }
+
+        $this->inlineStyleNonces[$handle . '-inline-css'] = $nonce;
+
+        if (
+            $this->inlineStyleOutputBufferStarted
+            || PHP_SAPI === 'cli'
+            || PHP_SAPI === 'phpdbg'
+        ) {
+            return;
+        }
+
+        ob_start([$this, 'filterInlineStyleOutputBuffer']);
+        $this->inlineStyleOutputBufferStarted = true;
+    }
+
+    private function shouldUsePluginInlineStyleNonceStrategy(string $handle, string $css, string $context): bool
+    {
+        $strategy = strtolower(trim((string) apply_filters(
+            'tasty_fonts_inline_style_nonce_strategy',
+            'auto',
+            $handle,
+            $context,
+            $css
+        )));
+
+        if (in_array($strategy, ['off', 'disabled', 'none', 'core'], true)) {
+            return false;
+        }
+
+        if ($strategy === 'auto' && $this->coreSupportsInlineStyleNonceHandling()) {
+            return false;
+        }
+
+        return in_array($strategy, ['auto', 'buffer', 'output_buffer', 'plugin'], true);
+    }
+
+    private function getInlineStyleNonce(string $handle, string $css, string $context): string
+    {
+        $nonce = apply_filters('tasty_fonts_inline_style_nonce', '', $handle, $css, $context);
+
+        return is_string($nonce) ? trim($nonce) : '';
+    }
+
+    private function coreSupportsInlineStyleNonceHandling(): bool
+    {
+        return function_exists('wp_get_inline_style_tag') || function_exists('wp_print_inline_style_tag');
     }
 
     private function queueGeneratedCssRegeneration(bool $logWriteResult = true): void
@@ -359,6 +493,7 @@ final class AssetService
             'size' => $state['size'],
             'last_modified' => $state['last_modified'],
             'expected_hash' => $expectedHash,
+            'expected_version' => $this->versionTokenFromHash($expectedHash),
             'current_hash' => $state['current_hash'],
             'is_current' => $state['exists'] && $state['current_hash'] === $expectedHash,
             'write_path' => $writePath,
@@ -401,7 +536,7 @@ final class AssetService
             'exists' => $exists,
             'size' => $exists ? (int) filesize($path) : 0,
             'last_modified' => $exists ? (int) filemtime($path) : 0,
-            'current_hash' => $exists ? (string) hash_file('crc32b', $path) : '',
+            'current_hash' => $exists ? $this->hashFile($path) : '',
         ];
     }
 

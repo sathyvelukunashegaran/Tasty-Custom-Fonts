@@ -24,6 +24,21 @@ $secondNextPatchVersion = static function (string $version) use ($nextPatchVersi
     return $nextPatchVersion($nextPatchVersion($version));
 };
 
+$releaseAssets = static function (string $version, string $packageUrl): array {
+    return [
+        [
+            'name' => 'tasty-fonts-' . $version . '.zip',
+            'browser_download_url' => $packageUrl,
+            'state' => 'uploaded',
+        ],
+        [
+            'name' => 'tasty-fonts-' . $version . '.zip.sha256',
+            'browser_download_url' => $packageUrl . '.sha256',
+            'state' => 'uploaded',
+        ],
+    ];
+};
+
 $tests['plugin_adds_a_settings_link_to_plugin_action_links'] = static function (): void {
     $links = Plugin::filterPluginActionLinks(['<a href="https://example.test/deactivate">Deactivate</a>']);
 
@@ -57,6 +72,7 @@ $tests['plugin_boot_registers_plugin_row_meta_rest_and_font_library_sync_hooks']
     assertSameValue(true, isset($hookCallbacks['plugin_row_meta']), 'Boot should register the plugin row meta hook.');
     assertSameValue(true, isset($hookCallbacks['pre_set_site_transient_update_plugins']), 'Boot should register the plugin update transient hook.');
     assertSameValue(true, isset($hookCallbacks['plugins_api']), 'Boot should register the plugin information hook.');
+    assertSameValue(true, isset($hookCallbacks['upgrader_pre_download']), 'Boot should register the pre-download verification hook for release packages.');
     assertSameValue(true, isset($hookCallbacks['upgrader_process_complete']), 'Boot should register the upgrader completion hook.');
     assertSameValue(true, isset($hookCallbacks['rest_api_init']), 'Boot should register the REST API init hook.');
     assertSameValue(true, isset($hookCallbacks['enqueue_block_assets']), 'Boot should register the block editor content-assets hook for Gutenberg iframe styles.');
@@ -129,7 +145,7 @@ $tests['plugin_deactivation_flushes_known_transients_and_clears_css_regeneration
     );
 };
 
-$tests['github_updater_injects_a_plugin_update_from_the_latest_stable_release'] = static function () use ($nextPatchVersion): void {
+$tests['github_updater_injects_a_plugin_update_from_the_latest_stable_release'] = static function () use ($nextPatchVersion, $releaseAssets): void {
     resetTestState();
     resetPluginSingleton();
 
@@ -146,13 +162,10 @@ $tests['github_updater_injects_a_plugin_update_from_the_latest_stable_release'] 
                     'prerelease' => false,
                     'body' => "## What's Changed\n\n- Added updater support.",
                     'published_at' => '2026-04-08T00:00:00Z',
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-' . $releaseVersion . '.zip',
-                            'browser_download_url' => 'https://github.com/sathyvelukunashegaran/Tasty-Custom-Fonts/releases/download/' . $releaseVersion . '/tasty-fonts-' . $releaseVersion . '.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets(
+                        $releaseVersion,
+                        'https://github.com/sathyvelukunashegaran/Tasty-Custom-Fonts/releases/download/' . $releaseVersion . '/tasty-fonts-' . $releaseVersion . '.zip'
+                    ),
                 ],
             ]
         ),
@@ -177,7 +190,7 @@ $tests['github_updater_injects_a_plugin_update_from_the_latest_stable_release'] 
     assertSameValue(false, isset($result->no_update[plugin_basename(TASTY_FONTS_FILE)]), 'Updater should remove stale no-update entries for this plugin.');
 };
 
-$tests['github_updater_skips_same_or_older_releases'] = static function (): void {
+$tests['github_updater_skips_same_or_older_releases'] = static function () use ($releaseAssets): void {
     resetTestState();
     resetPluginSingleton();
 
@@ -199,13 +212,7 @@ $tests['github_updater_skips_same_or_older_releases'] = static function (): void
                     'prerelease' => false,
                     'body' => '',
                     'published_at' => '2026-04-08T00:00:00Z',
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-' . TASTY_FONTS_VERSION . '.zip',
-                            'browser_download_url' => 'https://example.test/current.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets(TASTY_FONTS_VERSION, 'https://example.test/current.zip'),
                 ],
             ]
         ),
@@ -229,13 +236,7 @@ $tests['github_updater_skips_same_or_older_releases'] = static function (): void
                     'prerelease' => false,
                     'body' => '',
                     'published_at' => '2026-04-01T00:00:00Z',
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-1.4.9.zip',
-                            'browser_download_url' => 'https://example.test/older.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets('1.4.9', 'https://example.test/older.zip'),
                 ],
             ]
         ),
@@ -247,7 +248,7 @@ $tests['github_updater_skips_same_or_older_releases'] = static function (): void
     assertSameValue([], $olderVersion->response ?? [], 'Updater should not inject an update when the latest stable release is older than the installed version.');
 };
 
-$tests['github_updater_skips_latest_stable_releases_without_a_valid_zip_asset'] = static function (): void {
+$tests['github_updater_skips_latest_stable_releases_without_a_valid_zip_asset'] = static function () use ($releaseAssets): void {
     resetTestState();
     resetPluginSingleton();
 
@@ -277,13 +278,7 @@ $tests['github_updater_skips_latest_stable_releases_without_a_valid_zip_asset'] 
                     'prerelease' => false,
                     'body' => '',
                     'published_at' => '2026-04-07T00:00:00Z',
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-' . TASTY_FONTS_VERSION . '.zip',
-                            'browser_download_url' => 'https://example.test/older-valid.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets(TASTY_FONTS_VERSION, 'https://example.test/older-valid.zip'),
                 ],
             ]
         ),
@@ -302,7 +297,48 @@ $tests['github_updater_skips_latest_stable_releases_without_a_valid_zip_asset'] 
     assertSameValue([], $result->response ?? [], 'Updater should ignore the latest stable release when it does not expose the expected install ZIP asset.');
 };
 
-$tests['github_updater_ignores_prereleases_and_drafts_when_finding_updates'] = static function () use ($nextPatchVersion, $secondNextPatchVersion): void {
+$tests['github_updater_skips_releases_without_a_published_checksum_asset'] = static function () use ($nextPatchVersion): void {
+    resetTestState();
+    resetPluginSingleton();
+
+    global $remoteGetResponses;
+
+    $releaseVersion = $nextPatchVersion(TASTY_FONTS_VERSION);
+    $remoteGetResponses['https://api.github.com/repos/sathyvelukunashegaran/Tasty-Custom-Fonts/releases'] = [
+        'response' => ['code' => 200],
+        'body' => json_encode(
+            [
+                [
+                    'tag_name' => $releaseVersion,
+                    'draft' => false,
+                    'prerelease' => false,
+                    'body' => '',
+                    'published_at' => '2026-04-08T00:00:00Z',
+                    'assets' => [
+                        [
+                            'name' => 'tasty-fonts-' . $releaseVersion . '.zip',
+                            'browser_download_url' => 'https://example.test/' . $releaseVersion . '.zip',
+                            'state' => 'uploaded',
+                        ],
+                    ],
+                ],
+            ]
+        ),
+    ];
+
+    Plugin::instance()->boot();
+    $result = apply_filters(
+        'pre_set_site_transient_update_plugins',
+        (object) [
+            'checked' => [plugin_basename(TASTY_FONTS_FILE) => TASTY_FONTS_VERSION],
+            'response' => [],
+        ]
+    );
+
+    assertSameValue([], $result->response ?? [], 'Updater should not offer releases that do not publish a checksum asset.');
+};
+
+$tests['github_updater_ignores_prereleases_and_drafts_when_finding_updates'] = static function () use ($nextPatchVersion, $secondNextPatchVersion, $releaseAssets): void {
     resetTestState();
     resetPluginSingleton();
 
@@ -320,13 +356,7 @@ $tests['github_updater_ignores_prereleases_and_drafts_when_finding_updates'] = s
                     'prerelease' => true,
                     'body' => '',
                     'published_at' => '2026-04-09T00:00:00Z',
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-' . $draftVersion . '-beta.1.zip',
-                            'browser_download_url' => 'https://example.test/beta.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets($draftVersion . '-beta.1', 'https://example.test/beta.zip'),
                 ],
                 [
                     'tag_name' => $draftVersion,
@@ -334,13 +364,7 @@ $tests['github_updater_ignores_prereleases_and_drafts_when_finding_updates'] = s
                     'prerelease' => false,
                     'body' => '',
                     'published_at' => '2026-04-08T00:00:00Z',
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-' . $draftVersion . '.zip',
-                            'browser_download_url' => 'https://example.test/draft.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets($draftVersion, 'https://example.test/draft.zip'),
                 ],
                 [
                     'tag_name' => $stableVersion,
@@ -348,13 +372,7 @@ $tests['github_updater_ignores_prereleases_and_drafts_when_finding_updates'] = s
                     'prerelease' => false,
                     'body' => '',
                     'published_at' => '2026-04-07T00:00:00Z',
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-' . $stableVersion . '.zip',
-                            'browser_download_url' => 'https://example.test/stable.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets($stableVersion, 'https://example.test/stable.zip'),
                 ],
             ]
         ),
@@ -373,7 +391,7 @@ $tests['github_updater_ignores_prereleases_and_drafts_when_finding_updates'] = s
     assertSameValue($stableVersion, $update->new_version ?? '', 'Updater should skip prereleases and drafts and use the latest published stable release.');
 };
 
-$tests['github_updater_uses_beta_releases_when_the_beta_channel_is_selected'] = static function () use ($nextPatchVersion, $secondNextPatchVersion): void {
+$tests['github_updater_uses_beta_releases_when_the_beta_channel_is_selected'] = static function () use ($nextPatchVersion, $secondNextPatchVersion, $releaseAssets): void {
     resetTestState();
 
     global $remoteGetResponses;
@@ -395,13 +413,7 @@ $tests['github_updater_uses_beta_releases_when_the_beta_channel_is_selected'] = 
                     'prerelease' => true,
                     'body' => 'Beta release notes.',
                     'published_at' => '2026-04-09T00:00:00Z',
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-' . $betaVersion . '.zip',
-                            'browser_download_url' => 'https://example.test/' . $betaVersion . '.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets($betaVersion, 'https://example.test/' . $betaVersion . '.zip'),
                 ],
                 [
                     'tag_name' => $stableVersion,
@@ -409,13 +421,7 @@ $tests['github_updater_uses_beta_releases_when_the_beta_channel_is_selected'] = 
                     'prerelease' => false,
                     'body' => 'Stable release notes.',
                     'published_at' => '2026-04-08T00:00:00Z',
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-' . $stableVersion . '.zip',
-                            'browser_download_url' => 'https://example.test/' . $stableVersion . '.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets($stableVersion, 'https://example.test/' . $stableVersion . '.zip'),
                 ],
             ]
         ),
@@ -437,7 +443,7 @@ $tests['github_updater_uses_beta_releases_when_the_beta_channel_is_selected'] = 
     assertSameValue('https://example.test/' . $betaVersion . '.zip', $update->package ?? '', 'The beta channel should expose the beta package URL.');
 };
 
-$tests['github_updater_uses_nightly_releases_when_the_nightly_channel_is_selected'] = static function () use ($nextPatchVersion, $secondNextPatchVersion): void {
+$tests['github_updater_uses_nightly_releases_when_the_nightly_channel_is_selected'] = static function () use ($nextPatchVersion, $secondNextPatchVersion, $releaseAssets): void {
     resetTestState();
 
     global $remoteGetResponses;
@@ -459,13 +465,7 @@ $tests['github_updater_uses_nightly_releases_when_the_nightly_channel_is_selecte
                     'prerelease' => true,
                     'body' => 'Nightly release notes.',
                     'published_at' => '2026-04-09T00:00:00Z',
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-' . $nightlyVersion . '.zip',
-                            'browser_download_url' => 'https://example.test/' . $nightlyVersion . '.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets($nightlyVersion, 'https://example.test/' . $nightlyVersion . '.zip'),
                 ],
                 [
                     'tag_name' => $stableVersion,
@@ -473,13 +473,7 @@ $tests['github_updater_uses_nightly_releases_when_the_nightly_channel_is_selecte
                     'prerelease' => false,
                     'body' => 'Stable release notes.',
                     'published_at' => '2026-04-08T00:00:00Z',
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-' . $stableVersion . '.zip',
-                            'browser_download_url' => 'https://example.test/' . $stableVersion . '.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets($stableVersion, 'https://example.test/' . $stableVersion . '.zip'),
                 ],
             ]
         ),
@@ -494,7 +488,7 @@ $tests['github_updater_uses_nightly_releases_when_the_nightly_channel_is_selecte
     assertSameValue('upgrade', (string) ($overview['state'] ?? ''), 'A newer nightly build should surface as an upgrade.');
 };
 
-$tests['github_updater_can_reinstall_the_selected_channel_when_it_requires_a_rollback'] = static function (): void {
+$tests['github_updater_can_reinstall_the_selected_channel_when_it_requires_a_rollback'] = static function () use ($releaseAssets): void {
     resetTestState();
 
     global $remoteGetResponses;
@@ -515,13 +509,7 @@ $tests['github_updater_can_reinstall_the_selected_channel_when_it_requires_a_rol
                     'prerelease' => false,
                     'body' => 'Stable release notes.',
                     'published_at' => '2026-04-08T00:00:00Z',
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-1.0.0.zip',
-                            'browser_download_url' => 'https://example.test/1.0.0.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets('1.0.0', 'https://example.test/1.0.0.zip'),
                 ],
             ]
         ),
@@ -536,7 +524,110 @@ $tests['github_updater_can_reinstall_the_selected_channel_when_it_requires_a_rol
     assertSameValue(true, !empty($pluginUpgraderInstallCalls[0]['args']['overwrite_package']), 'Rollback reinstalls should enable package overwrite.');
 };
 
-$tests['github_updater_returns_plugin_information_for_the_details_modal'] = static function () use ($nextPatchVersion): void {
+$tests['github_updater_verifies_release_package_checksums_before_install'] = static function () use ($nextPatchVersion, $releaseAssets): void {
+    resetTestState();
+    resetPluginSingleton();
+
+    global $downloadUrlCalls;
+    global $downloadUrlResponses;
+    global $remoteGetResponses;
+
+    $releaseVersion = $nextPatchVersion(TASTY_FONTS_VERSION);
+    $packageUrl = 'https://example.test/' . $releaseVersion . '.zip';
+    $checksumUrl = $packageUrl . '.sha256';
+    $packageBody = 'zip-binary-data';
+    $checksum = hash('sha256', $packageBody);
+
+    $remoteGetResponses['https://api.github.com/repos/sathyvelukunashegaran/Tasty-Custom-Fonts/releases'] = [
+        'response' => ['code' => 200],
+        'body' => json_encode(
+            [
+                [
+                    'tag_name' => $releaseVersion,
+                    'draft' => false,
+                    'prerelease' => false,
+                    'body' => '',
+                    'published_at' => '2026-04-08T00:00:00Z',
+                    'assets' => $releaseAssets($releaseVersion, $packageUrl),
+                ],
+            ]
+        ),
+    ];
+    $remoteGetResponses[$checksumUrl] = [
+        'response' => ['code' => 200],
+        'body' => $checksum . '  tasty-fonts-' . $releaseVersion . '.zip',
+    ];
+    $downloadUrlResponses[$packageUrl] = $packageBody;
+
+    Plugin::instance()->boot();
+    apply_filters(
+        'pre_set_site_transient_update_plugins',
+        (object) [
+            'checked' => [plugin_basename(TASTY_FONTS_FILE) => TASTY_FONTS_VERSION],
+            'response' => [],
+        ]
+    );
+
+    $result = apply_filters('upgrader_pre_download', false, $packageUrl, null, ['type' => 'plugin']);
+
+    assertTrueValue(is_string($result) && is_file($result), 'Checksum verification should hand WordPress a verified local package file.');
+    assertSameValue($packageBody, (string) file_get_contents($result), 'Checksum verification should preserve the downloaded package contents.');
+    assertSameValue($packageUrl, (string) ($downloadUrlCalls[0]['url'] ?? ''), 'Checksum verification should download the release ZIP after fetching the checksum.');
+
+    unlink((string) $result);
+};
+
+$tests['github_updater_rejects_release_packages_with_mismatched_checksums'] = static function () use ($nextPatchVersion, $releaseAssets): void {
+    resetTestState();
+    resetPluginSingleton();
+
+    global $downloadUrlResponses;
+    global $remoteGetResponses;
+
+    $releaseVersion = $nextPatchVersion(TASTY_FONTS_VERSION);
+    $packageUrl = 'https://example.test/' . $releaseVersion . '.zip';
+    $checksumUrl = $packageUrl . '.sha256';
+
+    $remoteGetResponses['https://api.github.com/repos/sathyvelukunashegaran/Tasty-Custom-Fonts/releases'] = [
+        'response' => ['code' => 200],
+        'body' => json_encode(
+            [
+                [
+                    'tag_name' => $releaseVersion,
+                    'draft' => false,
+                    'prerelease' => false,
+                    'body' => '',
+                    'published_at' => '2026-04-08T00:00:00Z',
+                    'assets' => $releaseAssets($releaseVersion, $packageUrl),
+                ],
+            ]
+        ),
+    ];
+    $remoteGetResponses[$checksumUrl] = [
+        'response' => ['code' => 200],
+        'body' => hash('sha256', 'expected-package') . '  tasty-fonts-' . $releaseVersion . '.zip',
+    ];
+    $downloadUrlResponses[$packageUrl] = 'tampered-package';
+
+    Plugin::instance()->boot();
+    apply_filters(
+        'pre_set_site_transient_update_plugins',
+        (object) [
+            'checked' => [plugin_basename(TASTY_FONTS_FILE) => TASTY_FONTS_VERSION],
+            'response' => [],
+        ]
+    );
+
+    $result = apply_filters('upgrader_pre_download', false, $packageUrl, null, ['type' => 'plugin']);
+
+    assertWpErrorCode(
+        'tasty_fonts_release_checksum_mismatch',
+        $result,
+        'Checksum verification should reject release ZIPs whose contents do not match the published checksum.'
+    );
+};
+
+$tests['github_updater_returns_plugin_information_for_the_details_modal'] = static function () use ($nextPatchVersion, $releaseAssets): void {
     resetTestState();
 
     global $remoteGetResponses;
@@ -552,13 +643,7 @@ $tests['github_updater_returns_plugin_information_for_the_details_modal'] = stat
                     'prerelease' => false,
                     'body' => "Release notes line one.\nRelease notes line two.",
                     'published_at' => '2026-04-08T00:00:00Z',
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-' . $releaseVersion . '.zip',
-                            'browser_download_url' => 'https://example.test/release.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets($releaseVersion, 'https://example.test/release.zip'),
                 ],
             ]
         ),
@@ -581,7 +666,7 @@ $tests['github_updater_returns_plugin_information_for_the_details_modal'] = stat
     assertSameValue(false, $ignored, 'Plugin details should ignore requests for other plugin slugs.');
 };
 
-$tests['github_updater_reuses_cached_release_metadata_and_clears_cache_after_upgrade'] = static function (): void {
+$tests['github_updater_reuses_cached_release_metadata_and_clears_cache_after_upgrade'] = static function () use ($releaseAssets): void {
     resetTestState();
     resetPluginSingleton();
 
@@ -599,13 +684,7 @@ $tests['github_updater_reuses_cached_release_metadata_and_clears_cache_after_upg
                     'prerelease' => false,
                     'body' => '',
                     'published_at' => '2026-04-08T00:00:00Z',
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-1.6.0.zip',
-                            'browser_download_url' => 'https://example.test/release.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets('1.6.0', 'https://example.test/release.zip'),
                 ],
             ]
         ),
@@ -640,7 +719,7 @@ $tests['github_updater_reuses_cached_release_metadata_and_clears_cache_after_upg
     assertSameValue(2, count($remoteGetCalls), 'Updater should fetch fresh metadata after the upgrader cache reset.');
 };
 
-$tests['github_updater_ignores_unrelated_upgrader_events'] = static function (): void {
+$tests['github_updater_ignores_unrelated_upgrader_events'] = static function () use ($releaseAssets): void {
     resetTestState();
     resetPluginSingleton();
 
@@ -657,13 +736,7 @@ $tests['github_updater_ignores_unrelated_upgrader_events'] = static function ():
                     'prerelease' => false,
                     'published_at' => '2026-04-08T12:00:00Z',
                     'body' => "## What's Changed\n\n- Added more reliability coverage.",
-                    'assets' => [
-                        [
-                            'name' => 'tasty-fonts-1.6.0.zip',
-                            'browser_download_url' => 'https://example.test/tasty-fonts-1.6.0.zip',
-                            'state' => 'uploaded',
-                        ],
-                    ],
+                    'assets' => $releaseAssets('1.6.0', 'https://example.test/tasty-fonts-1.6.0.zip'),
                 ],
             ]
         ),

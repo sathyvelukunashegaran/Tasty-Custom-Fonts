@@ -18,6 +18,8 @@ final class SettingsRepository
     public const OPTION_GOOGLE_API_KEY_DATA = 'tasty_fonts_google_api_key_data';
     public const LEGACY_OPTION_SETTINGS = 'etch_fonts_settings';
     public const LEGACY_OPTION_ROLES = 'etch_fonts_roles';
+    private const GOOGLE_API_KEY_ENCRYPTED_FIELD = 'google_api_key_encrypted';
+    private const GOOGLE_API_KEY_CIPHER_PREFIX = 'secretbox:';
     private const OUTPUT_QUICK_MODE_MINIMAL = 'minimal';
     private const OUTPUT_QUICK_MODE_VARIABLES = 'variables';
     private const OUTPUT_QUICK_MODE_CLASSES = 'classes';
@@ -1121,14 +1123,23 @@ final class SettingsRepository
             $googleApiKeyData = $this->extractGoogleApiKeyData($settings);
         }
 
-        return $this->normalizeGoogleApiKeyData($googleApiKeyData);
+        $normalizedGoogleApiKeyData = $this->normalizeGoogleApiKeyData($googleApiKeyData);
+
+        if (
+            is_array($googleApiKeyData)
+            && $this->buildStoredGoogleApiKeyData($normalizedGoogleApiKeyData) !== $googleApiKeyData
+        ) {
+            $normalizedGoogleApiKeyData = $this->persistGoogleApiKeyData($normalizedGoogleApiKeyData);
+        }
+
+        return $normalizedGoogleApiKeyData;
     }
 
     private function persistGoogleApiKeyData(array $googleApiKeyData): array
     {
         $googleApiKeyData = $this->normalizeGoogleApiKeyData($googleApiKeyData);
 
-        update_option(self::OPTION_GOOGLE_API_KEY_DATA, $googleApiKeyData, false);
+        update_option(self::OPTION_GOOGLE_API_KEY_DATA, $this->buildStoredGoogleApiKeyData($googleApiKeyData), false);
         $this->settingsCache = null;
 
         return $googleApiKeyData;
@@ -1180,7 +1191,15 @@ final class SettingsRepository
     {
         $googleApiKeyData = is_array($value) ? $value : [];
         $googleApiKeyData = wp_parse_args($googleApiKeyData, self::DEFAULT_GOOGLE_API_KEY_DATA);
-        $googleApiKeyData['google_api_key'] = trim(sanitize_text_field((string) ($googleApiKeyData['google_api_key'] ?? '')));
+        $plaintextApiKey = trim(sanitize_text_field((string) ($googleApiKeyData['google_api_key'] ?? '')));
+        $encryptedApiKey = trim(sanitize_text_field((string) ($googleApiKeyData[self::GOOGLE_API_KEY_ENCRYPTED_FIELD] ?? '')));
+
+        if ($plaintextApiKey === '' && $encryptedApiKey !== '') {
+            $plaintextApiKey = $this->decryptGoogleApiKey($encryptedApiKey);
+        }
+
+        $googleApiKeyData['google_api_key'] = $plaintextApiKey;
+        unset($googleApiKeyData[self::GOOGLE_API_KEY_ENCRYPTED_FIELD]);
         $googleApiKeyData['google_api_key_status'] = $this->normalizeGoogleApiKeyStatus(
             (string) ($googleApiKeyData['google_api_key_status'] ?? 'empty'),
             (string) ($googleApiKeyData['google_api_key'] ?? '')
@@ -1189,6 +1208,138 @@ final class SettingsRepository
         $googleApiKeyData['google_api_key_checked_at'] = $this->normalizeTimestamp($googleApiKeyData['google_api_key_checked_at'] ?? 0);
 
         return $googleApiKeyData;
+    }
+
+    private function buildStoredGoogleApiKeyData(array $googleApiKeyData): array
+    {
+        $storedGoogleApiKeyData = [
+            'google_api_key_status' => (string) ($googleApiKeyData['google_api_key_status'] ?? 'empty'),
+            'google_api_key_status_message' => (string) ($googleApiKeyData['google_api_key_status_message'] ?? ''),
+            'google_api_key_checked_at' => (int) ($googleApiKeyData['google_api_key_checked_at'] ?? 0),
+        ];
+        $googleApiKey = trim((string) ($googleApiKeyData['google_api_key'] ?? ''));
+
+        if ($googleApiKey === '') {
+            return $storedGoogleApiKeyData;
+        }
+
+        $encryptedGoogleApiKey = $this->encryptGoogleApiKey($googleApiKey);
+
+        if ($encryptedGoogleApiKey !== '') {
+            $storedGoogleApiKeyData[self::GOOGLE_API_KEY_ENCRYPTED_FIELD] = $encryptedGoogleApiKey;
+
+            return $storedGoogleApiKeyData;
+        }
+
+        $storedGoogleApiKeyData['google_api_key'] = $googleApiKey;
+
+        return $storedGoogleApiKeyData;
+    }
+
+    private function encryptGoogleApiKey(string $googleApiKey): string
+    {
+        $googleApiKey = trim($googleApiKey);
+        $key = $this->deriveGoogleApiKeyEncryptionKey();
+
+        if (
+            $googleApiKey === ''
+            || $key === ''
+            || !function_exists('sodium_crypto_secretbox')
+            || !defined('SODIUM_CRYPTO_SECRETBOX_NONCEBYTES')
+        ) {
+            return '';
+        }
+
+        try {
+            $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+        } catch (\Throwable) {
+            return '';
+        }
+
+        $ciphertext = sodium_crypto_secretbox($googleApiKey, $nonce, $key);
+
+        return self::GOOGLE_API_KEY_CIPHER_PREFIX . base64_encode($nonce . $ciphertext);
+    }
+
+    private function decryptGoogleApiKey(string $encryptedGoogleApiKey): string
+    {
+        if (
+            !str_starts_with($encryptedGoogleApiKey, self::GOOGLE_API_KEY_CIPHER_PREFIX)
+            || !function_exists('sodium_crypto_secretbox_open')
+            || !defined('SODIUM_CRYPTO_SECRETBOX_NONCEBYTES')
+        ) {
+            return '';
+        }
+
+        $key = $this->deriveGoogleApiKeyEncryptionKey();
+
+        if ($key === '') {
+            return '';
+        }
+
+        $payload = base64_decode(substr($encryptedGoogleApiKey, strlen(self::GOOGLE_API_KEY_CIPHER_PREFIX)), true);
+
+        if (!is_string($payload) || strlen($payload) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES) {
+            return '';
+        }
+
+        $nonce = substr($payload, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+        $ciphertext = substr($payload, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+        $googleApiKey = sodium_crypto_secretbox_open($ciphertext, $nonce, $key);
+
+        if (!is_string($googleApiKey)) {
+            return '';
+        }
+
+        return trim(sanitize_text_field($googleApiKey));
+    }
+
+    private function deriveGoogleApiKeyEncryptionKey(): string
+    {
+        $saltMaterial = [];
+
+        if (function_exists('wp_salt')) {
+            foreach (['auth', 'secure_auth', 'logged_in', 'nonce'] as $scheme) {
+                $salt = wp_salt($scheme);
+
+                if (is_string($salt) && $salt !== '') {
+                    $saltMaterial[] = $salt;
+                }
+            }
+        }
+
+        foreach (
+            [
+                'AUTH_KEY',
+                'SECURE_AUTH_KEY',
+                'LOGGED_IN_KEY',
+                'NONCE_KEY',
+                'AUTH_SALT',
+                'SECURE_AUTH_SALT',
+                'LOGGED_IN_SALT',
+                'NONCE_SALT',
+            ] as $constant
+        ) {
+            if (defined($constant)) {
+                $value = constant($constant);
+
+                if (is_string($value) && $value !== '') {
+                    $saltMaterial[] = $value;
+                }
+            }
+        }
+
+        $saltMaterial = array_values(array_unique($saltMaterial));
+
+        if ($saltMaterial === []) {
+            return '';
+        }
+
+        return hash(
+            'sha256',
+            implode('|', $saltMaterial) . '|' . self::OPTION_GOOGLE_API_KEY_DATA . '|google_api_key',
+            true
+        );
     }
 
     private function normalizeFontDisplay(string $display): string

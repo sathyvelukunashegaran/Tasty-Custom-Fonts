@@ -994,6 +994,66 @@ $tests['admin_controller_reuses_cached_search_results_during_search_cooldown'] =
     );
 };
 
+$tests['admin_controller_rate_limits_expensive_rest_actions_per_user'] = static function (): void {
+    resetTestState();
+
+    global $currentUserId;
+
+    $currentUserId = 42;
+    $services = makeServiceGraph();
+    $resolverCalls = 0;
+
+    $first = invokePrivateMethod(
+        $services['controller'],
+        'runRateLimitedAction',
+        [
+            'google_import',
+            static function () use (&$resolverCalls): array {
+                $resolverCalls += 1;
+
+                return ['status' => 'ok', 'call' => $resolverCalls];
+            },
+        ]
+    );
+    $second = invokePrivateMethod(
+        $services['controller'],
+        'runRateLimitedAction',
+        [
+            'google_import',
+            static function () use (&$resolverCalls): array {
+                $resolverCalls += 1;
+
+                return ['status' => 'ok', 'call' => $resolverCalls];
+            },
+        ]
+    );
+
+    $currentUserId = 84;
+    $third = invokePrivateMethod(
+        $services['controller'],
+        'runRateLimitedAction',
+        [
+            'google_import',
+            static function () use (&$resolverCalls): array {
+                $resolverCalls += 1;
+
+                return ['status' => 'ok', 'call' => $resolverCalls];
+            },
+        ]
+    );
+
+    assertSameValue(2, $resolverCalls, 'Expensive REST action throttles should block repeated requests for the same user while allowing a different user to proceed.');
+    assertSameValue('ok', (string) ($first['status'] ?? ''), 'The first expensive action call should run normally.');
+    assertSameValue(true, is_wp_error($second), 'A repeated expensive action in the cooldown window should be rejected.');
+    assertSameValue('tasty_fonts_rest_action_rate_limited', is_wp_error($second) ? $second->get_error_code() : '', 'Repeated expensive actions should use the dedicated rate limit error code.');
+    assertSameValue('ok', (string) ($third['status'] ?? ''), 'Rate limiting should be scoped per user, not globally.');
+    assertSameValue(
+        true,
+        is_array(get_transient(AdminController::ACTION_COOLDOWN_TRANSIENT_PREFIX . 'google_import_42')),
+        'Expensive REST action throttles should be stored in per-user transients.'
+    );
+};
+
 $tests['admin_controller_enqueues_tokens_before_admin_styles'] = static function (): void {
     resetTestState();
 
@@ -1949,6 +2009,43 @@ $tests['rest_controller_upload_route_returns_native_payloads'] = static function
     assertSameValue(1, (int) ($data['summary']['imported'] ?? 0), 'The REST upload route should return the import summary directly in the response body.');
 };
 
+$tests['rest_controller_upload_route_returns_429_when_rate_limited'] = static function (): void {
+    resetTestState();
+
+    global $uploadedFilePaths;
+
+    $services = makeServiceGraph();
+    $tmpName = uniqueTestDirectory('tmp-rest-upload-throttled') . '/inter-400-italic.woff2';
+    mkdir(dirname($tmpName), FS_CHMOD_DIR, true);
+    file_put_contents($tmpName, "wOF2test-font");
+    $uploadedFilePaths[] = $tmpName;
+
+    $request = new WP_REST_Request('POST', '/' . RestController::API_NAMESPACE . '/local/upload');
+    $request->set_param('rows', [[
+        'family' => 'Inter',
+        'weight' => '400',
+        'style' => 'italic',
+        'fallback' => 'Arial, sans-serif',
+    ]]);
+    $request->set_file_params([
+        'files' => [
+            'name' => [0 => 'inter-400-italic.woff2'],
+            'type' => [0 => 'font/woff2'],
+            'tmp_name' => [0 => $tmpName],
+            'error' => [0 => UPLOAD_ERR_OK],
+            'size' => [0 => filesize($tmpName)],
+        ],
+    ]);
+
+    $firstResponse = $services['rest']->uploadLocalFonts($request);
+    $secondResponse = $services['rest']->uploadLocalFonts($request);
+
+    assertSameValue(true, $firstResponse instanceof WP_REST_Response, 'The first throttled upload request should still complete normally.');
+    assertSameValue(true, is_wp_error($secondResponse), 'Repeated upload requests in the cooldown window should return a REST error.');
+    assertSameValue('tasty_fonts_rest_action_rate_limited', $secondResponse->get_error_code(), 'Repeated upload requests should expose the dedicated rate limit error code.');
+    assertSameValue(429, (int) (($secondResponse->get_error_data()['status'] ?? 0)), 'Repeated upload requests should surface HTTP 429 to the admin client.');
+};
+
 $tests['google_search_cooldown_cache_is_shared_between_repeated_rest_requests'] = static function (): void {
     resetTestState();
 
@@ -2594,11 +2691,17 @@ $tests['handle_admin_actions_dispatches_clear_log_and_redirects'] = static funct
 
     $services = makeServiceGraph();
     $services['log']->add('Entry before clear');
+    add_action(
+        'tasty_fonts_before_admin_redirect_exit',
+        static function (): void {
+            throw new WpDieException('redirect');
+        }
+    );
 
     try {
         $services['controller']->handleAdminActions();
     } catch (WpDieException $e) {
-        // Expected: the redirect handler terminates via wp_die() after wp_safe_redirect().
+        // Expected: the redirect handler terminates after wp_safe_redirect().
     }
 
     $logMessages = implode(' ', array_column($services['log']->all(), 'message'));
@@ -2619,11 +2722,17 @@ $tests['handle_admin_actions_returns_early_after_first_matching_handler'] = stat
     $_POST['tasty_fonts_rescan_fonts'] = '1';
 
     $services = makeServiceGraph();
+    add_action(
+        'tasty_fonts_before_admin_redirect_exit',
+        static function (): void {
+            throw new WpDieException('redirect');
+        }
+    );
 
     try {
         $services['controller']->handleAdminActions();
     } catch (WpDieException $e) {
-        // Expected: the redirect handler terminates via wp_die() after wp_safe_redirect().
+        // Expected: the redirect handler terminates after wp_safe_redirect().
     }
 
     // The rescan handler would add a "Fonts rescanned." log entry; the clear-log handler would not.

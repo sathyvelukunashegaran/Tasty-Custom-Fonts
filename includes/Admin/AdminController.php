@@ -51,6 +51,8 @@ final class AdminController
     public const SEARCH_COOLDOWN_TRANSIENT_PREFIX = 'tasty_fonts_search_cooldown_';
     private const SEARCH_COOLDOWN_WINDOW_SECONDS = 0.5;
     private const SEARCH_COOLDOWN_TRANSIENT_TTL = 1;
+    public const ACTION_COOLDOWN_TRANSIENT_PREFIX = 'tasty_fonts_action_cooldown_';
+    private const ACTION_COOLDOWN_DEFAULT_WINDOW_SECONDS = 2.0;
     private const SETTINGS_STUDIO_TABS = ['output-settings', 'integrations', 'plugin-behavior', 'developer'];
     private readonly AdminPageRenderer $renderer;
     private readonly AdminPageContextBuilder $pageContextBuilder;
@@ -351,16 +353,21 @@ final class AdminController
             );
         }
 
-        $result = $this->googleClient->getFamily($familyName);
+        return $this->runRateLimitedAction(
+            'google_family_fetch',
+            function () use ($familyName): array|WP_Error {
+                $result = $this->googleClient->getFamily($familyName);
 
-        if ($result === null) {
-            return new WP_Error(
-                'tasty_fonts_google_family_not_found',
-                __('No Google Fonts family matched that name.', 'tasty-fonts')
-            );
-        }
+                if ($result === null) {
+                    return new WP_Error(
+                        'tasty_fonts_google_family_not_found',
+                        __('No Google Fonts family matched that name.', 'tasty-fonts')
+                    );
+                }
 
-        return ['item' => $result];
+                return ['item' => $result];
+            }
+        );
     }
 
     public function fetchBunnyFamily(string $familyName): array|WP_Error
@@ -374,16 +381,21 @@ final class AdminController
             );
         }
 
-        $result = $this->bunnyClient->getFamily($familyName);
+        return $this->runRateLimitedAction(
+            'bunny_family_fetch',
+            function () use ($familyName): array|WP_Error {
+                $result = $this->bunnyClient->getFamily($familyName);
 
-        if ($result === null) {
-            return new WP_Error(
-                'tasty_fonts_bunny_family_not_found',
-                __('No Bunny Fonts family matched that name.', 'tasty-fonts')
-            );
-        }
+                if ($result === null) {
+                    return new WP_Error(
+                        'tasty_fonts_bunny_family_not_found',
+                        __('No Bunny Fonts family matched that name.', 'tasty-fonts')
+                    );
+                }
 
-        return ['item' => $result];
+                return ['item' => $result];
+            }
+        );
     }
 
     public function importGoogleFamily(
@@ -393,11 +405,19 @@ final class AdminController
         string $formatMode = 'static'
     ): array|WP_Error
     {
-        return $this->googleImport->importFamily(
-            sanitize_text_field($familyName),
-            $this->sanitizeVariantTokens($variantTokens),
-            $this->normalizeDeliveryMode($deliveryMode),
-            $this->normalizeFormatMode($formatMode)
+        $familyName = sanitize_text_field($familyName);
+        $variants = $this->sanitizeVariantTokens($variantTokens);
+        $deliveryMode = $this->normalizeDeliveryMode($deliveryMode);
+        $formatMode = $this->normalizeFormatMode($formatMode);
+
+        return $this->runRateLimitedAction(
+            'google_import',
+            fn (): array|WP_Error => $this->googleImport->importFamily(
+                $familyName,
+                $variants,
+                $deliveryMode,
+                $formatMode
+            )
         );
     }
 
@@ -407,10 +427,17 @@ final class AdminController
         string $deliveryMode = 'self_hosted'
     ): array|WP_Error
     {
-        return $this->bunnyImport->importFamily(
-            sanitize_text_field($familyName),
-            $this->sanitizeVariantTokens($variantTokens),
-            $this->normalizeDeliveryMode($deliveryMode)
+        $familyName = sanitize_text_field($familyName);
+        $variants = $this->sanitizeVariantTokens($variantTokens);
+        $deliveryMode = $this->normalizeDeliveryMode($deliveryMode);
+
+        return $this->runRateLimitedAction(
+            'bunny_import',
+            fn (): array|WP_Error => $this->bunnyImport->importFamily(
+                $familyName,
+                $variants,
+                $deliveryMode
+            )
         );
     }
 
@@ -446,7 +473,10 @@ final class AdminController
             );
         }
 
-        return $this->localUpload->uploadRows($rows);
+        return $this->runRateLimitedAction(
+            'local_upload',
+            fn (): array|WP_Error => $this->localUpload->uploadRows($rows)
+        );
     }
 
     public function saveFamilyFallbackValue(string $family, string $fallback): array|WP_Error
@@ -777,6 +807,7 @@ final class AdminController
     public function statusForError(WP_Error $error, int $defaultStatus = 400): int
     {
         return match ($error->get_error_code()) {
+            'tasty_fonts_rest_action_rate_limited' => 429,
             'tasty_fonts_google_family_not_found',
             'tasty_fonts_bunny_family_not_found',
             'tasty_fonts_family_not_found',
@@ -2084,6 +2115,17 @@ final class AdminController
         return $result;
     }
 
+    private function runRateLimitedAction(string $action, callable $resolver): array|WP_Error
+    {
+        $cooldownError = $this->startRateLimitedActionCooldown($action);
+
+        if (is_wp_error($cooldownError)) {
+            return $cooldownError;
+        }
+
+        return $resolver();
+    }
+
     private function saveFamilyFontDisplaySelection(string $family, string $display): array
     {
         $this->settings->saveFamilyFontDisplay($family, $display);
@@ -2821,6 +2863,14 @@ final class AdminController
         return self::NOTICE_TRANSIENT_PREFIX . max(0, (int) get_current_user_id());
     }
 
+    private function getActionCooldownTransientKey(string $action): string
+    {
+        return self::ACTION_COOLDOWN_TRANSIENT_PREFIX
+            . strtolower(trim(preg_replace('/[^a-z0-9_-]+/i', '_', $action) ?? 'action'))
+            . '_'
+            . max(0, (int) get_current_user_id());
+    }
+
     private function getSearchCooldownTransientKey(): string
     {
         return self::SEARCH_COOLDOWN_TRANSIENT_PREFIX . max(0, (int) get_current_user_id());
@@ -2853,6 +2903,42 @@ final class AdminController
 
         return strtolower(trim((string) ($cooldown['provider'] ?? ''))) === strtolower(trim($provider))
             && strtolower(trim((string) ($cooldown['query'] ?? ''))) === strtolower(trim($query));
+    }
+
+    private function startRateLimitedActionCooldown(string $action): true|WP_Error
+    {
+        $window = (float) apply_filters(
+            'tasty_fonts_rest_action_cooldown_window',
+            self::ACTION_COOLDOWN_DEFAULT_WINDOW_SECONDS,
+            $action,
+            max(0, (int) get_current_user_id())
+        );
+
+        if ($window <= 0) {
+            return true;
+        }
+
+        $cooldownKey = $this->getActionCooldownTransientKey($action);
+        $cooldown = get_transient($cooldownKey);
+        $expiresAt = is_array($cooldown) ? (float) ($cooldown['expires_at'] ?? 0) : 0.0;
+
+        if ($expiresAt > microtime(true)) {
+            return new WP_Error(
+                'tasty_fonts_rest_action_rate_limited',
+                __('Please wait a moment before repeating that request.', 'tasty-fonts')
+            );
+        }
+
+        set_transient(
+            $cooldownKey,
+            [
+                'action' => strtolower(trim($action)),
+                'expires_at' => microtime(true) + $window,
+            ],
+            max(1, (int) ceil($window))
+        );
+
+        return true;
     }
 
     private function redirectWithSuccess(string $message): never
@@ -3058,7 +3144,8 @@ final class AdminController
     private function redirect(): never
     {
         wp_safe_redirect($this->buildAdminPageUrl());
-        wp_die();
+        do_action('tasty_fonts_before_admin_redirect_exit');
+        exit;
     }
 
     public static function isPluginAdminHook(string $hookSuffix): bool
