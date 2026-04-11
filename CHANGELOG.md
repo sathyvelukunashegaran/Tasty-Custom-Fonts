@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.0-beta.1] - 2026-04-11
+
 ### Added
 
 - Added per-user REST action cooldowns around Google/Bunny family lookups, provider imports, and local uploads so repeated admin actions now return a proper `429` instead of hammering remote services or duplicate upload flows.
