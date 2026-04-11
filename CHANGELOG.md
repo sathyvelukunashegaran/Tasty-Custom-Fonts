@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.10.0-beta.1] - 2026-04-11
+
 ### Fixed
 
 - Improved admin accessibility feedback by promoting blocking import and upload errors to assertive announcements while keeping success and progress updates polite.
