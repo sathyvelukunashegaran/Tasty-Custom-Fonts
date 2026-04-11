@@ -300,3 +300,74 @@ test('admin contracts compare serialized settings states deterministically', () 
         false
     );
 });
+
+test('admin contracts normalizeAxisTag normalizes lowercase, uppercase, and non-4-char tags', () => {
+    // via hasVariableFontMetadata which calls normalizeAxisTag internally
+    // A valid lowercase 4-char tag must be treated as a valid axis tag.
+    assert.equal(hasVariableFontMetadata({ variation_axes: { wght: { min: 100, max: 900 } } }), true);
+    // A valid uppercase 4-char tag must also be recognised.
+    assert.equal(hasVariableFontMetadata({ variation_axes: { WGHT: { min: 100, max: 900 } } }), true);
+    // A mixed-case 4-char tag must be normalised to uppercase and recognised.
+    assert.equal(hasVariableFontMetadata({ variation_axes: { Wght: {} } }), true);
+    // Tags that are not exactly 4 alphanumeric characters must be rejected.
+    assert.equal(hasVariableFontMetadata({ variation_axes: { WGH: {} } }), false);
+    assert.equal(hasVariableFontMetadata({ variation_axes: { WEIGHT: {} } }), false);
+    assert.equal(hasVariableFontMetadata({ variation_axes: { '': {} } }), false);
+});
+
+test('admin contracts resolveRoleFallback uses catalog-driven fallback when available', () => {
+    // When the role family has a matching catalog entry with a fallback, that fallback is used.
+    const stateWithCatalog = roleStatesMatch(
+        { heading: 'Inter', headingFallback: 'serif' },
+        { heading: 'Inter', headingFallback: 'sans-serif' },
+        {
+            roleFamilyCatalog: {
+                Inter: { fallback: 'sans-serif' },
+            },
+        }
+    );
+    // Both sides resolve the catalog-driven fallback, so the states match.
+    assert.equal(stateWithCatalog, true);
+
+    // When the catalog fallback differs from the explicit fallback, the catalog wins.
+    const mismatch = roleStatesMatch(
+        { heading: 'Inter', headingFallback: 'serif' },
+        { heading: 'Inter', headingFallback: 'serif' },
+        {
+            roleFamilyCatalog: {
+                Inter: { fallback: 'sans-serif' },
+            },
+        }
+    );
+    // Both sides use the catalog fallback 'sans-serif', overriding 'serif', so they still match.
+    assert.equal(mismatch, true);
+});
+
+test('admin contracts canDisableOutputLayer returns true when another output layer remains enabled', () => {
+    // When classes are enabled and variables are disabled, the variables layer can be disabled.
+    assert.equal(canDisableOutputLayer('variables', { classOutputEnabled: true, variableOutputEnabled: false }), true);
+    // When variables are enabled and classes are disabled, the classes layer can be disabled.
+    assert.equal(canDisableOutputLayer('classes', { classOutputEnabled: false, variableOutputEnabled: true }), true);
+    // When both are enabled, either layer can be disabled individually.
+    assert.equal(canDisableOutputLayer('classes', { classOutputEnabled: true, variableOutputEnabled: true }), true);
+});
+
+test('admin contracts resolveAssignedRoleState resets weight when reassigning to a different family', () => {
+    // Start with a heading weight already set for 'Inter'.
+    const currentState = {
+        heading: 'Inter',
+        headingWeight: '700',
+        body: 'Roboto',
+        bodyWeight: '400',
+    };
+
+    // Reassign heading to 'Lato' with no preserveStates → weight should reset to default.
+    const nextState = resolveAssignedRoleState('heading', 'Lato', currentState);
+
+    assert.equal(nextState.heading, 'Lato');
+    assert.equal(nextState.headingWeight, '', 'Weight should reset to default when reassigning to a different family with no preserved state.');
+
+    // Body should be unchanged.
+    assert.equal(nextState.body, 'Roboto');
+    assert.equal(nextState.bodyWeight, '400');
+});
