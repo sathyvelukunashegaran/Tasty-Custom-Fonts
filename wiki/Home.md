@@ -58,6 +58,11 @@ These docs describe the current plugin behavior in full, covering the shipping f
 - [Site Transfer](Site-Transfer) — move your full Tasty Fonts setup between sites with one portable bundle
 - [Advanced Tools](Advanced-Tools) — inspect generated CSS, system details, and activity history
 
+## Guides
+
+- [GDPR And Font Privacy](GDPR) — understand what each delivery method sends to third parties and how to achieve a compliant setup
+- [Caching And Font Loading](Caching-And-Font-Loading) — get the best font delivery performance using every control the plugin provides
+
 ## Font Sources
 
 - [Local Fonts](Provider-Local-Fonts) — upload files or rescan the uploads directory
