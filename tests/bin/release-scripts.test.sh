@@ -31,8 +31,9 @@ done
 
 release_repo_from_main="$(mktemp -d)"
 release_repo_from_beta="$(mktemp -d)"
+archive_repo="$(mktemp -d)"
 
-cleanup() { rm -rf "${test_repo}" "${release_repo_from_main}" "${release_repo_from_beta}"; }
+cleanup() { rm -rf "${test_repo}" "${release_repo_from_main}" "${release_repo_from_beta}" "${archive_repo}"; }
 trap cleanup EXIT
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -148,6 +149,86 @@ JS
     git -C "${repo}" config user.email "test@example.com"
     git -C "${repo}" add .
     git -C "${repo}" commit -m "Initial dev state" >/dev/null 2>&1
+}
+
+seed_archive_repo() {
+    local repo="$1"
+
+    mkdir -p \
+        "${repo}/assets/js" \
+        "${repo}/docs" \
+        "${repo}/languages" \
+        "${repo}/screenshots" \
+        "${repo}/tests" \
+        "${repo}/.github/workflows"
+
+    cp "${repo_root}/.gitattributes" "${repo}/.gitattributes"
+
+    cat > "${repo}/plugin.php" <<'PHP'
+<?php
+/*
+Plugin Name: Test Plugin
+Version: 1.0.0
+*/
+PHP
+
+    cat > "${repo}/uninstall.php" <<'PHP'
+<?php
+PHP
+
+    cat > "${repo}/readme.txt" <<'TXT'
+=== Test Plugin ===
+TXT
+
+    cat > "${repo}/README.md" <<'MD'
+# Test Plugin
+MD
+
+    cat > "${repo}/CHANGELOG.md" <<'MD'
+# Changelog
+MD
+
+    cat > "${repo}/SECURITY.md" <<'MD'
+# Security
+MD
+
+    cat > "${repo}/CODE_OF_CONDUCT.md" <<'MD'
+# Code of Conduct
+MD
+
+    cat > "${repo}/CONTRIBUTING.md" <<'MD'
+# Contributing
+MD
+
+    cat > "${repo}/.editorconfig" <<'TXT'
+root = true
+TXT
+
+    cat > "${repo}/assets/js/admin.js" <<'JS'
+console.log('runtime');
+JS
+
+    cat > "${repo}/docs/guide.md" <<'MD'
+# Guide
+MD
+
+    cat > "${repo}/languages/tasty-fonts-en_US-tasty-fonts-admin.json" <<'JSON'
+{}
+JSON
+
+    cat > "${repo}/languages/tasty-fonts.pot" <<'TXT'
+msgid ""
+TXT
+
+    touch "${repo}/screenshots/.gitkeep"
+    touch "${repo}/tests/run.php"
+    touch "${repo}/.github/workflows/ci.yml"
+
+    git -C "${repo}" init -b main >/dev/null 2>&1
+    git -C "${repo}" config user.name "Test User"
+    git -C "${repo}" config user.email "test@example.com"
+    git -C "${repo}" add .
+    git -C "${repo}" commit -m "Archive fixture" >/dev/null 2>&1
 }
 
 # ── set-version ───────────────────────────────────────────────────────────────
@@ -412,6 +493,42 @@ if ! "${test_repo}/bin/nightly-version" >/dev/null 2>&1; then
     _pass "nightly-version rejects a beta base version"
 else
     _fail "nightly-version rejects a beta base version" "should have failed"
+fi
+
+# ── archive export rules ──────────────────────────────────────────────────────
+
+seed_archive_repo "${archive_repo}"
+archive_entries="$(
+    cd "${archive_repo}" \
+        && git archive --format=tar --worktree-attributes HEAD \
+        | tar -tf -
+)"
+
+if [[ "${archive_entries}" == *"plugin.php"* \
+    && "${archive_entries}" == *"uninstall.php"* \
+    && "${archive_entries}" == *"assets/js/admin.js"* \
+    && "${archive_entries}" == *"languages/tasty-fonts-en_US-tasty-fonts-admin.json"* ]]; then
+    _pass "git archive keeps runtime plugin files in the distributable"
+else
+    _fail "git archive keeps runtime plugin files in the distributable" \
+        "entries=${archive_entries}"
+fi
+
+if [[ "${archive_entries}" != *"README.md"* \
+    && "${archive_entries}" != *"CHANGELOG.md"* \
+    && "${archive_entries}" != *"SECURITY.md"* \
+    && "${archive_entries}" != *"CONTRIBUTING.md"* \
+    && "${archive_entries}" != *"CODE_OF_CONDUCT.md"* \
+    && "${archive_entries}" != *"readme.txt"* \
+    && "${archive_entries}" != *"docs/guide.md"* \
+    && "${archive_entries}" != *"screenshots/.gitkeep"* \
+    && "${archive_entries}" != *"languages/tasty-fonts.pot"* \
+    && "${archive_entries}" != *".github/workflows/ci.yml"* \
+    && "${archive_entries}" != *"tests/run.php"* ]]; then
+    _pass "git archive excludes repository-only files from the distributable"
+else
+    _fail "git archive excludes repository-only files from the distributable" \
+        "entries=${archive_entries}"
 fi
 
 # ── release ───────────────────────────────────────────────────────────────────

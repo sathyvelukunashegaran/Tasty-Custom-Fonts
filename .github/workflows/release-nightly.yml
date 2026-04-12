@@ -59,6 +59,7 @@ jobs:
           git add plugin.php
           git archive \
             --format=zip \
+            --worktree-attributes \
             --prefix=etch-fonts/ \
             -o "${zip_name}" \
             "$(git write-tree)"

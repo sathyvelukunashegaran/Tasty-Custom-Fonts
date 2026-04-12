@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Trimmed GitHub release archives down to runtime plugin files by excluding repo docs, screenshots, contributor metadata, test/build tooling, and translation source templates from `git archive` exports.
+- Updated nightly release packaging to honor the same export rules as beta and stable release archives.
+
 ## [1.11.0-beta.3] - 2026-04-13
 
 ### Changed
