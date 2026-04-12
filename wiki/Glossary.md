@@ -182,10 +182,10 @@ A `font-display` value that shows a fallback font until the custom font loads, t
 The identifier used to namespace translatable strings in WordPress plugins. Tasty Custom Fonts uses the text domain `tasty-fonts`.
 
 **Transfer Bundle**
-Synonym for [Site Transfer Bundle](#site-transfer-bundle). A portable ZIP file containing a Tasty Fonts export that can be imported on any site running 1.12.0-beta.2 or later.
+Synonym for Site Transfer Bundle. A portable ZIP file containing a Tasty Fonts export that can be imported on any site running 1.12.0-beta.2 or later.
 
 **Transfer Tab**
-The fifth tab in the Settings page, added in 1.12.0. Contains the Export and Import cards for the [Site Transfer](#site-transfer) workflow.
+The fifth tab in the Settings page, added in 1.12.0. Contains the Export and Import cards for the Site Transfer workflow.
 
 **TTF (TrueType Font)**
 An older cross-platform font format. Supported for local upload. Modern browsers prefer WOFF2, but TTF works as a fallback.
