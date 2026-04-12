@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-04-13
+
 ### Changed
 
 - Trimmed GitHub release archives down to runtime plugin files by excluding repo docs, screenshots, contributor metadata, test/build tooling, and translation source templates from `git archive` exports.
