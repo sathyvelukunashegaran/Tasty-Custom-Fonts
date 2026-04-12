@@ -66,15 +66,16 @@ jobs:
             ./bin/release-notes "${GITHUB_REF_NAME}"
           } > release-notes.md
 
-          previous_tag="$(
+          previous_stable_tag="$(
             git tag --sort=version:refname \
+              | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' \
               | awk -v current="${GITHUB_REF_NAME}" '$0 == current { print previous; exit } { previous = $0 }'
           )"
 
-          if [ -n "${previous_tag}" ]; then
+          if [ -n "${previous_stable_tag}" ]; then
             {
               echo
-              echo "**Full Changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${previous_tag}...${GITHUB_REF_NAME}"
+              echo "**Full Changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${previous_stable_tag}...${GITHUB_REF_NAME}"
             } >> release-notes.md
           fi
 
