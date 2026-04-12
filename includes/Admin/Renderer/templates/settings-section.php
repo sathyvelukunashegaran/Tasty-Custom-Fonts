@@ -751,6 +751,24 @@
                                                             default => __('Off', 'tasty-fonts'),
                                                         };
                                                     };
+                                                    $bricksFeatureStatusHelp = static function (string $featureKey, string $status): string {
+                                                        return match ($featureKey) {
+                                                            'bricks_theme_styles_sync_enabled' => match ($status) {
+                                                                'synced' => __('Bricks Theme Style sync is active. Tasty is keeping the selected Theme Style mapped to the live sitewide role variables.', 'tasty-fonts'),
+                                                                'waiting_for_sitewide_roles' => __('Bricks Theme Style sync is enabled, but Tasty only applies it after sitewide role delivery is turned on.', 'tasty-fonts'),
+                                                                'ready' => __('Bricks Theme Style sync is enabled and ready to apply the selected Theme Style mapping.', 'tasty-fonts'),
+                                                                'unavailable' => __('Bricks is not active on this site yet, so Tasty cannot update Bricks Theme Styles.', 'tasty-fonts'),
+                                                                default => __('Tasty is not managing Bricks Theme Styles right now.', 'tasty-fonts'),
+                                                            },
+                                                            'bricks_disable_google_fonts_enabled' => match ($status) {
+                                                                'synced' => __('Bricks Google Fonts are disabled in Bricks now, so Bricks pickers only show Tasty-supplied fonts.', 'tasty-fonts'),
+                                                                'ready' => __('Bricks Google font control is enabled and ready to update Bricks own disable Google Fonts setting.', 'tasty-fonts'),
+                                                                'unavailable' => __('Bricks is not active on this site yet, so Tasty cannot update Bricks font settings.', 'tasty-fonts'),
+                                                                default => __('Tasty is not managing the Bricks Google Fonts setting right now.', 'tasty-fonts'),
+                                                            },
+                                                            default => '',
+                                                        };
+                                                    };
                                                     ?>
 
                                                     <div class="tasty-fonts-bricks-feature-grid">
@@ -771,6 +789,11 @@
                                                             <?php
                                                             $featureState = (array) ($feature['state'] ?? []);
                                                             $featureStatus = (string) ($featureState['status'] ?? 'disabled');
+                                                            $featureStatusHelp = $bricksFeatureStatusHelp($fieldName, $featureStatus);
+                                                            $featureBadgeClass = $bricksFeatureBadgeClass($featureStatus);
+                                                            if (!$trainingWheelsOff && $featureStatusHelp !== '') {
+                                                                $featureBadgeClass .= ' tasty-fonts-badge--interactive tasty-fonts-badge--help';
+                                                            }
                                                             ?>
                                                             <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--integration tasty-fonts-output-settings-detail-group--integration-card">
                                                                 <input type="hidden" name="<?php echo esc_attr($fieldName); ?>" value="0">
@@ -786,7 +809,10 @@
                                                                     <span class="tasty-fonts-toggle-copy">
                                                                         <span class="tasty-fonts-toggle-title-line">
                                                                             <span class="tasty-fonts-toggle-title"><?php echo esc_html((string) ($feature['title'] ?? '')); ?></span>
-                                                                            <span class="<?php echo esc_attr($bricksFeatureBadgeClass($featureStatus)); ?>">
+                                                                            <span
+                                                                                class="<?php echo esc_attr($featureBadgeClass); ?>"
+                                                                                <?php $this->renderPassiveHelpAttributes($featureStatusHelp); ?>
+                                                                            >
                                                                                 <?php echo esc_html($bricksFeatureStatusLabel($featureStatus)); ?>
                                                                             </span>
                                                                         </span>

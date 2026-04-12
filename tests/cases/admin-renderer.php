@@ -2758,10 +2758,140 @@ $tests['admin_page_renderer_renders_staged_bricks_integration_controls'] = stati
     assertContainsValue('Reset Bricks Integration', $output, 'The Bricks integration card should render the reset action.');
     assertContainsValue('Current Bricks State', $output, 'The Bricks integration card should render the current Bricks state summary.');
     assertContainsValue('Target Mapping', $output, 'The Bricks integration card should render the target Bricks mapping summary.');
+    assertContainsValue('data-help-tooltip="Bricks Theme Style sync is active. Tasty is keeping the selected Theme Style mapped to the live sitewide role variables."', $output, 'The Bricks Theme Style status badge should explain the synced state on hover.');
+    assertContainsValue('data-help-tooltip="Bricks Google Fonts are disabled in Bricks now, so Bricks pickers only show Tasty-supplied fonts."', $output, 'The Bricks Google Fonts status badge should explain the synced state on hover.');
     assertContainsValue('Tasty is applying Bricks font updates to &quot;Sitewide Primary&quot;.', $output, 'The Bricks integration card should explain which existing Theme Style Tasty is updating.');
     assertContainsValue('Theme Style Target', $output, 'The Bricks integration card should show the selected Theme Style target.');
     assertNotContainsValue('Body Role Variable', $output, 'The Bricks integration card should remove the redundant body role variable row from the managed mapping summary.');
     assertNotContainsValue('Heading Role Variable', $output, 'The Bricks integration card should remove the redundant heading role variable row from the managed mapping summary.');
+};
+
+$tests['admin_page_renderer_exposes_bricks_waiting_badge_help'] = static function (): void {
+    resetTestState();
+
+    $renderer = new AdminPageRenderer(new Storage());
+
+    ob_start();
+    try {
+        $renderer->renderPage([
+            'storage' => ['root' => '/tmp/uploads/fonts'],
+            'catalog' => [],
+            'available_families' => [],
+            'roles' => [],
+            'logs' => [],
+            'activity_actor_options' => [],
+            'family_fallbacks' => [],
+            'family_font_displays' => [],
+            'family_font_display_options' => [],
+            'preview_text' => 'The quick brown fox jumps over the lazy dog. 1234567890',
+            'preview_size' => 32,
+            'font_display' => 'optional',
+            'font_display_options' => [],
+            'minify_css_output' => true,
+            'preload_primary_fonts' => true,
+            'remote_connection_hints' => true,
+            'block_editor_font_library_sync_enabled' => true,
+            'training_wheels_off' => false,
+            'delete_uploaded_files_on_uninstall' => false,
+            'diagnostic_items' => [],
+            'overview_metrics' => [],
+            'output_panels' => [],
+            'generated_css_panel' => [],
+            'preview_panels' => [],
+            'local_environment_notice' => [],
+            'toasts' => [],
+            'apply_everywhere' => false,
+            'bricks_integration' => [
+                'title' => 'Bricks Builder',
+                'description' => 'Choose which Bricks controls Tasty Fonts should manage for selectors, builder previews, Theme Styles, and Bricks font settings.',
+                'status_label' => 'On',
+                'enabled' => true,
+                'available' => true,
+                'feature_descriptions' => [
+                    'selectors' => 'Show published Tasty families directly inside Bricks font controls.',
+                    'builder_preview' => 'Load the active Tasty delivery in Bricks builder previews for local, CDN, and Adobe fonts.',
+                    'theme_styles' => 'Update only the font-family and font-weight fields on one selected Bricks Theme Style.',
+                    'google_fonts' => 'Turn on Bricks’ own “disable Google Fonts” setting so Bricks pickers show only Tasty-supplied fonts.',
+                ],
+                'selectors' => ['enabled' => true, 'status' => 'active'],
+                'builder_preview' => ['enabled' => true, 'status' => 'active'],
+                'theme_styles' => [
+                    'enabled' => true,
+                    'applied' => false,
+                    'status' => 'waiting_for_sitewide_roles',
+                    'current' => [
+                        'body_family' => '',
+                        'heading_family' => '',
+                    ],
+                    'desired' => [
+                        'body_family' => 'var(--font-body)',
+                        'heading_family' => 'var(--font-heading)',
+                        'body_weight' => 'var(--font-body-weight)',
+                        'heading_weight' => 'var(--font-heading-weight)',
+                    ],
+                    'summary' => [
+                        'has_theme_styles' => true,
+                        'managed_style_exists' => true,
+                        'managed_style_label' => 'Tasty Fonts',
+                        'available_styles' => ['tasty-fonts-managed' => 'Tasty Fonts'],
+                        'target_mode' => 'managed',
+                        'target_style_id' => 'tasty-fonts-managed',
+                        'target_style_label' => 'Tasty Fonts',
+                        'target_is_managed' => true,
+                        'target_is_all' => false,
+                    ],
+                ],
+                'google_fonts' => [
+                    'enabled' => false,
+                    'status' => 'disabled',
+                    'current' => [
+                        'google_fonts_disabled' => false,
+                    ],
+                ],
+            ],
+            'oxygen_integration' => [
+                'title' => 'Oxygen Builder',
+                'description' => 'Expose published Tasty Fonts families through Oxygen’s custom-font compatibility layer and mirror Oxygen global font families into Gutenberg.',
+                'status_label' => 'Off',
+                'enabled' => false,
+                'available' => true,
+            ],
+            'gutenberg_integration' => [
+                'title' => 'Gutenberg Font Library',
+                'description' => 'Mirror imported families into WordPress typography controls so the block editor and site editor can use the same fonts managed by Tasty Fonts.',
+                'status_label' => 'On',
+                'enabled' => true,
+            ],
+            'acss_integration' => [
+                'title' => 'Automatic.css',
+                'description' => 'Sync ACSS heading and body font-family settings to Tasty Fonts role variables for clean interoperability.',
+                'status_label' => 'Off',
+                'enabled' => false,
+                'available' => true,
+                'current' => [
+                    'heading' => '',
+                    'body' => '',
+                ],
+                'desired' => [
+                    'heading-font-family' => 'var(--font-heading)',
+                    'text-font-family' => 'var(--font-body)',
+                ],
+            ],
+            'role_deployment' => [
+                'badge' => 'Draft only',
+                'badge_class' => 'is-warning',
+                'title' => 'Draft only',
+                'copy' => 'Current selections are saved, but not published sitewide.',
+            ],
+        ]);
+    } catch (\Throwable $e) {
+        ob_end_clean();
+        throw $e;
+    }
+    $output = (string) ob_get_clean();
+
+    assertContainsValue('data-help-tooltip="Bricks Theme Style sync is enabled, but Tasty only applies it after sitewide role delivery is turned on."', $output, 'The Bricks waiting badge should explain that sitewide role delivery must be enabled first.');
+    assertSameValue(1, preg_match('/data-help-tooltip="Bricks Theme Style sync is enabled, but Tasty only applies it after sitewide role delivery is turned on\\."[\s\S]*?>\s*Waiting\s*<\/span>/', $output), 'The Bricks Theme Style badge should still render the Waiting label.');
 };
 
 $tests['admin_page_renderer_offers_to_create_a_bricks_theme_style_when_none_exist'] = static function (): void {
