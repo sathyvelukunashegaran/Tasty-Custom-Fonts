@@ -3,6 +3,9 @@ name: Shared Quality
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   quality:
     runs-on: ubuntu-latest

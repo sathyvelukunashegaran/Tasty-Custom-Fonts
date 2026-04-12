@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Added explicit least-privilege `GITHUB_TOKEN` permissions to the shared quality and CI GitHub Actions workflows.
+
+### Fixed
+
+- Hardened admin hosted-font preview stylesheets by allowing only trusted Google Fonts and Bunny Fonts `https://.../css2` URLs before assigning preview `link` elements.
+- Replaced admin Google and Bunny search empty-state, loading, and error rendering with DOM text nodes instead of HTML interpolation for error messages.
+
 ## [1.11.0-beta.2] - 2026-04-13
 
 ### Changed

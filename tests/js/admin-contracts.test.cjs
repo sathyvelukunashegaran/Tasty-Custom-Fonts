@@ -9,6 +9,7 @@ const {
     getTabNavigationTargetIndex,
     hasStaticFontMetadata,
     hasVariableFontMetadata,
+    isTrustedHostedStylesheetUrl,
     normalizeOutputQuickModePreference,
     resolveStatusAnnouncement,
     resolveAssignedRoleState,
@@ -37,6 +38,17 @@ test('admin contracts escape font family values for CSS usage', () => {
         escapeFontFamily('He said "Hello"\\World'),
         'He said \\"Hello\\"\\\\World'
     );
+});
+
+test('admin contracts allow only trusted hosted stylesheet URLs', () => {
+    assert.equal(isTrustedHostedStylesheetUrl('https://fonts.googleapis.com/css2?family=Inter&display=swap'), true);
+    assert.equal(isTrustedHostedStylesheetUrl('https://fonts.bunny.net/css2?family=Inter&display=swap'), true);
+});
+
+test('admin contracts reject non-https, foreign-origin, and malformed stylesheet URLs', () => {
+    assert.equal(isTrustedHostedStylesheetUrl('http://fonts.googleapis.com/css2?family=Inter&display=swap'), false);
+    assert.equal(isTrustedHostedStylesheetUrl('https://example.com/css2?family=Inter&display=swap'), false);
+    assert.equal(isTrustedHostedStylesheetUrl('not a url'), false);
 });
 
 test('admin contracts resolve keyboard tab navigation targets for tablists', () => {

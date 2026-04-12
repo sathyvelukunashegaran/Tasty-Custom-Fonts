@@ -29,6 +29,23 @@
         return String(family || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     }
 
+    function isTrustedHostedStylesheetUrl(href) {
+        const allowedOrigins = new Set([
+            'https://fonts.googleapis.com',
+            'https://fonts.bunny.net',
+        ]);
+
+        try {
+            const url = new URL(String(href || ''));
+
+            return url.protocol === 'https:'
+                && allowedOrigins.has(url.origin)
+                && url.pathname === '/css2';
+        } catch (error) {
+            return false;
+        }
+    }
+
     function getTabNavigationTargetIndex(key, currentIndex, count, orientation = 'horizontal') {
         if (typeof currentIndex !== 'number' || typeof count !== 'number' || count < 2 || currentIndex < 0 || currentIndex >= count) {
             return null;
@@ -377,6 +394,7 @@
         getTabNavigationTargetIndex,
         hasStaticFontMetadata,
         hasVariableFontMetadata,
+        isTrustedHostedStylesheetUrl,
         normalizeOutputQuickModePreference,
         resolveStatusAnnouncement,
         resolveAssignedRoleState,

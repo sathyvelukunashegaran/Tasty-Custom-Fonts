@@ -398,6 +398,23 @@
     const escapeFontFamily = typeof adminContracts.escapeFontFamily === 'function'
         ? adminContracts.escapeFontFamily
         : (family) => String(family || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const isTrustedHostedStylesheetUrl = typeof adminContracts.isTrustedHostedStylesheetUrl === 'function'
+        ? adminContracts.isTrustedHostedStylesheetUrl
+        : (href) => {
+            try {
+                const url = new URL(String(href || ''));
+                const allowedOrigins = new Set([
+                    'https://fonts.googleapis.com',
+                    'https://fonts.bunny.net',
+                ]);
+
+                return url.protocol === 'https:'
+                    && allowedOrigins.has(url.origin)
+                    && url.pathname === '/css2';
+            } catch (error) {
+                return false;
+            }
+        };
     const settingsStatesMatch = typeof adminContracts.settingsStatesMatch === 'function'
         ? adminContracts.settingsStatesMatch
         : (left, right) => JSON.stringify(left || {}) === JSON.stringify(right || {});
@@ -912,6 +929,19 @@
 
     function defaultRequestFailedMessage() {
         return getString('requestFailed', 'Request failed.');
+    }
+
+    function renderEmptyState(container, message) {
+        if (!container) {
+            return;
+        }
+
+        container.innerHTML = '';
+
+        const emptyState = document.createElement('div');
+        emptyState.className = 'tasty-fonts-empty';
+        emptyState.textContent = String(message || '');
+        container.appendChild(emptyState);
     }
 
     function hasRestConfig() {
@@ -2445,6 +2475,12 @@
         queryParts.push('display=swap');
 
         const href = `https://fonts.googleapis.com/css2?${queryParts.join('&')}`;
+
+        if (!isTrustedHostedStylesheetUrl(href)) {
+            removeGooglePreviewStylesheet();
+            return;
+        }
+
         let stylesheet = googlePreviewStylesheet();
 
         if (!stylesheet) {
@@ -2463,6 +2499,11 @@
         const href = buildHostedCssUrl('https://fonts.bunny.net/css2', family, variants);
 
         if (!href) {
+            removeBunnyPreviewStylesheet();
+            return;
+        }
+
+        if (!isTrustedHostedStylesheetUrl(href)) {
             removeBunnyPreviewStylesheet();
             return;
         }
@@ -2501,6 +2542,12 @@
         queryParts.push('display=swap');
 
         const href = `https://fonts.bunny.net/css2?${queryParts.join('&')}`;
+
+        if (!isTrustedHostedStylesheetUrl(href)) {
+            removeBunnySearchPreviewStylesheet();
+            return;
+        }
+
         let stylesheet = bunnySearchPreviewStylesheet();
 
         if (!stylesheet) {
@@ -6968,7 +7015,7 @@
 
         if (!searchResults.length) {
             updateGooglePreviewStylesheet([]);
-            googleResults.innerHTML = `<div class="tasty-fonts-empty">${getString('searchEmpty', 'No Google Fonts families matched that search.')}</div>`;
+            renderEmptyState(googleResults, getString('searchEmpty', 'No Google Fonts families matched that search.'));
             return;
         }
 
@@ -7164,7 +7211,7 @@
 
         if (!bunnySearchResults.length) {
             updateBunnySearchPreviewStylesheet([]);
-            bunnyResults.innerHTML = `<div class="tasty-fonts-empty">${getString('bunnySearchEmpty', 'No Bunny Fonts families matched that search.')}</div>`;
+            renderEmptyState(bunnyResults, getString('bunnySearchEmpty', 'No Bunny Fonts families matched that search.'));
             return;
         }
 
@@ -8174,7 +8221,7 @@
 
         if (!config.googleApiEnabled) {
             updateGooglePreviewStylesheet([]);
-            googleResults.innerHTML = `<div class="tasty-fonts-empty">${getString('searchDisabled', '')}</div>`;
+            renderEmptyState(googleResults, getString('searchDisabled', ''));
             return;
         }
 
@@ -8184,7 +8231,7 @@
             return;
         }
 
-        googleResults.innerHTML = `<div class="tasty-fonts-empty">${getString('searching', 'Searching Google Fonts…')}</div>`;
+        renderEmptyState(googleResults, getString('searching', 'Searching Google Fonts…'));
 
         try {
             const payload = await requestJson(getRoutePath('searchGoogle', 'google/search'), {
@@ -8196,7 +8243,7 @@
             renderSearchResults(payload.items || []);
         } catch (error) {
             updateGooglePreviewStylesheet([]);
-            googleResults.innerHTML = `<div class="tasty-fonts-empty">${getErrorMessage(error, getString('importError', 'Request failed.'))}</div>`;
+            renderEmptyState(googleResults, getErrorMessage(error, getString('importError', 'Request failed.')));
         }
     }
 
@@ -8218,7 +8265,7 @@
             return;
         }
 
-        bunnyResults.innerHTML = `<div class="tasty-fonts-empty">${getString('bunnySearching', 'Searching Bunny Fonts…')}</div>`;
+        renderEmptyState(bunnyResults, getString('bunnySearching', 'Searching Bunny Fonts…'));
         try {
             const payload = await requestJson(getRoutePath('searchBunny', 'bunny/search'), {
                 method: 'GET',
@@ -8230,7 +8277,7 @@
         } catch (error) {
             bunnySearchResults = [];
             updateBunnySearchPreviewStylesheet([]);
-            bunnyResults.innerHTML = `<div class="tasty-fonts-empty">${getErrorMessage(error, getString('bunnySearchEmpty', 'No Bunny Fonts families matched that search.'))}</div>`;
+            renderEmptyState(bunnyResults, getErrorMessage(error, getString('bunnySearchEmpty', 'No Bunny Fonts families matched that search.')));
         }
     }
 
