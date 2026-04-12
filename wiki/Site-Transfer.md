@@ -68,10 +68,10 @@ Keep this ZIP somewhere safe — it is your portable bundle.
 1. Go to `Tasty Fonts → Settings` on the **destination site**.
 2. Click the **Transfer** tab.
 3. In the **Import Site Transfer Bundle** card:
-   - Click **Choose bundle** (or the ZIP bundle file picker) and select the ZIP you exported.
+   - Click **Choose File** and select the ZIP you exported.
    - (Optional) If this destination site needs Google Fonts search access, paste a Google Fonts API key into the **Google Fonts API Key** field. See [Why Google API Keys Are Excluded](#why-google-fonts-api-keys-are-excluded) below.
-4. Click **Import** (or the import submit button).
-5. A confirmation prompt will appear explaining what will be replaced. Type the confirmation phrase and confirm.
+4. Click **Import Bundle**.
+5. When the destructive confirmation appears, use the two-step confirm button flow to arm the action and then click again to confirm. No typed confirmation phrase is required.
 6. The plugin validates the bundle, extracts and verifies font files, restores library data, applies settings and role assignments, and then rebuilds the generated CSS.
 
 > **After a successful import:** you will see a success notice. The generated runtime stylesheet is rebuilt automatically. Your Tasty Fonts setup on the destination site now matches the source.
