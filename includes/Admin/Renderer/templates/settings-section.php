@@ -660,6 +660,9 @@
 
                                 <div class="tasty-fonts-output-settings-form tasty-fonts-integrations-form">
                                     <div class="tasty-fonts-output-settings-list tasty-fonts-integrations-list">
+                                        <?php
+                                        $showBricksStatusCopy = (($bricksIntegration['available'] ?? false) !== true) || (($bricksIntegration['enabled'] ?? false) !== true);
+                                        ?>
                                         <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--integration">
                                             <input type="hidden" name="bricks_integration_enabled" value="0">
                                             <label class="tasty-fonts-toggle-field tasty-fonts-toggle-field--output tasty-fonts-toggle-field--integration">
@@ -685,11 +688,313 @@
                                                     <?php if ($showSettingsDescriptions && (string) ($bricksIntegration['description'] ?? '') !== ''): ?>
                                                         <span class="tasty-fonts-toggle-description"><?php echo esc_html((string) ($bricksIntegration['description'] ?? '')); ?></span>
                                                     <?php endif; ?>
-                                                    <?php if ($showSettingsDescriptions && (string) ($bricksIntegration['status_copy'] ?? '') !== ''): ?>
+                                                    <?php if ($showSettingsDescriptions && $showBricksStatusCopy && (string) ($bricksIntegration['status_copy'] ?? '') !== ''): ?>
                                                         <span class="tasty-fonts-toggle-description"><?php echo esc_html((string) ($bricksIntegration['status_copy'] ?? '')); ?></span>
                                                     <?php endif; ?>
                                                 </span>
                                             </label>
+
+                                            <?php if (($bricksIntegration['available'] ?? false) === true): ?>
+                                            <?php
+                                            $bricksManagedControlsEnabled = !empty($bricksIntegration['theme_styles']['enabled'])
+                                                || !empty($bricksIntegration['google_fonts']['enabled']);
+                                            $bricksThemeStyleSummary = (array) (($bricksIntegration['theme_styles']['summary'] ?? null) ?: []);
+                                            $bricksManagedThemeStyleLabel = trim((string) ($bricksThemeStyleSummary['managed_style_label'] ?? \TastyFonts\Integrations\BricksIntegrationService::MANAGED_THEME_STYLE_LABEL));
+                                            $bricksAvailableThemeStyles = (array) ($bricksThemeStyleSummary['available_styles'] ?? []);
+                                            $bricksHasThemeStyles = !empty($bricksThemeStyleSummary['has_theme_styles']);
+                                            $bricksManagedThemeStyleExists = !empty($bricksThemeStyleSummary['managed_style_exists']);
+                                            $bricksThemeStylesEnabled = !empty($bricksIntegration['theme_styles']['enabled']);
+                                            $bricksThemeStylesApplied = !empty($bricksIntegration['theme_styles']['applied']);
+                                            $bricksTargetMode = trim((string) ($bricksThemeStyleSummary['target_mode'] ?? \TastyFonts\Integrations\BricksIntegrationService::TARGET_MODE_MANAGED));
+                                            $bricksTargetThemeStyleId = trim((string) ($bricksThemeStyleSummary['target_style_id'] ?? \TastyFonts\Integrations\BricksIntegrationService::MANAGED_THEME_STYLE_ID));
+                                            $bricksTargetThemeStyleLabel = trim((string) ($bricksThemeStyleSummary['target_style_label'] ?? $bricksManagedThemeStyleLabel));
+                                            $bricksTargetIsManaged = !empty($bricksThemeStyleSummary['target_is_managed']);
+                                            $bricksTargetIsAll = !empty($bricksThemeStyleSummary['target_is_all']);
+                                            ?>
+                                            <div class="tasty-fonts-output-settings-submenu tasty-fonts-output-settings-submenu--integration">
+                                                <div class="tasty-fonts-output-settings-submenu-copy tasty-fonts-output-settings-submenu-copy--compact">
+                                                    <h4><?php esc_html_e('Bricks Controls', 'tasty-fonts'); ?></h4>
+                                                    <?php if ($showSettingsDescriptions): ?>
+                                                        <p><?php esc_html_e('Bricks selectors and builder previews are included automatically. Use the controls below only for the deeper typography settings Tasty should manage.', 'tasty-fonts'); ?></p>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="tasty-fonts-output-settings-submenu-list tasty-fonts-output-settings-submenu-list--integration tasty-fonts-output-settings-submenu-list--bricks">
+                                                    <?php
+                                                    $bricksFeatureBadgeClass = static function (string $status): string {
+                                                        return 'tasty-fonts-badge' . match ($status) {
+                                                            'synced', 'active' => ' is-success',
+                                                            'waiting_for_sitewide_roles', 'ready' => ' is-warning',
+                                                            'unavailable' => ' is-danger',
+                                                            default => '',
+                                                        };
+                                                    };
+                                                    $bricksFeatureStatusLabel = static function (string $status): string {
+                                                        return match ($status) {
+                                                            'synced' => __('Synced', 'tasty-fonts'),
+                                                            'active' => __('On', 'tasty-fonts'),
+                                                            'waiting_for_sitewide_roles' => __('Waiting', 'tasty-fonts'),
+                                                            'ready' => __('Ready', 'tasty-fonts'),
+                                                            'unavailable' => __('Not Active', 'tasty-fonts'),
+                                                            default => __('Off', 'tasty-fonts'),
+                                                        };
+                                                    };
+                                                    ?>
+
+                                                    <div class="tasty-fonts-bricks-feature-grid">
+                                                        <?php foreach (
+                                                            [
+                                                                'bricks_theme_styles_sync_enabled' => [
+                                                                    'title' => __('Sync Bricks Theme Styles', 'tasty-fonts'),
+                                                                    'state' => (array) ($bricksIntegration['theme_styles'] ?? []),
+                                                                    'description' => (string) (($bricksIntegration['feature_descriptions']['theme_styles'] ?? '')),
+                                                                ],
+                                                                'bricks_disable_google_fonts_enabled' => [
+                                                                    'title' => __('Disable Bricks Google Fonts', 'tasty-fonts'),
+                                                                    'state' => (array) ($bricksIntegration['google_fonts'] ?? []),
+                                                                    'description' => (string) (($bricksIntegration['feature_descriptions']['google_fonts'] ?? '')),
+                                                                ],
+                                                            ] as $fieldName => $feature
+                                                        ): ?>
+                                                            <?php
+                                                            $featureState = (array) ($feature['state'] ?? []);
+                                                            $featureStatus = (string) ($featureState['status'] ?? 'disabled');
+                                                            ?>
+                                                            <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--integration tasty-fonts-output-settings-detail-group--integration-card">
+                                                                <input type="hidden" name="<?php echo esc_attr($fieldName); ?>" value="0">
+                                                                <label class="tasty-fonts-toggle-field tasty-fonts-toggle-field--output tasty-fonts-toggle-field--integration">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        class="tasty-fonts-toggle-input"
+                                                                        name="<?php echo esc_attr($fieldName); ?>"
+                                                                        value="1"
+                                                                        <?php checked(($featureState['enabled'] ?? false) === true); ?>
+                                                                    >
+                                                                    <span class="tasty-fonts-toggle-switch" aria-hidden="true"></span>
+                                                                    <span class="tasty-fonts-toggle-copy">
+                                                                        <span class="tasty-fonts-toggle-title-line">
+                                                                            <span class="tasty-fonts-toggle-title"><?php echo esc_html((string) ($feature['title'] ?? '')); ?></span>
+                                                                            <span class="<?php echo esc_attr($bricksFeatureBadgeClass($featureStatus)); ?>">
+                                                                                <?php echo esc_html($bricksFeatureStatusLabel($featureStatus)); ?>
+                                                                            </span>
+                                                                        </span>
+                                                                        <?php if ($showSettingsDescriptions && (string) ($feature['description'] ?? '') !== ''): ?>
+                                                                            <span class="tasty-fonts-toggle-description"><?php echo esc_html((string) ($feature['description'] ?? '')); ?></span>
+                                                                        <?php endif; ?>
+                                                                    </span>
+                                                                </label>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    </div>
+
+                                                    <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--integration tasty-fonts-output-settings-detail-group--integration-card">
+                                                        <label class="tasty-fonts-toggle-field tasty-fonts-toggle-field--output tasty-fonts-toggle-field--integration">
+                                                            <span class="tasty-fonts-toggle-copy">
+                                                                <span class="tasty-fonts-toggle-title-line">
+                                                                    <span class="tasty-fonts-toggle-title"><?php esc_html_e('Theme Style Target', 'tasty-fonts'); ?></span>
+                                                                    <?php if ($bricksThemeStylesApplied && $bricksTargetThemeStyleLabel !== ''): ?>
+                                                                        <span class="tasty-fonts-badge is-success"><?php echo esc_html($bricksTargetThemeStyleLabel); ?></span>
+                                                                    <?php endif; ?>
+                                                                </span>
+                                                                <?php if ($showSettingsDescriptions): ?>
+                                                                    <span class="tasty-fonts-toggle-description"><?php esc_html_e('Tasty only updates the font-family and font-weight fields on the selected Bricks Theme Style.', 'tasty-fonts'); ?></span>
+                                                                <?php endif; ?>
+                                                                <span class="tasty-fonts-toggle-description">
+                                                                    <?php if (!$bricksHasThemeStyles && !$bricksManagedThemeStyleExists): ?>
+                                                                        <?php esc_html_e('No Bricks Theme Style found yet. Tasty can create one for you.', 'tasty-fonts'); ?>
+                                                                        <?php elseif ($bricksTargetIsAll): ?>
+                                                                        <?php esc_html_e('Tasty will update every Bricks Theme Style to use the Tasty role variables.', 'tasty-fonts'); ?>
+                                                                    <?php elseif ($bricksTargetIsManaged): ?>
+                                                                        <?php
+                                                                        echo esc_html(
+                                                                            sprintf(
+                                                                                /* translators: %s: theme style label */
+                                                                                __('Tasty will use the managed Theme Style "%s".', 'tasty-fonts'),
+                                                                                $bricksManagedThemeStyleLabel
+                                                                            )
+                                                                        );
+                                                                        ?>
+                                                                    <?php else: ?>
+                                                                        <?php
+                                                                        echo esc_html(
+                                                                            sprintf(
+                                                                                /* translators: %s: theme style label */
+                                                                                __('Tasty will patch font fields on "%s".', 'tasty-fonts'),
+                                                                                $bricksTargetThemeStyleLabel
+                                                                            )
+                                                                        );
+                                                                        ?>
+                                                                    <?php endif; ?>
+                                                                </span>
+                                                            </span>
+                                                        </label>
+                                                        <div class="tasty-fonts-settings-inline-controls">
+                                                            <div class="tasty-fonts-bricks-target-modes" role="radiogroup" aria-label="<?php esc_attr_e('Bricks Theme Style target mode', 'tasty-fonts'); ?>" data-bricks-theme-style-target-modes>
+                                                                <?php foreach (
+                                                                    [
+                                                                        \TastyFonts\Integrations\BricksIntegrationService::TARGET_MODE_MANAGED => __('Use Tasty Theme Style', 'tasty-fonts'),
+                                                                        \TastyFonts\Integrations\BricksIntegrationService::TARGET_MODE_SELECTED => __('Update One Existing Style', 'tasty-fonts'),
+                                                                        \TastyFonts\Integrations\BricksIntegrationService::TARGET_MODE_ALL => __('Update All Theme Styles', 'tasty-fonts'),
+                                                                    ] as $targetModeValue => $targetModeLabel
+                                                                ): ?>
+                                                                    <label class="tasty-fonts-bricks-target-mode">
+                                                                        <input
+                                                                            type="radio"
+                                                                            name="bricks_theme_style_target_mode"
+                                                                            value="<?php echo esc_attr($targetModeValue); ?>"
+                                                                            data-bricks-theme-style-target-mode
+                                                                            <?php checked($bricksTargetMode, $targetModeValue); ?>
+                                                                        >
+                                                                        <span><?php echo esc_html($targetModeLabel); ?></span>
+                                                                    </label>
+                                                                <?php endforeach; ?>
+                                                            </div>
+                                                            <select
+                                                                name="bricks_theme_style_target_id"
+                                                                class="tasty-fonts-select"
+                                                                data-bricks-theme-style-target-select
+                                                                <?php disabled($bricksTargetMode !== \TastyFonts\Integrations\BricksIntegrationService::TARGET_MODE_SELECTED); ?>
+                                                            >
+                                                                <?php if ($bricksAvailableThemeStyles === [] || (count($bricksAvailableThemeStyles) === 1 && isset($bricksAvailableThemeStyles[\TastyFonts\Integrations\BricksIntegrationService::MANAGED_THEME_STYLE_ID]))): ?>
+                                                                    <option value="<?php echo esc_attr(\TastyFonts\Integrations\BricksIntegrationService::MANAGED_THEME_STYLE_ID); ?>">
+                                                                        <?php esc_html_e('No existing Bricks Theme Styles yet', 'tasty-fonts'); ?>
+                                                                    </option>
+                                                                <?php endif; ?>
+                                                                <?php foreach ($bricksAvailableThemeStyles as $styleId => $styleLabel): ?>
+                                                                    <?php if ((string) $styleId === \TastyFonts\Integrations\BricksIntegrationService::MANAGED_THEME_STYLE_ID): ?>
+                                                                        <?php continue; ?>
+                                                                    <?php endif; ?>
+                                                                    <option value="<?php echo esc_attr((string) $styleId); ?>" <?php selected($bricksTargetThemeStyleId, (string) $styleId); ?>>
+                                                                        <?php echo esc_html((string) $styleLabel); ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                            <?php if (!$bricksHasThemeStyles && !$bricksManagedThemeStyleExists): ?>
+                                                                <button
+                                                                    type="submit"
+                                                                    class="button button-small tasty-fonts-create-theme-style-button"
+                                                                    name="bricks_create_theme_style"
+                                                                    value="1"
+                                                                    data-settings-force-submit
+                                                                >
+                                                                    <?php esc_html_e('Create Tasty Theme Style', 'tasty-fonts'); ?>
+                                                                </button>
+                                                            <?php endif; ?>
+                                                            <?php if ($bricksManagedThemeStyleExists): ?>
+                                                                <button
+                                                                    type="submit"
+                                                                    class="button button-secondary button-small"
+                                                                    name="bricks_delete_theme_style"
+                                                                    value="1"
+                                                                    data-settings-force-submit
+                                                                >
+                                                                    <?php esc_html_e('Delete Tasty Theme Style', 'tasty-fonts'); ?>
+                                                                </button>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </div>
+
+                                                    <?php if ($bricksManagedControlsEnabled): ?>
+                                                        <details class="tasty-fonts-integration-details" open>
+                                                            <summary><?php esc_html_e('Managed Mapping Details', 'tasty-fonts'); ?></summary>
+                                                            <div class="tasty-fonts-integration-details-body tasty-fonts-integration-details-body--two-column">
+                                                                <section class="tasty-fonts-integration-group" aria-label="<?php esc_attr_e('Current Bricks managed values', 'tasty-fonts'); ?>">
+                                                                    <span class="tasty-fonts-integration-group-title"><?php esc_html_e('Current Bricks State', 'tasty-fonts'); ?></span>
+                                                                    <div class="tasty-fonts-integration-inline-summary">
+                                                                        <?php if (!$bricksHasThemeStyles): ?>
+                                                                            <p><?php esc_html_e('No Bricks Theme Style found yet. Choose the managed target above if you want Tasty to create one automatically.', 'tasty-fonts'); ?></p>
+                                                                        <?php elseif ($bricksTargetIsAll): ?>
+                                                                            <p><?php esc_html_e('Tasty is set to update every Bricks Theme Style that exists on this site.', 'tasty-fonts'); ?></p>
+                                                                        <?php elseif ($bricksTargetIsManaged && $bricksManagedThemeStyleExists): ?>
+                                                                            <p>
+                                                                                <?php
+                                                                                echo esc_html(
+                                                                                    sprintf(
+                                                                                        /* translators: %s: theme style label */
+                                                                                        __('Tasty created and manages the Bricks Theme Style "%s".', 'tasty-fonts'),
+                                                                                        $bricksManagedThemeStyleLabel
+                                                                                    )
+                                                                                );
+                                                                                ?>
+                                                                            </p>
+                                                                        <?php elseif ($bricksTargetThemeStyleLabel !== ''): ?>
+                                                                            <p>
+                                                                                <?php
+                                                                                echo esc_html(
+                                                                                    sprintf(
+                                                                                        /* translators: %s: theme style label */
+                                                                                        $bricksThemeStylesApplied
+                                                                                            ? __('Tasty is applying Bricks font updates to "%s".', 'tasty-fonts')
+                                                                                            : __('Tasty is ready to update the Theme Style "%s".', 'tasty-fonts'),
+                                                                                        $bricksTargetThemeStyleLabel
+                                                                                    )
+                                                                                );
+                                                                                ?>
+                                                                            </p>
+                                                                        <?php endif; ?>
+                                                                    </div>
+                                                                    <dl class="tasty-fonts-integration-kv-list">
+                                                                        <div class="tasty-fonts-integration-kv">
+                                                                            <dt><?php esc_html_e('Theme Style', 'tasty-fonts'); ?></dt>
+                                                                            <dd><span class="tasty-fonts-integration-code"><?php echo esc_html($bricksTargetThemeStyleLabel !== '' ? $bricksTargetThemeStyleLabel : __('not selected', 'tasty-fonts')); ?></span></dd>
+                                                                        </div>
+                                                                        <div class="tasty-fonts-integration-kv">
+                                                                            <dt><?php esc_html_e('Body', 'tasty-fonts'); ?></dt>
+                                                                            <dd><span class="tasty-fonts-integration-code"><?php echo esc_html((string) (($bricksIntegration['theme_styles']['current']['body_family'] ?? '') !== '' ? $bricksIntegration['theme_styles']['current']['body_family'] : __('empty', 'tasty-fonts'))); ?></span></dd>
+                                                                        </div>
+                                                                        <div class="tasty-fonts-integration-kv">
+                                                                            <dt><?php esc_html_e('Heading', 'tasty-fonts'); ?></dt>
+                                                                            <dd><span class="tasty-fonts-integration-code"><?php echo esc_html((string) (($bricksIntegration['theme_styles']['current']['heading_family'] ?? '') !== '' ? $bricksIntegration['theme_styles']['current']['heading_family'] : __('empty', 'tasty-fonts'))); ?></span></dd>
+                                                                        </div>
+                                                                        <div class="tasty-fonts-integration-kv">
+                                                                            <dt><?php esc_html_e('Google Fonts', 'tasty-fonts'); ?></dt>
+                                                                            <dd><span class="tasty-fonts-integration-code"><?php echo esc_html(!empty($bricksIntegration['google_fonts']['current']['google_fonts_disabled']) ? __('disabled', 'tasty-fonts') : __('enabled', 'tasty-fonts')); ?></span></dd>
+                                                                        </div>
+                                                                    </dl>
+                                                                </section>
+
+                                                                <section class="tasty-fonts-integration-group" aria-label="<?php esc_attr_e('Target Bricks mapping', 'tasty-fonts'); ?>">
+                                                                    <span class="tasty-fonts-integration-group-title"><?php esc_html_e('Target Mapping', 'tasty-fonts'); ?></span>
+                                                                    <dl class="tasty-fonts-integration-kv-list">
+                                                                        <div class="tasty-fonts-integration-kv">
+                                                                            <dt><?php esc_html_e('Body', 'tasty-fonts'); ?></dt>
+                                                                            <dd><span class="tasty-fonts-integration-code"><?php echo esc_html((string) ($bricksIntegration['theme_styles']['desired']['body_family'] ?? \TastyFonts\Integrations\BricksIntegrationService::DESIRED_BODY_VALUE)); ?></span></dd>
+                                                                        </div>
+                                                                        <div class="tasty-fonts-integration-kv">
+                                                                            <dt><?php esc_html_e('Heading', 'tasty-fonts'); ?></dt>
+                                                                            <dd><span class="tasty-fonts-integration-code"><?php echo esc_html((string) ($bricksIntegration['theme_styles']['desired']['heading_family'] ?? \TastyFonts\Integrations\BricksIntegrationService::DESIRED_HEADING_VALUE)); ?></span></dd>
+                                                                        </div>
+                                                                        <div class="tasty-fonts-integration-kv">
+                                                                            <dt><?php esc_html_e('Body Weight', 'tasty-fonts'); ?></dt>
+                                                                            <dd><span class="tasty-fonts-integration-code"><?php echo esc_html((string) ($bricksIntegration['theme_styles']['desired']['body_weight'] ?? \TastyFonts\Integrations\BricksIntegrationService::DESIRED_BODY_WEIGHT_VALUE)); ?></span></dd>
+                                                                        </div>
+                                                                        <div class="tasty-fonts-integration-kv">
+                                                                            <dt><?php esc_html_e('Heading Weight', 'tasty-fonts'); ?></dt>
+                                                                            <dd><span class="tasty-fonts-integration-code"><?php echo esc_html((string) ($bricksIntegration['theme_styles']['desired']['heading_weight'] ?? \TastyFonts\Integrations\BricksIntegrationService::DESIRED_HEADING_WEIGHT_VALUE)); ?></span></dd>
+                                                                        </div>
+                                                                    </dl>
+                                                                </section>
+                                                            </div>
+                                                        </details>
+                                                    <?php else: ?>
+                                                        <div class="tasty-fonts-integration-note">
+                                                            <?php esc_html_e('Enable Theme Style sync or Disable Bricks Google Fonts to see the current Bricks state here.', 'tasty-fonts'); ?>
+                                                        </div>
+                                                    <?php endif; ?>
+
+                                                    <div class="tasty-fonts-settings-inline-controls tasty-fonts-settings-inline-controls--actions">
+                                                        <button
+                                                            type="submit"
+                                                            class="button button-secondary button-small"
+                                                            name="bricks_reset_integration"
+                                                            value="1"
+                                                            data-settings-force-submit
+                                                        >
+                                                            <?php esc_html_e('Reset Bricks Integration', 'tasty-fonts'); ?>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <?php endif; ?>
                                         </div>
 
                                         <div class="tasty-fonts-output-settings-detail-group tasty-fonts-output-settings-detail-group--integration">

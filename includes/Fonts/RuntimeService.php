@@ -52,6 +52,52 @@ final class RuntimeService
         }
     }
 
+    public function enqueueBricksFrontendOverride(): void
+    {
+        if (is_admin()) {
+            return;
+        }
+
+        $this->enqueueBricksQuotedVariableFixScript();
+
+        $settings = $this->settings->getSettings();
+
+        if (!$this->bricksIntegration->managedFrontendStylesActive($settings)) {
+            return;
+        }
+
+        $css = implode('', array_values(array_unique(array_filter(
+            $this->bricksIntegration->getManagedFrontendStyles(),
+            'strlen'
+        ))));
+
+        if ($css === '') {
+            return;
+        }
+
+        wp_register_style('tasty-fonts-bricks-runtime-override', false, [], TASTY_FONTS_VERSION);
+        wp_enqueue_style('tasty-fonts-bricks-runtime-override');
+        wp_add_inline_style('tasty-fonts-bricks-runtime-override', $css);
+    }
+
+    public function enqueueBricksBuilder(): void
+    {
+        if (!$this->isBricksBuilderRequest()) {
+            return;
+        }
+
+        if ($this->bricksBuilderPreviewEnabled()) {
+            $this->assets->enqueue('tasty-fonts-bricks-builder');
+            $this->enqueueExternalStylesheets($this->planner->getExternalStylesheets(), 'bricks-builder');
+        }
+
+        if (!$this->bricksSelectorEnabled() || !$this->bricksIntegration->isAvailable()) {
+            return;
+        }
+
+        $this->enqueueBricksBuilderSelectorGroupingScript($this->planner->getRuntimeFamilies());
+    }
+
     /**
      * Output preload and preconnect hints for active runtime font assets.
      *
@@ -201,7 +247,9 @@ final class RuntimeService
             $styles = array_merge($styles, $this->acssIntegration->getManagedEditorStyles());
         }
 
-        if ($this->builderIntegrationEnabled('bricks') && $this->bricksIntegration->isAvailable()) {
+        if ($this->bricksIntegration->managedEditorStylesActive($this->settings->getSettings())) {
+            $styles = array_merge($styles, $this->bricksIntegration->getManagedEditorStyles());
+        } elseif ($this->bricksSelectorEnabled() && $this->bricksIntegration->isAvailable()) {
             $styles = array_merge($styles, $this->bricksIntegration->getEditorStyles($runtimeFamilies));
         }
 
@@ -223,7 +271,7 @@ final class RuntimeService
 
     public function filterBricksStandardFonts(array $fonts): array
     {
-        if (!$this->builderIntegrationEnabled('bricks') || !$this->bricksIntegration->isAvailable()) {
+        if (!$this->bricksSelectorEnabled() || !$this->bricksIntegration->isAvailable()) {
             return $fonts;
         }
 
@@ -309,6 +357,301 @@ final class RuntimeService
                 'inlineCss' => $inlineCss,
             ]
         );
+    }
+
+    private function enqueueBricksBuilderSelectorGroupingScript(array $runtimeFamilies): void
+    {
+        $familyNames = $this->bricksIntegration->getSelectorFamilyNames($runtimeFamilies);
+
+        if ($familyNames === []) {
+            return;
+        }
+
+        $script = $this->buildBricksBuilderSelectorGroupingScript($familyNames);
+
+        if ($script === '') {
+            return;
+        }
+
+        wp_add_inline_script('bricks-builder', $script, 'before');
+    }
+
+    private function enqueueBricksQuotedVariableFixScript(): void
+    {
+        if (!$this->builderIntegrationEnabled('bricks') || !$this->bricksIntegration->isAvailable()) {
+            return;
+        }
+
+        $script = $this->buildBricksQuotedVariableFixScript();
+
+        if ($script === '') {
+            return;
+        }
+
+        wp_add_inline_script('bricks-scripts', $script, 'after');
+    }
+
+    private function buildBricksQuotedVariableFixScript(): string
+    {
+        return <<<'JS'
+(function () {
+    if (typeof document === 'undefined' || !document.documentElement) {
+        return;
+    }
+
+    var quotedPropertyPattern = /(font-family\s*:\s*)["'](var\(--[^"']+\))["']/g;
+    var quotedValuePattern = /^["'](var\(--[^"']+\))["']$/;
+
+    function normalizeCssText(cssText) {
+        return typeof cssText === 'string' ? cssText.replace(quotedPropertyPattern, '$1$2') : '';
+    }
+
+    function normalizeFontFamilyValue(value) {
+        if (typeof value !== 'string') {
+            return '';
+        }
+
+        var trimmed = value.trim();
+        var matches = trimmed.match(quotedValuePattern);
+
+        return matches ? matches[1] : trimmed;
+    }
+
+    function normalizeStyleDeclaration(style) {
+        if (!style || typeof style.getPropertyValue !== 'function') {
+            return;
+        }
+
+        var original = style.getPropertyValue('font-family');
+
+        if (typeof original !== 'string' || original.trim() === '') {
+            return;
+        }
+
+        var normalized = normalizeFontFamilyValue(original);
+
+        if (normalized === '' || normalized === original.trim()) {
+            return;
+        }
+
+        style.setProperty('font-family', normalized, style.getPropertyPriority('font-family'));
+    }
+
+    function normalizeStyleTag(node) {
+        if (!node || node.tagName !== 'STYLE') {
+            return;
+        }
+
+        var original = node.textContent || '';
+        var normalized = normalizeCssText(original);
+
+        if (normalized !== original) {
+            node.textContent = normalized;
+        }
+    }
+
+    function normalizeCssRules(rules) {
+        if (!rules) {
+            return;
+        }
+
+        Array.prototype.forEach.call(rules, function (rule) {
+            if (!rule) {
+                return;
+            }
+
+            if (rule.style) {
+                normalizeStyleDeclaration(rule.style);
+            }
+
+            if (rule.cssRules && rule.cssRules.length) {
+                normalizeCssRules(rule.cssRules);
+            }
+        });
+    }
+
+    function normalizeStyleSheets() {
+        Array.prototype.forEach.call(document.styleSheets || [], function (sheet) {
+            try {
+                normalizeCssRules(sheet.cssRules || sheet.rules || []);
+            } catch (error) {
+                // Ignore cross-origin stylesheets.
+            }
+        });
+    }
+
+    function normalizeInlineStyles() {
+        if (typeof document.querySelectorAll !== 'function') {
+            return;
+        }
+
+        document.querySelectorAll('[style*="font-family"]').forEach(function (element) {
+            if (element && element.style) {
+                normalizeStyleDeclaration(element.style);
+            }
+        });
+    }
+
+    function normalizeTree(root) {
+        if (!root) {
+            return;
+        }
+
+        if (root.tagName === 'STYLE') {
+            normalizeStyleTag(root);
+            return;
+        }
+
+        if (typeof root.querySelectorAll !== 'function') {
+            return;
+        }
+
+        root.querySelectorAll('style').forEach(normalizeStyleTag);
+    }
+
+    function normalizeAll() {
+        normalizeTree(document);
+        normalizeStyleSheets();
+        normalizeInlineStyles();
+    }
+
+    normalizeAll();
+
+    var observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+            if (mutation.type === 'characterData') {
+                var parent = mutation.target && mutation.target.parentElement;
+
+                if (parent && parent.tagName === 'STYLE') {
+                    normalizeStyleTag(parent);
+                }
+            }
+
+            Array.prototype.forEach.call(mutation.addedNodes || [], normalizeTree);
+        });
+
+        normalizeStyleSheets();
+        normalizeInlineStyles();
+    });
+
+    observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ['style']
+    });
+
+    var repairPasses = 0;
+    var repairTimer = window.setInterval(function () {
+        normalizeAll();
+        repairPasses += 1;
+
+        if (repairPasses >= 40) {
+            window.clearInterval(repairTimer);
+        }
+    }, 250);
+})();
+JS;
+    }
+
+    private function buildBricksBuilderSelectorGroupingScript(array $familyNames): string
+    {
+        $encodedFamilies = wp_json_encode(array_values($familyNames), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        if (!is_string($encodedFamilies) || $encodedFamilies === '') {
+            return '';
+        }
+
+        return <<<JS
+(function () {
+    if (typeof window === 'undefined' || !window.bricksData || !window.bricksData.fonts) {
+        return;
+    }
+
+    var tastyFamilies = {$encodedFamilies};
+
+    if (!Array.isArray(tastyFamilies) || tastyFamilies.length === 0) {
+        return;
+    }
+
+    var data = window.bricksData;
+    var fonts = data.fonts;
+    var standard = Array.isArray(fonts.standard) ? fonts.standard : [];
+    var existingCustom = fonts.custom && typeof fonts.custom === 'object' && !Array.isArray(fonts.custom) ? fonts.custom : {};
+    var tastyLookup = {};
+    var tastyEntries = {};
+    var customEntries = {};
+    var remainingStandard = [];
+    var hasExistingCustom = false;
+
+    tastyFamilies.forEach(function (familyName) {
+        if (typeof familyName !== 'string') {
+            return;
+        }
+
+        familyName = familyName.trim();
+
+        if (!familyName || tastyLookup[familyName]) {
+            return;
+        }
+
+        tastyLookup[familyName] = true;
+    });
+
+    standard.forEach(function (familyName) {
+        if (typeof familyName !== 'string') {
+            return;
+        }
+
+        familyName = familyName.trim();
+
+        if (!familyName) {
+            return;
+        }
+
+        if (!tastyLookup[familyName]) {
+            remainingStandard.push(familyName);
+        }
+    });
+
+    Object.keys(existingCustom).forEach(function (key) {
+        var entry = existingCustom[key];
+        var label = entry && typeof entry.family === 'string' ? entry.family.trim() : key.trim();
+
+        if (!label) {
+            return;
+        }
+
+        if (tastyLookup[label] || tastyLookup[key]) {
+            tastyEntries[label] = entry && typeof entry === 'object' ? entry : { family: label };
+            return;
+        }
+
+        hasExistingCustom = true;
+        customEntries[key] = entry;
+    });
+
+    Object.keys(tastyLookup).forEach(function (familyName) {
+        if (tastyEntries[familyName]) {
+            return;
+        }
+
+        tastyEntries[familyName] = { family: familyName };
+    });
+
+    if (!Object.keys(tastyEntries).length) {
+        return;
+    }
+
+    fonts.standard = remainingStandard;
+    fonts.custom = Object.assign({}, tastyEntries, customEntries);
+
+    if (data.i18n && typeof data.i18n === 'object') {
+        data.i18n.fontsCustom = hasExistingCustom ? 'Tasty Fonts + Custom' : 'Tasty Fonts';
+    }
+})();
+JS;
     }
 
     private function enqueueExternalStylesheets(array $stylesheets, string $handleSuffix = ''): void
@@ -461,6 +804,25 @@ final class RuntimeService
         $value = $settings[$key] ?? null;
 
         return $value !== false;
+    }
+
+    private function bricksSelectorEnabled(): bool
+    {
+        return $this->bricksIntegration->selectorsEnabled($this->settings->getSettings());
+    }
+
+    private function bricksBuilderPreviewEnabled(): bool
+    {
+        return $this->bricksIntegration->builderPreviewEnabled($this->settings->getSettings());
+    }
+
+    private function isBricksBuilderRequest(): bool
+    {
+        if (function_exists('bricks_is_builder')) {
+            return (bool) bricks_is_builder();
+        }
+
+        return isset($_GET['brickspreview']) || isset($_GET['bricks']);
     }
 
     private function hasEtchCanvasRequest(): bool

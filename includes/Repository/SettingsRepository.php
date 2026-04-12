@@ -85,6 +85,12 @@ final class SettingsRepository
         'update_channel' => self::UPDATE_CHANNEL_STABLE,
         'block_editor_font_library_sync_enabled' => null,
         'bricks_integration_enabled' => null,
+        'bricks_selector_fonts_enabled' => true,
+        'bricks_builder_preview_enabled' => true,
+        'bricks_theme_styles_sync_enabled' => false,
+        'bricks_theme_style_target_mode' => 'managed',
+        'bricks_theme_style_target_id' => 'managed',
+        'bricks_disable_google_fonts_enabled' => false,
         'oxygen_integration_enabled' => null,
         'training_wheels_off' => false,
         'monospace_role_enabled' => false,
@@ -159,6 +165,12 @@ final class SettingsRepository
             $settings['block_editor_font_library_sync_enabled'] ?? null
         );
         $settings['bricks_integration_enabled'] = $this->normalizeOptionalBoolean($settings['bricks_integration_enabled'] ?? null);
+        $settings['bricks_selector_fonts_enabled'] = !empty($settings['bricks_selector_fonts_enabled']);
+        $settings['bricks_builder_preview_enabled'] = !empty($settings['bricks_builder_preview_enabled']);
+        $settings['bricks_theme_styles_sync_enabled'] = !empty($settings['bricks_theme_styles_sync_enabled']);
+        $settings['bricks_theme_style_target_mode'] = $this->normalizeBricksThemeStyleTargetMode($settings['bricks_theme_style_target_mode'] ?? 'managed');
+        $settings['bricks_theme_style_target_id'] = $this->normalizeBricksThemeStyleTargetId($settings['bricks_theme_style_target_id'] ?? 'managed');
+        $settings['bricks_disable_google_fonts_enabled'] = !empty($settings['bricks_disable_google_fonts_enabled']);
         $settings['oxygen_integration_enabled'] = $this->normalizeOptionalBoolean($settings['oxygen_integration_enabled'] ?? null);
         $settings['training_wheels_off'] = !empty($settings['training_wheels_off']);
         $settings['monospace_role_enabled'] = !empty($settings['monospace_role_enabled']);
@@ -187,7 +199,9 @@ final class SettingsRepository
         $settings['family_fallbacks'] = $this->normalizeFamilyFallbacks($settings['family_fallbacks'] ?? []);
         $settings['family_font_displays'] = $this->normalizeFamilyFontDisplays($settings['family_font_displays'] ?? []);
         $settings['delete_uploaded_files_on_uninstall'] = !empty($settings['delete_uploaded_files_on_uninstall']);
+        $settings = $this->normalizeBricksBaselineSettings($settings);
         $settings = $this->normalizeMinimalOutputPresetSettings($settings);
+        unset($settings['bricks_variables_sync_enabled']);
         $settings['output_quick_mode_preference'] = $this->resolveOutputQuickModePreference($storedSettings, $settings);
 
         return $this->cacheSettings($settings);
@@ -317,6 +331,34 @@ final class SettingsRepository
             $settings['bricks_integration_enabled'] = $this->normalizeOptionalBoolean($input['bricks_integration_enabled']);
             $settingsChanged = true;
         }
+
+        foreach (
+            [
+                'bricks_selector_fonts_enabled',
+                'bricks_builder_preview_enabled',
+                'bricks_theme_styles_sync_enabled',
+                'bricks_disable_google_fonts_enabled',
+            ] as $field
+        ) {
+            if (!array_key_exists($field, $input)) {
+                continue;
+            }
+
+            $settings[$field] = !empty($input[$field]);
+            $settingsChanged = true;
+        }
+
+        if (array_key_exists('bricks_theme_style_target_id', $input)) {
+            $settings['bricks_theme_style_target_id'] = $this->normalizeBricksThemeStyleTargetId($input['bricks_theme_style_target_id']);
+            $settingsChanged = true;
+        }
+
+        if (array_key_exists('bricks_theme_style_target_mode', $input)) {
+            $settings['bricks_theme_style_target_mode'] = $this->normalizeBricksThemeStyleTargetMode($input['bricks_theme_style_target_mode']);
+            $settingsChanged = true;
+        }
+
+        $settings = $this->normalizeBricksBaselineSettings($settings);
 
         if (array_key_exists('oxygen_integration_enabled', $input)) {
             $settings['oxygen_integration_enabled'] = $this->normalizeOptionalBoolean($input['oxygen_integration_enabled']);
@@ -573,6 +615,12 @@ final class SettingsRepository
         $settings = $this->getSettings();
         $settings['block_editor_font_library_sync_enabled'] = null;
         $settings['bricks_integration_enabled'] = null;
+        $settings['bricks_selector_fonts_enabled'] = true;
+        $settings['bricks_builder_preview_enabled'] = true;
+        $settings['bricks_theme_styles_sync_enabled'] = false;
+        $settings['bricks_theme_style_target_mode'] = 'managed';
+        $settings['bricks_theme_style_target_id'] = 'managed';
+        $settings['bricks_disable_google_fonts_enabled'] = false;
         $settings['oxygen_integration_enabled'] = null;
         $settings['acss_font_role_sync_enabled'] = null;
         $settings['acss_font_role_sync_applied'] = false;
@@ -845,6 +893,22 @@ final class SettingsRepository
     private function defaultBlockEditorFontLibrarySyncEnabled(): bool
     {
         return true;
+    }
+
+    private function normalizeBricksThemeStyleTargetId(mixed $value): string
+    {
+        $targetId = sanitize_text_field(is_scalar($value) ? (string) $value : '');
+        $targetId = trim($targetId);
+
+        return $targetId !== '' ? $targetId : 'managed';
+    }
+
+    private function normalizeBricksThemeStyleTargetMode(mixed $value): string
+    {
+        $mode = sanitize_text_field(is_scalar($value) ? (string) $value : '');
+        $mode = trim($mode);
+
+        return in_array($mode, ['managed', 'selected', 'all'], true) ? $mode : 'managed';
     }
 
     private function normalizeRoleFallback(mixed $value, string $default): string
@@ -1595,5 +1659,15 @@ final class SettingsRepository
         }
 
         return in_array($state, ['unknown', 'valid', 'invalid'], true) ? $state : 'unknown';
+    }
+
+    private function normalizeBricksBaselineSettings(array $settings): array
+    {
+        $bricksEnabled = ($settings['bricks_integration_enabled'] ?? null) !== false;
+
+        $settings['bricks_selector_fonts_enabled'] = $bricksEnabled;
+        $settings['bricks_builder_preview_enabled'] = $bricksEnabled;
+
+        return $settings;
     }
 }

@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Added deep Bricks Builder typography integration with managed Theme Style sync, Theme Style target modes for a Tasty-managed style, one selected style, or all Theme Styles, plus create, delete, and reset actions for the Tasty-managed Bricks Theme Style.
+- Added direct Bricks control over the native `disableGoogleFonts` setting so Tasty Fonts can switch Bricks pickers into a Tasty-only font list.
+
+### Changed
+
+- Simplified the Bricks integration UI by folding selector exposure and builder preview loading into the main Bricks toggle, flattening the settings layout, and clarifying current Theme Style targeting and state reporting.
+- Updated Bricks Theme Style sync to use the existing Tasty role variables directly for family and weight output instead of maintaining a separate Bricks alias-variable layer.
+- Grouped Tasty runtime families into a dedicated top-level Bricks builder picker group so published Tasty fonts are easier to find than when mixed into Bricks standard fonts.
+
+### Fixed
+
+- Fixed Bricks frontend and builder canvas typography when Bricks quoted `var(...)` font-family values, including live canvas CSSOM repairs so Tasty-managed family and weight variables resolve correctly in preview and runtime output.
+- Fixed Bricks Theme Style targeting, reset, and managed-style lifecycle behavior so switching between managed, selected, and all-style modes stays in sync and reset restores user Theme Styles without deleting them.
+
 ## [1.10.0] - 2026-04-12
 
 ### Added

@@ -10263,6 +10263,14 @@
             });
 
             form.addEventListener('submit', (event) => {
+                const submitter = event.submitter instanceof HTMLElement ? event.submitter : null;
+                const forceSubmit = !!(submitter && submitter.hasAttribute('data-settings-force-submit'));
+
+                if (forceSubmit) {
+                    settingsNavigationInFlight = true;
+                    return;
+                }
+
                 if (!syncSettingsFormDirtyState(form)) {
                     event.preventDefault();
                     return;
@@ -10270,6 +10278,78 @@
 
                 settingsNavigationInFlight = true;
             });
+        });
+    }
+
+    function requestForcedSettingsSubmit(form) {
+        if (!(form instanceof HTMLFormElement) || typeof form.requestSubmit !== 'function') {
+            return;
+        }
+
+        const submitter = document.createElement('button');
+        submitter.type = 'submit';
+        submitter.hidden = true;
+        submitter.tabIndex = -1;
+        submitter.setAttribute('data-settings-force-submit', '');
+        submitter.setAttribute('aria-hidden', 'true');
+        form.appendChild(submitter);
+
+        try {
+            form.requestSubmit(submitter);
+        } finally {
+            submitter.remove();
+        }
+    }
+
+    function bindBricksThemeStyleTargetControls() {
+        settingsForms.forEach((form) => {
+            const modeInputs = Array.from(form.querySelectorAll('[data-bricks-theme-style-target-mode]'));
+            const targetSelect = form.querySelector('[data-bricks-theme-style-target-select]');
+
+            if (!modeInputs.length || !(targetSelect instanceof HTMLSelectElement)) {
+                return;
+            }
+
+            const syncTargetSelectState = () => {
+                const activeModeInput = modeInputs.find((input) => input instanceof HTMLInputElement && input.checked);
+                const mode = activeModeInput instanceof HTMLInputElement ? String(activeModeInput.value || '') : '';
+                const selectedMode = mode === 'selected';
+
+                targetSelect.disabled = !selectedMode;
+
+                return mode;
+            };
+
+            modeInputs.forEach((input) => {
+                input.addEventListener('change', () => {
+                    const mode = syncTargetSelectState();
+
+                    if (mode === 'selected') {
+                        if (String(targetSelect.value || '').trim() !== '') {
+                            syncSettingsFormDirtyState(form);
+                            requestForcedSettingsSubmit(form);
+                            return;
+                        }
+
+                        targetSelect.focus();
+                        return;
+                    }
+
+                    syncSettingsFormDirtyState(form);
+                    requestForcedSettingsSubmit(form);
+                });
+            });
+
+            targetSelect.addEventListener('change', () => {
+                if (syncTargetSelectState() !== 'selected') {
+                    return;
+                }
+
+                syncSettingsFormDirtyState(form);
+                requestForcedSettingsSubmit(form);
+            });
+
+            syncTargetSelectState();
         });
     }
 
@@ -10315,6 +10395,7 @@
         bindBunnyImportControls();
         bindUploadControls();
         bindOutputSettingsControls();
+        bindBricksThemeStyleTargetControls();
         bindSettingsForms();
         bindDeveloperToolsControls();
 

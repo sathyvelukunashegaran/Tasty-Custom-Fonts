@@ -52,6 +52,11 @@ final class AdminController
         'output_quick_mode_preference',
         'preview_sentence',
         'update_channel',
+        'bricks_theme_style_target_mode',
+        'bricks_theme_style_target_id',
+        'bricks_create_theme_style',
+        'bricks_delete_theme_style',
+        'bricks_reset_integration',
     ];
     private const SETTINGS_SAVE_BOOLEAN_FIELDS = [
         'minify_css_output',
@@ -79,6 +84,8 @@ final class AdminController
         'remote_connection_hints',
         'block_editor_font_library_sync_enabled',
         'bricks_integration_enabled',
+        'bricks_theme_styles_sync_enabled',
+        'bricks_disable_google_fonts_enabled',
         'oxygen_integration_enabled',
         'acss_font_role_sync_enabled',
         'delete_uploaded_files_on_uninstall',
@@ -612,6 +619,16 @@ final class AdminController
         $clearGoogleKey = !empty($submittedValues['tasty_fonts_clear_google_api_key']);
         $settingsInput = $this->buildSettingsSaveInput($submittedValues);
         $settingsInput = $this->preserveUnavailableIntegrationSettings($settingsInput);
+        $settingsInput = $this->applyBricksThemeStyleActions($settingsInput, $submittedValues);
+
+        if (!empty($submittedValues['bricks_reset_integration'])) {
+            return $this->resetBricksIntegration($previousSettings, $settingsInput);
+        }
+
+        if (!empty($submittedValues['bricks_delete_theme_style'])) {
+            return $this->deleteManagedBricksThemeStyle($previousSettings, $settingsInput);
+        }
+
         $unicodeRangeValidation = $this->validateUnicodeRangeSettingsInput($settingsInput, $previousSettings);
 
         if (is_wp_error($unicodeRangeValidation)) {
@@ -652,6 +669,12 @@ final class AdminController
 
         if (is_wp_error($integrationMessage)) {
             return $integrationMessage;
+        }
+
+        $bricksIntegrationMessage = $this->syncBricksIntegrationAfterSettingsSave($previousSettings, $savedSettings, $settingsInput);
+
+        if (is_wp_error($bricksIntegrationMessage)) {
+            return $bricksIntegrationMessage;
         }
 
         $savedSettings = $this->settings->getSettings();
@@ -708,8 +731,10 @@ final class AdminController
 
         $settingsMessage = $this->buildSettingsSavedMessage($previousSettings, $savedSettings);
 
-        if ($integrationMessage !== '') {
-            $settingsMessage .= ' ' . $integrationMessage;
+        foreach ([$integrationMessage, $bricksIntegrationMessage] as $messagePart) {
+            if ($messagePart !== '') {
+                $settingsMessage .= ' ' . $messagePart;
+            }
         }
 
         $this->log->add($settingsMessage);
@@ -873,6 +898,7 @@ final class AdminController
 
         $this->initializeDetectedIntegrations();
         $this->reconcileAcssIntegrationDrift();
+        $this->reconcileBricksIntegrationState();
 
         if ($this->shouldRedirectNonCanonicalPageRequest()) {
             wp_safe_redirect($this->buildAdminPageUrl($this->resolveRequestedPageType()));
@@ -1229,6 +1255,16 @@ final class AdminController
             if (is_wp_error($integrationMessage)) {
                 $this->redirectWithError($integrationMessage->get_error_message());
             }
+
+            $bricksIntegrationMessage = $this->syncBricksIntegrationForRuntimeState($integrationSettings);
+
+            if (is_wp_error($bricksIntegrationMessage)) {
+                $this->redirectWithError($bricksIntegrationMessage->get_error_message());
+            }
+
+            if ($bricksIntegrationMessage !== '') {
+                $integrationMessage = trim($integrationMessage . ' ' . $bricksIntegrationMessage);
+            }
         }
 
         $this->assets->refreshGeneratedAssets(false);
@@ -1476,6 +1512,29 @@ final class AdminController
                 : __('Bricks integration disabled', 'tasty-fonts');
         }
 
+        foreach (
+            [
+                'bricks_theme_styles_sync_enabled' => __('Bricks Theme Style sync', 'tasty-fonts'),
+                'bricks_disable_google_fonts_enabled' => __('Bricks Google fonts control', 'tasty-fonts'),
+            ] as $field => $label
+        ) {
+            if (!empty($before[$field]) === !empty($after[$field])) {
+                continue;
+            }
+
+            $changes[] = !empty($after[$field])
+                ? sprintf(__('%s enabled', 'tasty-fonts'), $label)
+                : sprintf(__('%s disabled', 'tasty-fonts'), $label);
+        }
+
+        if (($before['bricks_theme_style_target_mode'] ?? BricksIntegrationService::TARGET_MODE_MANAGED) !== ($after['bricks_theme_style_target_mode'] ?? BricksIntegrationService::TARGET_MODE_MANAGED)) {
+            $changes[] = __('Bricks Theme Style mode updated', 'tasty-fonts');
+        }
+
+        if (($before['bricks_theme_style_target_id'] ?? 'managed') !== ($after['bricks_theme_style_target_id'] ?? 'managed')) {
+            $changes[] = __('Bricks Theme Style target updated', 'tasty-fonts');
+        }
+
         if (($before['oxygen_integration_enabled'] ?? null) !== ($after['oxygen_integration_enabled'] ?? null)) {
             $changes[] = ($after['oxygen_integration_enabled'] ?? null) === true
                 ? __('Oxygen integration enabled', 'tasty-fonts')
@@ -1555,6 +1614,10 @@ final class AdminController
             || ($before['update_channel'] ?? SettingsRepository::UPDATE_CHANNEL_STABLE) !== ($after['update_channel'] ?? SettingsRepository::UPDATE_CHANNEL_STABLE)
             || !empty($before['block_editor_font_library_sync_enabled']) !== !empty($after['block_editor_font_library_sync_enabled'])
             || ($before['bricks_integration_enabled'] ?? null) !== ($after['bricks_integration_enabled'] ?? null)
+            || !empty($before['bricks_theme_styles_sync_enabled']) !== !empty($after['bricks_theme_styles_sync_enabled'])
+            || ($before['bricks_theme_style_target_mode'] ?? BricksIntegrationService::TARGET_MODE_MANAGED) !== ($after['bricks_theme_style_target_mode'] ?? BricksIntegrationService::TARGET_MODE_MANAGED)
+            || ($before['bricks_theme_style_target_id'] ?? 'managed') !== ($after['bricks_theme_style_target_id'] ?? 'managed')
+            || !empty($before['bricks_disable_google_fonts_enabled']) !== !empty($after['bricks_disable_google_fonts_enabled'])
             || ($before['oxygen_integration_enabled'] ?? null) !== ($after['oxygen_integration_enabled'] ?? null)
             || ($before['acss_font_role_sync_enabled'] ?? null) !== ($after['acss_font_role_sync_enabled'] ?? null)
             || !empty($before['acss_font_role_sync_applied']) !== !empty($after['acss_font_role_sync_applied']);
@@ -2341,6 +2404,13 @@ final class AdminController
     {
         if (!$this->bricksIntegration->isAvailable()) {
             unset($settingsInput['bricks_integration_enabled']);
+            unset($settingsInput['bricks_theme_styles_sync_enabled']);
+            unset($settingsInput['bricks_theme_style_target_mode']);
+            unset($settingsInput['bricks_theme_style_target_id']);
+            unset($settingsInput['bricks_disable_google_fonts_enabled']);
+            unset($settingsInput['bricks_create_theme_style']);
+            unset($settingsInput['bricks_delete_theme_style']);
+            unset($settingsInput['bricks_reset_integration']);
         }
 
         if (!$this->oxygenIntegration->isAvailable()) {
@@ -2744,6 +2814,39 @@ final class AdminController
         $this->log->add(__('Automatic.css sync turned off after its managed font settings changed outside Tasty Fonts.', 'tasty-fonts'));
     }
 
+    private function reconcileBricksIntegrationState(): void
+    {
+        if (!$this->bricksIntegration->isAvailable()) {
+            return;
+        }
+
+        $settings = $this->settings->getSettings();
+        $masterEnabled = ($settings['bricks_integration_enabled'] ?? null) !== false;
+        $sitewideRolesEnabled = !empty($settings['auto_apply_roles']);
+        $themeStylesEnabled = !empty($settings[BricksIntegrationService::FEATURE_THEME_STYLES]);
+        $targetMode = (string) ($settings['bricks_theme_style_target_mode'] ?? BricksIntegrationService::TARGET_MODE_MANAGED);
+        $targetStyleId = (string) ($settings['bricks_theme_style_target_id'] ?? BricksIntegrationService::MANAGED_THEME_STYLE_ID);
+        $state = $this->bricksIntegration->readState($settings);
+
+        if ($this->bricksIntegration->hasLegacyManagedVariables()) {
+            $this->bricksIntegration->removeLegacyManagedVariables();
+            $this->log->add(__('Removed legacy Bricks alias variables so Bricks Theme Styles can use the Tasty role variables directly.', 'tasty-fonts'));
+        }
+
+        if (
+            $masterEnabled
+            && $sitewideRolesEnabled
+            && $themeStylesEnabled
+            && (($state['theme_styles']['status'] ?? '') === 'ready')
+        ) {
+            $result = $this->bricksIntegration->applyThemeStylesSync($targetMode, $targetStyleId);
+
+            if (!is_wp_error($result)) {
+                $this->log->add(__('Updated the selected Bricks Theme Style to use the Tasty role variables directly.', 'tasty-fonts'));
+            }
+        }
+    }
+
     private function syncAcssIntegrationAfterSettingsSave(array $previousSettings, array $savedSettings, array $settingsInput): string|WP_Error
     {
         if (!array_key_exists('acss_font_role_sync_enabled', $settingsInput)) {
@@ -2758,6 +2861,283 @@ final class AdminController
         }
 
         return $this->syncAcssIntegrationForRuntimeState($savedSettings, true);
+    }
+
+    private function applyBricksThemeStyleActions(array $settingsInput, array $submittedValues): array
+    {
+        $hasThemeStyleTargetSubmission = !empty($submittedValues['bricks_create_theme_style'])
+            || array_key_exists(BricksIntegrationService::FEATURE_THEME_STYLES, $settingsInput)
+            || array_key_exists('bricks_theme_style_target_mode', $settingsInput)
+            || array_key_exists('bricks_theme_style_target_id', $settingsInput);
+
+        if (!$hasThemeStyleTargetSubmission) {
+            return $settingsInput;
+        }
+
+        if (!empty($submittedValues['bricks_create_theme_style'])) {
+            $settingsInput['bricks_integration_enabled'] = true;
+            $settingsInput[BricksIntegrationService::FEATURE_THEME_STYLES] = true;
+            $settingsInput['bricks_theme_style_target_mode'] = BricksIntegrationService::TARGET_MODE_MANAGED;
+            $settingsInput['bricks_theme_style_target_id'] = BricksIntegrationService::MANAGED_THEME_STYLE_ID;
+        }
+
+        $targetMode = (string) ($settingsInput['bricks_theme_style_target_mode'] ?? BricksIntegrationService::TARGET_MODE_MANAGED);
+
+        if (!in_array($targetMode, [
+            BricksIntegrationService::TARGET_MODE_MANAGED,
+            BricksIntegrationService::TARGET_MODE_SELECTED,
+            BricksIntegrationService::TARGET_MODE_ALL,
+        ], true)) {
+            $targetMode = BricksIntegrationService::TARGET_MODE_MANAGED;
+        }
+
+        $settingsInput['bricks_theme_style_target_mode'] = $targetMode;
+
+        if ($targetMode !== BricksIntegrationService::TARGET_MODE_SELECTED) {
+            $settingsInput['bricks_theme_style_target_id'] = BricksIntegrationService::MANAGED_THEME_STYLE_ID;
+
+            return $settingsInput;
+        }
+
+        $availableStyles = $this->bricksIntegration->getThemeStyleChoices();
+        $fallbackTargetId = array_key_first($availableStyles) ?: BricksIntegrationService::MANAGED_THEME_STYLE_ID;
+        $requestedTargetId = trim((string) ($settingsInput['bricks_theme_style_target_id'] ?? ''));
+
+        $settingsInput['bricks_theme_style_target_id'] = $requestedTargetId !== '' && isset($availableStyles[$requestedTargetId])
+            ? $requestedTargetId
+            : $fallbackTargetId;
+
+        return $settingsInput;
+    }
+
+    private function deleteManagedBricksThemeStyle(array $previousSettings, array $settingsInput): array|WP_Error
+    {
+        $deleted = $this->bricksIntegration->deleteManagedThemeStyle();
+
+        if (is_wp_error($deleted)) {
+            return $deleted;
+        }
+
+        $availableStyles = $this->bricksIntegration->getThemeStyleChoices();
+        $fallbackTargetId = array_key_first($availableStyles) ?: BricksIntegrationService::MANAGED_THEME_STYLE_ID;
+        $wasUsingManagedTarget = ($previousSettings['bricks_theme_style_target_mode'] ?? BricksIntegrationService::TARGET_MODE_MANAGED) === BricksIntegrationService::TARGET_MODE_MANAGED;
+
+        $settingsInput['bricks_theme_style_target_mode'] = $wasUsingManagedTarget && $fallbackTargetId !== BricksIntegrationService::MANAGED_THEME_STYLE_ID
+            ? BricksIntegrationService::TARGET_MODE_SELECTED
+            : (string) ($previousSettings['bricks_theme_style_target_mode'] ?? BricksIntegrationService::TARGET_MODE_MANAGED);
+        $settingsInput['bricks_theme_style_target_id'] = $fallbackTargetId;
+
+        if ($wasUsingManagedTarget && $fallbackTargetId === BricksIntegrationService::MANAGED_THEME_STYLE_ID) {
+            $settingsInput[BricksIntegrationService::FEATURE_THEME_STYLES] = false;
+        }
+
+        $savedSettings = $this->settings->saveSettings($settingsInput);
+        $bricksMessage = $this->syncBricksIntegrationAfterSettingsSave($previousSettings, $savedSettings, $settingsInput);
+
+        if (is_wp_error($bricksMessage)) {
+            return $bricksMessage;
+        }
+
+        $savedSettings = $this->settings->getSettings();
+        $reloadRequired = $this->settingsChangeRequiresReload($previousSettings, $savedSettings);
+        $catalog = $this->catalog->getCatalog();
+        $availableFamilies = $this->buildSelectableFamilyNames($catalog);
+        $roles = $this->settings->getRoles($availableFamilies);
+        $appliedRoles = $this->settings->getAppliedRoles($availableFamilies);
+        $outputPanels = $this->buildOutputPanels($roles, $savedSettings, $catalog, $appliedRoles);
+        $message = __('The Tasty Fonts Theme Style was deleted from Bricks.', 'tasty-fonts');
+
+        if ($bricksMessage !== '') {
+            $message .= ' ' . $bricksMessage;
+        }
+
+        if ($reloadRequired) {
+            $message .= ' ' . __('Reload the page to apply this change.', 'tasty-fonts');
+        }
+
+        return [
+            'message' => $message,
+            'settings' => $savedSettings,
+            'reload_required' => $reloadRequired,
+            'output_panels' => $outputPanels,
+        ];
+    }
+
+    private function resetBricksIntegration(array $previousSettings, array $settingsInput): array|WP_Error
+    {
+        $settingsInput['bricks_integration_enabled'] = false;
+        $settingsInput[BricksIntegrationService::FEATURE_THEME_STYLES] = false;
+        $settingsInput[BricksIntegrationService::FEATURE_DISABLE_GOOGLE_FONTS] = false;
+        $settingsInput['bricks_theme_style_target_mode'] = BricksIntegrationService::TARGET_MODE_MANAGED;
+        $settingsInput['bricks_theme_style_target_id'] = BricksIntegrationService::MANAGED_THEME_STYLE_ID;
+
+        $savedSettings = $this->settings->saveSettings($settingsInput);
+
+        $bricksResetMessage = $this->syncBricksIntegrationForReset();
+
+        if (is_wp_error($bricksResetMessage)) {
+            return $bricksResetMessage;
+        }
+
+        $savedSettings = $this->settings->getSettings();
+        $reloadRequired = $this->settingsChangeRequiresReload($previousSettings, $savedSettings);
+        $catalog = $this->catalog->getCatalog();
+        $availableFamilies = $this->buildSelectableFamilyNames($catalog);
+        $roles = $this->settings->getRoles($availableFamilies);
+        $appliedRoles = $this->settings->getAppliedRoles($availableFamilies);
+        $outputPanels = $this->buildOutputPanels($roles, $savedSettings, $catalog, $appliedRoles);
+        $message = __('Bricks integration reset. Previous Theme Styles and Bricks font settings were restored.', 'tasty-fonts');
+
+        if ($bricksResetMessage !== '') {
+            $message .= ' ' . $bricksResetMessage;
+        }
+
+        if ($reloadRequired) {
+            $message .= ' ' . __('Reload the page to apply this change.', 'tasty-fonts');
+        }
+
+        return [
+            'message' => $message,
+            'settings' => $savedSettings,
+            'reload_required' => $reloadRequired,
+            'output_panels' => $outputPanels,
+        ];
+    }
+
+    private function syncBricksIntegrationForReset(): string|WP_Error
+    {
+        if (!$this->bricksIntegration->isAvailable()) {
+            return '';
+        }
+
+        $messages = [];
+
+        if ($this->bricksIntegration->hasLegacyManagedVariables()) {
+            $this->bricksIntegration->removeLegacyManagedVariables();
+            $messages[] = __('Legacy Bricks alias variables were removed.', 'tasty-fonts');
+        }
+
+        $state = $this->bricksIntegration->getSyncState();
+
+        if (!empty($state['theme_styles']['applied'])) {
+            $restore = $this->bricksIntegration->restoreThemeStylesSync();
+
+            if (is_wp_error($restore)) {
+                return $restore;
+            }
+
+            $messages[] = __('Bricks Theme Styles were restored.', 'tasty-fonts');
+        }
+
+        $state = $this->bricksIntegration->getSyncState();
+
+        if (!empty($state['google_fonts']['applied'])) {
+            $restore = $this->bricksIntegration->restoreGoogleFontsSetting();
+
+            if (is_wp_error($restore)) {
+                return $restore;
+            }
+
+            $messages[] = __('Bricks Google font settings were restored.', 'tasty-fonts');
+        }
+
+        return implode(' ', $messages);
+    }
+
+    private function syncBricksIntegrationAfterSettingsSave(array $previousSettings, array $savedSettings, array $settingsInput): string|WP_Error
+    {
+        foreach (
+            [
+                'bricks_integration_enabled',
+                BricksIntegrationService::FEATURE_THEME_STYLES,
+                'bricks_theme_style_target_mode',
+                'bricks_theme_style_target_id',
+                BricksIntegrationService::FEATURE_DISABLE_GOOGLE_FONTS,
+                'auto_apply_roles',
+            ] as $field
+        ) {
+            if (array_key_exists($field, $settingsInput)) {
+                return $this->syncBricksIntegrationForRuntimeState($savedSettings, true);
+            }
+        }
+
+        return '';
+    }
+
+    private function syncBricksIntegrationForRuntimeState(array $settings, bool $clearBackupWhenDisabled = false): string|WP_Error
+    {
+        if (!$this->bricksIntegration->isAvailable()) {
+            return '';
+        }
+
+        $masterEnabled = ($settings['bricks_integration_enabled'] ?? null) !== false;
+        $sitewideRolesEnabled = !empty($settings['auto_apply_roles']);
+        $messages = [];
+        $bricksState = $this->bricksIntegration->readState($settings);
+
+        $themeStylesEnabled = !empty($settings[BricksIntegrationService::FEATURE_THEME_STYLES]);
+        $disableGoogleFontsEnabled = !empty($settings[BricksIntegrationService::FEATURE_DISABLE_GOOGLE_FONTS]);
+        $targetMode = (string) ($settings['bricks_theme_style_target_mode'] ?? BricksIntegrationService::TARGET_MODE_MANAGED);
+        $targetStyleId = (string) ($settings['bricks_theme_style_target_id'] ?? BricksIntegrationService::MANAGED_THEME_STYLE_ID);
+
+        if ($this->bricksIntegration->hasLegacyManagedVariables()) {
+            $this->bricksIntegration->removeLegacyManagedVariables();
+            $messages[] = __('Legacy Bricks alias variables were removed so Theme Styles can use the existing Tasty role variables directly.', 'tasty-fonts');
+        }
+
+        $bricksState = $this->bricksIntegration->readState($settings);
+
+        if (!$masterEnabled || !$themeStylesEnabled || !$sitewideRolesEnabled) {
+            if (!empty($bricksState['theme_styles']['applied'])) {
+                $restore = $this->bricksIntegration->restoreThemeStylesSync();
+
+                if (is_wp_error($restore)) {
+                    return $restore;
+                }
+
+                if (!$masterEnabled) {
+                    $messages[] = __('Bricks Theme Styles were restored because the Bricks integration is off.', 'tasty-fonts');
+                } elseif (!$sitewideRolesEnabled) {
+                    $messages[] = __('Bricks Theme Styles were restored because sitewide role delivery is off.', 'tasty-fonts');
+                } else {
+                    $messages[] = __('Bricks Theme Style sync was turned off and the previous Theme Styles were restored.', 'tasty-fonts');
+                }
+            }
+        } elseif (($bricksState['theme_styles']['status'] ?? '') !== 'synced') {
+            $result = $this->bricksIntegration->applyThemeStylesSync($targetMode, $targetStyleId);
+
+            if (is_wp_error($result)) {
+                return $result;
+            }
+
+            $messages[] = __('Bricks Theme Styles now use the Tasty Fonts sitewide typography variables.', 'tasty-fonts');
+        }
+
+        $bricksState = $this->bricksIntegration->readState($settings);
+
+        if (!$masterEnabled || !$disableGoogleFontsEnabled) {
+            if (!empty($bricksState['google_fonts']['applied'])) {
+                $restore = $this->bricksIntegration->restoreGoogleFontsSetting();
+
+                if (is_wp_error($restore)) {
+                    return $restore;
+                }
+
+                $messages[] = !$masterEnabled
+                    ? __('Bricks Google fonts control was restored because the Bricks integration is off.', 'tasty-fonts')
+                    : __('Bricks Google fonts control was turned off and the previous Bricks setting was restored.', 'tasty-fonts');
+            }
+        } elseif (($bricksState['google_fonts']['status'] ?? '') !== 'synced') {
+            $result = $this->bricksIntegration->applyGoogleFontsSetting();
+
+            if (is_wp_error($result)) {
+                return $result;
+            }
+
+            $messages[] = __('Bricks Google fonts are now disabled so Bricks font pickers show only Tasty-supplied fonts.', 'tasty-fonts');
+        }
+
+        return implode(' ', array_values(array_unique(array_filter($messages, 'strlen'))));
     }
 
     private function syncAcssIntegrationForRuntimeState(array $settings, bool $clearBackupWhenDisabled = false): string|WP_Error

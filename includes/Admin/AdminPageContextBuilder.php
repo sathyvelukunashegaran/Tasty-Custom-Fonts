@@ -782,15 +782,21 @@ final class AdminPageContextBuilder
 
     public function buildBricksIntegrationContext(array $settings): array
     {
-        $state = $this->bricksIntegration->readState($settings['bricks_integration_enabled'] ?? null);
+        $state = $this->bricksIntegration->readState($settings);
 
         return array_merge(
             $state,
             [
                 'title' => __('Bricks Builder', 'tasty-fonts'),
-                'description' => __('Expose published Tasty Fonts families inside Bricks selectors and mirror Bricks theme font families into Gutenberg.', 'tasty-fonts'),
+                'description' => __('Choose which Bricks controls Tasty Fonts should manage for selectors, builder previews, Theme Styles, and Bricks font settings.', 'tasty-fonts'),
                 'status_label' => $this->buildBuilderIntegrationStatusLabel((string) ($state['status'] ?? 'disabled')),
                 'status_copy' => $this->buildBricksIntegrationStatusCopy((string) ($state['status'] ?? 'disabled')),
+                'feature_descriptions' => [
+                    'selectors' => __('Show published Tasty families directly inside Bricks font controls.', 'tasty-fonts'),
+                    'builder_preview' => __('Load the active Tasty delivery in Bricks builder previews for local, CDN, and Adobe fonts.', 'tasty-fonts'),
+                    'theme_styles' => __('Update only the font-family and font-weight fields on the managed Theme Style, one selected Theme Style, or every Bricks Theme Style.', 'tasty-fonts'),
+                    'google_fonts' => __('Turn on Bricks’ own “disable Google Fonts” setting so Bricks pickers show only Tasty-supplied fonts.', 'tasty-fonts'),
+                ],
             ]
         );
     }
@@ -1061,9 +1067,9 @@ final class AdminPageContextBuilder
     private function buildBricksIntegrationStatusCopy(string $status): string
     {
         return match ($status) {
-            'active' => __('Bricks is active. Published Tasty Fonts families will appear in Bricks selectors, and matching Bricks theme font families will be mirrored into Gutenberg.', 'tasty-fonts'),
+            'active' => __('Bricks is active. Use the controls below to decide whether Tasty Fonts should sync Theme Styles or disable Bricks’ own Google fonts.', 'tasty-fonts'),
             'unavailable' => __('Bricks is not active on this site yet. If you install or reactivate Bricks later, this integration can turn on automatically.', 'tasty-fonts'),
-            default => __('Bricks integration is off. Tasty Fonts will stay out of Bricks selectors and will not mirror Bricks font-family choices into Gutenberg.', 'tasty-fonts'),
+            default => __('Bricks integration is off. Tasty Fonts will leave Bricks selectors, Theme Styles, and Google font settings unchanged.', 'tasty-fonts'),
         };
     }
 

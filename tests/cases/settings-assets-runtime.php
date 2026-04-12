@@ -14,6 +14,7 @@ use TastyFonts\Fonts\FontFilenameParser;
 use TastyFonts\Fonts\RuntimeAssetPlanner;
 use TastyFonts\Google\GoogleFontsClient;
 use TastyFonts\Integrations\AcssIntegrationService;
+use TastyFonts\Integrations\BricksIntegrationService;
 use TastyFonts\Repository\ImportRepository;
 use TastyFonts\Repository\LogRepository;
 use TastyFonts\Repository\SettingsRepository;
@@ -2969,14 +2970,250 @@ $tests['settings_repository_tracks_builder_integration_state'] = static function
 
     assertSameValue(null, $defaults['bricks_integration_enabled'], 'Bricks integration should start unconfigured so supported sites can default on once detected.');
     assertSameValue(null, $defaults['oxygen_integration_enabled'], 'Oxygen integration should start unconfigured so supported sites can default on once detected.');
+    assertSameValue(true, $defaults['bricks_selector_fonts_enabled'], 'Bricks selector font exposure should stay enabled as part of the Bricks baseline.');
+    assertSameValue(true, $defaults['bricks_builder_preview_enabled'], 'Bricks builder preview loading should stay enabled as part of the Bricks baseline.');
+    assertSameValue(false, array_key_exists('bricks_variables_sync_enabled', $defaults), 'Bricks should no longer persist the removed legacy variable-sync setting.');
+    assertSameValue(false, $defaults['bricks_theme_styles_sync_enabled'], 'Bricks Theme Style sync should default off until the user opts into deeper integration.');
+    assertSameValue('managed', $defaults['bricks_theme_style_target_mode'], 'Bricks Theme Style sync should default to the managed target mode.');
+    assertSameValue('managed', $defaults['bricks_theme_style_target_id'], 'Bricks Theme Style sync should default to the managed Tasty Theme Style target.');
+    assertSameValue(false, $defaults['bricks_disable_google_fonts_enabled'], 'Bricks Google font disabling should default off until the user opts into Tasty-only picker mode.');
 
     $saved = $settings->saveSettings([
         'bricks_integration_enabled' => '1',
+        'bricks_theme_styles_sync_enabled' => '1',
+        'bricks_theme_style_target_mode' => 'selected',
+        'bricks_theme_style_target_id' => 'sitewide-primary',
+        'bricks_disable_google_fonts_enabled' => '1',
         'oxygen_integration_enabled' => '0',
     ]);
 
     assertSameValue(true, $saved['bricks_integration_enabled'], 'Saving the Bricks integration toggle should persist an explicit enabled state.');
+    assertSameValue(true, $saved['bricks_selector_fonts_enabled'], 'Saving the Bricks integration toggle should keep selector exposure enabled as part of the baseline.');
+    assertSameValue(true, $saved['bricks_builder_preview_enabled'], 'Saving the Bricks integration toggle should keep builder preview loading enabled as part of the baseline.');
+    assertSameValue(true, $saved['bricks_theme_styles_sync_enabled'], 'Saving Bricks Theme Style sync should persist an explicit enabled state.');
+    assertSameValue('selected', $saved['bricks_theme_style_target_mode'], 'Saving the Bricks Theme Style mode should persist the selected targeting strategy.');
+    assertSameValue('sitewide-primary', $saved['bricks_theme_style_target_id'], 'Saving the Bricks Theme Style target should persist the selected style ID.');
+    assertSameValue(true, $saved['bricks_disable_google_fonts_enabled'], 'Saving Bricks Google font disabling should persist an explicit enabled state.');
     assertSameValue(false, $saved['oxygen_integration_enabled'], 'Saving the Oxygen integration toggle should persist an explicit disabled state.');
+};
+
+$tests['admin_controller_creates_a_managed_bricks_theme_style_target_when_requested'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+
+    $result = $services['controller']->saveSettingsValues([
+        'bricks_create_theme_style' => '1',
+    ]);
+    $settings = $result['settings'];
+
+    assertSameValue(true, $settings['bricks_integration_enabled'], 'Creating a managed Bricks Theme Style should turn on the master Bricks integration bridge.');
+    assertSameValue(true, $settings['bricks_theme_styles_sync_enabled'], 'Creating a managed Bricks Theme Style should enable Bricks Theme Style sync.');
+    assertSameValue(BricksIntegrationService::TARGET_MODE_MANAGED, $settings['bricks_theme_style_target_mode'], 'Creating a managed Bricks Theme Style should switch the target mode to the managed Tasty Theme Style.');
+    assertSameValue(BricksIntegrationService::MANAGED_THEME_STYLE_ID, $settings['bricks_theme_style_target_id'], 'Creating a managed Bricks Theme Style should target the managed Tasty Theme Style.');
+};
+
+$tests['admin_controller_switches_bricks_theme_style_mode_back_to_managed_cleanly'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $optionStore[BRICKS_DB_THEME_STYLES] = [
+        'sitewide-primary' => [
+            'label' => 'Primary',
+            'settings' => [
+                'typography' => [
+                    'typographyBody' => ['font-family' => 'Inter'],
+                    'typographyHeadings' => ['font-family' => 'Lora'],
+                ],
+            ],
+        ],
+        BricksIntegrationService::MANAGED_THEME_STYLE_ID => [
+            'label' => 'Tasty Fonts',
+            'settings' => [
+                'typography' => [
+                    'typographyBody' => ['font-family' => 'Georgia'],
+                    'typographyHeadings' => ['font-family' => 'Merriweather'],
+                ],
+            ],
+        ],
+    ];
+
+    $services['settings']->saveSettings([
+        'bricks_integration_enabled' => '1',
+        'bricks_theme_styles_sync_enabled' => '1',
+        'bricks_theme_style_target_mode' => BricksIntegrationService::TARGET_MODE_SELECTED,
+        'bricks_theme_style_target_id' => 'sitewide-primary',
+    ]);
+    $services['settings']->setAutoApplyRoles(true);
+    $services['bricks_integration']->applyThemeStylesSync(BricksIntegrationService::TARGET_MODE_SELECTED, 'sitewide-primary');
+
+    $result = $services['controller']->saveSettingsValues([
+        'bricks_theme_style_target_mode' => BricksIntegrationService::TARGET_MODE_MANAGED,
+        'bricks_theme_style_target_id' => 'sitewide-primary',
+    ]);
+    $syncState = $services['bricks_integration']->getSyncState();
+
+    assertSameValue(
+        BricksIntegrationService::TARGET_MODE_MANAGED,
+        (string) ($result['settings']['bricks_theme_style_target_mode'] ?? ''),
+        'Switching Bricks Theme Style mode back to managed should persist the managed target mode.'
+    );
+    assertSameValue(
+        BricksIntegrationService::MANAGED_THEME_STYLE_ID,
+        (string) ($result['settings']['bricks_theme_style_target_id'] ?? ''),
+        'Switching Bricks Theme Style mode back to managed should discard the stale selected style ID.'
+    );
+    assertSameValue(
+        BricksIntegrationService::TARGET_MODE_MANAGED,
+        (string) ($syncState['theme_styles']['target_mode'] ?? ''),
+        'Switching Bricks Theme Style mode back to managed should update the stored Bricks sync target mode.'
+    );
+    assertSameValue(
+        BricksIntegrationService::MANAGED_THEME_STYLE_ID,
+        (string) ($syncState['theme_styles']['target_style_id'] ?? ''),
+        'Switching Bricks Theme Style mode back to managed should update the stored Bricks sync target ID.'
+    );
+    assertSameValue(
+        BricksIntegrationService::DESIRED_BODY_VALUE,
+        (string) (($optionStore[BRICKS_DB_THEME_STYLES][BricksIntegrationService::MANAGED_THEME_STYLE_ID]['settings']['typography']['typographyBody']['font-family'] ?? '')),
+        'Switching Bricks Theme Style mode back to managed should reapply Tasty typography to the managed Bricks Theme Style.'
+    );
+};
+
+$tests['admin_controller_resets_bricks_integration_state_and_restores_bricks_options'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $optionStore[BRICKS_DB_THEME_STYLES] = [
+        'sitewide-primary' => [
+            'label' => 'Sitewide Primary',
+            'settings' => [
+                'conditions' => ['conditions' => [['priority' => 10]]],
+                'typography' => [
+                    'typographyBody' => ['font-family' => 'Inter'],
+                    'typographyHeadings' => ['font-family' => 'Lora'],
+                ],
+            ],
+        ],
+    ];
+    $optionStore[BricksIntegrationService::OPTION_GLOBAL_SETTINGS] = ['builderHeaderSticky' => true];
+
+    $services['settings']->saveSettings([
+        'bricks_integration_enabled' => '1',
+        'bricks_theme_styles_sync_enabled' => '1',
+        'bricks_theme_style_target_mode' => 'selected',
+        'bricks_theme_style_target_id' => 'sitewide-primary',
+        'bricks_disable_google_fonts_enabled' => '1',
+    ]);
+    $services['settings']->setAutoApplyRoles(true);
+    $optionStore[BricksIntegrationService::OPTION_GLOBAL_VARIABLES] = [
+        ['id' => BricksIntegrationService::VARIABLE_NAME_BODY, 'name' => BricksIntegrationService::VARIABLE_NAME_BODY, 'value' => 'var(--font-body)', 'category' => BricksIntegrationService::VARIABLE_CATEGORY_ID],
+    ];
+    $optionStore[BricksIntegrationService::OPTION_GLOBAL_VARIABLE_CATEGORIES] = [
+        ['id' => BricksIntegrationService::VARIABLE_CATEGORY_ID, 'name' => 'Tasty Fonts'],
+    ];
+    $services['bricks_integration']->applyThemeStylesSync('sitewide-primary');
+    $services['bricks_integration']->applyGoogleFontsSetting();
+
+    $result = $services['controller']->saveSettingsValues([
+        'bricks_reset_integration' => '1',
+    ]);
+
+    assertSameValue(false, $result['settings']['bricks_integration_enabled'], 'Resetting Bricks integration should disable the master Bricks integration switch.');
+    assertSameValue(false, $result['settings']['bricks_theme_styles_sync_enabled'], 'Resetting Bricks integration should disable Bricks Theme Style sync.');
+    assertSameValue(false, $result['settings']['bricks_disable_google_fonts_enabled'], 'Resetting Bricks integration should disable Bricks Google font control.');
+    assertSameValue(BricksIntegrationService::TARGET_MODE_MANAGED, $result['settings']['bricks_theme_style_target_mode'], 'Resetting Bricks integration should restore the managed Theme Style target mode.');
+    assertSameValue(
+        'Inter',
+        (string) (($optionStore[BRICKS_DB_THEME_STYLES]['sitewide-primary']['settings']['typography']['typographyBody']['font-family'] ?? '')),
+        'Resetting Bricks integration should restore the original Bricks Theme Style values.'
+    );
+    assertSameValue(
+        ['builderHeaderSticky' => true],
+        (array) ($optionStore[BricksIntegrationService::OPTION_GLOBAL_SETTINGS] ?? []),
+        'Resetting Bricks integration should restore the previous Bricks global settings.'
+    );
+    assertSameValue(
+        [],
+        array_values(
+            array_filter(
+                (array) ($optionStore[BricksIntegrationService::OPTION_GLOBAL_VARIABLES] ?? []),
+                static fn (array $variable): bool => strpos((string) ($variable['name'] ?? ''), 'tasty-font-') === 0
+            )
+        ),
+        'Resetting Bricks integration should remove legacy Bricks alias variables.'
+    );
+};
+
+$tests['admin_controller_reconciles_legacy_bricks_alias_variables_into_direct_role_variables'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings([
+        'bricks_integration_enabled' => '1',
+        'bricks_theme_styles_sync_enabled' => '1',
+        'bricks_theme_style_target_mode' => BricksIntegrationService::TARGET_MODE_MANAGED,
+        'bricks_theme_style_target_id' => BricksIntegrationService::MANAGED_THEME_STYLE_ID,
+    ]);
+    $services['settings']->setAutoApplyRoles(true);
+
+    $optionStore[BRICKS_DB_THEME_STYLES] = [
+        BricksIntegrationService::MANAGED_THEME_STYLE_ID => [
+            'label' => 'Tasty Fonts',
+            'settings' => [
+                'conditions' => [
+                    'conditions' => [
+                        ['key' => 'main', 'compare' => '==', 'value' => 'any', 'priority' => 10],
+                    ],
+                ],
+                'typography' => [
+                    'typographyBody' => ['font-family' => 'var(--tasty-font-body)', 'font-weight' => 'var(--tasty-font-body-weight)'],
+                    'typographyHeadings' => ['font-family' => 'var(--tasty-font-heading)', 'font-weight' => 'var(--tasty-font-heading-weight)'],
+                ],
+            ],
+        ],
+    ];
+    $optionStore[BricksIntegrationService::OPTION_GLOBAL_VARIABLES] = [
+        ['id' => BricksIntegrationService::VARIABLE_NAME_BODY, 'name' => BricksIntegrationService::VARIABLE_NAME_BODY, 'value' => 'var(--font-body)', 'category' => BricksIntegrationService::VARIABLE_CATEGORY_ID],
+        ['id' => BricksIntegrationService::VARIABLE_NAME_HEADING, 'name' => BricksIntegrationService::VARIABLE_NAME_HEADING, 'value' => 'var(--font-heading)', 'category' => BricksIntegrationService::VARIABLE_CATEGORY_ID],
+        ['id' => BricksIntegrationService::VARIABLE_NAME_BODY_WEIGHT, 'name' => BricksIntegrationService::VARIABLE_NAME_BODY_WEIGHT, 'value' => 'var(--font-body-weight)', 'category' => BricksIntegrationService::VARIABLE_CATEGORY_ID],
+        ['id' => BricksIntegrationService::VARIABLE_NAME_HEADING_WEIGHT, 'name' => BricksIntegrationService::VARIABLE_NAME_HEADING_WEIGHT, 'value' => 'var(--font-heading-weight)', 'category' => BricksIntegrationService::VARIABLE_CATEGORY_ID],
+    ];
+    $optionStore[BricksIntegrationService::OPTION_GLOBAL_VARIABLE_CATEGORIES] = [
+        ['id' => BricksIntegrationService::VARIABLE_CATEGORY_ID, 'name' => 'Tasty Fonts'],
+    ];
+    update_option(
+        BricksIntegrationService::OPTION_SYNC_STATE,
+        [
+            'theme_styles' => ['applied' => true, 'target_mode' => BricksIntegrationService::TARGET_MODE_MANAGED, 'target_style_id' => BricksIntegrationService::MANAGED_THEME_STYLE_ID],
+            'google_fonts' => ['applied' => false],
+        ],
+        false
+    );
+
+    invokePrivateMethod($services['controller'], 'reconcileBricksIntegrationState');
+
+    assertSameValue(
+        BricksIntegrationService::DESIRED_BODY_VALUE,
+        (string) (($optionStore[BRICKS_DB_THEME_STYLES][BricksIntegrationService::MANAGED_THEME_STYLE_ID]['settings']['typography']['typographyBody']['font-family'] ?? '')),
+        'Bricks reconciliation should migrate stored Theme Styles from legacy alias variables to the direct Tasty role variables.'
+    );
+    assertSameValue(
+        [],
+        array_values(
+            array_filter(
+                (array) ($optionStore[BricksIntegrationService::OPTION_GLOBAL_VARIABLES] ?? []),
+                static fn (array $variable): bool => strpos((string) ($variable['name'] ?? ''), 'tasty-font-') === 0
+            )
+        ),
+        'Bricks reconciliation should remove the legacy Bricks alias variables after migrating Theme Styles.'
+    );
 };
 
 $tests['runtime_service_adds_only_runtime_families_to_bricks_standard_fonts'] = static function (): void {
@@ -3015,7 +3252,677 @@ $tests['runtime_service_adds_only_runtime_families_to_bricks_standard_fonts'] = 
 
     $fonts = $services['runtime']->filterBricksStandardFonts(['Arial']);
 
-    assertSameValue(['Arial', 'Inter'], $fonts, 'Bricks should receive existing standard fonts plus published Tasty Fonts runtime families only.');
+    assertSameValue(['Inter', 'Arial'], $fonts, 'Bricks should receive published Tasty Fonts runtime families first, followed by existing standard fonts.');
+};
+
+$tests['bricks_integration_service_removes_legacy_managed_variables'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $optionStore[BricksIntegrationService::OPTION_GLOBAL_VARIABLES] = [
+        [
+            'id' => 'brand-primary',
+            'name' => 'brand-primary',
+            'value' => '#222',
+            'category' => 'colors',
+        ],
+    ];
+    $optionStore[BricksIntegrationService::OPTION_GLOBAL_VARIABLE_CATEGORIES] = [
+        [
+            'id' => 'colors',
+            'name' => 'Colors',
+        ],
+    ];
+
+    $optionStore[BricksIntegrationService::OPTION_GLOBAL_VARIABLES][] = [
+        'id' => BricksIntegrationService::VARIABLE_NAME_BODY,
+        'name' => BricksIntegrationService::VARIABLE_NAME_BODY,
+        'value' => 'var(--font-body)',
+        'category' => BricksIntegrationService::VARIABLE_CATEGORY_ID,
+    ];
+    $optionStore[BricksIntegrationService::OPTION_GLOBAL_VARIABLE_CATEGORIES][] = [
+        'id' => BricksIntegrationService::VARIABLE_CATEGORY_ID,
+        'name' => 'Tasty Fonts',
+    ];
+
+    $services['bricks_integration']->removeLegacyManagedVariables();
+
+    assertSameValue(
+        [
+            [
+                'id' => 'brand-primary',
+                'name' => 'brand-primary',
+                'value' => '#222',
+                'category' => 'colors',
+            ],
+        ],
+        $optionStore[BricksIntegrationService::OPTION_GLOBAL_VARIABLES] ?? [],
+        'Removing legacy Bricks variables should preserve the unrelated Bricks global variables.'
+    );
+    assertSameValue(
+        [
+            [
+                'id' => 'colors',
+                'name' => 'Colors',
+            ],
+        ],
+        $optionStore[BricksIntegrationService::OPTION_GLOBAL_VARIABLE_CATEGORIES] ?? [],
+        'Removing legacy Bricks variables should preserve the unrelated Bricks variable categories.'
+    );
+};
+
+$tests['bricks_integration_service_applies_and_restores_managed_theme_styles'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $optionStore[BRICKS_DB_THEME_STYLES] = [
+        'style-primary' => [
+            'label' => 'Primary',
+            'settings' => [
+                'conditions' => [
+                    'conditions' => [
+                        ['priority' => 10],
+                    ],
+                ],
+                'typography' => [
+                    'typographyBody' => ['font-family' => 'Inter', 'font-size' => '18px'],
+                    'typographyLead' => ['font-family' => 'Inter'],
+                    'typographyHeadings' => ['font-family' => 'Lora'],
+                    'typographyHeadingH1' => ['font-family' => 'Lora'],
+                    'typographyHeadingH2' => ['font-family' => 'Lora'],
+                    'typographyHeadingH3' => ['font-family' => 'Lora'],
+                    'typographyHeadingH4' => ['font-family' => 'Lora'],
+                    'typographyHeadingH5' => ['font-family' => 'Lora'],
+                    'typographyHeadingH6' => ['font-family' => 'Lora'],
+                    'typographyHero' => ['font-family' => 'Lora'],
+                ],
+            ],
+        ],
+        'style-secondary' => [
+            'label' => 'Secondary',
+            'settings' => [
+                'conditions' => [
+                    'conditions' => [
+                        ['priority' => 20],
+                    ],
+                ],
+                'typography' => [
+                    'typographyBody' => ['font-family' => 'Georgia'],
+                    'typographyHeadings' => ['font-family' => 'Merriweather'],
+                ],
+            ],
+        ],
+    ];
+
+    $services['bricks_integration']->applyThemeStylesSync(BricksIntegrationService::TARGET_MODE_SELECTED, 'style-primary');
+    $styles = (array) ($optionStore[BRICKS_DB_THEME_STYLES] ?? []);
+    $typography = (array) (($styles['style-primary']['settings']['typography'] ?? null) ?: []);
+
+    assertSameValue(BricksIntegrationService::DESIRED_BODY_VALUE, (string) ($typography['typographyBody']['font-family'] ?? ''), 'Applying Bricks Theme Style sync should map body typography to the Tasty body variable.');
+    assertSameValue(BricksIntegrationService::DESIRED_BODY_WEIGHT_VALUE, (string) ($typography['typographyBody']['font-weight'] ?? ''), 'Applying Bricks Theme Style sync should map body weights to the Tasty body weight variable.');
+    assertSameValue(BricksIntegrationService::DESIRED_HEADING_VALUE, (string) ($typography['typographyHeadingH1']['font-family'] ?? ''), 'Applying Bricks Theme Style sync should map heading typography to the Tasty heading variable.');
+    assertSameValue(BricksIntegrationService::DESIRED_HEADING_WEIGHT_VALUE, (string) ($typography['typographyHeadingH1']['font-weight'] ?? ''), 'Applying Bricks Theme Style sync should map heading weights to the Tasty heading weight variable.');
+    assertSameValue('18px', (string) ($typography['typographyBody']['font-size'] ?? ''), 'Applying Bricks Theme Style sync should preserve unrelated Theme Style typography properties.');
+    assertSameValue('Georgia', (string) (($styles['style-secondary']['settings']['typography']['typographyBody']['font-family'] ?? '')), 'Applying Bricks Theme Style sync should leave non-targeted Theme Styles untouched.');
+
+    $services['bricks_integration']->restoreThemeStylesSync();
+
+    assertSameValue(
+        'Inter',
+        (string) (($optionStore[BRICKS_DB_THEME_STYLES]['style-primary']['settings']['typography']['typographyBody']['font-family'] ?? '')),
+        'Restoring Bricks Theme Style sync should restore the previous body typography family.'
+    );
+    assertSameValue(
+        'Lora',
+        (string) (($optionStore[BRICKS_DB_THEME_STYLES]['style-primary']['settings']['typography']['typographyHeadingH1']['font-family'] ?? '')),
+        'Restoring Bricks Theme Style sync should restore the previous heading typography family.'
+    );
+};
+
+$tests['bricks_integration_service_can_apply_theme_sync_to_all_bricks_theme_styles'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $optionStore[BRICKS_DB_THEME_STYLES] = [
+        'style-primary' => [
+            'label' => 'Primary',
+            'settings' => [
+                'typography' => [
+                    'typographyBody' => ['font-family' => 'Inter'],
+                ],
+            ],
+        ],
+        'style-secondary' => [
+            'label' => 'Secondary',
+            'settings' => [
+                'typography' => [
+                    'typographyHeadings' => ['font-family' => 'Lora'],
+                ],
+            ],
+        ],
+    ];
+
+    $services['bricks_integration']->applyThemeStylesSync(BricksIntegrationService::TARGET_MODE_ALL, BricksIntegrationService::MANAGED_THEME_STYLE_ID);
+
+    assertSameValue(
+        BricksIntegrationService::DESIRED_BODY_VALUE,
+        (string) (($optionStore[BRICKS_DB_THEME_STYLES]['style-primary']['settings']['typography']['typographyBody']['font-family'] ?? '')),
+        'Applying all-style Bricks Theme Style sync should update body typography across every Theme Style.'
+    );
+    assertSameValue(
+        BricksIntegrationService::DESIRED_HEADING_VALUE,
+        (string) (($optionStore[BRICKS_DB_THEME_STYLES]['style-secondary']['settings']['typography']['typographyHeadings']['font-family'] ?? '')),
+        'Applying all-style Bricks Theme Style sync should update heading typography across every Theme Style.'
+    );
+};
+
+$tests['admin_controller_can_delete_the_managed_bricks_theme_style'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $optionStore[BRICKS_DB_THEME_STYLES] = [
+        BricksIntegrationService::MANAGED_THEME_STYLE_ID => [
+            'label' => 'Tasty Fonts',
+            'settings' => ['typography' => []],
+        ],
+        'sitewide-primary' => [
+            'label' => 'Primary',
+            'settings' => ['typography' => []],
+        ],
+    ];
+    $services['settings']->saveSettings([
+        'bricks_integration_enabled' => '1',
+        'bricks_theme_styles_sync_enabled' => '1',
+        'bricks_theme_style_target_mode' => BricksIntegrationService::TARGET_MODE_MANAGED,
+        'bricks_theme_style_target_id' => BricksIntegrationService::MANAGED_THEME_STYLE_ID,
+    ]);
+
+    $result = $services['controller']->saveSettingsValues([
+        'bricks_delete_theme_style' => '1',
+    ]);
+
+    assertSameValue(false, isset($optionStore[BRICKS_DB_THEME_STYLES][BricksIntegrationService::MANAGED_THEME_STYLE_ID]), 'Deleting the managed Bricks Theme Style should remove it from Bricks storage.');
+    assertSameValue(BricksIntegrationService::TARGET_MODE_SELECTED, (string) ($result['settings']['bricks_theme_style_target_mode'] ?? ''), 'Deleting the managed Bricks Theme Style should fall back to a selected existing Theme Style when one exists.');
+    assertSameValue('sitewide-primary', (string) ($result['settings']['bricks_theme_style_target_id'] ?? ''), 'Deleting the managed Bricks Theme Style should switch the target to the first remaining Bricks Theme Style.');
+};
+
+$tests['bricks_integration_service_creates_a_managed_theme_style_when_none_exist'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $optionStore[BRICKS_DB_THEME_STYLES] = [];
+
+    $services['bricks_integration']->applyThemeStylesSync(BricksIntegrationService::TARGET_MODE_MANAGED, BricksIntegrationService::MANAGED_THEME_STYLE_ID);
+    $styles = (array) ($optionStore[BRICKS_DB_THEME_STYLES] ?? []);
+
+    assertSameValue(true, isset($styles[BricksIntegrationService::MANAGED_THEME_STYLE_ID]), 'Applying Bricks Theme Style sync should create a managed Theme Style when Bricks has none yet.');
+    assertSameValue(
+        BricksIntegrationService::DESIRED_BODY_VALUE,
+        (string) (($styles[BricksIntegrationService::MANAGED_THEME_STYLE_ID]['settings']['typography']['typographyBody']['font-family'] ?? '')),
+        'The fallback managed Theme Style should point body typography at the Tasty body variable.'
+    );
+
+    $services['bricks_integration']->restoreThemeStylesSync();
+
+    assertSameValue([], $optionStore[BRICKS_DB_THEME_STYLES] ?? [], 'Restoring a fallback managed Theme Style should return Bricks to its previous empty Theme Style state.');
+};
+
+$tests['bricks_integration_service_reset_restores_later_targeted_styles_without_deleting_them'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $optionStore[BRICKS_DB_THEME_STYLES] = [];
+
+    $services['bricks_integration']->applyThemeStylesSync(BricksIntegrationService::TARGET_MODE_MANAGED, BricksIntegrationService::MANAGED_THEME_STYLE_ID);
+
+    $optionStore[BRICKS_DB_THEME_STYLES]['custom-user-style'] = [
+        'label' => 'Custom User Style',
+        'settings' => [
+            'typography' => [
+                'typographyBody' => ['font-family' => 'Inter', 'font-size' => '18px'],
+                'typographyHeadings' => ['font-family' => 'Lora', 'letter-spacing' => '0.02em'],
+            ],
+        ],
+    ];
+
+    $services['bricks_integration']->applyThemeStylesSync(BricksIntegrationService::TARGET_MODE_SELECTED, 'custom-user-style');
+    $services['bricks_integration']->restoreThemeStylesSync();
+
+    assertSameValue(
+        false,
+        isset($optionStore[BRICKS_DB_THEME_STYLES][BricksIntegrationService::MANAGED_THEME_STYLE_ID]),
+        'Restoring Bricks Theme Styles should remove the managed Tasty Theme Style only when Tasty created it.'
+    );
+    assertSameValue(
+        true,
+        isset($optionStore[BRICKS_DB_THEME_STYLES]['custom-user-style']),
+        'Restoring Bricks Theme Styles should not delete a user-created Theme Style that Tasty later targeted.'
+    );
+    assertSameValue(
+        'Inter',
+        (string) (($optionStore[BRICKS_DB_THEME_STYLES]['custom-user-style']['settings']['typography']['typographyBody']['font-family'] ?? '')),
+        'Restoring Bricks Theme Styles should restore the original body typography on a later-targeted user-created Theme Style.'
+    );
+    assertSameValue(
+        '18px',
+        (string) (($optionStore[BRICKS_DB_THEME_STYLES]['custom-user-style']['settings']['typography']['typographyBody']['font-size'] ?? '')),
+        'Restoring Bricks Theme Styles should preserve unrelated properties on a later-targeted user-created Theme Style.'
+    );
+    assertSameValue(
+        'Lora',
+        (string) (($optionStore[BRICKS_DB_THEME_STYLES]['custom-user-style']['settings']['typography']['typographyHeadings']['font-family'] ?? '')),
+        'Restoring Bricks Theme Styles should restore the original heading typography on a later-targeted user-created Theme Style.'
+    );
+};
+
+$tests['bricks_integration_service_reports_managed_theme_style_values_when_no_active_screen_match_exists'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $optionStore[BRICKS_DB_THEME_STYLES] = [
+        BricksIntegrationService::MANAGED_THEME_STYLE_ID => [
+            'label' => 'Tasty Fonts',
+            'settings' => [
+                'conditions' => [
+                    'conditions' => [
+                        ['key' => 'main', 'compare' => '==', 'value' => 'any', 'priority' => 10],
+                    ],
+                ],
+                'typography' => [
+                    'typographyBody' => [
+                        'font-family' => BricksIntegrationService::DESIRED_BODY_VALUE,
+                        'font-weight' => BricksIntegrationService::DESIRED_BODY_WEIGHT_VALUE,
+                    ],
+                    'typographyHeadings' => [
+                        'font-family' => BricksIntegrationService::DESIRED_HEADING_VALUE,
+                        'font-weight' => BricksIntegrationService::DESIRED_HEADING_WEIGHT_VALUE,
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    $state = $services['bricks_integration']->readState([
+        'bricks_integration_enabled' => true,
+        'bricks_theme_styles_sync_enabled' => true,
+        'bricks_theme_style_target_mode' => BricksIntegrationService::TARGET_MODE_MANAGED,
+        'bricks_theme_style_target_id' => BricksIntegrationService::MANAGED_THEME_STYLE_ID,
+        'auto_apply_roles' => true,
+    ]);
+
+    assertSameValue(
+        BricksIntegrationService::DESIRED_BODY_VALUE,
+        (string) ($state['theme_styles']['current']['body_family'] ?? ''),
+        'Bricks state should report the managed body Theme Style value even when the settings screen has no active Bricks screen match.'
+    );
+    assertSameValue(
+        BricksIntegrationService::DESIRED_HEADING_VALUE,
+        (string) ($state['theme_styles']['current']['heading_family'] ?? ''),
+        'Bricks state should report the managed heading Theme Style value even when the settings screen has no active Bricks screen match.'
+    );
+    assertSameValue(
+        'Tasty Fonts',
+        (string) ($state['theme_styles']['summary']['managed_style_label'] ?? ''),
+        'Bricks state should report the managed Theme Style label when Tasty created that Theme Style.'
+    );
+    assertSameValue(
+        BricksIntegrationService::MANAGED_THEME_STYLE_ID,
+        (string) ($state['theme_styles']['summary']['target_style_id'] ?? ''),
+        'Bricks state should report which Theme Style target Tasty is managing.'
+    );
+    assertSameValue(
+        BricksIntegrationService::TARGET_MODE_MANAGED,
+        (string) ($state['theme_styles']['summary']['target_mode'] ?? ''),
+        'Bricks state should report which Theme Style mode Tasty is using.'
+    );
+};
+
+$tests['bricks_integration_service_resolves_managed_target_even_when_a_selected_style_id_is_saved'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $optionStore[BRICKS_DB_THEME_STYLES] = [
+        'sitewide-primary' => [
+            'label' => 'Primary',
+            'settings' => ['typography' => []],
+        ],
+        BricksIntegrationService::MANAGED_THEME_STYLE_ID => [
+            'label' => 'Tasty Fonts',
+            'settings' => [
+                'typography' => [
+                    'typographyBody' => ['font-family' => BricksIntegrationService::DESIRED_BODY_VALUE],
+                    'typographyHeadings' => ['font-family' => BricksIntegrationService::DESIRED_HEADING_VALUE],
+                ],
+            ],
+        ],
+    ];
+
+    $state = $services['bricks_integration']->readState([
+        'bricks_integration_enabled' => true,
+        'bricks_theme_styles_sync_enabled' => true,
+        'bricks_theme_style_target_mode' => BricksIntegrationService::TARGET_MODE_MANAGED,
+        'bricks_theme_style_target_id' => 'sitewide-primary',
+        'auto_apply_roles' => true,
+    ]);
+
+    assertSameValue(
+        BricksIntegrationService::MANAGED_THEME_STYLE_ID,
+        (string) ($state['theme_styles']['summary']['target_style_id'] ?? ''),
+        'Managed Bricks Theme Style mode should resolve to the managed Tasty Theme Style even when an old selected style ID is still stored.'
+    );
+    assertSameValue(
+        'Tasty Fonts',
+        (string) ($state['theme_styles']['summary']['target_style_label'] ?? ''),
+        'Managed Bricks Theme Style mode should report the managed Tasty Theme Style label instead of a stale selected style label.'
+    );
+    assertSameValue(
+        true,
+        !empty($state['theme_styles']['summary']['target_is_managed']),
+        'Managed Bricks Theme Style mode should still be recognized as the managed target when an old selected style ID is present.'
+    );
+};
+
+$tests['bricks_integration_service_reports_when_no_bricks_theme_styles_exist'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $state = $services['bricks_integration']->readState([
+        'bricks_integration_enabled' => true,
+        'bricks_theme_styles_sync_enabled' => false,
+        'auto_apply_roles' => true,
+    ]);
+
+    assertSameValue(
+        false,
+        !empty($state['theme_styles']['summary']['has_theme_styles']),
+        'Bricks state should report when no Theme Styles exist yet.'
+    );
+    assertSameValue(
+        'Tasty Fonts',
+        (string) ($state['theme_styles']['summary']['managed_style_label'] ?? ''),
+        'Bricks state should still expose the default Tasty Theme Style label when none exists yet.'
+    );
+};
+
+$tests['bricks_integration_service_applies_and_restores_disable_google_fonts_setting'] = static function (): void {
+    resetTestState();
+
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $optionStore[BricksIntegrationService::OPTION_GLOBAL_SETTINGS] = [
+        'builderHeaderSticky' => true,
+    ];
+
+    $services['bricks_integration']->applyGoogleFontsSetting();
+
+    assertSameValue(true, !empty($optionStore[BricksIntegrationService::OPTION_GLOBAL_SETTINGS]['disableGoogleFonts']), 'Applying the Bricks Google font setting should turn on Bricks disableGoogleFonts.');
+
+    $services['bricks_integration']->restoreGoogleFontsSetting();
+
+    assertSameValue(
+        ['builderHeaderSticky' => true],
+        $optionStore[BricksIntegrationService::OPTION_GLOBAL_SETTINGS] ?? [],
+        'Restoring the Bricks Google font setting should restore the previous Bricks global settings without leaving disableGoogleFonts behind.'
+    );
+};
+
+$tests['runtime_service_enqueues_bricks_builder_assets_when_preview_loading_is_enabled'] = static function (): void {
+    resetTestState();
+
+    global $enqueuedStyles;
+    global $inlineScripts;
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings([
+        'bricks_integration_enabled' => true,
+    ]);
+    $services['imports']->saveProfile(
+        'JetBrains Mono',
+        'jetbrains-mono',
+        [
+            'id' => 'google-cdn',
+            'label' => 'Google CDN',
+            'provider' => 'google',
+            'type' => 'cdn',
+            'variants' => ['regular', '700'],
+            'faces' => [],
+        ],
+        'published',
+        true
+    );
+    $_GET['brickspreview'] = '1';
+
+    $services['runtime']->enqueueBricksBuilder();
+
+    assertSameValue(true, isset($enqueuedStyles['tasty-fonts-bricks-builder']), 'Bricks builder preview loading should enqueue the generated Tasty stylesheet for the builder.');
+    assertSameValue(true, isset($enqueuedStyles['tasty-fonts-google-jetbrains-mono-cdn-bricks-builder']), 'Bricks builder preview loading should enqueue external runtime font stylesheets with Bricks-specific handles.');
+    assertSameValue(true, isset($inlineScripts['bricks-builder'][0]), 'Bricks selector exposure should inject a builder script so Tasty Fonts appear in their own top-level picker group.');
+    assertSameValue('before', (string) ($inlineScripts['bricks-builder'][0]['position'] ?? ''), 'The Bricks picker grouping script should run before the builder app boots.');
+    assertContainsValue('var tastyFamilies = ["JetBrains Mono"];', (string) ($inlineScripts['bricks-builder'][0]['data'] ?? ''), 'The Bricks picker grouping script should include the published Tasty runtime family names.');
+};
+
+$tests['runtime_service_keeps_bricks_builder_baseline_enabled_even_when_legacy_child_flags_are_disabled'] = static function (): void {
+    resetTestState();
+
+    global $enqueuedStyles;
+    global $inlineScripts;
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings([
+        'bricks_integration_enabled' => true,
+        'bricks_builder_preview_enabled' => false,
+        'bricks_selector_fonts_enabled' => false,
+    ]);
+    $services['imports']->saveProfile(
+        'Inter',
+        'inter',
+        [
+            'id' => 'local-self-hosted',
+            'label' => 'Local upload',
+            'provider' => 'local',
+            'type' => 'self_hosted',
+            'variants' => ['400'],
+            'faces' => [[
+                'family' => 'Inter',
+                'slug' => 'inter',
+                'source' => 'local',
+                'weight' => '400',
+                'style' => 'normal',
+                'files' => ['woff2' => 'upload/inter/inter-400-normal.woff2'],
+                'paths' => ['woff2' => 'upload/inter/inter-400-normal.woff2'],
+            ]],
+        ],
+        'published',
+        true
+    );
+    $_GET['bricks'] = 'run';
+
+    $services['runtime']->enqueueBricksBuilder();
+
+    assertSameValue(true, isset($enqueuedStyles['tasty-fonts-bricks-builder']), 'The main Bricks toggle should keep builder preview assets enabled even when legacy child flags are disabled.');
+    assertSameValue(true, isset($inlineScripts['bricks-builder'][0]), 'The main Bricks toggle should keep the builder picker grouping script enabled even when legacy child flags are disabled.');
+    assertContainsValue("data.i18n.fontsCustom = hasExistingCustom ? 'Tasty Fonts + Custom' : 'Tasty Fonts';", (string) ($inlineScripts['bricks-builder'][0]['data'] ?? ''), 'The Bricks picker grouping script should relabel the top picker group for Tasty Fonts.');
+};
+
+$tests['runtime_service_appends_managed_bricks_editor_styles_when_theme_style_sync_is_active'] = static function (): void {
+    resetTestState();
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings([
+        'bricks_integration_enabled' => true,
+        'bricks_theme_styles_sync_enabled' => true,
+        'bricks_theme_style_target_mode' => BricksIntegrationService::TARGET_MODE_MANAGED,
+        'bricks_theme_style_target_id' => BricksIntegrationService::MANAGED_THEME_STYLE_ID,
+    ]);
+    $services['settings']->setAutoApplyRoles(true);
+
+    $services['bricks_integration']->applyThemeStylesSync(BricksIntegrationService::TARGET_MODE_MANAGED, BricksIntegrationService::MANAGED_THEME_STYLE_ID);
+
+    $settings = $services['runtime']->filterBlockEditorSettings([], null);
+    $css = (string) ($settings['styles'][0]['css'] ?? '');
+
+    assertContainsValue('body{font-family:var(--font-body);font-weight:var(--font-body-weight);}', $css, 'Managed Bricks Theme Style sync should mirror the Tasty body role variables into Gutenberg.');
+    assertContainsValue('font-family:var(--font-heading);font-weight:var(--font-heading-weight);', $css, 'Managed Bricks Theme Style sync should mirror the Tasty heading role variables into Gutenberg.');
+};
+
+$tests['runtime_service_enqueues_bricks_frontend_override_when_theme_style_sync_is_active'] = static function (): void {
+    resetTestState();
+
+    global $enqueuedStyles;
+    global $inlineStyles;
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings([
+        'bricks_integration_enabled' => true,
+        'bricks_theme_styles_sync_enabled' => true,
+        'bricks_theme_style_target_mode' => BricksIntegrationService::TARGET_MODE_MANAGED,
+        'bricks_theme_style_target_id' => BricksIntegrationService::MANAGED_THEME_STYLE_ID,
+    ]);
+    $services['settings']->setAutoApplyRoles(true);
+
+    $services['bricks_integration']->applyThemeStylesSync(BricksIntegrationService::TARGET_MODE_MANAGED, BricksIntegrationService::MANAGED_THEME_STYLE_ID);
+    $services['runtime']->enqueueBricksFrontendOverride();
+
+    assertSameValue(
+        true,
+        isset($enqueuedStyles['tasty-fonts-bricks-runtime-override']),
+        'Managed Bricks Theme Style sync should enqueue a late runtime override stylesheet so Bricks frontend output resolves Tasty role variables correctly.'
+    );
+
+    $css = (string) ($inlineStyles['tasty-fonts-bricks-runtime-override'] ?? '');
+
+    assertContainsValue(
+        'body,.bricks-type-lead{font-family:var(--font-body);font-weight:var(--font-body-weight);}',
+        $css,
+        'The Bricks runtime override should restore unquoted body and lead font-role variables on the frontend.'
+    );
+    assertContainsValue(
+        'h1,h2,h3,h4,h5,h6,.bricks-type-hero{font-family:var(--font-heading);font-weight:var(--font-heading-weight);}',
+        $css,
+        'The Bricks runtime override should restore unquoted heading and hero font-role variables on the frontend.'
+    );
+};
+
+$tests['runtime_service_enqueues_bricks_frontend_override_when_live_bricks_style_keeps_only_font_family_values'] = static function (): void {
+    resetTestState();
+
+    global $enqueuedStyles;
+    global $inlineStyles;
+    global $optionStore;
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings([
+        'bricks_integration_enabled' => true,
+        'bricks_theme_styles_sync_enabled' => true,
+        'bricks_theme_style_target_mode' => BricksIntegrationService::TARGET_MODE_MANAGED,
+        'bricks_theme_style_target_id' => BricksIntegrationService::MANAGED_THEME_STYLE_ID,
+    ]);
+    $services['settings']->setAutoApplyRoles(true);
+
+    $services['bricks_integration']->applyThemeStylesSync(BricksIntegrationService::TARGET_MODE_MANAGED, BricksIntegrationService::MANAGED_THEME_STYLE_ID);
+
+    $optionStore[BRICKS_DB_THEME_STYLES][BricksIntegrationService::MANAGED_THEME_STYLE_ID]['settings']['typography']['typographyBody'] = [
+        'font-family' => 'var(--font-body)',
+    ];
+    $optionStore[BRICKS_DB_THEME_STYLES][BricksIntegrationService::MANAGED_THEME_STYLE_ID]['settings']['typography']['typographyLead'] = [
+        'font-family' => 'var(--font-body)',
+    ];
+    $optionStore[BRICKS_DB_THEME_STYLES][BricksIntegrationService::MANAGED_THEME_STYLE_ID]['settings']['typography']['typographyHeadings'] = [
+        'font-family' => 'var(--font-heading)',
+    ];
+    $optionStore[BRICKS_DB_THEME_STYLES][BricksIntegrationService::MANAGED_THEME_STYLE_ID]['settings']['typography']['typographyHeadingH1'] = [
+        'font-family' => 'var(--font-heading)',
+    ];
+    $optionStore[BRICKS_DB_THEME_STYLES][BricksIntegrationService::MANAGED_THEME_STYLE_ID]['settings']['typography']['typographyHeadingH2'] = [
+        'font-family' => 'var(--font-heading)',
+    ];
+    $optionStore[BRICKS_DB_THEME_STYLES][BricksIntegrationService::MANAGED_THEME_STYLE_ID]['settings']['typography']['typographyHeadingH3'] = [
+        'font-family' => 'var(--font-heading)',
+    ];
+    $optionStore[BRICKS_DB_THEME_STYLES][BricksIntegrationService::MANAGED_THEME_STYLE_ID]['settings']['typography']['typographyHeadingH4'] = [
+        'font-family' => 'var(--font-heading)',
+    ];
+    $optionStore[BRICKS_DB_THEME_STYLES][BricksIntegrationService::MANAGED_THEME_STYLE_ID]['settings']['typography']['typographyHeadingH5'] = [
+        'font-family' => 'var(--font-heading)',
+    ];
+    $optionStore[BRICKS_DB_THEME_STYLES][BricksIntegrationService::MANAGED_THEME_STYLE_ID]['settings']['typography']['typographyHeadingH6'] = [
+        'font-family' => 'var(--font-heading)',
+    ];
+    $optionStore[BRICKS_DB_THEME_STYLES][BricksIntegrationService::MANAGED_THEME_STYLE_ID]['settings']['typography']['typographyHero'] = [
+        'font-family' => 'var(--font-heading)',
+    ];
+
+    $services['runtime']->enqueueBricksFrontendOverride();
+
+    assertSameValue(
+        true,
+        isset($enqueuedStyles['tasty-fonts-bricks-runtime-override']),
+        'The Bricks frontend override should still enqueue when Bricks keeps only the synced font-family values in the live Theme Style record.'
+    );
+    assertContainsValue(
+        'body,.bricks-type-lead{font-family:var(--font-body);font-weight:var(--font-body-weight);}',
+        (string) ($inlineStyles['tasty-fonts-bricks-runtime-override'] ?? ''),
+        'The Bricks frontend override should recover the full role-variable mapping even when Bricks has stripped the stored font-weight fields.'
+    );
+};
+
+$tests['runtime_service_enqueues_bricks_variable_fix_script_for_frontend_and_builder_canvas_styles'] = static function (): void {
+    resetTestState();
+
+    global $inlineScripts;
+
+    $services = makeServiceGraph();
+    $services['settings']->saveSettings([
+        'bricks_integration_enabled' => true,
+    ]);
+
+    $services['runtime']->enqueueBricksFrontendOverride();
+
+    assertSameValue(
+        true,
+        isset($inlineScripts['bricks-scripts'][0]),
+        'Late Bricks runtime passes should attach the quoted-variable fixer script to the Bricks runtime so Tasty role variables also work in Bricks-generated inline typography CSS.'
+    );
+
+    $script = (string) ($inlineScripts['bricks-scripts'][0]['data'] ?? '');
+
+    assertContainsValue(
+        "var quotedPropertyPattern = /(font-family\\s*:\\s*)[\"'](var\\(--[^\"']+\\))[\"']/g;",
+        $script,
+        'The Bricks quoted-variable fixer script should strip quotes around CSS variable font-family values.'
+    );
+    assertContainsValue(
+        "style.setProperty('font-family', normalized, style.getPropertyPriority('font-family'));",
+        $script,
+        'The Bricks quoted-variable fixer script should also repair live CSSStyleRule font-family declarations inside the Bricks canvas.'
+    );
+    assertContainsValue(
+        "observer.observe(document.documentElement, {",
+        $script,
+        'The Bricks quoted-variable fixer script should observe later style-tag mutations so builder canvas updates are normalized too.'
+    );
+    assertContainsValue(
+        "var repairTimer = window.setInterval(function () {",
+        $script,
+        'The Bricks quoted-variable fixer script should keep repairing the live Bricks canvas for a short period while builder styles are still being injected.'
+    );
 };
 
 $tests['runtime_service_appends_builder_editor_styles_for_managed_bricks_and_oxygen_fonts'] = static function (): void {
@@ -3095,7 +4002,7 @@ $tests['runtime_service_appends_builder_editor_styles_for_managed_bricks_and_oxy
     $css = (string) ($settings['styles'][0]['css'] ?? '');
 
     assertContainsValue('body{font-family:"Inter", sans-serif;}', $css, 'Builder editor styles should mirror managed body families into Gutenberg.');
-    assertContainsValue('body :is(h1, .editor-post-title){font-family:"Merriweather", sans-serif;}', $css, 'Bricks heading styles should mirror managed H1 selections into Gutenberg.');
+    assertContainsValue('body :is(h1, h2, h3, h4, h5, h6, .editor-post-title){font-family:"Merriweather", sans-serif;}', $css, 'Bricks heading styles should mirror managed H1 selections into Gutenberg.');
     assertContainsValue('body :is(h1, h2, h3, h4, h5, h6, .editor-post-title){font-family:"Merriweather", sans-serif;}', $css, 'Oxygen display families should mirror into Gutenberg heading styles.');
     assertNotContainsValue('Draft Sans', $css, 'Builder editor styles should ignore library-only families that are not part of the runtime catalog.');
 };

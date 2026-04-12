@@ -726,6 +726,7 @@ $registeredStyles = [];
 $styleData = [];
 $inlineStyles = [];
 $enqueuedScripts = [];
+$inlineScripts = [];
 $localizedScripts = [];
 $scriptTranslations = [];
 $loadedTextdomains = [];
@@ -1198,6 +1199,21 @@ if (!function_exists('wp_localize_script')) {
     }
 }
 
+if (!function_exists('wp_add_inline_script')) {
+    function wp_add_inline_script(string $handle, string $data, string $position = 'after'): bool
+    {
+        global $inlineScripts;
+
+        $inlineScripts[$handle] = $inlineScripts[$handle] ?? [];
+        $inlineScripts[$handle][] = [
+            'data' => $data,
+            'position' => $position === 'before' ? 'before' : 'after',
+        ];
+
+        return true;
+    }
+}
+
 if (!function_exists('wp_set_script_translations')) {
     function wp_set_script_translations(string $handle, string $domain = 'default', string $path = ''): bool
     {
@@ -1611,6 +1627,7 @@ function resetTestState(): void
     global $enqueuedStyles;
     global $hookCallbacks;
     global $inlineStyles;
+    global $inlineScripts;
     global $isAdminRequest;
     global $isUserLoggedIn;
     global $localizedScripts;
@@ -1681,6 +1698,7 @@ function resetTestState(): void
     $styleData = [];
     $inlineStyles = [];
     $enqueuedScripts = [];
+    $inlineScripts = [];
     $localizedScripts = [];
     $loadedTextdomains = [];
     $menuPageCalls = [];

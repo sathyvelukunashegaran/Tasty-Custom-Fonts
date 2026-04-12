@@ -260,6 +260,8 @@ final class Plugin
         add_action(AssetService::ACTION_REGENERATE_CSS, [$this, 'handleGeneratedCssRegeneration']);
         add_action(GoogleFontsClient::ACTION_REVALIDATE_API_KEY, [$this, 'handleGoogleApiKeyRevalidation']);
         add_action('wp_enqueue_scripts', [$this->runtime, 'enqueueFrontend']);
+        add_action('wp_enqueue_scripts', [$this->runtime, 'enqueueBricksFrontendOverride'], 1000);
+        add_action('wp_enqueue_scripts', [$this->runtime, 'enqueueBricksBuilder'], 100);
         add_action('wp_head', [$this->runtime, 'outputPreloadHints'], 1);
         add_action('etch/canvas/enqueue_assets', [$this->runtime, 'enqueueEtchCanvas']);
         add_action('enqueue_block_editor_assets', [$this->runtime, 'enqueueBlockEditor']);
