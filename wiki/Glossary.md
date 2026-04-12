@@ -58,7 +58,7 @@ The design principle that separates "what you are experimenting with" from "what
 A WordPress page-builder environment. The plugin integrates with Etch by providing runtime stylesheet URLs through the Etch canvas bridge, so preview typography inside the builder matches the live site.
 
 **Encrypted option storage**
-The storage model used since 1.12.0 for the Google Fonts API key. The key is stored in a dedicated WordPress option (`tasty_fonts_google_api_key_data`) using symmetric encryption, isolated from the main `tasty_fonts_settings` record. It is never serialised into [Site Transfer](#site-transfer) bundles or any other portable export.
+The storage model used since 1.12.0 for the Google Fonts API key. The key is stored in a dedicated WordPress option (`tasty_fonts_google_api_key_data`) using symmetric encryption, isolated from the main `tasty_fonts_settings` record. It is never serialised into Site Transfer bundles or any other portable export.
 
 ## F
 
