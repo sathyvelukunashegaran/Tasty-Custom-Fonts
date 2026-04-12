@@ -52,8 +52,8 @@ Before you begin, confirm all of the following:
 1. Go to `Tasty Fonts → Settings` on the **source site**.
 2. Click the **Transfer** tab.
 3. In the **Export Site Transfer Bundle** card, confirm the export action is available (not greyed out). If it is greyed out, a ZipArchive error message will explain why.
-4. Click **Export Site Transfer Bundle**.
-5. Your browser downloads a ZIP file named `tasty-fonts-transfer-YYYY-MM-DD.zip`.
+4. Click **Export Bundle**.
+5. Your browser downloads a ZIP file named something like `tasty-fonts-transfer-1.12.0-beta.2-20260412-221254.zip`.
 
 > **What's in the ZIP:** the archive contains a manifest file (`tasty-fonts-export.json`) plus your managed font files under a `fonts/` subdirectory. The manifest records your library state, settings, roles, and a checksum for every included file.
 
