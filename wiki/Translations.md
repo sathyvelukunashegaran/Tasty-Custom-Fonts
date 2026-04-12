@@ -41,5 +41,5 @@ When you adjust labels, button text, notices, diagnostics copy, or settings lang
 
 ## Related Docs
 
-- [Architecture](architecture.md)
-- [Release Process](release-process.md)
+- [Architecture](Architecture)
+- [Release Process](Release-Process)
