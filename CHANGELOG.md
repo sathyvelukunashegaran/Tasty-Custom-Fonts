@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.12.0-beta.1] - 2026-04-13
+
 ### Changed
 
 - Renamed the packaged plugin directory from `etch-fonts/` to `tasty-fonts/` across release archives, install instructions, and test fixtures to match the current product branding.
