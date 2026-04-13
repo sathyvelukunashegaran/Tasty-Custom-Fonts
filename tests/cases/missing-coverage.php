@@ -73,9 +73,10 @@ $tests['site_environment_current_type_returns_empty_string_without_wp_function']
     // must return an empty string.
     $type = SiteEnvironment::currentEnvironmentType();
 
-    assertTrueValue(
-        is_string($type),
-        'currentEnvironmentType() should always return a string.'
+    assertSameValue(
+        '',
+        $type,
+        'currentEnvironmentType() should return an empty string when no environment source is defined.'
     );
 };
 
