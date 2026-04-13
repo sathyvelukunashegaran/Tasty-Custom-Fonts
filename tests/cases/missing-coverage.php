@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use TastyFonts\Admin\AdminController;
+use TastyFonts\Adobe\AdobeProjectClient;
 use TastyFonts\Repository\ImportRepository;
 use TastyFonts\Repository\LogRepository;
 use TastyFonts\Repository\SettingsRepository;
@@ -613,13 +614,15 @@ $tests['uninstall_handler_deletes_adobe_project_transient_when_project_id_is_sav
 
     global $transientDeleted;
 
+    $projectId = 'abc123';
+
     // Seed an adobe project ID in the settings option.
-    update_option(SettingsRepository::OPTION_SETTINGS, ['adobe_project_id' => 'abc123', 'adobe_enabled' => true]);
+    update_option(SettingsRepository::OPTION_SETTINGS, ['adobe_project_id' => $projectId, 'adobe_enabled' => true]);
 
     $services = makeServiceGraph();
 
     $handler = new UninstallHandler(
-        ['adobe_project_id' => 'abc123'],
+        ['adobe_project_id' => $projectId],
         $services['storage'],
         $services['block_editor_font_library'],
         $services['developer_tools']
@@ -627,10 +630,11 @@ $tests['uninstall_handler_deletes_adobe_project_transient_when_project_id_is_sav
 
     $handler->run();
 
-    // The handler should attempt to delete at least one transient key.
+    $expectedTransientKey = TransientKey::forSite(AdobeProjectClient::TRANSIENT_PREFIX . md5($projectId));
+
     assertTrueValue(
-        count($transientDeleted) > 0,
-        'UninstallHandler should delete transients (including the Adobe project transient) during uninstall.'
+        in_array($expectedTransientKey, $transientDeleted, true),
+        'UninstallHandler should delete the Adobe project transient during uninstall.'
     );
 };
 
