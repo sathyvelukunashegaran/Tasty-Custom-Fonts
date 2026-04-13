@@ -655,10 +655,17 @@ $tests['uninstall_handler_skips_adobe_transient_deletion_when_no_project_id'] = 
     // Should not throw even when the project ID is empty.
     $handler->run();
 
-    $deletedEmptyAdobeProjectTransient = in_array(TransientKey::ADOBE_PROJECT_PREFIX, $transientDeleted, true);
+    // The UninstallHandler should not delete any Adobe project transient
+    // when adobe_project_id is empty, because the method returns early.
+    $adobePrefix = TransientKey::forSite(AdobeProjectClient::TRANSIENT_PREFIX);
+    $deletedAdobeTransients = array_filter(
+        $transientDeleted,
+        static fn (string $key): bool => str_starts_with($key, $adobePrefix)
+    );
 
-    assertFalseValue(
-        $deletedEmptyAdobeProjectTransient,
-        'UninstallHandler should not delete an Adobe project transient when no adobe_project_id is present.'
+    assertSameValue(
+        [],
+        array_values($deletedAdobeTransients),
+        'UninstallHandler should not delete any Adobe project transient when no adobe_project_id is present.'
     );
 };
