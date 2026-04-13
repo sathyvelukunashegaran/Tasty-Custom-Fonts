@@ -110,8 +110,8 @@ Published fonts reach every layer of your WordPress site automatically.
 | --- | --- | --- | --- |
 | Local files | Self-hosted | ✅ Yes | ✅ Yes |
 | Google Fonts | Self-hosted or Google CDN | ✅ Yes | ✅ Yes (when self-hosted) |
-| Bunny Fonts | Self-hosted or Bunny CDN | ✅ Yes | ✅ Yes |
-| Adobe Fonts | Adobe-hosted | — | ✅ Yes |
+| Bunny Fonts | Self-hosted or Bunny CDN | ✅ Yes | ✅ Yes (when self-hosted) |
+| Adobe Fonts | Adobe-hosted | — | ❌ No (Adobe-hosted) |
 
 Each family stores one or more delivery profiles. The active profile controls what the plugin serves at runtime — switch it any time without rebuilding your typography system.
 
