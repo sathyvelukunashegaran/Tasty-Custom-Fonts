@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Added a centralized admin design-token scale covering spacing, typography, motion, layers, component sizing, and syntax highlighting.
+
+### Changed
+
+- Always render the embedded Studio tools section so the Studio shell keeps its tools markup available on every page.
+
 ## [1.12.0-beta.2] - 2026-04-13
 
 ### Added

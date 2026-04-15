@@ -31,13 +31,9 @@ final class StudioSectionRenderer extends AbstractSectionRenderer
 
         $view['currentPage'] = (string) ($view['currentPage'] ?? AdminController::PAGE_ROLES);
 
-        if ($view['currentPage'] === AdminController::PAGE_ROLES) {
-            ob_start();
-            $this->toolsRenderer->render($view);
-            $view['embeddedToolsSection'] = (string) ob_get_clean();
-        } else {
-            $view['embeddedToolsSection'] = '';
-        }
+        ob_start();
+        $this->toolsRenderer->render($view);
+        $view['embeddedToolsSection'] = (string) ob_get_clean();
 
         $this->renderTemplate('studio-section.php', $view);
     }

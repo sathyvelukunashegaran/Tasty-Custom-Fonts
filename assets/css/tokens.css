@@ -1,3 +1,24 @@
+/**
+ * Design tokens — governance rules
+ *
+ * 1. This file is the single source of truth for all design values.
+ *    Every token category defined here is canonical: color, spacing,
+ *    typography, radius, shadow, motion, layer, and component contracts.
+ *
+ * 2. Raw hex or rgba() color values are NOT permitted in admin.css.
+ *    New colors must be defined as tokens here first, then consumed via var().
+ *    The only documented exception is the --tasty-preview-code-* syntax-
+ *    highlight sub-palette in admin.css, which is a self-contained local theme.
+ *
+ * 3. Hardcoded px values for spacing, sizing, and typography are NOT
+ *    permitted in admin.css for values that exist on the token scale.
+ *    Use the numeric (--tasty-space-N) or t-shirt (--tasty-space-xs … xxl)
+ *    aliases instead. Sub-step values (--tasty-space-1-5, -2-5, -3-5, -4-5)
+ *    cover the common in-between gaps.
+ *
+ * 4. assets/css/admin-rtl.css is directional overrides only (flex-direction,
+ *    margin, text-align). Token evolution stays centralised here.
+ */
 .tasty-fonts-admin {
     /* Primitive palette */
     --tasty-white-rgb: 255, 255, 255;
@@ -11,6 +32,8 @@
     --tasty-gray-700: #495664;
     --tasty-gray-900: #1d2327;
     --tasty-gray-900-rgb: 29, 35, 39;
+    /* Shadow/overlay base — the dark slate used across all shadow rgba() calls */
+    --tasty-shadow-color-rgb: 15, 23, 42;
 
     --tasty-ctrl-border: #cfd7e0;
     --tasty-ctrl-border-strong: #8a96a3;
@@ -72,15 +95,28 @@
     --tasty-danger: var(--tasty-danger-raw);
     --tasty-danger-soft: rgba(var(--tasty-danger-rgb), 0.055);
 
-    /* Spacing */
+    /* Spacing — numeric scale (base unit: 4px) */
     --tasty-space-1: 4px;
+    --tasty-space-1-5: 6px;
     --tasty-space-2: 8px;
+    --tasty-space-2-5: 10px;
     --tasty-space-3: 12px;
+    --tasty-space-3-5: 14px;
     --tasty-space-4: 16px;
+    --tasty-space-4-5: 18px;
     --tasty-space-5: 20px;
     --tasty-space-6: 24px;
+    --tasty-space-7: 28px;
     --tasty-space-8: 32px;
+    --tasty-space-9: 36px;
     --tasty-space-10: 40px;
+    /* Spacing — t-shirt size semantic aliases */
+    --tasty-space-xs: var(--tasty-space-1);    /* 4px  */
+    --tasty-space-s: var(--tasty-space-2);     /* 8px  */
+    --tasty-space-m: var(--tasty-space-4);     /* 16px */
+    --tasty-space-l: var(--tasty-space-6);     /* 24px */
+    --tasty-space-xl: var(--tasty-space-8);    /* 32px */
+    --tasty-space-xxl: var(--tasty-space-10);  /* 40px */
 
     /* Radius */
     --tasty-radius-s: 6px;
@@ -128,6 +164,7 @@
     --tasty-control-padding-inline-roomy: 14px;
 
     /* Typography scale */
+    --tasty-font-size-2xs: 10px;
     --tasty-font-size-xs: 11px;
     --tasty-font-size-s: 12px;
     --tasty-font-size-m: 13px;
@@ -139,8 +176,13 @@
     --tasty-font-weight-semibold: 600;
     --tasty-font-weight-bold: 700;
     --tasty-line-height-tight: 1.2;
-    --tasty-line-height-body: 1.5;
+    --tasty-line-height-snug: 1.35;
+    --tasty-line-height-normal: 1.4;
     --tasty-line-height-relaxed: 1.45;
+    --tasty-line-height-body: 1.5;
+    --tasty-line-height-prose: 1.6;
+    --tasty-line-height-loose: 1.65;
+    --tasty-line-height-code: 1.75;
     --tasty-type-meta-size: var(--tasty-font-size-xs);
     --tasty-type-meta-weight: var(--tasty-font-weight-semibold);
     --tasty-type-meta-spacing: 0.08em;
@@ -326,4 +368,75 @@
     --tasty-gradient-surface-success: linear-gradient(160deg, rgba(var(--tasty-success-rgb), 0.035) 0%, rgba(var(--tasty-white-rgb), 1) 66%);
     --tasty-gradient-surface-warning: linear-gradient(160deg, rgba(var(--tasty-warning-rgb), 0.04) 0%, rgba(var(--tasty-white-rgb), 1) 66%);
     --tasty-gradient-surface-muted: linear-gradient(170deg, rgba(var(--tasty-white-rgb), 0.9) 0%, rgba(248, 250, 253, 0.98) 100%);
+
+    /* Semantic one-off colors */
+    --tasty-version-meta-ink: rgba(52, 66, 86, 0.88);
+
+    /* Motion */
+    --tasty-duration-fast: 0.14s;
+    --tasty-duration-subtle: 0.15s;
+    --tasty-duration-base: 0.16s;
+    --tasty-duration-moderate: 0.18s;
+    --tasty-duration-slow: 0.2s;
+    --tasty-duration-medium: 0.24s;
+    --tasty-easing-base: ease;
+    --tasty-easing-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    /* Layer (z-index) */
+    --tasty-z-overlay: 100000;
+    --tasty-z-tooltip: 100001;
+
+    /* Button component */
+    --tasty-btn-height-sm: 28px;
+    --tasty-btn-height-md: var(--tasty-control-height-compact);  /* 32px */
+    --tasty-btn-height-lg: var(--tasty-control-height-regular);  /* 38px */
+    --tasty-btn-padding-x-sm: var(--tasty-space-2-5);            /* 10px */
+    --tasty-btn-padding-x-md: var(--tasty-space-3-5);            /* 14px */
+    --tasty-btn-padding-x-lg: var(--tasty-control-padding-inline-roomy); /* 14px */
+    --tasty-btn-radius: var(--tasty-radius-control);
+
+    /* Field component */
+    --tasty-field-gap: var(--tasty-space-2);
+    --tasty-field-label-gap: var(--tasty-space-1-5);
+    --tasty-field-row-gap: var(--tasty-space-3);
+    --tasty-field-group-gap: var(--tasty-space-4);
+
+    /* Toggle component */
+    --tasty-toggle-width: 42px;
+    --tasty-toggle-height: 24px;
+    --tasty-toggle-thumb-size: 20px;
+    --tasty-toggle-thumb-offset: 2px;
+    --tasty-toggle-translate: 18px;
+
+    /* Form row */
+    --tasty-form-row-padding-block: 13px;
+
+    /* ==========================================================
+     * Syntax highlighting — light theme (globally scoped)
+     *
+     * Defined here so any syntax-highlighted element works
+     * regardless of DOM context (Generated CSS viewer,
+     * diagnostics output, preview code panels, etc.).
+     *
+     * Dark-theme override: .tasty-fonts-preview-code-panel
+     * in admin.css re-declares these vars using the dark palette.
+     * ==========================================================
+     */
+    /* Panel surface */
+    --tasty-syntax-bg: var(--tasty-surface-soft);
+    --tasty-syntax-border: var(--tasty-border-subtle-strong);
+    /* Text */
+    --tasty-syntax-text: var(--tasty-text);
+    --tasty-syntax-comment: var(--tasty-text-muted);
+    --tasty-syntax-punctuation: var(--tasty-gray-700);      /* : ; { } ( ) */
+    /* Structure */
+    --tasty-syntax-at-rule: #5b21b6;                        /* @font-face  @media  @keyframes */
+    --tasty-syntax-selector: #1d4ed8;                       /* :root  .class  element */
+    /* Declarations */
+    --tasty-syntax-property: #047857;                       /* font-family  src  --custom-prop-name */
+    --tasty-syntax-string: #b45309;                         /* "Font Name"  url(…) content */
+    --tasty-syntax-number: #1e3a8a;                         /* 300  900  16px  #hexcolor */
+    --tasty-syntax-variable: #9d174d;                       /* --font-heading  --font-body (as value) */
+    --tasty-syntax-keyword: #065f46;                        /* swap  normal  italic  bold */
+    --tasty-syntax-function: #c2410c;                       /* url()  var()  format()  calc() */
 }

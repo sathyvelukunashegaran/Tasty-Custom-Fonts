@@ -96,7 +96,7 @@
     margin-left: auto;
     max-width: min(100%, var(--tasty-masthead-nav-max-width));
     align-items: flex-end;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -156,7 +156,7 @@
     border: 1px solid var(--tasty-border-subtle-strong);
     border-radius: var(--tasty-radius-card);
     box-shadow: var(--tasty-shadow-card);
-    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: box-shadow var(--tasty-duration-slow) var(--tasty-easing-base), border-color var(--tasty-duration-slow) var(--tasty-easing-base);
 }
 
 .tasty-fonts-hero,
@@ -252,7 +252,7 @@
 .tasty-fonts-hero-text {
     color: var(--tasty-text-muted);
     font-size: var(--tasty-type-body-large-size);
-    line-height: 1.38;
+    line-height: var(--tasty-line-height-snug);
     margin: 0;
     max-width: min(100%, 30rem);
 }
@@ -262,7 +262,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
     min-height: 26px;
     padding: 4px 9px;
     text-decoration: none;
@@ -274,15 +274,15 @@
     --tasty-version-pill-ink-rgb: var(--tasty-accent-rgb);
     --tasty-version-pill-border: rgba(var(--tasty-accent-rgb), 0.14);
     --tasty-version-pill-sheen: rgba(var(--tasty-white-rgb), 0.98);
-    --tasty-version-pill-shadow: rgba(15, 23, 42, 0.07);
+    --tasty-version-pill-shadow: rgba(var(--tasty-shadow-color-rgb), 0.07);
     --tasty-version-pill-meta-background: rgba(var(--tasty-accent-rgb), 0.06);
     --tasty-version-pill-meta-border: rgba(var(--tasty-accent-rgb), 0.11);
-    --tasty-version-pill-meta-color: rgba(52, 66, 86, 0.88);
+    --tasty-version-pill-meta-color: var(--tasty-version-meta-ink);
     flex-direction: row;
     align-items: center;
     align-self: center;
     min-height: 38px;
-    gap: 8px;
+    gap: var(--tasty-space-2);
     padding: 8px 12px;
     border-color: var(--tasty-version-pill-border);
     border-radius: 999px;
@@ -331,7 +331,7 @@
 .tasty-fonts-version-link-meta {
     position: relative;
     flex-wrap: nowrap;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
     padding: 4px 9px;
     border: 1px solid var(--tasty-version-pill-meta-border);
     border-radius: 999px;
@@ -453,12 +453,12 @@
 
 .tasty-fonts-metric {
     display: grid;
-    gap: 4px;
+    gap: var(--tasty-space-1);
     min-height: auto;
     padding: var(--tasty-dashboard-metric-padding-block) var(--tasty-dashboard-metric-padding-inline);
     border: 1px solid var(--tasty-border-subtle-strong);
     border-radius: var(--tasty-radius-card);
-    background: linear-gradient(160deg, rgba(var(--tasty-white-rgb), 1) 0%, rgba(248, 250, 253, 0.96) 100%);
+    background: linear-gradient(160deg, rgba(var(--tasty-white-rgb), 1) 0%, rgba(var(--tasty-white-rgb), 0.96) 100%);
     box-shadow: var(--tasty-shadow-card);
 }
 
@@ -466,7 +466,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
 }
 
 .tasty-fonts-metric-label {
@@ -488,7 +488,7 @@
 
 .tasty-fonts-help-tooltip-layer {
     position: fixed;
-    z-index: 100001;
+    z-index: var(--tasty-z-tooltip);
     max-width: min(320px, calc(100vw - 24px));
     padding: var(--tasty-space-3);
     border: 1px solid var(--tasty-border);
@@ -505,7 +505,7 @@
 }
 
 .tasty-fonts-toast {
-    animation: tasty-fonts-toast-enter 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation: tasty-fonts-toast-enter var(--tasty-duration-medium) var(--tasty-easing-spring) both;
     will-change: transform, opacity;
 }
 
@@ -525,7 +525,7 @@
     position: fixed;
     right: 24px;
     bottom: 24px;
-    z-index: 100000;
+    z-index: var(--tasty-z-overlay);
     display: grid;
     gap: var(--tasty-space-2);
     pointer-events: none;
@@ -551,7 +551,7 @@
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
-    transition: opacity 0.18s ease, transform 0.18s ease;
+    transition: opacity var(--tasty-duration-moderate) var(--tasty-easing-base), transform var(--tasty-duration-moderate) var(--tasty-easing-base);
 }
 
 .tasty-fonts-toast.is-actionable {
@@ -613,7 +613,7 @@
 }
 
 .tasty-fonts-toast.is-actionable .tasty-fonts-toast-message {
-    line-height: 1.45;
+    line-height: var(--tasty-line-height-relaxed);
 }
 
 .tasty-fonts-toast-actions {
@@ -623,15 +623,15 @@
 }
 
 .tasty-fonts-toast.is-actionable .tasty-fonts-toast-actions {
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
 }
 
 .tasty-fonts-toast-action {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 32px;
-    padding: 0 12px;
+    min-height: var(--tasty-btn-height-md);
+    padding: 0 var(--tasty-space-3);
     border: 1px solid var(--tasty-control-border);
     border-radius: 999px;
     background: rgba(var(--tasty-white-rgb), 0.88);
@@ -640,7 +640,7 @@
     font-size: var(--tasty-type-meta-size);
     font-weight: var(--tasty-font-weight-semibold);
     line-height: 1;
-    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    transition: background var(--tasty-duration-moderate) var(--tasty-easing-base), border-color var(--tasty-duration-moderate) var(--tasty-easing-base), color var(--tasty-duration-moderate) var(--tasty-easing-base), transform var(--tasty-duration-moderate) var(--tasty-easing-base);
 }
 
 .tasty-fonts-toast.is-actionable .tasty-fonts-toast-action {
@@ -664,33 +664,33 @@
 .tasty-fonts-toast-action.is-primary {
     border-color: var(--tasty-danger);
     background: var(--tasty-danger);
-    color: #fff !important;
-    -webkit-text-fill-color: #fff;
+    color: var(--tasty-gray-0) !important;
+    -webkit-text-fill-color: var(--tasty-gray-0);
 }
 
 .tasty-fonts-toast.is-confirmation .tasty-fonts-toast-action.is-primary {
     border-color: var(--tasty-danger);
     background: var(--tasty-danger);
-    color: #fff !important;
-    -webkit-text-fill-color: #fff;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    color: var(--tasty-gray-0) !important;
+    -webkit-text-fill-color: var(--tasty-gray-0);
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.16);
 }
 
 .tasty-fonts-toast-action.is-primary:hover,
 .tasty-fonts-toast-action.is-primary:focus {
     border-color: var(--tasty-danger);
     background: rgba(var(--tasty-danger-rgb), 0.92);
-    color: #fff !important;
-    -webkit-text-fill-color: #fff;
+    color: var(--tasty-gray-0) !important;
+    -webkit-text-fill-color: var(--tasty-gray-0);
 }
 
 .tasty-fonts-toast.is-confirmation .tasty-fonts-toast-action.is-primary:hover,
 .tasty-fonts-toast.is-confirmation .tasty-fonts-toast-action.is-primary:focus {
     border-color: var(--tasty-danger);
     background: rgba(var(--tasty-danger-rgb), 0.92);
-    color: #fff !important;
-    -webkit-text-fill-color: #fff;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    color: var(--tasty-gray-0) !important;
+    -webkit-text-fill-color: var(--tasty-gray-0);
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.16);
 }
 
 .tasty-fonts-toast.is-confirmation .tasty-fonts-toast-action.is-secondary {
@@ -711,7 +711,7 @@
     align-items: center;
     justify-content: center;
     width: 24px;
-    height: 24px;
+    height: var(--tasty-toggle-height);
     padding: 0;
     border: 0;
     border-radius: 999px;
@@ -955,7 +955,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-stack-copy {
     appearance: none;
     position: relative;
-    transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+    transition: border-color var(--tasty-duration-base) var(--tasty-easing-base), background-color var(--tasty-duration-base) var(--tasty-easing-base), color var(--tasty-duration-base) var(--tasty-easing-base), box-shadow var(--tasty-duration-base) var(--tasty-easing-base);
 }
 
 .tasty-fonts-pill--help,
@@ -1107,7 +1107,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-system-statuses {
     display: grid;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     grid-template-columns: repeat(2, minmax(220px, 1fr));
     min-width: 0;
     width: 100%;
@@ -1115,7 +1115,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-status-card {
     display: grid;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
     min-height: 0;
     padding: 14px;
     --tasty-surface-current: var(--tasty-gradient-surface-card);
@@ -1411,7 +1411,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-field-status {
     align-items: center;
     display: inline-flex;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
     min-height: 20px;
     padding: 0 8px;
     border: 1px solid var(--tasty-border-subtle-strong);
@@ -1896,7 +1896,7 @@ h3.tasty-fonts-section-title {
     padding: 0 var(--tasty-control-padding-inline-roomy);
     border-radius: var(--tasty-radius-control);
     text-align: center;
-    transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+    transition: border-color var(--tasty-duration-base) var(--tasty-easing-base), background-color var(--tasty-duration-base) var(--tasty-easing-base), color var(--tasty-duration-base) var(--tasty-easing-base);
 }
 
 .tasty-fonts-scope-button:hover,
@@ -1966,7 +1966,7 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-toggle-field--role-sitewide .tasty-fonts-toggle-copy {
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
 }
 
 .tasty-fonts-role-stacks {
@@ -1988,7 +1988,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-role-stack {
     align-items: center;
     display: inline-flex;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
     min-width: 0;
 }
 
@@ -2107,7 +2107,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-output-settings-copy p {
     margin: 0;
     font-size: var(--tasty-type-caption-size);
-    line-height: 1.45;
+    line-height: var(--tasty-line-height-relaxed);
     color: var(--tasty-text-muted);
 }
 
@@ -2139,7 +2139,7 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-output-settings-subsection > span {
-    font-size: 10px;
+    font-size: var(--tasty-font-size-2xs);
     font-weight: var(--tasty-font-weight-bold);
     letter-spacing: 0.1em;
     line-height: 1.2;
@@ -2192,7 +2192,7 @@ h3.tasty-fonts-section-title {
     margin: 0;
     font-size: var(--tasty-type-caption-size);
     color: var(--tasty-text-muted);
-    line-height: 1.4;
+    line-height: var(--tasty-line-height-normal);
 }
 
 .tasty-fonts-output-settings-submenu > .tasty-fonts-output-settings-submenu-copy {
@@ -2212,7 +2212,7 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-output-settings-submenu-group-title {
-    font-size: 10px;
+    font-size: var(--tasty-font-size-2xs);
     font-weight: var(--tasty-font-weight-bold);
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -2227,7 +2227,7 @@ h3.tasty-fonts-section-title {
     align-items: center;
     column-gap: var(--tasty-space-4);
     row-gap: 3px;
-    padding: 13px 0;
+    padding: var(--tasty-form-row-padding-block) 0;
     border: 0;
     border-bottom: 1px solid var(--tasty-border-subtle);
     border-radius: 0;
@@ -2244,11 +2244,11 @@ h3.tasty-fonts-section-title {
     display: inline-flex;
     flex-wrap: nowrap;
     gap: 3px;
-    padding: 4px;
+    padding: var(--tasty-space-1);
     border: 1px solid var(--tasty-border);
     border-radius: var(--tasty-radius-pill);
     background: linear-gradient(170deg, var(--tasty-surface-muted) 0%, var(--tasty-gray-150) 100%);
-    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+    box-shadow: inset 0 1px 2px rgba(var(--tasty-shadow-color-rgb), 0.06);
 }
 
 .tasty-fonts-output-quick-option {
@@ -2267,7 +2267,7 @@ h3.tasty-fonts-section-title {
     color: var(--tasty-text-muted);
     line-height: 1;
     white-space: nowrap;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    transition: background var(--tasty-duration-subtle) var(--tasty-easing-base), border-color var(--tasty-duration-subtle) var(--tasty-easing-base), color var(--tasty-duration-subtle) var(--tasty-easing-base), box-shadow var(--tasty-duration-subtle) var(--tasty-easing-base);
 }
 
 .tasty-fonts-output-quick-option:focus-within {
@@ -2281,12 +2281,12 @@ h3.tasty-fonts-section-title {
     background: var(--tasty-surface);
     border-color: var(--tasty-border-subtle-strong);
     color: var(--tasty-text);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.07);
+    box-shadow: 0 1px 3px rgba(var(--tasty-shadow-color-rgb), 0.07);
 }
 
 .tasty-fonts-output-quick-option.is-active:focus-within {
     border-color: var(--tasty-accent);
-    box-shadow: var(--tasty-shadow-focus), 0 1px 3px rgba(15, 23, 42, 0.07);
+    box-shadow: var(--tasty-shadow-focus), 0 1px 3px rgba(var(--tasty-shadow-color-rgb), 0.07);
 }
 
 .tasty-fonts-output-quick-option input {
@@ -2315,7 +2315,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-toggle-field--output {
     width: 100%;
     align-items: center;
-    padding: 13px 0;
+    padding: var(--tasty-form-row-padding-block) 0;
     border: 0;
     border-bottom: 1px solid var(--tasty-border-subtle);
     border-radius: 0;
@@ -2344,7 +2344,7 @@ h3.tasty-fonts-section-title {
     align-items: center;
     gap: 2px var(--tasty-space-4);
     width: 100%;
-    padding: 13px 0;
+    padding: var(--tasty-form-row-padding-block) 0;
     border: 0;
     border-bottom: 1px solid var(--tasty-border-subtle);
     border-radius: 0;
@@ -2371,7 +2371,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-toggle-field--output .tasty-fonts-toggle-description {
     font-size: var(--tasty-type-caption-size);
-    line-height: 1.4;
+    line-height: var(--tasty-line-height-normal);
     max-width: none;
 }
 
@@ -2406,7 +2406,7 @@ h3.tasty-fonts-section-title {
     display: block;
     font-size: var(--tasty-type-caption-size);
     color: var(--tasty-text-muted);
-    line-height: 1.4;
+    line-height: var(--tasty-line-height-normal);
     margin: 0;
 }
 
@@ -2441,12 +2441,12 @@ h3.tasty-fonts-section-title {
     position: relative;
     display: inline-flex;
     flex: 0 0 auto;
-    width: 42px;
-    height: 24px;
+    width: var(--tasty-toggle-width);
+    height: var(--tasty-toggle-height);
     border-radius: 999px;
     background: rgba(var(--tasty-gray-600-rgb), 0.28);
-    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.1);
-    transition: background-color 0.18s ease, box-shadow 0.18s ease;
+    box-shadow: inset 0 1px 2px rgba(var(--tasty-shadow-color-rgb), 0.1);
+    transition: background-color var(--tasty-duration-moderate) var(--tasty-easing-base), box-shadow var(--tasty-duration-moderate) var(--tasty-easing-base);
 }
 
 .tasty-fonts-toggle-switch::after {
@@ -2454,21 +2454,21 @@ h3.tasty-fonts-section-title {
     position: absolute;
     top: 2px;
     left: 2px;
-    width: 20px;
-    height: 20px;
+    width: var(--tasty-toggle-thumb-size);
+    height: var(--tasty-toggle-thumb-size);
     border-radius: 999px;
     background: var(--tasty-surface);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.16), 0 1px 1px rgba(15, 23, 42, 0.08);
-    transition: transform 0.18s ease;
+    box-shadow: 0 1px 3px rgba(var(--tasty-shadow-color-rgb), 0.16), 0 1px 1px rgba(var(--tasty-shadow-color-rgb), 0.08);
+    transition: transform var(--tasty-duration-moderate) var(--tasty-easing-base);
 }
 
 .tasty-fonts-toggle-input:checked + .tasty-fonts-toggle-switch {
     background: var(--tasty-accent);
-    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(var(--tasty-accent-rgb), 0.18);
+    box-shadow: inset 0 1px 2px rgba(var(--tasty-shadow-color-rgb), 0.08), 0 0 0 1px rgba(var(--tasty-accent-rgb), 0.18);
 }
 
 .tasty-fonts-toggle-input:checked + .tasty-fonts-toggle-switch::after {
-    transform: translateX(18px);
+    transform: translateX(var(--tasty-toggle-translate));
 }
 
 .tasty-fonts-toggle-input:focus-visible + .tasty-fonts-toggle-switch {
@@ -2491,7 +2491,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-toggle-description {
     color: var(--tasty-text-muted);
     font-size: var(--tasty-type-caption-size);
-    line-height: 1.45;
+    line-height: var(--tasty-line-height-relaxed);
     max-width: 48rem;
 }
 
@@ -2502,7 +2502,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-output-settings-footnote {
     margin: var(--tasty-space-3) 0 0;
     font-size: var(--tasty-type-caption-size);
-    line-height: 1.45;
+    line-height: var(--tasty-line-height-relaxed);
     color: var(--tasty-text-muted);
 }
 
@@ -2532,7 +2532,7 @@ h3.tasty-fonts-section-title {
     border: 1px solid rgba(var(--tasty-gray-600-rgb), 0.16);
     border-radius: var(--tasty-radius-panel);
     background: linear-gradient(170deg, rgba(var(--tasty-white-rgb), 0.88) 0%, rgba(var(--tasty-white-rgb), 0.72) 100%);
-    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.9), 0 1px 4px rgba(15, 23, 42, 0.06);
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.9), 0 1px 4px rgba(var(--tasty-shadow-color-rgb), 0.06);
 }
 
 .tasty-fonts-tab-button {
@@ -2551,7 +2551,7 @@ h3.tasty-fonts-section-title {
     min-height: var(--tasty-masthead-tab-height);
     padding: 0 var(--tasty-masthead-tab-padding-inline);
     text-decoration: none;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    transition: background-color var(--tasty-duration-subtle) var(--tasty-easing-base), border-color var(--tasty-duration-subtle) var(--tasty-easing-base), color var(--tasty-duration-subtle) var(--tasty-easing-base), box-shadow var(--tasty-duration-subtle) var(--tasty-easing-base);
 }
 
 .tasty-fonts-tab-button.is-active {
@@ -2560,7 +2560,7 @@ h3.tasty-fonts-section-title {
     color: var(--tasty-accent);
     font-weight: 600;
     letter-spacing: -0.005em;
-    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.9), 0 1px 3px rgba(15, 23, 42, 0.06);
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.9), 0 1px 3px rgba(var(--tasty-shadow-color-rgb), 0.06);
 }
 
 .tasty-fonts-studio-panel {
@@ -2591,7 +2591,7 @@ h3.tasty-fonts-section-title {
     border-right: 1.5px solid currentColor;
     border-bottom: 1.5px solid currentColor;
     transform: translateY(-1px) rotate(45deg);
-    transition: transform 0.14s ease;
+    transition: transform var(--tasty-duration-fast) var(--tasty-easing-base);
 }
 
 .tasty-fonts-disclosure-button[aria-expanded="true"]::after {
@@ -2631,7 +2631,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-toolbar-copy {
     display: grid;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
 }
 
 .tasty-fonts-preview-toolbar-copy p {
@@ -2644,13 +2644,13 @@ h3.tasty-fonts-section-title {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
 }
 
 .tasty-fonts-preview-modified {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
     min-height: 28px;
     font-size: var(--tasty-type-caption-size);
 }
@@ -2675,7 +2675,7 @@ h3.tasty-fonts-section-title {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     padding: 8px 10px;
     border: 1px solid var(--tasty-border);
     border-radius: var(--tasty-radius-card);
@@ -2686,7 +2686,7 @@ h3.tasty-fonts-section-title {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
 }
 
 .tasty-fonts-preview-tabs {
@@ -2727,19 +2727,19 @@ h3.tasty-fonts-section-title {
     z-index: 1;
     margin-top: var(--tasty-space-2);
     display: grid;
-    gap: 14px;
+    gap: var(--tasty-space-3-5);
     padding: 14px;
     border: 1px solid var(--tasty-border-subtle-strong);
     border-radius: var(--tasty-radius-large);
-    background: linear-gradient(180deg, rgba(248, 250, 252, 0.94), rgba(248, 250, 252, 0.98));
-    box-shadow: 0 -12px 28px rgba(15, 23, 42, 0.08);
+    background: linear-gradient(180deg, rgba(var(--tasty-white-rgb), 0.94), rgba(var(--tasty-white-rgb), 0.98));
+    box-shadow: 0 -12px 28px rgba(var(--tasty-shadow-color-rgb), 0.08);
 }
 
 .tasty-fonts-preview-tray-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     flex-wrap: wrap;
     margin-bottom: 0;
 }
@@ -2759,13 +2759,13 @@ h3.tasty-fonts-section-title {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
 }
 
 .tasty-fonts-preview-tray-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 14px;
+    gap: var(--tasty-space-3-5);
     align-self: stretch;
 }
 
@@ -2791,19 +2791,19 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-role-picker {
     display: grid;
     align-content: start;
-    gap: 14px;
+    gap: var(--tasty-space-3-5);
     min-width: 0;
 }
 
 .tasty-fonts-preview-role-editor {
     min-width: 0;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     padding-top: 12px;
     border-top: 1px solid var(--tasty-border-subtle);
 }
 
 .tasty-fonts-preview-role-editor > .tasty-fonts-stack-field {
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
 }
 
 .tasty-fonts-preview-role-picker .tasty-fonts-select-field,
@@ -2816,7 +2816,7 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-preview-role-picker > .tasty-fonts-stack-field {
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
 }
 
 .tasty-fonts-preview-role-picker > .tasty-fonts-stack-field > .tasty-fonts-field-label-row,
@@ -2853,7 +2853,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-specimen-rail {
     display: grid;
     align-content: start;
-    gap: 16px;
+    gap: var(--tasty-space-4);
 }
 
 .tasty-fonts-preview-specimen-glyph {
@@ -2864,7 +2864,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-specimen-key {
     display: grid;
-    gap: 4px;
+    gap: var(--tasty-space-1);
 }
 
 .tasty-fonts-preview-specimen-key-label,
@@ -2882,13 +2882,13 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-specimen-key-value {
     font-size: var(--tasty-type-body-large-size);
     font-weight: 600;
-    line-height: 1.35;
+    line-height: var(--tasty-line-height-snug);
 }
 
 .tasty-fonts-preview-specimen-scale {
     display: grid;
     align-content: start;
-    gap: 18px;
+    gap: var(--tasty-space-4-5);
 }
 
 .tasty-fonts-preview-specimen-scale-item {
@@ -2933,12 +2933,12 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-specimen-copy {
     display: grid;
     align-content: start;
-    gap: 16px;
+    gap: var(--tasty-space-4);
 }
 
 .tasty-fonts-preview-specimen-copy-row {
     display: grid;
-    gap: 8px;
+    gap: var(--tasty-space-2);
     grid-template-columns: minmax(88px, 100px) minmax(0, 1fr);
     align-items: start;
 }
@@ -2957,24 +2957,24 @@ h3.tasty-fonts-section-title {
     color: var(--tasty-text);
     font-size: var(--tasty-type-preview-lead-size);
     font-weight: 600;
-    line-height: 1.35;
+    line-height: var(--tasty-line-height-snug);
 }
 
 .tasty-fonts-preview-specimen-body-large {
     font-size: var(--tasty-type-preview-body-large-size);
-    line-height: 1.6;
+    line-height: var(--tasty-line-height-prose);
 }
 
 .tasty-fonts-preview-specimen-body {
     font-size: var(--tasty-type-preview-body-size);
-    line-height: 1.65;
+    line-height: var(--tasty-line-height-loose);
 }
 
 .tasty-fonts-preview-specimen-quote {
     color: var(--tasty-text);
     font-size: var(--tasty-type-preview-quote-size);
     font-weight: 700;
-    line-height: 1.35;
+    line-height: var(--tasty-line-height-snug);
     padding: 0;
     border: 0;
 }
@@ -2984,20 +2984,20 @@ h3.tasty-fonts-section-title {
     font-size: var(--tasty-type-body-large-size);
     font-weight: 600;
     letter-spacing: 0.14em;
-    line-height: 1.4;
+    line-height: var(--tasty-line-height-normal);
     text-transform: uppercase;
 }
 
 .tasty-fonts-preview-specimen-small {
     font-size: var(--tasty-type-body-size);
-    line-height: 1.45;
+    line-height: var(--tasty-line-height-relaxed);
 }
 
 .tasty-fonts-preview-specimen-tiny {
     color: var(--tasty-text);
     font-size: var(--tasty-type-label-size);
     font-weight: 600;
-    line-height: 1.4;
+    line-height: var(--tasty-line-height-normal);
 }
 
 .tasty-fonts-preview-support-grid {
@@ -3008,7 +3008,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-support-card {
     display: grid;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     padding: 18px;
     background: var(--tasty-surface);
     border: 1px solid var(--tasty-border);
@@ -3037,7 +3037,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-support-copy {
     color: var(--tasty-text-muted);
     font-size: var(--tasty-type-preview-body-large-size);
-    line-height: 1.6;
+    line-height: var(--tasty-line-height-prose);
     margin: 0;
 }
 
@@ -3045,7 +3045,7 @@ h3.tasty-fonts-section-title {
     align-items: center;
     border-top: 1px solid var(--tasty-border);
     display: flex;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     justify-content: space-between;
     margin-top: auto;
     padding-top: 12px;
@@ -3054,7 +3054,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-support-meta span {
     color: var(--tasty-text-muted);
     font-size: var(--tasty-type-caption-size);
-    line-height: 1.4;
+    line-height: var(--tasty-line-height-normal);
 }
 
 .tasty-fonts-preview-support-meta strong {
@@ -3065,13 +3065,13 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-support-stats {
     display: grid;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .tasty-fonts-preview-support-stat {
     display: grid;
-    gap: 4px;
+    gap: var(--tasty-space-1);
     padding: 14px;
     background: var(--tasty-surface-soft);
     border: 1px solid var(--tasty-border);
@@ -3081,7 +3081,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-support-stat span {
     color: var(--tasty-text-muted);
     font-size: var(--tasty-type-caption-size);
-    line-height: 1.4;
+    line-height: var(--tasty-line-height-normal);
 }
 
 .tasty-fonts-preview-support-stat strong {
@@ -3132,9 +3132,9 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-card-body {
     display: grid;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     align-content: start;
-    padding: 24px;
+    padding: var(--tasty-space-6);
 }
 
 .tasty-fonts-preview-card-label,
@@ -3164,7 +3164,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-card-copy {
     color: var(--tasty-text-muted);
-    line-height: 1.6;
+    line-height: var(--tasty-line-height-prose);
     margin: 0;
     max-width: 28ch;
 }
@@ -3172,7 +3172,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-card-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     justify-content: flex-start;
     margin-top: auto;
     padding-top: 4px;
@@ -3185,14 +3185,14 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-code-workspace {
     display: grid;
-    gap: 18px;
+    gap: var(--tasty-space-4-5);
     grid-template-columns: minmax(240px, 0.42fr) minmax(0, 0.58fr);
     align-items: start;
 }
 
 .tasty-fonts-preview-code-overview {
     display: grid;
-    gap: 14px;
+    gap: var(--tasty-space-3-5);
     padding: 22px;
     background: var(--tasty-surface);
     border: 1px solid var(--tasty-border);
@@ -3211,18 +3211,18 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-code-copy {
     color: var(--tasty-text-muted);
     font-size: var(--tasty-type-body-large-size);
-    line-height: 1.65;
+    line-height: var(--tasty-line-height-loose);
     margin: 0;
 }
 
 .tasty-fonts-preview-code-meta {
     display: grid;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
 }
 
 .tasty-fonts-preview-code-meta-item {
     display: grid;
-    gap: 4px;
+    gap: var(--tasty-space-1);
     padding: 12px 14px;
     background: var(--tasty-surface-soft);
     border: 1px solid var(--tasty-border);
@@ -3242,12 +3242,12 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-code-meta-value {
     color: var(--tasty-text);
     font-size: var(--tasty-type-body-large-size);
-    line-height: 1.35;
+    line-height: var(--tasty-line-height-snug);
 }
 
 .tasty-fonts-preview-code-inline {
     display: grid;
-    gap: 8px;
+    gap: var(--tasty-space-2);
 }
 
 .tasty-fonts-preview-code-inline-sample {
@@ -3261,14 +3261,14 @@ h3.tasty-fonts-section-title {
     background: var(--tasty-surface-soft);
     color: var(--tasty-text);
     font-size: 13px;
-    line-height: 1.5;
+    line-height: var(--tasty-line-height-body);
     overflow-wrap: anywhere;
 }
 
 .tasty-fonts-preview-code-chip-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
 }
 
 .tasty-fonts-preview-code-chip,
@@ -3292,30 +3292,30 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-code-surfaces {
     display: grid;
-    gap: 16px;
+    gap: var(--tasty-space-4);
 }
 
 .tasty-fonts-preview-code-window {
     overflow: hidden;
-    background: #0f172a;
-    border: 1px solid rgba(15, 23, 42, 0.18);
+    background: var(--tasty-preview-code-window-bg);
+    border: 1px solid rgba(var(--tasty-shadow-color-rgb), 0.18);
     border-radius: var(--tasty-radius-large);
     box-shadow: var(--tasty-shadow-card);
 }
 
 .tasty-fonts-preview-code-window-topbar {
     align-items: center;
-    background: #111c2e;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+    background: var(--tasty-preview-code-topbar-bg);
+    border-bottom: 1px solid rgba(var(--tasty-preview-code-chrome-rgb), 0.16);
     display: grid;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     grid-template-columns: auto minmax(0, 1fr) auto;
     padding: 12px 14px;
 }
 
 .tasty-fonts-preview-code-window-dots {
     display: flex;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
 }
 
 .tasty-fonts-preview-code-window-dots span {
@@ -3326,22 +3326,22 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-preview-code-window-dots span:nth-child(1) {
-    background: #f87171;
+    background: var(--tasty-preview-code-dot-red);
 }
 
 .tasty-fonts-preview-code-window-dots span:nth-child(2) {
-    background: #fbbf24;
+    background: var(--tasty-preview-code-dot-yellow);
 }
 
 .tasty-fonts-preview-code-window-dots span:nth-child(3) {
-    background: #34d399;
+    background: var(--tasty-preview-code-dot-green);
 }
 
 .tasty-fonts-preview-code-window-tab {
     align-items: center;
-    color: #cbd5e1;
+    color: var(--tasty-preview-code-tab-text);
     display: flex;
-    gap: 8px;
+    gap: var(--tasty-space-2);
     min-width: 0;
 }
 
@@ -3352,7 +3352,7 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-preview-code-window-tab .dashicons {
-    color: #93c5fd;
+    color: var(--tasty-preview-code-tab-icon);
     font-size: 16px;
     height: 16px;
     width: 16px;
@@ -3361,14 +3361,14 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-code-window-tools {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--tasty-space-2);
     justify-content: flex-end;
 }
 
 .tasty-fonts-preview-code-badge {
-    background: rgba(148, 163, 184, 0.12);
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    color: #e2e8f0;
+    background: rgba(var(--tasty-preview-code-chrome-rgb), 0.12);
+    border: 1px solid rgba(var(--tasty-preview-code-chrome-rgb), 0.18);
+    color: var(--tasty-preview-code-text);
 }
 
 .tasty-fonts-preview-code-badge--light {
@@ -3379,8 +3379,18 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-code-panel {
     font-size: 13px;
+    --tasty-preview-code-chrome-rgb: 148, 163, 184;  /* Slate-400: chrome borders/muted text */
+    --tasty-preview-code-window-bg: #0f172a;          /* Deep slate: editor background */
+    --tasty-preview-code-topbar-bg: #111c2e;          /* Darker slate: topbar/statusbar strip */
+    --tasty-preview-code-dot-red: #f87171;            /* Traffic-light red */
+    --tasty-preview-code-dot-yellow: #fbbf24;         /* Traffic-light yellow */
+    --tasty-preview-code-dot-green: #34d399;          /* Traffic-light green */
+    --tasty-preview-code-tab-text: #cbd5e1;           /* Slate-300: tab filename text */
+    --tasty-preview-code-tab-icon: #93c5fd;           /* Blue-300: tab dashicon */
+    --tasty-preview-code-statusbar-text: #94a3b8;     /* Slate-400: statusbar text */
+    --tasty-preview-code-output-text: #dbe4f0;        /* Light blue-gray: output viewer text */
     --tasty-preview-code-bg: #0f172a;
-    --tasty-preview-code-rule: rgba(148, 163, 184, 0.1);
+    --tasty-preview-code-rule: rgba(var(--tasty-preview-code-chrome-rgb), 0.1);
     --tasty-preview-code-text: #e2e8f0;
     --tasty-preview-code-muted: #64748b;
     --tasty-preview-code-comment: #7c8da7;
@@ -3397,6 +3407,19 @@ h3.tasty-fonts-section-title {
     --tasty-preview-code-attr: #fcd34d;
     background: var(--tasty-preview-code-bg);
     color: var(--tasty-preview-code-text);
+    /* Dark-theme override for globally-scoped syntax tokens */
+    --tasty-syntax-bg: var(--tasty-preview-code-bg);
+    --tasty-syntax-text: var(--tasty-preview-code-text);
+    --tasty-syntax-comment: var(--tasty-preview-code-comment);
+    --tasty-syntax-punctuation: var(--tasty-preview-code-punctuation);
+    --tasty-syntax-at-rule: var(--tasty-preview-code-keyword);
+    --tasty-syntax-selector: var(--tasty-preview-code-selector);
+    --tasty-syntax-property: var(--tasty-preview-code-property);
+    --tasty-syntax-string: var(--tasty-preview-code-string);
+    --tasty-syntax-number: var(--tasty-preview-code-number);
+    --tasty-syntax-variable: var(--tasty-preview-code-variable);
+    --tasty-syntax-keyword: var(--tasty-preview-code-selector);
+    --tasty-syntax-function: var(--tasty-preview-code-function);
 }
 
 .tasty-fonts-preview-code-panel--editor {
@@ -3423,6 +3446,19 @@ h3.tasty-fonts-section-title {
     --tasty-preview-code-punctuation: #475569;
     --tasty-preview-code-tag: #0f766e;
     --tasty-preview-code-attr: #92400e;
+    /* Wire --tasty-syntax-* to this panel's own light palette */
+    --tasty-syntax-bg: var(--tasty-preview-code-bg);
+    --tasty-syntax-text: var(--tasty-preview-code-text);
+    --tasty-syntax-comment: var(--tasty-preview-code-comment);
+    --tasty-syntax-punctuation: var(--tasty-preview-code-punctuation);
+    --tasty-syntax-at-rule: #5b21b6;
+    --tasty-syntax-selector: var(--tasty-preview-code-selector);
+    --tasty-syntax-property: var(--tasty-preview-code-property);
+    --tasty-syntax-string: var(--tasty-preview-code-string);
+    --tasty-syntax-number: var(--tasty-preview-code-number);
+    --tasty-syntax-variable: var(--tasty-preview-code-variable);
+    --tasty-syntax-keyword: var(--tasty-preview-code-keyword);
+    --tasty-syntax-function: var(--tasty-preview-code-function);
 }
 
 .tasty-fonts-preview-code-lines {
@@ -3432,7 +3468,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-code-line {
     display: grid;
     grid-template-columns: 44px minmax(0, 1fr);
-    gap: 14px;
+    gap: var(--tasty-space-3-5);
     padding: 0 16px;
 }
 
@@ -3442,7 +3478,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-code-line-number {
     color: var(--tasty-preview-code-muted);
-    line-height: 1.75;
+    line-height: var(--tasty-line-height-code);
     text-align: right;
     user-select: none;
 }
@@ -3450,7 +3486,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-code-line-content {
     color: var(--tasty-preview-code-text);
     display: block;
-    line-height: 1.75;
+    line-height: var(--tasty-line-height-code);
     min-width: 0;
     overflow: hidden;
     white-space: pre-wrap;
@@ -3508,19 +3544,19 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-code-statusbar {
     align-items: center;
-    background: #111c2e;
-    border-top: 1px solid rgba(148, 163, 184, 0.16);
-    color: #94a3b8;
+    background: var(--tasty-preview-code-topbar-bg);
+    border-top: 1px solid rgba(var(--tasty-preview-code-chrome-rgb), 0.16);
+    color: var(--tasty-preview-code-statusbar-text);
     display: flex;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     justify-content: space-between;
     padding: 10px 14px;
 }
 
 .tasty-fonts-preview-code-block-shell {
     display: grid;
-    gap: 14px;
-    padding: 20px;
+    gap: var(--tasty-space-3-5);
+    padding: var(--tasty-space-5);
     background: var(--tasty-surface);
     border: 1px solid var(--tasty-border);
     border-radius: var(--tasty-radius-card);
@@ -3530,13 +3566,13 @@ h3.tasty-fonts-section-title {
     align-items: flex-start;
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     justify-content: space-between;
 }
 
 .tasty-fonts-preview-code-block-head-copy {
     display: grid;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
 }
 
 .tasty-fonts-preview-code-block-title {
@@ -3550,14 +3586,14 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-code-caption {
     color: var(--tasty-text-muted);
     font-size: var(--tasty-type-body-size);
-    line-height: 1.6;
+    line-height: var(--tasty-line-height-prose);
     margin: 0;
 }
 
 .tasty-fonts-preview-reading-sheet {
     display: grid;
-    gap: 18px;
-    padding: 24px;
+    gap: var(--tasty-space-4-5);
+    padding: var(--tasty-space-6);
     background: var(--tasty-surface);
     border: 1px solid var(--tasty-border);
     border-radius: var(--tasty-radius-card);
@@ -3565,7 +3601,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-reading-head {
     display: grid;
-    gap: 8px;
+    gap: var(--tasty-space-2);
 }
 
 .tasty-fonts-preview-reading-title {
@@ -3579,20 +3615,20 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-reading-lead {
     color: var(--tasty-text);
     font-size: var(--tasty-type-preview-subtitle-size);
-    line-height: 1.5;
+    line-height: var(--tasty-line-height-body);
     margin: 0;
     max-width: 48ch;
 }
 
 .tasty-fonts-preview-reading-layout {
     display: grid;
-    gap: 18px;
+    gap: var(--tasty-space-4-5);
     grid-template-columns: minmax(0, 1.3fr) minmax(180px, 0.7fr);
 }
 
 .tasty-fonts-preview-reading-copy {
     display: grid;
-    gap: 14px;
+    gap: var(--tasty-space-3-5);
 }
 
 .tasty-fonts-preview-reading-copy p {
@@ -3603,8 +3639,8 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-reading-aside {
     display: grid;
-    gap: 12px;
-    padding: 16px;
+    gap: var(--tasty-space-3);
+    padding: var(--tasty-space-4);
     background: var(--tasty-surface-soft);
     border: 1px solid var(--tasty-border);
     border-radius: var(--tasty-radius-card);
@@ -3620,8 +3656,8 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-ui-shell {
     display: grid;
-    gap: 14px;
-    padding: 20px;
+    gap: var(--tasty-space-3-5);
+    padding: var(--tasty-space-5);
     background: var(--tasty-surface);
     border: 1px solid var(--tasty-border);
     border-radius: var(--tasty-radius-card);
@@ -3631,7 +3667,7 @@ h3.tasty-fonts-section-title {
     align-items: center;
     display: flex;
     justify-content: space-between;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     padding-bottom: 12px;
     border-bottom: 1px solid var(--tasty-border);
 }
@@ -3658,14 +3694,14 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-preview-ui-grid {
     display: grid;
-    gap: 14px;
+    gap: var(--tasty-space-3-5);
     grid-template-columns: minmax(0, 1.05fr) minmax(220px, 0.95fr);
 }
 
 .tasty-fonts-preview-ui-panel {
     display: grid;
-    gap: 10px;
-    padding: 16px;
+    gap: var(--tasty-space-2-5);
+    padding: var(--tasty-space-4);
     background: var(--tasty-surface-soft);
     border: 1px solid var(--tasty-border);
     border-radius: var(--tasty-radius-card);
@@ -3683,20 +3719,20 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-ui-copy {
     color: var(--tasty-text-muted);
     font-size: var(--tasty-type-body-large-size);
-    line-height: 1.65;
+    line-height: var(--tasty-line-height-loose);
     margin: 0;
 }
 
 .tasty-fonts-preview-ui-list {
     display: grid;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
 }
 
 .tasty-fonts-preview-ui-list-row {
     align-items: center;
     display: flex;
     justify-content: space-between;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     padding: 12px 14px;
     background: var(--tasty-surface);
     border: 1px solid var(--tasty-border);
@@ -3725,7 +3761,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-ui-label {
     color: var(--tasty-text-muted);
     font-size: var(--tasty-type-caption-size);
-    line-height: 1.5;
+    line-height: var(--tasty-line-height-body);
 }
 
 .tasty-fonts-preview-overline {
@@ -3753,13 +3789,13 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-preview-reading p,
 .tasty-fonts-preview-ui-input,
 .tasty-fonts-font-preview-copy {
-    line-height: 1.45;
+    line-height: var(--tasty-line-height-relaxed);
     margin: 0;
 }
 
 .tasty-fonts-preview-lede {
     font-size: var(--tasty-type-preview-lede-size);
-    line-height: 1.35;
+    line-height: var(--tasty-line-height-snug);
 }
 
 .tasty-fonts-preview-copy,
@@ -3829,7 +3865,7 @@ h3.tasty-fonts-section-title {
     position: relative;
     padding-left: 26px;
     color: var(--tasty-text);
-    line-height: 1.55;
+    line-height: var(--tasty-line-height-prose);
 }
 
 .tasty-fonts-preview-reading-list li::before {
@@ -3897,7 +3933,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-body-preview,
 .tasty-fonts-font-preview {
     font-size: var(--tasty-type-preview-body-fixed-size);
-    line-height: 1.55;
+    line-height: var(--tasty-line-height-prose);
 }
 
 .tasty-fonts-preview-controls {
@@ -3932,7 +3968,7 @@ h3.tasty-fonts-section-title {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     padding: 10px 12px;
     background: var(--tasty-gradient-surface-inset);
     border-bottom: 1px solid var(--tasty-border);
@@ -3943,7 +3979,7 @@ h3.tasty-fonts-section-title {
     align-items: center;
     justify-content: flex-end;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--tasty-space-2);
 }
 
 .tasty-fonts-admin .tasty-fonts-output-display-toggle.button {
@@ -3959,58 +3995,87 @@ h3.tasty-fonts-section-title {
     margin: 0;
     border: 0;
     box-shadow: none;
-    padding: 14px;
+    padding: var(--tasty-space-4) var(--tasty-space-5);
     overflow-x: hidden;
     overflow-y: auto;
-    background:
-        linear-gradient(180deg, rgba(15, 23, 42, 0.02), rgba(15, 23, 42, 0)) padding-box,
-        transparent;
-    color: #dbe4f0;
+    background: var(--tasty-syntax-bg);
+    color: var(--tasty-syntax-text);
 }
 
 .tasty-fonts-output-code {
     display: block;
     max-width: 100%;
     color: inherit;
-    line-height: 1.65;
+    font-size: 12.5px;
+    line-height: var(--tasty-line-height-code);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     word-break: break-word;
+    tab-size: 2;
 }
 
+/* Light-panel (code-panel) output viewer: keep the clean light surface */
 .tasty-fonts-code-panel .tasty-fonts-output {
-    background: #0f172a;
+    background: var(--tasty-syntax-bg);
+    color: var(--tasty-syntax-text);
 }
 
-.tasty-fonts-syntax-selector,
-.tasty-fonts-syntax-property,
+/* Snippets panel + Diagnostics Generated CSS — strip all code surface backgrounds */
+#tasty-fonts-role-snippets-panel .tasty-fonts-code-panel,
+#tasty-fonts-role-snippets-panel .tasty-fonts-code-panel-head,
+#tasty-fonts-role-snippets-panel .tasty-fonts-output,
+#tasty-fonts-diagnostics-page .tasty-fonts-code-panel,
+#tasty-fonts-diagnostics-page .tasty-fonts-output {
+    background: transparent;
+}
+
+/*
+ * Syntax token classes
+ * Light-theme colors are set globally via --tasty-syntax-* in tokens.css.
+ * Dark-theme override lives inside .tasty-fonts-preview-code-panel below.
+ */
 .tasty-fonts-syntax-at-rule {
-    color: #93c5fd;
+    color: var(--tasty-syntax-at-rule);
+    font-weight: var(--tasty-font-weight-semibold);
 }
 
-.tasty-fonts-syntax-variable {
-    color: #67e8f9;
+.tasty-fonts-syntax-selector {
+    color: var(--tasty-syntax-selector);
+    font-weight: var(--tasty-font-weight-semibold);
+}
+
+.tasty-fonts-syntax-property {
+    color: var(--tasty-syntax-property);
 }
 
 .tasty-fonts-syntax-string {
-    color: #f9a8d4;
+    color: var(--tasty-syntax-string);
 }
 
 .tasty-fonts-syntax-number {
-    color: #fcd34d;
+    color: var(--tasty-syntax-number);
 }
 
-.tasty-fonts-syntax-keyword,
+.tasty-fonts-syntax-variable {
+    color: var(--tasty-syntax-variable);
+    font-style: italic;
+}
+
+.tasty-fonts-syntax-keyword {
+    color: var(--tasty-syntax-keyword);
+}
+
 .tasty-fonts-syntax-function {
-    color: #c4b5fd;
+    color: var(--tasty-syntax-function);
 }
 
 .tasty-fonts-syntax-comment {
-    color: #94a3b8;
+    color: var(--tasty-syntax-comment);
+    font-style: italic;
 }
 
 .tasty-fonts-syntax-punctuation {
-    color: #e2e8f0;
+    color: var(--tasty-syntax-punctuation);
 }
 
 .tasty-fonts-toolbar {
@@ -4056,7 +4121,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-library-filter-pills {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--tasty-space-2);
     flex-wrap: wrap;
     min-width: 0;
 }
@@ -4102,15 +4167,15 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-filter-pill--small {
-    min-height: 28px;
-    padding: 0 10px;
+    min-height: var(--tasty-btn-height-sm);
+    padding: 0 var(--tasty-btn-padding-x-sm);
     font-size: var(--tasty-type-label-size);
     line-height: 1.1;
 }
 
 .tasty-fonts-admin .button.tasty-fonts-filter-pill--small {
-    min-height: 28px;
-    padding: 0 10px;
+    min-height: var(--tasty-btn-height-sm);
+    padding: 0 var(--tasty-btn-padding-x-sm);
 }
 
 .tasty-fonts-filter-pill:hover,
@@ -4156,7 +4221,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-actions--library {
     justify-content: flex-end;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     flex: 0 0 auto;
     flex-wrap: nowrap;
 }
@@ -4276,7 +4341,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-import-head {
     display: grid;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
     margin-bottom: var(--tasty-space-4);
 }
 
@@ -4328,7 +4393,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-search-shell,
 .tasty-fonts-import-panel {
     min-width: 0;
-    padding: 20px;
+    padding: var(--tasty-space-5);
     border: 1px solid var(--tasty-border-subtle-strong);
     border-radius: var(--tasty-radius-large);
     background: var(--tasty-surface);
@@ -4363,7 +4428,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-source-status-copy {
     display: grid;
     flex: 1 1 24rem;
-    gap: 8px;
+    gap: var(--tasty-space-2);
     max-width: 38rem;
     min-width: 0;
 }
@@ -4402,11 +4467,11 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-panel-head {
     display: grid;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
 }
 
 .tasty-fonts-panel-head--workflow {
-    gap: 4px;
+    gap: var(--tasty-space-1);
 }
 
 .tasty-fonts-source-status-title-row h4,
@@ -4426,7 +4491,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-inline-checkbox {
     display: inline-flex;
     align-items: start;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     color: var(--tasty-text);
     font-size: var(--tasty-type-body-size);
     line-height: var(--tasty-type-body-line-height);
@@ -4461,12 +4526,12 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-google-access-footer > .tasty-fonts-settings-buttons {
     align-items: flex-start;
     flex: 0 0 auto;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
 }
 
 .tasty-fonts-access-note {
     display: grid;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
     min-width: 0;
     max-width: min(100%, 42rem);
     padding: 12px 14px;
@@ -4512,11 +4577,11 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-access-link {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--tasty-space-2);
     color: var(--tasty-accent);
     font-size: var(--tasty-type-body-size);
     font-weight: var(--tasty-type-title-weight);
-    line-height: 1.4;
+    line-height: var(--tasty-line-height-normal);
     text-decoration: none;
 }
 
@@ -4645,7 +4710,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-upload-tip {
     display: grid;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
     padding: 0;
     border: 0;
     background: transparent;
@@ -4755,7 +4820,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-upload-face-list {
     display: grid;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
 }
 
 .tasty-fonts-upload-face-row {
@@ -4777,7 +4842,7 @@ h3.tasty-fonts-section-title {
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     min-height: var(--tasty-control-height);
-    padding: 4px;
+    padding: var(--tasty-space-1);
     border: 1px solid var(--tasty-border-subtle);
     border-radius: var(--tasty-radius-control);
     background: var(--tasty-control-surface);
@@ -4885,7 +4950,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-upload-variable-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--tasty-space-2);
     min-height: var(--tasty-control-height);
 }
 
@@ -4898,7 +4963,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-upload-axis-list {
     display: grid;
-    gap: 8px;
+    gap: var(--tasty-space-2);
 }
 
 .tasty-fonts-upload-axis-row {
@@ -4964,7 +5029,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-import-choice-fieldset {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
     min-width: 0;
     width: 100%;
     align-self: start;
@@ -5006,7 +5071,7 @@ h3.tasty-fonts-section-title {
     border: 1px solid var(--tasty-border);
     border-radius: var(--tasty-radius-pill);
     background: linear-gradient(170deg, var(--tasty-surface-muted) 0%, var(--tasty-gray-150) 100%);
-    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+    box-shadow: inset 0 1px 2px rgba(var(--tasty-shadow-color-rgb), 0.06);
 }
 
 .tasty-fonts-import-choice-options--segmented .tasty-fonts-output-quick-option {
@@ -5027,7 +5092,7 @@ h3.tasty-fonts-section-title {
     color: var(--tasty-text-muted);
     line-height: 1;
     white-space: nowrap;
-    transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+    transition: border-color var(--tasty-duration-base) var(--tasty-easing-base), background-color var(--tasty-duration-base) var(--tasty-easing-base), color var(--tasty-duration-base) var(--tasty-easing-base), box-shadow var(--tasty-duration-base) var(--tasty-easing-base);
 }
 
 .tasty-fonts-import-choice-options--segmented button.tasty-fonts-output-quick-option {
@@ -5047,7 +5112,7 @@ h3.tasty-fonts-section-title {
     border-color: var(--tasty-border-subtle-strong);
     background: var(--tasty-surface);
     color: var(--tasty-text);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.07);
+    box-shadow: 0 1px 3px rgba(var(--tasty-shadow-color-rgb), 0.07);
 }
 
 .tasty-fonts-import-choice-note {
@@ -5059,7 +5124,7 @@ h3.tasty-fonts-section-title {
     background: transparent;
     color: var(--tasty-text-muted);
     font-size: 12px;
-    line-height: 1.35;
+    line-height: var(--tasty-line-height-snug);
 }
 
 .tasty-fonts-import-note {
@@ -5092,7 +5157,7 @@ h3.tasty-fonts-section-title {
     text-align: left;
     cursor: pointer;
     align-items: stretch;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+    transition: border-color var(--tasty-duration-moderate) var(--tasty-easing-base), box-shadow var(--tasty-duration-moderate) var(--tasty-easing-base), background-color var(--tasty-duration-moderate) var(--tasty-easing-base), color var(--tasty-duration-moderate) var(--tasty-easing-base);
 }
 
 .tasty-fonts-search-card + .tasty-fonts-search-card {
@@ -5151,7 +5216,7 @@ h3.tasty-fonts-section-title {
     gap: 4px 10px;
     margin-top: 10px;
     font-size: var(--tasty-type-caption-size);
-    line-height: 1.35;
+    line-height: var(--tasty-line-height-snug);
 }
 
 .tasty-fonts-search-card-meta span {
@@ -5172,14 +5237,14 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-selected-wrap {
     display: grid;
-    gap: 14px;
+    gap: var(--tasty-space-3-5);
     grid-template-columns: repeat(2, minmax(180px, 1fr));
     min-width: 0;
     width: 100%;
 }
 
 .tasty-fonts-selected-wrap--import {
-    gap: 12px;
+    gap: var(--tasty-space-3);
     grid-template-columns: minmax(250px, 0.92fr) minmax(0, 1.08fr);
     align-items: stretch;
     padding: 0;
@@ -5190,7 +5255,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-selected-card {
     display: grid;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     padding: 14px;
     border-color: var(--tasty-border-subtle);
     background: var(--tasty-surface);
@@ -5201,7 +5266,7 @@ h3.tasty-fonts-section-title {
     align-content: start;
     gap: var(--tasty-space-4);
     min-height: 100%;
-    padding: 16px;
+    padding: var(--tasty-space-4);
     border: 1px solid rgba(var(--tasty-gray-600-rgb), 0.12);
     border-radius: var(--tasty-radius-card);
     background: var(--tasty-surface);
@@ -5225,7 +5290,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-import-card-copy {
     display: grid;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
     min-width: 0;
 }
 
@@ -5233,14 +5298,14 @@ h3.tasty-fonts-section-title {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 8px;
+    gap: var(--tasty-space-2);
     flex-wrap: wrap;
     min-width: 0;
 }
 
 .tasty-fonts-import-preview-shell {
     display: grid;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     min-height: 100%;
 }
 
@@ -5271,20 +5336,20 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-import-selected-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
 }
 
 .tasty-fonts-import-selected-note {
     margin: 0;
     font-size: var(--tasty-type-caption-size);
-    line-height: 1.45;
+    line-height: var(--tasty-line-height-relaxed);
 }
 
 .tasty-fonts-import-selected-preview {
     display: flex;
     align-items: center;
     min-height: 260px;
-    padding: 24px;
+    padding: var(--tasty-space-6);
     border: 1px solid rgba(var(--tasty-gray-600-rgb), 0.12);
     border-radius: var(--tasty-radius-large);
     background: linear-gradient(180deg, rgba(var(--tasty-white-rgb), 0.9) 0%, rgba(var(--tasty-accent-rgb), 0.05) 100%);
@@ -5311,8 +5376,8 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-import-selection-summary {
     display: inline-flex;
     align-items: center;
-    min-height: 32px;
-    padding: 0 12px;
+    min-height: var(--tasty-btn-height-md);
+    padding: 0 var(--tasty-space-3);
     border: 1px solid rgba(var(--tasty-accent-rgb), 0.12);
     border-radius: 999px;
     background: rgba(var(--tasty-accent-rgb), 0.06);
@@ -5328,7 +5393,7 @@ h3.tasty-fonts-section-title {
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     flex-wrap: wrap;
 }
 
@@ -5343,14 +5408,14 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-import-variant-actions {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
     flex-wrap: wrap;
 }
 
 .tasty-fonts-variant-filter {
     align-self: flex-start;
-    min-height: 28px;
-    padding: 0 10px;
+    min-height: var(--tasty-btn-height-sm);
+    padding: 0 var(--tasty-btn-padding-x-sm);
     border-radius: var(--tasty-radius-pill);
     background: var(--tasty-control-surface-muted);
     border-color: var(--tasty-border-subtle);
@@ -5362,13 +5427,13 @@ h3.tasty-fonts-section-title {
 }
 
 .tasty-fonts-admin .button.tasty-fonts-variant-filter {
-    min-height: 28px;
-    padding: 0 10px;
+    min-height: var(--tasty-btn-height-sm);
+    padding: 0 var(--tasty-btn-padding-x-sm);
 }
 
 .tasty-fonts-variant-list {
     display: grid;
-    gap: 8px;
+    gap: var(--tasty-space-2);
     grid-template-columns: repeat(2, minmax(0, 1fr));
     min-height: 38px;
     align-content: start;
@@ -5387,7 +5452,7 @@ h3.tasty-fonts-section-title {
     background: var(--tasty-surface);
     color: var(--tasty-text);
     cursor: pointer;
-    transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+    transition: border-color var(--tasty-duration-moderate) var(--tasty-easing-base), background var(--tasty-duration-moderate) var(--tasty-easing-base), transform var(--tasty-duration-moderate) var(--tasty-easing-base);
 }
 
 .tasty-fonts-variant-chip:hover {
@@ -5450,13 +5515,13 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-import-footer {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 14px;
+    gap: var(--tasty-space-3-5);
     align-items: center;
 }
 
 .tasty-fonts-import-status {
     display: none;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     min-width: 0;
 }
 
@@ -5501,7 +5566,7 @@ h3.tasty-fonts-section-title {
     height: 100%;
     border-radius: inherit;
     background: var(--tasty-accent);
-    transition: width 0.22s ease;
+    transition: width var(--tasty-duration-moderate) var(--tasty-easing-base);
 }
 
 .tasty-fonts-empty--panel {
@@ -5565,7 +5630,7 @@ h3.tasty-fonts-section-title {
 
     .tasty-fonts-upload-file-picker {
         grid-template-columns: 1fr;
-        gap: 8px;
+        gap: var(--tasty-space-2);
         align-items: stretch;
     }
 
@@ -5596,7 +5661,7 @@ h3.tasty-fonts-section-title {
     justify-content: flex-end;
     align-items: center;
     align-self: end;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     padding-top: 0;
 }
 
@@ -5614,7 +5679,7 @@ h3.tasty-fonts-section-title {
     border-color: var(--tasty-border-subtle-strong);
     background: var(--tasty-gradient-surface-card);
     box-shadow: var(--tasty-shadow-card);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    transition: border-color var(--tasty-duration-slow) var(--tasty-easing-base), box-shadow var(--tasty-duration-slow) var(--tasty-easing-base), transform var(--tasty-duration-slow) var(--tasty-easing-base);
 }
 
 .tasty-fonts-font-card:hover {
@@ -5683,7 +5748,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-font-card-overview-main {
     display: grid;
-    gap: 18px;
+    gap: var(--tasty-space-4-5);
     align-content: start;
 }
 
@@ -5961,7 +6026,7 @@ h3.tasty-fonts-section-title {
     padding: var(--tasty-library-preview-padding);
     border: 1px solid var(--tasty-border-subtle-strong);
     border-radius: var(--tasty-radius-control);
-    background: linear-gradient(160deg, rgba(var(--tasty-white-rgb), 0.6) 0%, rgba(248, 250, 253, 0.92) 100%);
+    background: linear-gradient(160deg, rgba(var(--tasty-white-rgb), 0.6) 0%, rgba(var(--tasty-white-rgb), 0.92) 100%);
 }
 
 .tasty-fonts-font-inline-preview.is-monospace,
@@ -6004,7 +6069,7 @@ h3.tasty-fonts-section-title {
     font-size: var(--tasty-library-monospace-preview-size);
     font-weight: var(--tasty-font-weight-semibold);
     letter-spacing: 0;
-    line-height: 1.45;
+    line-height: var(--tasty-line-height-relaxed);
     overflow: hidden;
     overflow-wrap: normal;
     text-overflow: ellipsis;
@@ -6205,7 +6270,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-family-details-grid {
     display: grid;
-    gap: 16px;
+    gap: var(--tasty-space-4);
     grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.95fr);
     grid-template-areas:
         "primary utilities"
@@ -6216,14 +6281,14 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-family-details-primary {
     grid-area: primary;
     display: grid;
-    gap: 16px;
+    gap: var(--tasty-space-4);
     min-width: 0;
 }
 
 .tasty-fonts-family-details-utilities {
     grid-area: utilities;
     display: grid;
-    gap: 16px;
+    gap: var(--tasty-space-4);
     align-content: start;
     min-width: 0;
 }
@@ -6231,12 +6296,12 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-detail-group {
     position: relative;
     display: grid;
-    gap: 14px;
-    padding: 16px;
+    gap: var(--tasty-space-3-5);
+    padding: var(--tasty-space-4);
     border: 1px solid var(--tasty-border-subtle);
     border-radius: var(--tasty-radius-panel);
     background: rgba(var(--tasty-white-rgb), 0.94);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    box-shadow: 0 1px 2px rgba(var(--tasty-shadow-color-rgb), 0.03);
 }
 
 .tasty-fonts-detail-group--faces {
@@ -6251,7 +6316,7 @@ h3.tasty-fonts-section-title {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     flex-wrap: wrap;
 }
 
@@ -6269,7 +6334,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-detail-card-list {
     display: grid;
-    gap: 12px;
+    gap: var(--tasty-space-3);
 }
 
 .tasty-fonts-detail-card-list--deliveries {
@@ -6284,12 +6349,12 @@ h3.tasty-fonts-section-title {
     --tasty-detail-card-accent: var(--tasty-border-subtle);
     --tasty-detail-card-surface: var(--tasty-control-surface-muted);
     display: grid;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     padding: 14px;
     border: 1px solid var(--tasty-detail-card-accent);
     border-radius: var(--tasty-radius-inner);
     background: rgba(var(--tasty-white-rgb), 0.98);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.025);
+    box-shadow: 0 1px 2px rgba(var(--tasty-shadow-color-rgb), 0.025);
 }
 
 .tasty-fonts-detail-card::before {
@@ -6335,7 +6400,7 @@ h3.tasty-fonts-section-title {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     flex-wrap: wrap;
 }
 
@@ -6393,7 +6458,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-detail-meta {
     display: grid;
-    gap: 8px;
+    gap: var(--tasty-space-2);
     grid-template-columns: repeat(3, minmax(0, 1fr));
     margin: 0;
 }
@@ -6423,20 +6488,20 @@ h3.tasty-fonts-section-title {
     color: var(--tasty-text);
     font-size: var(--tasty-type-body-size);
     font-weight: var(--tasty-font-weight-semibold);
-    line-height: 1.5;
+    line-height: var(--tasty-line-height-body);
     overflow-wrap: anywhere;
 }
 
 .tasty-fonts-detail-chip-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
 }
 
 .tasty-fonts-detail-files {
     display: grid;
-    gap: 8px;
-    padding: 12px;
+    gap: var(--tasty-space-2);
+    padding: var(--tasty-space-3);
     border: 1px solid var(--tasty-border-subtle-faint);
     border-radius: var(--tasty-radius-control);
     background: rgba(var(--tasty-white-rgb), 0.78);
@@ -6444,7 +6509,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-detail-group--utility .tasty-fonts-detail-files {
     height: 100%;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     justify-items: stretch;
     align-content: start;
 }
@@ -6452,7 +6517,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-detail-group--utility .tasty-fonts-role-stacks--selection {
     display: grid;
     width: 100%;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     justify-content: stretch;
     justify-items: stretch;
 }
@@ -6478,7 +6543,7 @@ h3.tasty-fonts-section-title {
     text-align: left;
     white-space: normal;
     overflow-wrap: anywhere;
-    line-height: 1.35;
+    line-height: var(--tasty-line-height-snug);
     min-height: 0;
     padding-right: 12px;
     padding-top: 8px;
@@ -6495,7 +6560,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-detail-file-list {
     display: grid;
-    gap: 8px;
+    gap: var(--tasty-space-2);
 }
 
 .tasty-fonts-detail-card--face .tasty-fonts-detail-files--css {
@@ -6515,7 +6580,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-file-path {
     display: grid;
-    gap: 4px;
+    gap: var(--tasty-space-1);
     padding: 10px 12px;
     border: 1px solid var(--tasty-border-subtle-strong);
     border-radius: calc(var(--tasty-radius-control) - 2px);
@@ -6538,7 +6603,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-detail-card--face .tasty-fonts-detail-files .tasty-fonts-role-stacks--selection {
     display: grid;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     justify-content: stretch;
 }
 
@@ -6562,7 +6627,7 @@ h3.tasty-fonts-section-title {
     text-align: left;
     white-space: normal;
     overflow-wrap: anywhere;
-    line-height: 1.35;
+    line-height: var(--tasty-line-height-snug);
     min-height: 0;
     padding-right: 12px;
     padding-top: 8px;
@@ -6602,7 +6667,7 @@ h3.tasty-fonts-section-title {
     background: var(--tasty-surface);
     color: var(--tasty-text);
     font-size: var(--tasty-type-preview-body-fixed-size);
-    line-height: 1.35;
+    line-height: var(--tasty-line-height-snug);
     letter-spacing: -0.01em;
     overflow-wrap: anywhere;
 }
@@ -6776,7 +6841,7 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-log-time {
     font-size: var(--tasty-type-label-size);
-    line-height: 1.35;
+    line-height: var(--tasty-line-height-snug);
     margin-bottom: 0;
 }
 
@@ -6798,7 +6863,7 @@ h3.tasty-fonts-section-title {
     color: var(--tasty-text);
     font-size: var(--tasty-type-body-size);
     font-weight: 500;
-    line-height: 1.45;
+    line-height: var(--tasty-line-height-relaxed);
     order: 1;
 }
 
@@ -6846,7 +6911,7 @@ h3.tasty-fonts-section-title {
     margin: 0;
     color: var(--tasty-text-muted);
     font-size: var(--tasty-type-body-size);
-    line-height: 1.55;
+    line-height: var(--tasty-line-height-prose);
 }
 
 .tasty-fonts-empty-state-actions {
@@ -6870,7 +6935,7 @@ h3.tasty-fonts-section-title {
     border: 1px solid var(--tasty-control-border);
     border-radius: var(--tasty-radius-control);
     box-sizing: border-box;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    box-shadow: 0 1px 2px rgba(var(--tasty-shadow-color-rgb), 0.04), inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.7);
     color: var(--tasty-control-text);
     display: inline-flex;
     font-size: var(--tasty-type-body-size);
@@ -6955,7 +7020,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-admin textarea,
 .tasty-fonts-admin select,
 .tasty-fonts-tab-button {
-    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+    transition: border-color var(--tasty-duration-moderate) var(--tasty-easing-base), box-shadow var(--tasty-duration-moderate) var(--tasty-easing-base), background-color var(--tasty-duration-moderate) var(--tasty-easing-base), color var(--tasty-duration-moderate) var(--tasty-easing-base);
 }
 
 .tasty-fonts-admin a.button:focus,
@@ -6972,13 +7037,13 @@ h3.tasty-fonts-section-title {
 
 .tasty-fonts-output-settings-text-field {
     display: grid;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     margin-bottom: 18px;
 }
 
 .tasty-fonts-output-settings-text-label {
     display: grid;
-    gap: 4px;
+    gap: var(--tasty-space-1);
 }
 
 .tasty-fonts-output-settings-text-title {
@@ -6989,7 +7054,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-output-settings-text-description {
     color: var(--tasty-text-muted);
     font-size: 13px;
-    line-height: 1.5;
+    line-height: var(--tasty-line-height-body);
 }
 
 .tasty-fonts-output-settings-textarea {
@@ -7003,14 +7068,14 @@ h3.tasty-fonts-section-title {
     border-color: var(--tasty-control-border-active);
     background: var(--tasty-control-surface);
     color: var(--tasty-control-text);
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 6px rgba(var(--tasty-shadow-color-rgb), 0.07), inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.8);
 }
 
 .tasty-fonts-admin .tasty-fonts-tab-button:hover {
     background: rgba(var(--tasty-white-rgb), 0.6);
     border-color: rgba(var(--tasty-accent-rgb), 0.14);
     color: var(--tasty-text);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    box-shadow: 0 1px 3px rgba(var(--tasty-shadow-color-rgb), 0.05);
 }
 
 .tasty-fonts-tab-button:focus:not(:focus-visible) {
@@ -7046,7 +7111,7 @@ h3.tasty-fonts-section-title {
     background: var(--tasty-accent-hover);
     border-color: var(--tasty-accent-hover);
     color: var(--tasty-text-on-accent);
-    box-shadow: 0 2px 8px rgba(var(--tasty-accent-rgb), 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    box-shadow: 0 2px 8px rgba(var(--tasty-accent-rgb), 0.32), inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.14);
 }
 
 .tasty-fonts-admin .button:disabled,
@@ -7167,7 +7232,7 @@ h3.tasty-fonts-section-title {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 13px 0;
+    padding: var(--tasty-form-row-padding-block) 0;
     background: transparent;
     border: 0;
     border-top: 1px solid var(--tasty-border-subtle);
@@ -7244,7 +7309,7 @@ h3.tasty-fonts-section-title {
     border: 1px solid rgba(var(--tasty-gray-600-rgb), 0.16);
     border-radius: var(--tasty-radius-panel);
     background: linear-gradient(170deg, rgba(var(--tasty-white-rgb), 0.88) 0%, rgba(var(--tasty-white-rgb), 0.72) 100%);
-    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.9), 0 1px 4px rgba(15, 23, 42, 0.06);
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.9), 0 1px 4px rgba(var(--tasty-shadow-color-rgb), 0.06);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-settings-save-shell[hidden] {
@@ -7347,7 +7412,7 @@ h3.tasty-fonts-section-title {
 }
 
 #tasty-fonts-settings-page .tasty-fonts-integration-group-title {
-    font-size: 10px;
+    font-size: var(--tasty-font-size-2xs);
     font-weight: var(--tasty-font-weight-bold);
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -7357,7 +7422,7 @@ h3.tasty-fonts-section-title {
 #tasty-fonts-settings-page .tasty-fonts-integration-group-description {
     margin: 0;
     color: var(--tasty-text-muted);
-    line-height: 1.5;
+    line-height: var(--tasty-line-height-body);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-toggle-field--integration {
@@ -7376,7 +7441,7 @@ h3.tasty-fonts-section-title {
 #tasty-fonts-settings-page .tasty-fonts-integration-title {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     min-width: 0;
 }
 
@@ -7394,7 +7459,7 @@ h3.tasty-fonts-section-title {
     border-radius: 9px;
     background: var(--tasty-integration-mark-bg);
     color: var(--tasty-integration-mark-color);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.42);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-integration-mark::after {
@@ -7442,7 +7507,7 @@ h3.tasty-fonts-section-title {
 
 #tasty-fonts-settings-page .tasty-fonts-integration-mark--oxygen {
     --tasty-integration-mark-bg: linear-gradient(135deg, #eef6ff, #dcecff);
-    --tasty-integration-mark-border: rgba(36, 108, 201, 0.2);
+    --tasty-integration-mark-border: rgba(var(--tasty-accent-rgb), 0.2);
     --tasty-integration-mark-color: #2364c9;
 }
 
@@ -7542,7 +7607,7 @@ h3.tasty-fonts-section-title {
 
 #tasty-fonts-settings-page .tasty-fonts-integration-toolbar-copy {
     display: grid;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
     min-width: 0;
 }
 
@@ -7611,7 +7676,7 @@ h3.tasty-fonts-section-title {
     float: right;
     color: var(--tasty-text-muted);
     font-size: 11px;
-    line-height: 1.4;
+    line-height: var(--tasty-line-height-normal);
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
@@ -7644,15 +7709,15 @@ h3.tasty-fonts-section-title {
     border-radius: 0;
     color: var(--tasty-text-muted);
     background: transparent;
-    line-height: 1.5;
+    line-height: var(--tasty-line-height-body);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-integration-inline-summary {
     display: grid;
-    gap: 6px;
+    gap: var(--tasty-space-1-5);
     margin: 0 0 10px;
     color: var(--tasty-text-muted);
-    line-height: 1.5;
+    line-height: var(--tasty-line-height-body);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-integration-inline-summary p {
@@ -7667,7 +7732,7 @@ h3.tasty-fonts-section-title {
     display: grid;
     grid-template-columns: minmax(0, 1.7fr) minmax(220px, 1fr);
     align-items: start;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     padding: 0 0 14px;
 }
 
@@ -7687,14 +7752,14 @@ h3.tasty-fonts-section-title {
 #tasty-fonts-settings-page .tasty-fonts-bricks-target-modes {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--tasty-space-2);
     align-items: start;
 }
 
 #tasty-fonts-settings-page .tasty-fonts-bricks-target-mode {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--tasty-space-2);
     padding: 8px 12px;
     border: 1px solid var(--tasty-border-subtle);
     border-radius: 999px;
@@ -7712,7 +7777,7 @@ h3.tasty-fonts-section-title {
 }
 
 #tasty-fonts-settings-page .tasty-fonts-integration-group .tasty-fonts-integration-kv-list {
-    gap: 8px;
+    gap: var(--tasty-space-2);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-integration-group .tasty-fonts-integration-kv:first-child {
@@ -7729,7 +7794,7 @@ h3.tasty-fonts-section-title {
     display: grid;
     grid-template-columns: minmax(76px, 92px) minmax(0, 1fr);
     align-items: center;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     padding: 0;
     border-top: 0;
 }
@@ -7751,7 +7816,7 @@ h3.tasty-fonts-section-title {
 #tasty-fonts-settings-page .tasty-fonts-integration-kv dt {
     color: var(--tasty-text);
     font-weight: var(--tasty-font-weight-medium);
-    line-height: 1.4;
+    line-height: var(--tasty-line-height-normal);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-integration-code {
@@ -7767,7 +7832,7 @@ h3.tasty-fonts-section-title {
     color: var(--tasty-text);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: var(--tasty-font-size-sm);
-    line-height: 1.35;
+    line-height: var(--tasty-line-height-snug);
     overflow-wrap: anywhere;
     word-break: break-word;
 }
@@ -7889,7 +7954,7 @@ h3.tasty-fonts-section-title {
 }
 
 #tasty-fonts-settings-page .tasty-fonts-output-settings-submenu > .tasty-fonts-output-settings-submenu-copy {
-    gap: 4px;
+    gap: var(--tasty-space-1);
     padding: 0;
     border-bottom: 0;
     background: transparent;
@@ -7915,7 +7980,7 @@ h3.tasty-fonts-section-title {
 }
 
 #tasty-fonts-settings-page .tasty-fonts-output-settings-submenu-group-title {
-    font-size: 10px;
+    font-size: var(--tasty-font-size-2xs);
     font-weight: var(--tasty-font-weight-bold);
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -7956,7 +8021,7 @@ h3.tasty-fonts-section-title {
 #tasty-fonts-settings-page .tasty-fonts-output-settings-submenu .tasty-fonts-toggle-field--output .tasty-fonts-toggle-description {
     font-size: 11px;
     color: rgba(var(--tasty-ctrl-text-muted-rgb), 0.9);
-    line-height: 1.38;
+    line-height: var(--tasty-line-height-snug);
 }
 
 /* ===================================================
@@ -8129,7 +8194,7 @@ h3.tasty-fonts-section-title {
 
 #tasty-fonts-settings-page .tasty-fonts-site-transfer-panel-head {
     display: grid;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-site-transfer-panel-head > p {
@@ -8178,7 +8243,7 @@ h3.tasty-fonts-section-title {
 #tasty-fonts-settings-page .tasty-fonts-site-transfer-note {
     color: var(--tasty-text-muted);
     font-size: var(--tasty-type-caption-size);
-    line-height: 1.5;
+    line-height: var(--tasty-line-height-body);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-site-transfer-note--muted {
@@ -8187,7 +8252,7 @@ h3.tasty-fonts-section-title {
 
 #tasty-fonts-settings-page .tasty-fonts-site-transfer-points {
     display: grid;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -8221,7 +8286,7 @@ h3.tasty-fonts-section-title {
 
 #tasty-fonts-settings-page .tasty-fonts-site-transfer-field {
     display: grid;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     min-width: 0;
 }
 
@@ -8229,7 +8294,7 @@ h3.tasty-fonts-section-title {
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 12px;
+    gap: var(--tasty-space-3);
     align-items: center;
     min-height: var(--tasty-control-height-regular);
     padding: 6px;
@@ -8237,7 +8302,7 @@ h3.tasty-fonts-section-title {
     border-radius: calc(var(--tasty-radius-control) + 2px);
     background: var(--tasty-control-surface);
     box-shadow: var(--tasty-control-shadow);
-    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+    transition: border-color var(--tasty-duration-moderate) var(--tasty-easing-base), box-shadow var(--tasty-duration-moderate) var(--tasty-easing-base), background-color var(--tasty-duration-moderate) var(--tasty-easing-base);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-site-transfer-file-picker:focus-within {
@@ -8286,7 +8351,7 @@ h3.tasty-fonts-section-title {
     color: var(--tasty-control-text);
     font-size: var(--tasty-type-body-size);
     font-weight: var(--tasty-font-weight-medium);
-    line-height: 1.35;
+    line-height: var(--tasty-line-height-snug);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -8324,7 +8389,7 @@ h3.tasty-fonts-section-title {
     min-width: 0;
     color: var(--tasty-text-muted);
     font-size: var(--tasty-type-caption-size);
-    line-height: 1.5;
+    line-height: var(--tasty-line-height-body);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-site-transfer-danger-note::before {
@@ -8494,7 +8559,7 @@ h3.tasty-fonts-section-title {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: var(--tasty-space-2-5);
     flex: 0 0 auto;
     width: auto;
     max-width: 100%;
@@ -8513,7 +8578,7 @@ h3.tasty-fonts-section-title {
     background: rgba(var(--tasty-white-rgb), 0.9);
     border-color: var(--tasty-border-subtle);
     color: rgba(var(--tasty-gray-900-rgb), 0.78);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.94), 0 1px 2px rgba(15, 23, 42, 0.04);
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.94), 0 1px 2px rgba(var(--tasty-shadow-color-rgb), 0.04);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-developer-action-button:not(.tasty-fonts-button-danger):hover,
@@ -8526,7 +8591,7 @@ h3.tasty-fonts-section-title {
 #tasty-fonts-settings-page .tasty-fonts-developer-action-button.tasty-fonts-button-danger:not(:disabled):not([aria-disabled="true"]) {
     min-width: var(--tasty-developer-action-width);
     color: var(--tasty-white);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 2px rgba(127, 29, 29, 0.06);
+    box-shadow: inset 0 1px 0 rgba(var(--tasty-white-rgb), 0.6), 0 1px 2px rgba(127, 29, 29, 0.06);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-developer-action-button.is-awaiting-confirmation {
@@ -8565,17 +8630,17 @@ h3.tasty-fonts-section-title {
 }
 
 #tasty-fonts-settings-page .tasty-fonts-output-settings-submenu .tasty-fonts-toggle-switch {
-    width: 36px;
-    height: 20px;
+    width: calc(var(--tasty-toggle-width) - 6px);
+    height: calc(var(--tasty-toggle-height) - 4px);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-output-settings-submenu .tasty-fonts-toggle-switch::after {
-    width: 16px;
-    height: 16px;
+    width: calc(var(--tasty-toggle-thumb-size) - 4px);
+    height: calc(var(--tasty-toggle-thumb-size) - 4px);
 }
 
 #tasty-fonts-settings-page .tasty-fonts-output-settings-submenu .tasty-fonts-toggle-input:checked + .tasty-fonts-toggle-switch::after {
-    transform: translateX(16px);
+    transform: translateX(calc(var(--tasty-toggle-translate) - 2px));
 }
 
 #tasty-fonts-settings-page .tasty-fonts-output-settings-subsection {
@@ -8611,7 +8676,7 @@ h3.tasty-fonts-section-title {
 
     #tasty-fonts-settings-page .tasty-fonts-settings-flat-row-copy--channel {
         display: grid;
-        gap: 4px;
+        gap: var(--tasty-space-1);
     }
 
     #tasty-fonts-settings-page .tasty-fonts-settings-flat-row-copy--channel p {
@@ -8626,7 +8691,7 @@ h3.tasty-fonts-section-title {
 
     #tasty-fonts-settings-page .tasty-fonts-settings-flat-row-support--channel {
         display: grid;
-        gap: 8px;
+        gap: var(--tasty-space-2);
     }
 
     #tasty-fonts-settings-page .tasty-fonts-settings-flat-row-form--channel-action .tasty-fonts-settings-flat-row-actions {
@@ -8692,7 +8757,7 @@ h3.tasty-fonts-section-title {
     }
 
     #tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-danger > .tasty-fonts-settings-flat-row-copy {
-        gap: 6px;
+        gap: var(--tasty-space-1-5);
     }
 
     #tasty-fonts-settings-page .tasty-fonts-settings-flat-row--developer-danger > .tasty-fonts-settings-flat-row-copy .tasty-fonts-developer-tool-title-row,
@@ -8756,7 +8821,7 @@ h3.tasty-fonts-section-title {
 #tasty-fonts-diagnostics-page .tasty-fonts-code-panel-head {
     padding: 8px 14px;
     min-height: 36px;
-    background: var(--tasty-gradient-surface-inset);
+    background: transparent;
     border-bottom-color: var(--tasty-border-subtle);
 }
 #tasty-fonts-diagnostics-page .tasty-fonts-code-panel-head > span {
@@ -8780,9 +8845,9 @@ h3.tasty-fonts-section-title {
     border-radius: var(--tasty-radius-control);
 }
 #tasty-fonts-diagnostics-page .tasty-fonts-output {
-    padding: 14px 16px;
-    font-size: 12.5px;
-    line-height: 1.6;
+    padding: var(--tasty-space-3-5) var(--tasty-space-4);
+    font-size: 12.5px;  /* non-standard display size for code output */
+    line-height: var(--tasty-line-height-code);
 }
 
 /* System Details — strip generic card; promote individual items */
@@ -8820,7 +8885,7 @@ h3.tasty-fonts-section-title {
     font-size: var(--tasty-type-body-size);
     font-weight: var(--tasty-font-weight-medium);
     color: var(--tasty-text);
-    line-height: 1.45;
+    line-height: var(--tasty-line-height-relaxed);
     min-width: 0;
     overflow-wrap: anywhere;
     word-break: break-word;
@@ -8844,7 +8909,7 @@ h3.tasty-fonts-section-title {
     color: var(--tasty-text-muted);
     box-shadow: none;
     cursor: pointer;
-    transition: transform 0.16s ease, color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+    transition: transform var(--tasty-duration-base) var(--tasty-easing-base), color var(--tasty-duration-base) var(--tasty-easing-base), background-color var(--tasty-duration-base) var(--tasty-easing-base), border-color var(--tasty-duration-base) var(--tasty-easing-base), box-shadow var(--tasty-duration-base) var(--tasty-easing-base);
 }
 
 #tasty-fonts-diagnostics-page .tasty-fonts-diagnostic-copy-button.button:hover,
@@ -8939,7 +9004,7 @@ h3.tasty-fonts-section-title {
     font-size: var(--tasty-type-body-size);
     font-weight: var(--tasty-font-weight-medium);
     color: var(--tasty-text);
-    line-height: 1.35;
+    line-height: var(--tasty-line-height-snug);
 }
 #tasty-fonts-diagnostics-page .tasty-fonts-log-time {
     font-size: var(--tasty-type-label-size);
@@ -8978,7 +9043,7 @@ h3.tasty-fonts-section-title {
 .tasty-fonts-page-notice > span {
     font-size: var(--tasty-type-caption-size);
     color: var(--tasty-text-muted);
-    line-height: 1.5;
+    line-height: var(--tasty-line-height-body);
     display: block;
     max-width: 52rem;
 }
@@ -9563,12 +9628,12 @@ h3.tasty-fonts-section-title {
 
     .tasty-fonts-preview-specimen-rail,
     .tasty-fonts-font-preview-aside {
-        gap: 10px;
+        gap: var(--tasty-space-2-5);
     }
 
     .tasty-fonts-preview-specimen-scale,
     .tasty-fonts-font-preview-scale {
-        gap: 8px;
+        gap: var(--tasty-space-2);
     }
 
     .tasty-fonts-preview-specimen-copy-row {
@@ -9601,7 +9666,7 @@ h3.tasty-fonts-section-title {
 
     .tasty-fonts-preview-code-line {
         grid-template-columns: 36px minmax(0, 1fr);
-        gap: 10px;
+        gap: var(--tasty-space-2-5);
         padding: 0 12px;
     }
 
@@ -9638,7 +9703,7 @@ h3.tasty-fonts-section-title {
     .tasty-fonts-table td {
         display: grid;
         grid-template-columns: minmax(120px, 144px) minmax(0, 1fr);
-        gap: 10px;
+        gap: var(--tasty-space-2-5);
         padding: 10px 12px;
         border-top: 1px solid var(--tasty-border);
     }
@@ -9653,7 +9718,7 @@ h3.tasty-fonts-section-title {
         font-size: var(--tasty-type-meta-size);
         font-weight: var(--tasty-type-meta-weight);
         letter-spacing: var(--tasty-type-meta-spacing);
-        line-height: 1.35;
+        line-height: var(--tasty-line-height-snug);
         text-transform: uppercase;
     }
 
@@ -9899,7 +9964,7 @@ h3.tasty-fonts-section-title {
     .tasty-fonts-search-shell,
     .tasty-fonts-import-panel,
     .tasty-fonts-upload-group {
-        padding: 16px;
+        padding: var(--tasty-space-4);
     }
 
     .tasty-fonts-upload-group-head {
@@ -9952,7 +10017,7 @@ h3.tasty-fonts-section-title {
 
     .tasty-fonts-table td {
         grid-template-columns: 1fr;
-        gap: 6px;
+        gap: var(--tasty-space-1-5);
     }
 
     .tasty-fonts-font-identity-top {
@@ -10005,7 +10070,7 @@ h3.tasty-fonts-section-title {
 
     .tasty-fonts-tab-list,
     .tasty-fonts-studio-switcher {
-        gap: 4px;
+        gap: var(--tasty-space-1);
         width: 100%;
     }
 
