@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.12.0-beta.3] - 2026-04-16
+
 ### Added
 
 - Added a centralized admin design-token scale covering spacing, typography, motion, layers, component sizing, and syntax highlighting.
