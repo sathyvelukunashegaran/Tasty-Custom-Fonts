@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.13.0-beta.2] - 2026-04-17
+
 ### Added
 
 - Added optional Tasty Fonts admin-access controls so administrators can delegate plugin access to selected non-administrator roles and specific users.
